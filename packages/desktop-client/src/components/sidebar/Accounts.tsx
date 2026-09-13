@@ -99,7 +99,6 @@ export function Accounts() {
               marginTop: 13,
               marginBottom: 5,
             }}
-            titleAccount
             balanceTestId="sidebar-on-budget-balance"
           />
         )}
@@ -131,7 +130,6 @@ export function Accounts() {
               marginTop: 13,
               marginBottom: 5,
             }}
-            titleAccount
             balanceTestId="sidebar-off-budget-balance"
           />
         )}

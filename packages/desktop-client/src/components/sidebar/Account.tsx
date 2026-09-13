@@ -62,7 +62,6 @@ type AccountProps<FieldName extends SheetFields<'account'>> = {
   outerStyle?: CSSProperties;
   onDragChange?: OnDragChangeCallback<{ id: string }>;
   onDrop?: OnDropCallback;
-  titleAccount?: boolean;
   isExactPathMatch?: boolean;
   balanceTestId?: string;
 };
@@ -80,7 +79,6 @@ export function Account<FieldName extends SheetFields<'account'>>({
   outerStyle,
   onDragChange,
   onDrop,
-  titleAccount,
   isExactPathMatch,
   balanceTestId,
 }: AccountProps<FieldName>) {
@@ -225,11 +223,6 @@ export function Account<FieldName extends SheetFields<'account'>>({
             </View>
 
             <AlignedText
-              style={
-                titleAccount && {
-                  paddingBottom: '3px',
-                }
-              }
               left={
                 isEditing ? (
                   <InitialFocus>
