@@ -22,6 +22,7 @@ import { TotalsList } from './TotalsList';
 
 type ToBudgetAmountProps = {
   prevMonthName: string;
+  showLabel?: boolean;
   style?: CSSProperties;
   amountStyle?: CSSProperties;
   onClick: () => void;
@@ -31,6 +32,7 @@ type ToBudgetAmountProps = {
 
 export function ToBudgetAmount({
   prevMonthName,
+  showLabel = true,
   style,
   amountStyle,
   onClick,
@@ -56,7 +58,9 @@ export function ToBudgetAmount({
 
   return (
     <View style={{ alignItems: 'center', ...style }}>
-      <Block>{isNegative ? t('Overbudgeted:') : t('To Budget:')}</Block>
+      {showLabel && (
+        <Block>{isNegative ? t('Overbudgeted:') : t('To Budget:')}</Block>
+      )}
       <View>
         <Tooltip
           content={

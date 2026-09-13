@@ -262,6 +262,7 @@ export const BudgetSummary = memo(({ month }: BudgetSummaryProps) => {
               prevMonthName={prevMonthName}
               month={month}
               onBudgetAction={onBudgetAction}
+              showLabel={false}
               isCollapsed
             />
           </View>
@@ -283,6 +284,7 @@ export const BudgetSummary = memo(({ month }: BudgetSummaryProps) => {
                 prevMonthName={prevMonthName}
                 month={month}
                 onBudgetAction={onBudgetAction}
+                showLabel={false}
               />
             </View>
           </>
