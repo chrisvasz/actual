@@ -3,7 +3,6 @@ import type { ComponentProps, CSSProperties, MouseEvent } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
-import { SvgCheveronDown } from '@actual-app/components/icons/v1';
 import {
   SvgArrowsSynchronize,
   SvgCalendar3,
@@ -27,13 +26,11 @@ import { useFormat } from '#hooks/useFormat';
 import { useNavigate } from '#hooks/useNavigate';
 import { useSheetName } from '#hooks/useSheetName';
 import { useSheetValue } from '#hooks/useSheetValue';
-import { useUndo } from '#hooks/useUndo';
 import type { Binding, SheetFields } from '#spreadsheet';
 import { envelopeBudget } from '#spreadsheet/bindings';
 import type { CategoryGroupMonthProps, CategoryMonthProps } from '..';
 
 import { BalanceMovementMenu } from './BalanceMovementMenu';
-import { BudgetMenu } from './BudgetMenu';
 import { IncomeMenu } from './IncomeMenu';
 
 export function useEnvelopeSheetName<
@@ -203,25 +200,7 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
   const { t } = useTranslation();
   const format = useFormat();
 
-  const budgetMenuTriggerRef = useRef(null);
   const balanceMenuTriggerRef = useRef(null);
-  const [budgetMenuOpen, setBudgetMenuOpen] = useState(false);
-  const [budgetPosition, setBudgetPosition] = useState({
-    crossOffset: 0,
-    offset: 0,
-  });
-  const resetBudgetPosition = (crossOffset = 0, offset = 0) =>
-    setBudgetPosition({ crossOffset, offset });
-
-  const handleBudgetContextMenu = (e: MouseEvent) => {
-    e.preventDefault();
-    const rect = e.currentTarget.getBoundingClientRect();
-    setBudgetPosition({
-      crossOffset: e.clientX - rect.left,
-      offset: e.clientY - rect.bottom,
-    });
-    setBudgetMenuOpen(true);
-  };
 
   const [balanceMenuOpen, setBalanceMenuOpen] = useState(false);
   const [balancePosition, setBalancePosition] = useState({
@@ -240,13 +219,6 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
     });
     setBalanceMenuOpen(true);
   };
-
-  const onMenuAction = (...args: Parameters<typeof onBudgetAction>) => {
-    onBudgetAction(...args);
-    setBudgetMenuOpen(false);
-  };
-
-  const { showUndoNotification } = useUndo();
 
   const navigate = useNavigate();
 
@@ -273,124 +245,30 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
         '&:hover .hover-visible, & .force-visible .hover-visible': {
           opacity: 1,
         },
-        '& .hover-expand': {
-          maxWidth: 0,
-          overflow: 'hidden',
-          transition: 'max-width 0s .25s',
-        },
-        '&:hover .hover-expand, & .hover-expand.force-visible': {
-          maxWidth: '300px',
-          overflow: 'visible',
-          transition: 'max-width 0s linear 0s',
-        },
       }}
     >
       <View
-        ref={budgetMenuTriggerRef}
         style={{
           flex: 1,
           flexDirection: 'row',
         }}
-        onContextMenu={e => {
-          if (editing) return;
-          handleBudgetContextMenu(e);
-        }}
       >
         {!editing && (
-          <>
-            <View
-              style={{
-                paddingLeft: 3,
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderTopWidth: 1,
-                borderBottomWidth: 1,
-                borderColor: theme.tableBorder,
-              }}
-            >
-              <NotesButton
-                id={`${category.id}-${month}`}
-                defaultColor={theme.pageTextLight}
-              />
-            </View>
-            <View
-              className={`hover-expand ${budgetMenuOpen ? 'force-visible' : ''}`}
-              style={{
-                flexDirection: 'row',
-                flexShrink: 1,
-                paddingLeft: 3,
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderTopWidth: 1,
-                borderBottomWidth: 1,
-                borderColor: theme.tableBorder,
-              }}
-            >
-              <Button
-                variant="bare"
-                onPress={() => {
-                  resetBudgetPosition(2, -4);
-                  setBudgetMenuOpen(true);
-                }}
-                style={{
-                  padding: 3,
-                }}
-              >
-                <SvgCheveronDown
-                  width={14}
-                  height={14}
-                  className="hover-visible"
-                />
-              </Button>
-              <Popover
-                triggerRef={budgetMenuTriggerRef}
-                placement="bottom left"
-                isOpen={budgetMenuOpen}
-                onOpenChange={() => setBudgetMenuOpen(false)}
-                style={{ width: 200 }}
-                isNonModal
-                {...budgetPosition}
-              >
-                <BudgetMenu
-                  onCopyLastMonthAverage={() => {
-                    onMenuAction(month, 'copy-single-last', {
-                      category: category.id,
-                    });
-                    showUndoNotification({
-                      message: t(`Budget set to last month's budget.`),
-                    });
-                  }}
-                  onSetMonthsAverage={numberOfMonths => {
-                    if (
-                      numberOfMonths !== 3 &&
-                      numberOfMonths !== 6 &&
-                      numberOfMonths !== 12
-                    ) {
-                      return;
-                    }
-
-                    onMenuAction(month, `set-single-${numberOfMonths}-avg`, {
-                      category: category.id,
-                    });
-                    showUndoNotification({
-                      message: t(
-                        'Budget set to {{numberOfMonths}}-month average.',
-                        { numberOfMonths },
-                      ),
-                    });
-                  }}
-                  onApplyBudgetTemplate={() => {
-                    onMenuAction(month, 'apply-single-category-template', {
-                      category: category.id,
-                    });
-                    showUndoNotification({
-                      message: t(`Budget template applied.`),
-                    });
-                  }}
-                />
-              </Popover>
-            </View>
-          </>
+          <View
+            style={{
+              paddingLeft: 3,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderTopWidth: 1,
+              borderBottomWidth: 1,
+              borderColor: theme.tableBorder,
+            }}
+          >
+            <NotesButton
+              id={`${category.id}-${month}`}
+              defaultColor={theme.pageTextLight}
+            />
+          </View>
         )}
         <EnvelopeSheetCell
           name="budget"
