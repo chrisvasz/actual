@@ -313,6 +313,9 @@ export const Row = forwardRef<HTMLDivElement, RowProps>(function Row(
 const inputCellStyle = {
   padding: '5px 3px',
   margin: '0 1px',
+  // Inherit the cell's font features so the digits keep their shape and
+  // spacing when the cell is opened for editing.
+  fontFeatureSettings: 'inherit',
 };
 
 const readonlyInputStyle = {
