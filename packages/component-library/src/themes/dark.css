@@ -243,9 +243,9 @@
   --color-noteTagDefault: var(--palette-purple700);
   --color-noteTagText: var(--palette-purple100);
 
-  --color-budgetOtherMonth: var(--palette-navy900);
+  --color-budgetOtherMonth: var(--color-budgetCurrentMonth);
   --color-budgetCurrentMonth: var(--color-tableBackground);
-  --color-budgetHeaderOtherMonth: var(--palette-navy800);
+  --color-budgetHeaderOtherMonth: var(--color-budgetHeaderCurrentMonth);
   --color-budgetHeaderCurrentMonth: var(--color-tableHeaderBackground);
 
   --color-floatingActionBarBackground: var(--palette-purple800);

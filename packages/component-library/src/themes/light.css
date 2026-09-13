@@ -254,9 +254,9 @@
   --color-noteTagText: var(--palette-black);
 
   --color-budgetCurrentMonth: var(--color-tableBackground);
-  --color-budgetOtherMonth: var(--palette-gray50);
-  --color-budgetHeaderCurrentMonth: var(--color-budgetOtherMonth);
-  --color-budgetHeaderOtherMonth: var(--palette-gray80);
+  --color-budgetOtherMonth: var(--color-budgetCurrentMonth);
+  --color-budgetHeaderCurrentMonth: var(--palette-gray50);
+  --color-budgetHeaderOtherMonth: var(--color-budgetHeaderCurrentMonth);
 
   --color-floatingActionBarBackground: var(--palette-purple400);
   --color-floatingActionBarBorder: var(--color-floatingActionBarBackground);
