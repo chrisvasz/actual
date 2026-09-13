@@ -195,6 +195,8 @@ export function Menu<const NameType = string>({
               flexDirection: 'row',
               justifyContent: 'center',
               alignItems: 'center',
+              borderRadius: 0,
+              transition: 'all 0.15s ease',
               color: theme.menuItemText,
               ...(item.disabled && { color: theme.buttonBareDisabledText }),
               ...(!item.disabled &&

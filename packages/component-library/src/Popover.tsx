@@ -42,6 +42,7 @@ export const Popover = ({
       className={css({
         ...styles.tooltip,
         ...styles.lightScrollbar,
+        border: 'none',
         padding: 0,
         userSelect: 'none',
         ...style,
