@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import type { AccountEntity } from '@actual-app/core/types/models';
 
@@ -80,21 +79,12 @@ export function Accounts() {
         },
       }}
     >
-      <View
-        style={{
-          height: 1,
-          backgroundColor: theme.sidebarItemBackgroundHover,
-          marginTop: 15,
-          flexShrink: 0,
-        }}
-      />
-
       <View style={{ overflow: 'auto' }}>
         <Account
           name={t('All accounts')}
           to="/accounts"
           query={bindings.allAccountBalance()}
-          style={{ fontWeight, marginTop: 15 }}
+          style={{ fontWeight, marginTop: 31 }}
           isExactPathMatch
           balanceTestId="sidebar-all-accounts-balance"
         />
