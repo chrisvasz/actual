@@ -209,7 +209,11 @@ export const MonthPicker = ({
                   borderTopRightRadius: 2,
                   borderBottomRightRadius: 2,
                 }),
-                ...(current && { fontWeight: 'bold' }),
+                ...(current && {
+                  textDecoration: isMonthBudgeted
+                    ? 'underline'
+                    : 'line-through underline',
+                }),
               }}
               onClick={() => onSelect(month)}
               onMouseEnter={() => setHoverId(idx)}

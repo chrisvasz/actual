@@ -130,7 +130,7 @@ export const BudgetSummary = memo(({ month }: BudgetSummaryProps) => {
                 fontWeight: 500,
                 textDecorationSkip: 'ink',
               },
-              currentMonth === month && { fontWeight: 'bold' },
+              currentMonth === month && { textDecoration: 'underline' },
             ])}
           >
             {monthUtils.format(month, 'MMMM', locale)}
