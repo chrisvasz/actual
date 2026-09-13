@@ -115,13 +115,17 @@ export const MonthPicker = ({
           style={{
             padding: '3px 3px',
             marginRight: '12px',
+            opacity: 0.6,
+            ':hover': {
+              opacity: 1,
+            },
           }}
         >
           <View title={t('Previous month')}>
             <SvgArrowThinLeft
               style={{
-                width: 16,
-                height: 16,
+                width: 13,
+                height: 13,
               }}
             />
           </View>
@@ -237,13 +241,17 @@ export const MonthPicker = ({
           style={{
             padding: '3px 3px',
             marginLeft: '12px',
+            opacity: 0.6,
+            ':hover': {
+              opacity: 1,
+            },
           }}
         >
           <View title={t('Next month')}>
             <SvgArrowThinRight
               style={{
-                width: 16,
-                height: 16,
+                width: 13,
+                height: 13,
               }}
             />
           </View>
