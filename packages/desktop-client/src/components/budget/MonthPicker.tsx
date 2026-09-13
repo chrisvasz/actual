@@ -148,6 +148,16 @@ export const MonthPicker = ({
           const isMonthBudgeted =
             month >= monthBounds.start && month <= monthBounds.end;
 
+          // The first month of every visible year carries the year with it,
+          // abbreviated when the cells are too narrow for the full one.
+          const label = showYearHeader
+            ? `${size === 'big' ? monthName : monthName[0]} ${
+                size === 'big' ? year : String(year).slice(-2)
+              }`
+            : size === 'big'
+              ? monthName
+              : monthName[0];
+
           return (
             <View
               key={month}
@@ -155,9 +165,12 @@ export const MonthPicker = ({
               data-month={selected ? month : undefined}
               style={{
                 alignItems: 'center',
-                padding: '3px 3px',
-                width: size === 'big' ? '35px' : '20px',
+                padding: showYearHeader ? '3px 6px' : '3px 3px',
+                ...(!showYearHeader && {
+                  width: size === 'big' ? '35px' : '20px',
+                }),
                 textAlign: 'center',
+                whiteSpace: 'nowrap',
                 userSelect: 'none',
                 cursor: 'default',
                 borderRadius: 2,
@@ -219,25 +232,7 @@ export const MonthPicker = ({
               onMouseEnter={() => setHoverId(idx)}
               onMouseLeave={() => setHoverId(null)}
             >
-              <View>
-                {size === 'small' ? monthName[0] : monthName}
-                {showYearHeader && (
-                  <View
-                    style={{
-                      position: 'absolute',
-                      top: -16,
-                      left: 0,
-                      fontSize: 10,
-                      fontWeight: 'bold',
-                      color: isMonthBudgeted
-                        ? theme.pageText
-                        : theme.pageTextSubdued,
-                    }}
-                  >
-                    {year}
-                  </View>
-                )}
-              </View>
+              <View>{label}</View>
             </View>
           );
         })}
