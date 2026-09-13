@@ -9,10 +9,8 @@ import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
-import { useGlobalPref } from '#hooks/useGlobalPref';
-
 import { RenderMonths } from './RenderMonths';
-import { getScrollbarWidth } from './util';
+import { CATEGORY_COLUMN_WIDTH, getScrollbarWidth } from './util';
 
 import { useBudgetComponents } from '.';
 
@@ -28,8 +26,6 @@ export const BudgetTotals = memo(function BudgetTotals({
   collapseAllCategories,
 }: BudgetTotalsProps) {
   const { t } = useTranslation();
-  const [categoryExpandedStatePref] = useGlobalPref('categoryExpandedState');
-  const categoryExpandedState = categoryExpandedStatePref ?? 0;
   const [menuOpen, setMenuOpen] = useState(false);
   const triggerRef = useRef(null);
 
@@ -58,10 +54,11 @@ export const BudgetTotals = memo(function BudgetTotals({
     >
       <View
         style={{
-          width: 200 + 100 * categoryExpandedState,
+          width: CATEGORY_COLUMN_WIDTH,
           color: theme.tableHeaderText,
           justifyContent: 'center',
-          paddingLeft: 5,
+          // Line the header up with the category names below it.
+          paddingLeft: 18,
           paddingRight: 5,
           display: 'flex',
           flexDirection: 'row',
