@@ -3,11 +3,6 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgDotsHorizontalTriple } from '@actual-app/components/icons/v1';
-import {
-  SvgArrowButtonLeft1,
-  SvgArrowButtonRight1,
-  SvgArrowButtonSingleLeft1,
-} from '@actual-app/components/icons/v2';
 import { Menu } from '@actual-app/components/menu';
 import { Popover } from '@actual-app/components/popover';
 import { styles } from '@actual-app/components/styles';
@@ -33,29 +28,10 @@ export const BudgetTotals = memo(function BudgetTotals({
   collapseAllCategories,
 }: BudgetTotalsProps) {
   const { t } = useTranslation();
-  const [categoryExpandedStatePref, setCategoryExpandedStatePref] =
-    useGlobalPref('categoryExpandedState');
+  const [categoryExpandedStatePref] = useGlobalPref('categoryExpandedState');
   const categoryExpandedState = categoryExpandedStatePref ?? 0;
   const [menuOpen, setMenuOpen] = useState(false);
   const triggerRef = useRef(null);
-
-  const cycleExpandedState = () => {
-    const nextState = (categoryExpandedState + 1) % 3;
-    setCategoryExpandedStatePref(nextState);
-  };
-
-  const getExpandStateLabel = () => {
-    switch (categoryExpandedState) {
-      case 0:
-        return t('Expand');
-      case 1:
-        return t('Fully Expand');
-      case 2:
-        return t('Collapse');
-      default:
-        return t('Expand');
-    }
-  };
 
   const { BudgetTotalsComponent: MonthComponent } = useBudgetComponents();
 
@@ -94,40 +70,6 @@ export const BudgetTotals = memo(function BudgetTotals({
           WebkitUserSelect: 'none',
         }}
       >
-        <Button
-          variant="bare"
-          aria-label={getExpandStateLabel()}
-          onPress={cycleExpandedState}
-          className="hover-visible"
-          style={{
-            color: 'currentColor',
-            padding: 3,
-            marginRight: 10,
-          }}
-        >
-          {categoryExpandedState === 0 ? (
-            <SvgArrowButtonSingleLeft1
-              style={{
-                width: 12,
-                height: 12,
-              }}
-            />
-          ) : categoryExpandedState === 1 ? (
-            <SvgArrowButtonLeft1
-              style={{
-                width: 12,
-                height: 12,
-              }}
-            />
-          ) : (
-            <SvgArrowButtonRight1
-              style={{
-                width: 12,
-                height: 12,
-              }}
-            />
-          )}
-        </Button>
         <View style={{ flexGrow: '1' }}>
           <Trans>Category</Trans>
         </View>
