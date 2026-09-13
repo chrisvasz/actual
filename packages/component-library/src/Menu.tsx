@@ -196,7 +196,7 @@ export function Menu<const NameType = string>({
               justifyContent: 'center',
               alignItems: 'center',
               borderRadius: 0,
-              transition: 'all 0.15s ease',
+              transition: 'all 0.1s ease',
               color: theme.menuItemText,
               ...(item.disabled && { color: theme.buttonBareDisabledText }),
               ...(!item.disabled &&
