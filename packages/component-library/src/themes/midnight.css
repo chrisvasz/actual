@@ -249,6 +249,7 @@
   --color-budgetCurrentMonth: var(--color-tableBackground);
   --color-budgetHeaderOtherMonth: var(--color-budgetHeaderCurrentMonth);
   --color-budgetHeaderCurrentMonth: var(--color-tableHeaderBackground);
+  --color-budgetSummaryAmountBackground: var(--color-tableHeaderBackground);
 
   --color-floatingActionBarBackground: var(--palette-gray900);
   --color-floatingActionBarBorder: var(--palette-purple300);

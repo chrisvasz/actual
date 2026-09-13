@@ -254,7 +254,7 @@ export const BudgetSummary = memo(({ month }: BudgetSummaryProps) => {
               alignItems: 'center',
               padding: '10px 20px',
               justifyContent: 'space-between',
-              backgroundColor: theme.pageBackground,
+              backgroundColor: theme.budgetSummaryAmountBackground,
               borderTop: '1px solid ' + theme.tableBorder,
             }}
           >
