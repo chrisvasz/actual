@@ -48,8 +48,8 @@
   --color-budgetNumberPositive: var(--color-budgetNumberNeutral);
   --color-templateNumberFunded: var(--color-numberPositive);
   --color-templateNumberUnderFunded: var(--palette-orange300);
-  --color-toBudgetPositive: var(--color-numberPositive);
-  --color-toBudgetZero: var(--color-numberPositive);
+  --color-toBudgetPositive: var(--color-pageTextPositive);
+  --color-toBudgetZero: var(--color-pageTextPositive);
   --color-toBudgetNegative: var(--color-budgetNumberNegative);
 
   --color-sidebarBackground: var(--palette-navy900);
