@@ -1,0 +1,13 @@
+###################################################
+# Dev overrides for this checkout. Publishes the
+# sync server's port so it can be run inside the
+# dev container alongside the Vite frontend:
+#
+#   docker compose exec actual-development yarn start:server
+###################################################
+
+services:
+  actual-development:
+    ports:
+      - '3001:3001'
+      - '5006:5006'
