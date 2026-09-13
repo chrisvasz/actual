@@ -65,8 +65,10 @@ export const MonthPicker = ({
   const [size, setSize] = useState('small');
   const containerRef = useResizeObserver(rect => {
     setSize(rect.width <= 400 ? 'small' : 'big');
+    // Reserve room for the chrome around the strip and for the inline year
+    // labels, then show as many months as what is left can hold.
     setTargetMonthCount(
-      Math.min(Math.max(Math.floor(rect.width / 50), 12), 24),
+      Math.min(Math.max(Math.floor((rect.width - 150) / 50), 6), 24),
     );
   });
 
