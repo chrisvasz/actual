@@ -4,8 +4,8 @@ import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
-  SvgCheveronLeft,
-  SvgCheveronRight,
+  SvgArrowThinLeft,
+  SvgArrowThinRight,
 } from '@actual-app/components/icons/v1';
 import { SvgCalendar } from '@actual-app/components/icons/v2';
 import { styles } from '@actual-app/components/styles';
@@ -118,7 +118,7 @@ export const MonthPicker = ({
           }}
         >
           <View title={t('Previous month')}>
-            <SvgCheveronLeft
+            <SvgArrowThinLeft
               style={{
                 width: 16,
                 height: 16,
@@ -246,7 +246,7 @@ export const MonthPicker = ({
           }}
         >
           <View title={t('Next month')}>
-            <SvgCheveronRight
+            <SvgArrowThinRight
               style={{
                 width: 16,
                 height: 16,
