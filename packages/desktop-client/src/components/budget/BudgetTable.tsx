@@ -13,7 +13,6 @@ import type {
 import type { DropPosition } from '#components/sort';
 import { SchedulesProvider } from '#hooks/useCachedSchedules';
 import { useCategories } from '#hooks/useCategories';
-import { useGlobalPref } from '#hooks/useGlobalPref';
 import { useLocalPref } from '#hooks/useLocalPref';
 
 import { BudgetCategories } from './BudgetCategories';
@@ -22,6 +21,7 @@ import { BudgetTotals } from './BudgetTotals';
 import { MonthsProvider } from './MonthsContext';
 import type { MonthBounds } from './MonthsContext';
 import {
+  CATEGORY_COLUMN_WIDTH,
   findSortDown,
   findSortUp,
   getScrollbarWidth,
@@ -84,8 +84,6 @@ export function BudgetTable(props: BudgetTableProps) {
   const [showHiddenCategories, setShowHiddenCategoriesPef] = useLocalPref(
     'budget.showHiddenCategories',
   );
-  const [categoryExpandedStatePref] = useGlobalPref('categoryExpandedState');
-  const categoryExpandedState = categoryExpandedStatePref ?? 0;
   const [editing, setEditing] = useState<{ id: string; cell: string } | null>(
     null,
   );
@@ -272,7 +270,7 @@ export function BudgetTable(props: BudgetTableProps) {
           paddingRight: 5 + getScrollbarWidth(),
         }}
       >
-        <View style={{ width: 200 + 100 * categoryExpandedState }} />
+        <View style={{ width: CATEGORY_COLUMN_WIDTH }} />
         <MonthsProvider
           startMonth={prewarmStartMonth}
           numMonths={numMonths}

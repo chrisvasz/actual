@@ -21,6 +21,9 @@ import type { useSpreadsheet } from '#hooks/useSpreadsheet';
 
 import { getValidMonthBounds } from './MonthsContext';
 
+// Width of the budget table's category column.
+export const CATEGORY_COLUMN_WIDTH = 200;
+
 export function addToBeBudgetedGroup(groups: CategoryGroupEntity[]) {
   return [
     {

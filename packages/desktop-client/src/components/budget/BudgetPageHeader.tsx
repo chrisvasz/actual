@@ -4,10 +4,8 @@ import type { ComponentProps } from 'react';
 
 import { View } from '@actual-app/components/view';
 
-import { useGlobalPref } from '#hooks/useGlobalPref';
-
 import { MonthPicker } from './MonthPicker';
-import { getScrollbarWidth } from './util';
+import { CATEGORY_COLUMN_WIDTH, getScrollbarWidth } from './util';
 
 type BudgetPageHeaderProps = {
   startMonth: string;
@@ -18,15 +16,13 @@ type BudgetPageHeaderProps = {
 
 export const BudgetPageHeader = memo<BudgetPageHeaderProps>(
   ({ startMonth, onMonthSelect, numMonths, monthBounds }) => {
-    const [categoryExpandedStatePref] = useGlobalPref('categoryExpandedState');
-    const categoryExpandedState = categoryExpandedStatePref ?? 0;
     const offsetMultipleMonths = numMonths === 1 ? 4 : 0;
 
     return (
       <View
         style={{
           marginLeft:
-            200 + 100 * categoryExpandedState + 5 - offsetMultipleMonths,
+            CATEGORY_COLUMN_WIDTH + 5 - offsetMultipleMonths,
           flexShrink: 0,
         }}
       >

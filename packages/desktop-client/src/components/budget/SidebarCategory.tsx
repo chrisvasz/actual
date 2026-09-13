@@ -15,9 +15,9 @@ import type {
 
 import { InputCell } from '#components/table';
 import { useContextMenu } from '#hooks/useContextMenu';
-import { useGlobalPref } from '#hooks/useGlobalPref';
 
 import { SidebarCategoryButtons } from './SidebarCategoryButtons';
+import { CATEGORY_COLUMN_WIDTH } from './util';
 
 type SidebarCategoryProps = {
   innerRef: Ref<HTMLDivElement>;
@@ -59,8 +59,6 @@ export function SidebarCategory({
   onHideNewCategory,
 }: SidebarCategoryProps) {
   const { t } = useTranslation();
-  const [categoryExpandedStatePref] = useGlobalPref('categoryExpandedState');
-  const categoryExpandedState = categoryExpandedStatePref ?? 0;
 
   const temporary = category.id === 'new';
   const triggerRef = useRef(null);
@@ -125,7 +123,7 @@ export function SidebarCategory({
     <View
       innerRef={innerRef}
       style={{
-        width: 200 + 100 * categoryExpandedState,
+        width: CATEGORY_COLUMN_WIDTH,
         overflow: 'hidden',
         '& .hover-visible': {
           display: 'none',

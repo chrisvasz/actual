@@ -84,12 +84,6 @@ async function saveGlobalPrefs(prefs: GlobalPrefs) {
   if (prefs.maxMonths !== undefined) {
     await asyncStorage.setItem('max-months', '' + prefs.maxMonths);
   }
-  if (prefs.categoryExpandedState !== undefined) {
-    await asyncStorage.setItem(
-      'category-expanded-state',
-      '' + prefs.categoryExpandedState,
-    );
-  }
   if (prefs.documentDir !== undefined && (await fs.exists(prefs.documentDir))) {
     await asyncStorage.setItem('document-dir', prefs.documentDir);
   }
@@ -151,7 +145,6 @@ async function saveGlobalPrefs(prefs: GlobalPrefs) {
 async function loadGlobalPrefs(): Promise<GlobalPrefs> {
   const {
     'floating-sidebar': floatingSidebar,
-    'category-expanded-state': categoryExpandedState,
     'max-months': maxMonths,
     'document-dir': documentDir,
     'encrypt-key': encryptKey,
@@ -168,7 +161,6 @@ async function loadGlobalPrefs(): Promise<GlobalPrefs> {
     showNewsFeed,
   } = await asyncStorage.multiGet([
     'floating-sidebar',
-    'category-expanded-state',
     'max-months',
     'document-dir',
     'encrypt-key',
@@ -186,7 +178,6 @@ async function loadGlobalPrefs(): Promise<GlobalPrefs> {
   ] as const);
   return {
     floatingSidebar: floatingSidebar === 'true',
-    categoryExpandedState: stringToInteger(categoryExpandedState || '') || 0,
     maxMonths: stringToInteger(maxMonths || '') || 1,
     documentDir: documentDir || getDefaultDocumentDir(),
     keyId: encryptKey && JSON.parse(encryptKey).id,
