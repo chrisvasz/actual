@@ -4,36 +4,23 @@ import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
-import { Button } from '@actual-app/components/button';
-import {
-  SvgArrowButtonDown1,
-  SvgArrowButtonUp1,
-} from '@actual-app/components/icons/v2';
 import { InitialFocus } from '@actual-app/components/initial-focus';
 import { Input } from '@actual-app/components/input';
-import { SpaceBetween } from '@actual-app/components/space-between';
 import { styles } from '@actual-app/components/styles';
-import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
-import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
 import type { AccountEntity } from '@actual-app/core/types/models';
 import { css, cx } from '@emotion/css';
 
 import { useReopenAccountMutation, useUpdateAccountMutation } from '#accounts';
-import { BalanceHistoryGraph } from '#components/accounts/BalanceHistoryGraph';
 import { Link } from '#components/common/Link';
-import { Notes } from '#components/Notes';
 import { DropHighlight, useDraggable, useDroppable } from '#components/sort';
 import type { OnDragChangeCallback, OnDropCallback } from '#components/sort';
 import { CellValue } from '#components/spreadsheet/CellValue';
 import { useContextMenu } from '#hooks/useContextMenu';
 import { useDragRef } from '#hooks/useDragRef';
-import { useIsTestEnv } from '#hooks/useIsTestEnv';
-import { useNotes } from '#hooks/useNotes';
-import { useSyncedPref } from '#hooks/useSyncedPref';
 import { openAccountCloseModal } from '#modals/modalsSlice';
-import { useDispatch, useSelector } from '#redux';
+import { useDispatch } from '#redux';
 import type { Binding, SheetFields } from '#spreadsheet';
 
 export const accountNameStyle: CSSProperties = {
@@ -82,7 +69,6 @@ export function Account<FieldName extends SheetFields<'account'>>({
   isExactPathMatch,
   balanceTestId,
 }: AccountProps<FieldName>) {
-  const isTestEnv = useIsTestEnv();
   const { t } = useTranslation();
   const type = account
     ? account.closed
@@ -108,33 +94,22 @@ export function Account<FieldName extends SheetFields<'account'>>({
     onDrop,
   });
 
-  const [showBalanceHistory, setShowBalanceHistory] = useSyncedPref(
-    `side-nav.show-balance-history-${account?.id}`,
-  );
-
   const dispatch = useDispatch();
 
   const [isEditing, setIsEditing] = useState(false);
 
-  const accountNote = useNotes(`account-${account?.id}`);
   const isTouchDevice =
     window.matchMedia('(hover: none)').matches ||
     window.matchMedia('(pointer: coarse)').matches;
-  const needsTooltip = !!account?.id && !isTouchDevice;
+  const supportsHover = !!account?.id && !isTouchDevice;
   const reopenAccount = useReopenAccountMutation();
   const updateAccount = useUpdateAccountMutation();
 
   const balanceCell = <CellValue binding={query} type="financial" />;
 
-  const isContextMenuOpen = useSelector(state =>
-    state.contextMenu.items.some(
-      i =>
-        typeof i === 'object' && 'name' in i && i.name.startsWith('account-'),
-    ),
-  );
   useContextMenu({
     triggerRef,
-    enabled: account != null && needsTooltip,
+    enabled: account != null && supportsHover,
     items: [
       {
         name: 'account-rename',
@@ -265,85 +240,5 @@ export function Account<FieldName extends SheetFields<'account'>>({
     </View>
   );
 
-  if (!needsTooltip || isTestEnv) {
-    return accountRow;
-  }
-
-  return (
-    <Tooltip
-      content={
-        <View
-          style={{
-            padding: 10,
-          }}
-        >
-          <SpaceBetween
-            gap={5}
-            style={{
-              justifyContent: 'space-between',
-              '& .hover-visible': {
-                opacity: 0,
-                transition: 'opacity .25s',
-              },
-              '&:hover .hover-visible': {
-                opacity: 1,
-              },
-            }}
-          >
-            <Text
-              style={{
-                fontWeight: 'bold',
-              }}
-            >
-              {name}
-            </Text>
-            <Button
-              aria-label={t('Toggle balance history')}
-              variant="bare"
-              onClick={() =>
-                setShowBalanceHistory(
-                  showBalanceHistory === 'true' ? 'false' : 'true',
-                )
-              }
-              className="hover-visible"
-            >
-              <SpaceBetween gap={3}>
-                {showBalanceHistory === 'true' ? (
-                  <SvgArrowButtonUp1 width={10} height={10} />
-                ) : (
-                  <SvgArrowButtonDown1 width={10} height={10} />
-                )}
-              </SpaceBetween>
-            </Button>
-          </SpaceBetween>
-          {showBalanceHistory === 'true' && account && (
-            <BalanceHistoryGraph
-              accountId={account.id}
-              style={{ minWidth: 350, minHeight: 70 }}
-            />
-          )}
-          {accountNote && (
-            <Notes
-              getStyle={() => ({
-                borderTop: `1px solid ${theme.tableBorder}`,
-                padding: 0,
-                paddingTop: '0.5rem',
-                marginTop: '0.5rem',
-              })}
-              notes={accountNote}
-            />
-          )}
-        </View>
-      }
-      style={{ ...styles.tooltip, borderRadius: '0px 5px 5px 0px' }}
-      placement="right top"
-      triggerProps={{
-        delay: 1000,
-        closeDelay: 250,
-        isDisabled: isContextMenuOpen,
-      }}
-    >
-      {accountRow}
-    </Tooltip>
-  );
+  return accountRow;
 }

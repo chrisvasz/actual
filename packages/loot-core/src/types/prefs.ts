@@ -30,7 +30,6 @@ export type SyncedPrefs = Partial<
     | 'currencySpaceBetweenAmountAndSymbol'
     | 'defaultCurrencyCode'
     | `show-account-${string}-net-worth-chart`
-    | `side-nav.show-balance-history-${string}`
     // @deprecated: superseded by `transaction-table-columns-${string}`; only
     // read as a fallback for budgets that never used the column manager
     | `show-balances-${string}`
