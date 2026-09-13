@@ -32,6 +32,8 @@ export class WorkerBridge {
   _currentBudgetId: string | null;
   _wasHidden: boolean;
   _onVisibilityChange: () => void;
+  _directWorker: Worker | null;
+  _hasCoordinatorResponded: boolean;
   localBackendWorker: Worker | null;
   backendWorkerUrl: URL;
 
@@ -43,6 +45,8 @@ export class WorkerBridge {
     this._isInitialized = false;
     this._currentBudgetId = null;
     this._wasHidden = document.visibilityState === 'hidden';
+    this._directWorker = null;
+    this._hasCoordinatorResponded = false;
     this.localBackendWorker = null;
     this.backendWorkerUrl = backendWorkerUrl;
 
@@ -64,7 +68,7 @@ export class WorkerBridge {
     this._onmessage = handler;
     // Setting onmessage on a real MessagePort implicitly starts it.
     // We need to do this explicitly on the underlying port.
-    if (!this._started) {
+    if (!this._started && !this._directWorker) {
       this._started = true;
       this._sharedPort.start();
     }
@@ -75,6 +79,12 @@ export class WorkerBridge {
   }
 
   postMessage(msg: unknown) {
+    // After falling back there is no coordinator left to route through.
+    if (this._directWorker) {
+      this._directWorker.postMessage(msg);
+      return;
+    }
+
     // All messages go through the SharedWorker for coordination.
     // The SharedWorker forwards to the leader's Worker via __to-worker.
     this._sharedPort.postMessage(msg);
@@ -85,7 +95,7 @@ export class WorkerBridge {
   }
 
   start() {
-    if (!this._started) {
+    if (!this._started && !this._directWorker) {
       this._started = true;
       this._sharedPort.start();
     }
@@ -107,6 +117,7 @@ export class WorkerBridge {
 
   _onSharedMessage(event: MessageEvent) {
     const msg = event.data as BridgeMessage;
+    this._hasCoordinatorResponded = true;
 
     // Elected as leader: create the real backend Worker on this tab
     if (msg && msg.type === '__become-leader') {
@@ -207,13 +218,55 @@ export class WorkerBridge {
   }
 
   _resumeAssociation() {
-    if (!this._isInitialized) {
+    if (!this._isInitialized || this._directWorker) {
       return;
     }
     this._sharedPort.postMessage({
       type: '__resume-tab',
       budgetId: this._currentBudgetId,
     });
+  }
+
+  /**
+   * Abandon the coordinator and run the backend in a dedicated Worker on this
+   * tab.
+   *
+   * Some embedded browsers expose SharedWorker but refuse to start one from a
+   * network-served script, and the failure arrives as a bare `error` event with
+   * no message. Without this the tab keeps waiting on a 'connect' that can
+   * never arrive, leaving the app on its loading screen forever.
+   *
+   * Multi-tab coordination is lost for this tab, so it behaves like the
+   * platforms that always take the direct-Worker path (iOS, Playwright).
+   *
+   * @returns whether the fallback was performed.
+   */
+  fallbackToDirectWorker(initMsg: unknown): boolean {
+    // Already fell back, or the coordinator is alive and talking to us — a
+    // late error must not tear down a working session.
+    if (this._directWorker || this._hasCoordinatorResponded) {
+      return false;
+    }
+
+    document.removeEventListener('visibilitychange', this._onVisibilityChange);
+    this._terminateLocalBackendWorker();
+    this._sharedPort.close();
+
+    const worker = new Worker(this.backendWorkerUrl);
+    this._directWorker = worker;
+    initSQLBackend(worker);
+
+    worker.onmessage = event => {
+      const msg = event.data as BridgeMessage;
+      // absurd-sql internal messages are handled by initSQLBackend
+      if (typeof msg?.type === 'string' && msg.type.startsWith('__absurd:')) {
+        return;
+      }
+      this._dispatch(event);
+    };
+
+    worker.postMessage(initMsg);
+    return true;
   }
 
   _createLocalWorker(

@@ -41,6 +41,15 @@ export function startBrowserBackend(
     forceDirectWorker,
   } = opts;
 
+  const directWorkerInitMsg = () => ({
+    type: 'init',
+    ...initPayload,
+    hasSharedArrayBuffer: !!window.SharedArrayBuffer,
+    isSharedArrayBufferOverrideEnabled: localStorage.getItem(
+      'SharedArrayBufferOverride',
+    ),
+  });
+
   // Use SharedWorker as a coordinator for multi-tab, multi-budget support.
   // Each budget gets its own leader tab running a dedicated Worker. All other
   // tabs on the same budget are followers — their messages are routed through
@@ -57,7 +66,19 @@ export function startBrowserBackend(
 
       const sharedPort = sharedWorker.port;
       const bridge = new WorkerBridge(sharedPort, backendWorkerUrl);
-      logger.log('[WorkerBridge] Connected to SharedWorker coordinator');
+      logger.log('[WorkerBridge] Using SharedWorker coordinator');
+
+      // A SharedWorker whose script fails to load reports it here and nowhere
+      // else: construction succeeds, the port stays silent, and nothing is
+      // logged to the page. Fall back to a dedicated Worker so the tab isn't
+      // left waiting on a coordinator that never came up.
+      sharedWorker.onerror = () => {
+        if (bridge.fallbackToDirectWorker(directWorkerInitMsg())) {
+          logger.warn(
+            '[WorkerBridge] SharedWorker failed to start; falling back to a dedicated Worker (multi-tab coordination is disabled for this tab)',
+          );
+        }
+      };
 
       // Don't call start() here. The port must remain un-started so that
       // messages (especially 'connect') are queued until connectWorker()
@@ -96,14 +117,7 @@ export function startBrowserBackend(
     localStorage.removeItem('SharedArrayBufferOverride');
   }
 
-  worker.postMessage({
-    type: 'init',
-    ...initPayload,
-    hasSharedArrayBuffer: !!window.SharedArrayBuffer,
-    isSharedArrayBufferOverrideEnabled: localStorage.getItem(
-      'SharedArrayBufferOverride',
-    ),
-  });
+  worker.postMessage(directWorkerInitMsg());
 
   return worker;
 }
