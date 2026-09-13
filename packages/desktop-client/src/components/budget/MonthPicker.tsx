@@ -72,8 +72,6 @@ export const MonthPicker = ({
     );
   });
 
-  const yearHeadersShown = [];
-
   return (
     <View
       style={{
@@ -139,20 +137,14 @@ export const MonthPicker = ({
 
           const current = currentMonth === month;
           const year = monthUtils.getYear(month);
-
-          let showYearHeader = false;
-
-          if (!yearHeadersShown.includes(year)) {
-            yearHeadersShown.push(year);
-            showYearHeader = true;
-          }
+          const showYear = monthUtils.getMonthIndex(month) === 0;
 
           const isMonthBudgeted =
             month >= monthBounds.start && month <= monthBounds.end;
 
-          // The first month of every visible year carries the year with it,
-          // abbreviated when the cells are too narrow for the full one.
-          const label = showYearHeader
+          // January carries the year with it, abbreviated when the cells are
+          // too narrow for the full one.
+          const label = showYear
             ? `${size === 'big' ? monthName : monthName[0]} ${
                 size === 'big' ? year : String(year).slice(-2)
               }`
@@ -167,8 +159,8 @@ export const MonthPicker = ({
               data-month={selected ? month : undefined}
               style={{
                 alignItems: 'center',
-                padding: showYearHeader ? '3px 6px' : '3px 3px',
-                ...(!showYearHeader && {
+                padding: showYear ? '3px 6px' : '3px 3px',
+                ...(!showYear && {
                   width: size === 'big' ? '35px' : '20px',
                 }),
                 textAlign: 'center',
