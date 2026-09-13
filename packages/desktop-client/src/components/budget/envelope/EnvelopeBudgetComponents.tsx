@@ -251,17 +251,18 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
         style={{
           flex: 1,
           flexDirection: 'row',
+          position: 'relative',
         }}
       >
         {!editing && (
+          // Floated clear of the flow so the amount keeps the whole cell.
           <View
             style={{
-              paddingLeft: 3,
-              alignItems: 'center',
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              right: -18,
               justifyContent: 'center',
-              borderTopWidth: 1,
-              borderBottomWidth: 1,
-              borderColor: theme.tableBorder,
             }}
           >
             <NotesButton
