@@ -317,6 +317,16 @@ export default defineConfig(async ({ mode, command }) => {
     },
     server: {
       host: true,
+      // Vite blocks requests whose Host header isn't localhost/an IP. Container
+      // runtimes expose the dev server under their own hostname (OrbStack's
+      // *.orb.local, for example), so allow those by default and let ALLOWED_HOSTS
+      // override for other setups (comma-separated; a leading dot matches
+      // subdomains).
+      allowedHosts: env.ALLOWED_HOSTS
+        ? env.ALLOWED_HOSTS.split(',')
+            .map(host => host.trim())
+            .filter(Boolean)
+        : ['.orb.local'],
       headers: devHeaders,
       port: +env.PORT || 5173,
       open: env.BROWSER
