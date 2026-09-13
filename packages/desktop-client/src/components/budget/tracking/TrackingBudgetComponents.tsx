@@ -242,12 +242,14 @@ export const CategoryMonth = memo(function CategoryMonth({
       >
         {!editing && (
           // Floated clear of the flow so the amount keeps the whole cell.
+          // The z-index keeps it clickable over the spent cell it sits on.
           <View
             style={{
               position: 'absolute',
               top: 0,
               bottom: 0,
               right: -18,
+              zIndex: 1,
               justifyContent: 'center',
             }}
           >
