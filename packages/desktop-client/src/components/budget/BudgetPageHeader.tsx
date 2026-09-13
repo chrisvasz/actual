@@ -21,8 +21,7 @@ export const BudgetPageHeader = memo<BudgetPageHeaderProps>(
     return (
       <View
         style={{
-          marginLeft:
-            CATEGORY_COLUMN_WIDTH + 5 - offsetMultipleMonths,
+          marginLeft: CATEGORY_COLUMN_WIDTH + 5 - offsetMultipleMonths,
           flexShrink: 0,
         }}
       >

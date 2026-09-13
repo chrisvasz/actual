@@ -54,10 +54,7 @@ const DynamicBudgetTable = ({
   const { setDisplayMax } = useBudgetMonthCount();
   const isGoalTemplatesEnabled = useFeatureFlag('goalTemplatesEnabled');
 
-  const numPossible = getNumPossibleMonths(
-    width,
-    CATEGORY_COLUMN_WIDTH,
-  );
+  const numPossible = getNumPossibleMonths(width, CATEGORY_COLUMN_WIDTH);
   const numMonths = Math.min(numPossible, maxMonths);
   const maxWidth = CATEGORY_COLUMN_WIDTH + 500 * numMonths;
 
