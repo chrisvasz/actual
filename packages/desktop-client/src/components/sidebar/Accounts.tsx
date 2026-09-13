@@ -97,7 +97,6 @@ export function Accounts() {
             style={{
               fontWeight,
               marginTop: 13,
-              marginBottom: 5,
             }}
             balanceTestId="sidebar-on-budget-balance"
           />
@@ -128,7 +127,6 @@ export function Accounts() {
             style={{
               fontWeight,
               marginTop: 13,
-              marginBottom: 5,
             }}
             balanceTestId="sidebar-off-budget-balance"
           />
