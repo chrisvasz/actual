@@ -27,3 +27,11 @@ jobs:
       - run: flyctl deploy --remote-only --wait-timeout 30m
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      # The machine stops when idle (min_machines_running = 0), so the Fly
+      # health check does not run during the deploy and a broken boot would
+      # otherwise land green. This cold-starts the machine and fails the run
+      # if it does not come up; --retry covers the cold-start window.
+      - name: Smoke test
+        run: >
+          curl -sSf --max-time 90 --retry 5 --retry-delay 10 --retry-all-errors
+          https://chopstick-budget.fly.dev/health
