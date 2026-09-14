@@ -1,0 +1,50 @@
+# Deploys this repo (modern Actual monorepo: sync server + web client, built
+# from source) over the existing `chopstick-budget` app, replacing the
+# 2022-frontend image that ../actual-frontend used to deploy there.
+app = "chopstick-budget"
+
+# The live volume vol_rn80d1753nnld20r is in dfw. A region mismatch does not
+# fail the deploy — Fly silently provisions a new empty volume and the app
+# boots with an empty budget.
+primary_region = "dfw"
+
+[build]
+  dockerfile = "sync-server.Dockerfile"
+
+[env]
+  ACTUAL_DATA_DIR = "/data"
+
+# Matches by NAME, not id. `fly volumes list -a chopstick-budget` must show
+# exactly one `actual_data` row — a freshly created machine takes an
+# *unattached* match, which would boot the app on a stale budget with nothing
+# reporting an error.
+[[mounts]]
+  source = "actual_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 5006
+  force_https = true
+
+  # A Fly volume attaches to exactly ONE machine. Two machines means two
+  # divergent copies of the budget, silently. Keep this app at one machine:
+  #   fly scale count 1
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+[[http_service.checks]]
+  grace_period = "20s"
+  interval = "30s"
+  method = "GET"
+  path = "/health"
+  timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
