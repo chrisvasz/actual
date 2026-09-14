@@ -19,6 +19,7 @@ import {
   SvgLocation,
 } from '@actual-app/components/icons/v1';
 import { styles } from '@actual-app/components/styles';
+import { Text } from '@actual-app/components/text';
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -359,6 +360,8 @@ export type PayeeAutocompleteProps = ComponentProps<
   accounts?: AccountEntity[];
   payees?: PayeeEntity[];
   nearbyPayees?: NearbyPayeeEntity[];
+  /** The raw payee name from the bank import, shown in the footer for reference. */
+  importedPayee?: string;
 };
 
 export function PayeeAutocomplete({
@@ -379,6 +382,7 @@ export function PayeeAutocomplete({
   accounts,
   payees,
   nearbyPayees,
+  importedPayee,
   ...props
 }: PayeeAutocompleteProps) {
   const { t } = useTranslation();
@@ -597,7 +601,10 @@ export function PayeeAutocomplete({
           renderPayeeItemGroupHeader={renderPayeeItemGroupHeader}
           renderPayeeItem={renderPayeeItem}
           footer={
-            <AutocompleteFooter embedded={embedded}>
+            <AutocompleteFooter
+              embedded={embedded}
+              show={showMakeTransfer || showManagePayees || !!importedPayee}
+            >
               {showMakeTransfer && (
                 <Button
                   variant={focusTransferPayees ? 'menuSelected' : 'menu'}
@@ -615,6 +622,12 @@ export function PayeeAutocomplete({
                   <Trans>Manage payees</Trans>
                 </Button>
               )}
+              {importedPayee && (
+                <ImportedPayeeFooterItem
+                  importedPayee={importedPayee}
+                  hasButtonsAbove={showMakeTransfer || showManagePayees}
+                />
+              )}
             </AutocompleteFooter>
           }
           onForgetLocation={handleForgetLocation}
@@ -622,6 +635,44 @@ export function PayeeAutocomplete({
       )}
       {...props}
     />
+  );
+}
+
+type ImportedPayeeFooterItemProps = {
+  importedPayee: string;
+  hasButtonsAbove: boolean;
+};
+
+function ImportedPayeeFooterItem({
+  importedPayee,
+  hasButtonsAbove,
+}: ImportedPayeeFooterItemProps) {
+  return (
+    <View
+      style={{
+        ...(hasButtonsAbove && { marginTop: 4 }),
+        padding: '0 2px',
+        lineHeight: 1.3,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 11,
+          color: theme.menuAutoCompleteTextHeader,
+        }}
+      >
+        <Trans>Imported payee</Trans>
+      </Text>
+      <Text
+        style={{
+          fontSize: 12,
+          color: theme.menuAutoCompleteText,
+          overflowWrap: 'anywhere',
+        }}
+      >
+        {importedPayee}
+      </Text>
+    </View>
   );
 }
 

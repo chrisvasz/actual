@@ -317,6 +317,7 @@ export type Modal =
       name: 'payee-autocomplete';
       options: {
         onSelect: (payeeId: string) => void;
+        importedPayee?: string;
         onClose?: () => void;
       };
     }

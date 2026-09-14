@@ -23,6 +23,7 @@ type PayeeAutocompleteModalProps = Extract<
 
 export function PayeeAutocompleteModal({
   onSelect,
+  importedPayee,
   onClose,
 }: PayeeAutocompleteModalProps) {
   const { t } = useTranslation();
@@ -79,6 +80,7 @@ export function PayeeAutocompleteModal({
             onManagePayees={onManagePayees}
             showManagePayees={!isNarrowWidth}
             showMakeTransfer={!isNarrowWidth}
+            importedPayee={importedPayee}
             {...defaultAutocompleteProps}
             onSelect={onSelect}
             value={null}

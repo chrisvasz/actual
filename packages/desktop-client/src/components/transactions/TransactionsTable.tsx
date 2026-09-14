@@ -631,7 +631,7 @@ type PayeeCellProps = {
   };
   valueStyle: CSSProperties | null;
   transaction: SerializedTransaction;
-  importedPayee?: PayeeEntity['id'];
+  importedPayee?: string;
   isPreview: boolean;
   onEdit: TransactionEditFunction;
   onUpdate: TransactionUpdateFunction;
@@ -698,6 +698,7 @@ function PayeeCell({
                   onSelect: (payeeId: PayeeEntity['id']) => {
                     onUpdate('payee', payeeId);
                   },
+                  importedPayee,
                 },
               },
             }),
@@ -739,35 +740,9 @@ function PayeeCell({
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               minWidth: 0,
-              borderBottom: importedPayee
-                ? `1px dashed ${theme.pageTextSubdued}`
-                : 'none',
             }}
           >
-            {importedPayee ? (
-              <Tooltip
-                content={
-                  <View style={{ padding: 10 }}>
-                    <Text style={{ fontWeight: 'bold' }}>
-                      <Trans>Imported Payee</Trans>
-                    </Text>
-                    <Text style={{ fontWeight: 'normal' }}>
-                      {importedPayee}
-                    </Text>
-                  </View>
-                }
-                style={{
-                  ...styles.tooltip,
-                  borderRadius: '0px 5px 5px 0px',
-                }}
-                placement="bottom"
-                triggerProps={{ delay: 750 }}
-              >
-                {displayPayee}
-              </Tooltip>
-            ) : (
-              displayPayee
-            )}
+            {displayPayee}
           </Text>
         </View>
       </CellButton>
@@ -797,62 +772,26 @@ function PayeeCell({
         }
         return displayPayee;
       }}
-      unexposedContent={props => {
-        const payeeName = (
-          <UnexposedCellContent
-            {...props}
-            style={
-              importedPayee
-                ? { borderBottom: `1px dashed ${theme.pageTextSubdued}` }
-                : {}
-            }
+      unexposedContent={props => (
+        <>
+          <PayeeIcons
+            transaction={transaction}
+            transferAccount={transferAccount}
+            onNavigateToTransferAccount={onNavigateToTransferAccount}
+            onNavigateToSchedule={onNavigateToSchedule}
           />
-        );
-
-        return (
-          <>
-            <PayeeIcons
-              transaction={transaction}
-              transferAccount={transferAccount}
-              onNavigateToTransferAccount={onNavigateToTransferAccount}
-              onNavigateToSchedule={onNavigateToSchedule}
-            />
-            <div
-              style={{
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              {importedPayee ? (
-                <Tooltip
-                  content={
-                    <View style={{ padding: 10 }}>
-                      <Text style={{ fontWeight: 'bold' }}>
-                        <Trans>Imported Payee</Trans>
-                      </Text>
-                      <Text style={{ fontWeight: 'normal' }}>
-                        {importedPayee}
-                      </Text>
-                    </View>
-                  }
-                  style={{
-                    ...styles.tooltip,
-                    borderRadius: '0px 5px 5px 0px',
-                  }}
-                  placement="bottom"
-                  triggerProps={{ delay: 750 }}
-                >
-                  {payeeName}
-                </Tooltip>
-              ) : (
-                payeeName
-              )}
-            </div>
-          </>
-        );
-      }}
+          <div
+            style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <UnexposedCellContent {...props} />
+          </div>
+        </>
+      )}
     >
       {({
         onBlur,
@@ -873,6 +812,7 @@ function PayeeCell({
             style: inputStyle,
           }}
           showManagePayees
+          importedPayee={importedPayee}
           clearOnBlur={false}
           focused
           onUpdate={(_, value) => onUpdate?.(value)}

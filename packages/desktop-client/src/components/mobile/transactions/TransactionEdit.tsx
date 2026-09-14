@@ -997,6 +997,8 @@ const TransactionEditInner = memo<TransactionEditInnerProps>(
                       onSelect: payeeId => {
                         void onUpdateInner(transactionToEdit, name, payeeId);
                       },
+                      importedPayee:
+                        transactionToEdit.imported_payee ?? undefined,
                       onClose: () => {
                         onClearActiveEdit();
                       },
