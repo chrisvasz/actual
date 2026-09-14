@@ -1,0 +1,29 @@
+# Deploys the sync server (with the web client bundled in) to the
+# `chopstick-budget` Fly app. See fly.toml for the app/volume details.
+#
+# Requires a FLY_API_TOKEN repo secret:
+#   fly tokens create deploy -a chopstick-budget -x 8760h
+name: Deploy to Fly
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Never cancel a release in progress: this app runs a single machine with a
+# volume attached, and killing flyctl mid-release can strand the machine.
+concurrency:
+  group: fly-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      # --remote-only: Fly's builder does the Docker build, so the runner only
+      # uploads the build context and needs no node/yarn setup.
+      - run: flyctl deploy --remote-only --wait-timeout 30m
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
