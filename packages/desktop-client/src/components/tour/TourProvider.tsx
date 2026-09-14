@@ -5,8 +5,6 @@ import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 
 export type TourId = 'budget-tour';
 
-export const TOUR_OFFER_NOTIFICATION_ID = 'tour-offer';
-
 type TourContextValue = {
   activeTourId: TourId | null;
   startTour: (tourId?: TourId) => void;
