@@ -3,7 +3,9 @@
 ROOT=`dirname $0`
 cd "$ROOT/.."
 
-export PORT=3001
+# Default to 3001, but let a caller-supplied PORT win so the dev server can be
+# started on another port when 3001 is taken.
+export PORT="${PORT:-3001}"
 export REACT_APP_BACKEND_WORKER_HASH="dev"
 
-yarn start --mode=browser
+yarn vite --mode=browser

@@ -116,3 +116,7 @@ storybook-static
 .actualrc.yaml
 .actualrc.yml
 actual.config.js
+
+# Local env overrides (vite loads these; never commit)
+.env.local
+.env.*.local
