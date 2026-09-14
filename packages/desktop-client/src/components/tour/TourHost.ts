@@ -5,16 +5,13 @@ import type { Controls, EventData } from 'react-joyride';
 
 import { theme } from '@actual-app/components/theme';
 
-import { useLocalPref } from '#hooks/useLocalPref';
 import { useModalState } from '#hooks/useModalState';
 import { useNavigate } from '#hooks/useNavigate';
 import { useReducedMotion } from '#hooks/useReducedMotion';
 import { useSyncedPref } from '#hooks/useSyncedPref';
-import { removeNotification } from '#notifications/notificationsSlice';
-import { useDispatch } from '#redux';
 
 import { ADD_ACCOUNT_STEP_ID, getTourSteps } from './steps';
-import { TOUR_OFFER_NOTIFICATION_ID, useTour } from './TourProvider';
+import { useTour } from './TourProvider';
 import type { TourId } from './TourProvider';
 import { TourTooltip } from './TourTooltip';
 
@@ -27,9 +24,7 @@ type TourHostProps = {
 
 export function TourHost({ tourId }: TourHostProps) {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const { stopTour } = useTour();
-  const [, setIntroSeen] = useLocalPref('tour.introSeen');
   const { activeModal, modalStack } = useModalState();
   const reducedMotion = useReducedMotion();
   const navigate = useNavigate();
@@ -41,11 +36,6 @@ export function TourHost({ tourId }: TourHostProps) {
     budgetType: budgetTypePref === 'tracking' ? 'tracking' : 'envelope',
   });
 
-  const completeTour = () => {
-    setIntroSeen(true);
-    stopTour();
-  };
-
   const handleEvent = (data: EventData, controls: Controls) => {
     if (data.type === 'error:target_not_found') {
       controls.next();
@@ -53,7 +43,7 @@ export function TourHost({ tourId }: TourHostProps) {
       data.type === 'tour:end' &&
       (data.status === 'finished' || data.status === 'skipped')
     ) {
-      completeTour();
+      stopTour();
     } else if (data.action === 'close' && data.origin === 'keyboard') {
       controls.skip();
     }
@@ -89,10 +79,6 @@ export function TourHost({ tourId }: TourHostProps) {
     styles: reducedMotion ? { floater: { transition: 'none' } } : undefined,
   });
 
-  useEffect(() => {
-    dispatch(removeNotification({ id: TOUR_OFFER_NOTIFICATION_ID }));
-  }, [dispatch]);
-
   const syncTourWithModals = useEffectEvent((modalCount: number) => {
     if (modalCount > 0) {
       const state = controls.info();
@@ -103,7 +89,7 @@ export function TourHost({ tourId }: TourHostProps) {
         activeModal === 'add-account' &&
         steps[state.index]?.id === ADD_ACCOUNT_STEP_ID
       ) {
-        completeTour();
+        stopTour();
         return;
       }
       pausedAtIndexRef.current = state.index;
