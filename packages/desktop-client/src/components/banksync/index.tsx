@@ -7,7 +7,6 @@ import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 import type { AccountEntity } from '@actual-app/core/types/models';
 
-import { MOBILE_NAV_HEIGHT } from '#components/mobile/MobileNavTabs';
 import { Page } from '#components/Page';
 import { useAccounts } from '#hooks/useAccounts';
 import { useGlobalPref } from '#hooks/useGlobalPref';
@@ -90,7 +89,6 @@ export function BankSync() {
       style={{
         minHeight: 'initial',
         marginInline: floatingSidebar && !isNarrowWidth ? 'auto' : 0,
-        paddingBottom: MOBILE_NAV_HEIGHT,
       }}
     >
       <View style={{ marginTop: '1em', gap: 24 }}>

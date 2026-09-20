@@ -11,8 +11,8 @@ import {
   addToBeBudgetedGroup,
   removeCategoriesFromGroups,
 } from '#components/budget/util';
+import { FieldLabel, TapField } from '#components/common/FormFields';
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
-import { FieldLabel, TapField } from '#components/mobile/MobileForms';
 import { AmountInput } from '#components/util/AmountInput';
 import { useCategories } from '#hooks/useCategories';
 import { useSyncedPref } from '#hooks/useSyncedPref';

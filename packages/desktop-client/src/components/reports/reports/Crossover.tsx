@@ -22,11 +22,11 @@ import type {
   TimeFrame,
 } from '@actual-app/core/types/models';
 
+import { BackButton } from '#components/common/BackButton';
 import { Link } from '#components/common/Link';
 import { EditablePageHeaderTitle } from '#components/EditablePageHeaderTitle';
 import { FinancialText } from '#components/FinancialText';
 import { Checkbox } from '#components/forms';
-import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { AccountSelector } from '#components/reports/AccountSelector';
@@ -429,9 +429,7 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
         isNarrowWidth ? (
           <MobilePageHeader
             title={title}
-            leftContent={
-              <MobileBackButton onPress={() => navigate('/reports')} />
-            }
+            leftContent={<BackButton onPress={() => navigate('/reports')} />}
           />
         ) : (
           <PageHeader

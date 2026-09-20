@@ -15,6 +15,7 @@ import { View } from '@actual-app/components/view';
 import { amountToInteger, integerToAmount } from '@actual-app/core/shared/util';
 import { t } from 'i18next';
 
+import { AmountInput } from '#components/amount/AmountInput';
 import { BudgetMenu } from '#components/budget/envelope/BudgetMenu';
 import { useEnvelopeSheetValue } from '#components/budget/envelope/EnvelopeBudgetComponents';
 import {
@@ -23,7 +24,6 @@ import {
   ModalHeader,
   ModalTitle,
 } from '#components/common/Modal';
-import { AmountInput } from '#components/mobile/transactions/AmountInput';
 import { Notes } from '#components/Notes';
 import { useCategory } from '#hooks/useCategory';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';

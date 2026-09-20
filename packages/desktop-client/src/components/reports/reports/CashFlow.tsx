@@ -19,9 +19,9 @@ import type {
 } from '@actual-app/core/types/models';
 import * as d from 'date-fns';
 
+import { BackButton } from '#components/common/BackButton';
 import { EditablePageHeaderTitle } from '#components/EditablePageHeaderTitle';
 import { FinancialText } from '#components/FinancialText';
-import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Change } from '#components/reports/Change';
@@ -257,9 +257,7 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
         isNarrowWidth ? (
           <MobilePageHeader
             title={title}
-            leftContent={
-              <MobileBackButton onPress={() => navigate('/reports')} />
-            }
+            leftContent={<BackButton onPress={() => navigate('/reports')} />}
           />
         ) : (
           <PageHeader

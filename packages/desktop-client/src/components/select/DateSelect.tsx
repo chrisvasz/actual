@@ -48,8 +48,8 @@ import { css } from '@emotion/css';
 import { CalendarDate } from '@internationalized/date';
 import { addDays, format, isValid, parse, parseISO, subDays } from 'date-fns';
 
+import { InputField } from '#components/common/FormFields';
 import { LabeledCheckbox } from '#components/forms/LabeledCheckbox';
-import { InputField } from '#components/mobile/MobileForms';
 import { useLanguage } from '#hooks/useLocale';
 import { useMergedRefs } from '#hooks/useMergedRefs';
 import { useSyncedPref } from '#hooks/useSyncedPref';

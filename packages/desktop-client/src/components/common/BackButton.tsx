@@ -9,13 +9,9 @@ import { Text } from '@actual-app/components/text';
 
 import { useNavigate } from '#hooks/useNavigate';
 
-type MobileBackButtonProps = ComponentPropsWithoutRef<typeof Button>;
+type BackButtonProps = ComponentPropsWithoutRef<typeof Button>;
 
-export function MobileBackButton({
-  onPress,
-  style,
-  ...props
-}: MobileBackButtonProps) {
+export function BackButton({ onPress, style, ...props }: BackButtonProps) {
   const navigate = useNavigate();
   return (
     <Button

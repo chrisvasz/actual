@@ -19,8 +19,8 @@ import { isCleanupConfigured } from '#components/budget/goals/cleanupModel';
 import { getDisplayTemplateMeta } from '#components/budget/goals/displayTemplateMeta';
 import { CleanupAutomation } from '#components/budget/goals/editor/CleanupAutomation';
 import { formatMonthLabel } from '#components/budget/goals/formatMonthLabel';
+import { BackButton } from '#components/common/BackButton';
 import { Link } from '#components/common/Link';
-import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { useFormat } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
 
@@ -215,7 +215,7 @@ export function BudgetAutomationsBodyMobile({
           }}
         >
           <View style={{ flex: 1, minWidth: 0, alignItems: 'flex-start' }}>
-            <MobileBackButton onPress={backToList} />
+            <BackButton onPress={backToList} />
           </View>
           <Text
             style={{

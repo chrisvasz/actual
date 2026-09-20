@@ -17,10 +17,10 @@ import { format as formatDate, parse as parseDate, parseISO } from 'date-fns';
 
 import { NoteInsertHashButton } from '#components/autocomplete/NoteInsertHashButton';
 import { NoteTagAutocomplete } from '#components/autocomplete/NoteTagAutocomplete';
+import { InputField } from '#components/common/FormFields';
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
 import { SectionLabel } from '#components/forms';
 import { LabeledCheckbox } from '#components/forms/LabeledCheckbox';
-import { InputField } from '#components/mobile/MobileForms';
 import { DateSelect } from '#components/select/DateSelect';
 import { useDateFormat } from '#hooks/useDateFormat';
 import type { Modal as ModalType } from '#modals/modalsSlice';
