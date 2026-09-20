@@ -14,15 +14,22 @@ yourself.
 - `[AI] Fix type error in account validation`
 - `Fix type error in account validation` (MISSING PREFIX — NOT ALLOWED)
 
-### Do not fill in the PR template
+### Write the PR body yourself
 
-- **NEVER fill in the PR template** (`.github/PULL_REQUEST_TEMPLATE.md`). Create
-  the PR with that template as the body, unmodified — leave all blank spaces and
-  placeholder comments as-is, and leave every checklist box unchecked. The human
-  who tested the change fills in the Description, Related issue(s), Testing, and
-  Checklist sections.
-- **Exception**: if a human **explicitly asks** you to fill it out, do so **in
-  Chinese**, using Chinese characters (简体中文) for all content you add.
+**Write a concise summary of the change as the PR body** — don't use the PR
+template, and don't leave the body empty.
+
+- Cover **what changed**, **why**, and anything a reviewer should know (a
+  trade-off, a follow-up, a deliberate omission).
+- Keep it short and plain: a couple of sentences, or a few bullets for a change
+  that touches several things.
+- No template, no checklist, no filler sections — skip headings like "Testing"
+  or "Related issue(s)" unless you actually have something to say there.
+- Describe only what you did. Don't claim testing or verification you didn't
+  perform.
+
+`.github/PULL_REQUEST_TEMPLATE.md` still exists for human contributors; it just
+isn't the starting point for a PR you open.
 
 ## Do not create GitHub issues
 
