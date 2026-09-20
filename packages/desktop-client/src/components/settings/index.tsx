@@ -128,7 +128,7 @@ function About() {
             }
           />
           <label htmlFor="settings-notifyWhenUpdateIsAvailable">
-            <Trans>Display a notification when updates are available</Trans>
+            <Trans>Check for new versions of Actual</Trans>
           </label>
         </Text>
         <Text style={{ display: 'flex' }}>
