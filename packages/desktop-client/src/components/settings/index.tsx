@@ -30,6 +30,7 @@ import { AuthSettings } from './AuthSettings';
 import { Backups } from './Backups';
 import { BudgetTypeSettings } from './BudgetTypeSettings';
 import { CurrencySettings } from './Currency';
+import { DeployedCommit } from './DeployedCommit';
 import { EncryptionSettings } from './Encryption';
 import { ExperimentalFeatures } from './Experimental';
 import { ExportBudget } from './Export';
@@ -256,6 +257,7 @@ export function Settings() {
             </Button>
           </View>
         )}
+        <DeployedCommit />
         <About />
         <ThemeSettings />
         <FormatSettings />
