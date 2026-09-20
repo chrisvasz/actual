@@ -1079,8 +1079,8 @@ class AccountInternal extends PureComponent<
       return;
     }
 
-    this.setState({ workingHard: true });
-
+    // No `workingHard` here: the reconciliation banner's own button shows the
+    // loading state for this action.
     await reconciliation.lockTransactions(accountId);
     await this.refetchTransactions();
   };

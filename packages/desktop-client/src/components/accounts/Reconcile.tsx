@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { Form } from 'react-aria-components';
 import { Trans } from 'react-i18next';
 
-import { Button } from '@actual-app/components/button';
+import { Button, ButtonWithLoading } from '@actual-app/components/button';
 import { SvgCheckCircle1 } from '@actual-app/components/icons/v2';
 import { InitialFocus } from '@actual-app/components/initial-focus';
 import { Input } from '@actual-app/components/input';
@@ -27,9 +27,11 @@ import * as bindings from '#spreadsheet/bindings';
 type ReconcilingMessageProps = {
   balanceQuery: { name: `balance-query-${string}`; query: Query };
   targetBalance: number;
-  onDone: () => void;
-  onCreateTransaction: (targetDiff: number) => void;
+  onDone: () => void | Promise<void>;
+  onCreateTransaction: (targetDiff: number) => void | Promise<void>;
 };
+
+type ReconcilingAction = 'done' | 'create-transaction';
 
 export function ReconcilingMessage({
   balanceQuery,
@@ -46,6 +48,22 @@ export function ReconcilingMessage({
     }) ?? 0;
   const format = useFormat();
   const targetDiff = targetBalance - cleared;
+
+  const [pendingAction, setPendingAction] = useState<ReconcilingAction | null>(
+    null,
+  );
+
+  async function runAction(
+    action: ReconcilingAction,
+    perform: () => void | Promise<void>,
+  ) {
+    setPendingAction(action);
+    try {
+      await perform();
+    } finally {
+      setPendingAction(null);
+    }
+  }
 
   const clearedBalance = format(cleared, 'financial');
   const bankBalance = format(targetBalance, 'financial');
@@ -103,17 +121,30 @@ export function ReconcilingMessage({
           </View>
         )}
         <View style={{ marginLeft: 15 }}>
-          <Button variant="primary" onPress={onDone}>
+          <ButtonWithLoading
+            variant="primary"
+            isLoading={pendingAction === 'done'}
+            isDisabled={pendingAction !== null}
+            onPress={() => void runAction('done', onDone)}
+          >
             {targetDiff === 0
               ? t('Lock transactions')
               : t('Exit reconciliation')}
-          </Button>
+          </ButtonWithLoading>
         </View>
         {targetDiff !== 0 && (
           <View style={{ marginLeft: 15 }}>
-            <Button onPress={() => onCreateTransaction(targetDiff)}>
+            <ButtonWithLoading
+              isLoading={pendingAction === 'create-transaction'}
+              isDisabled={pendingAction !== null}
+              onPress={() =>
+                void runAction('create-transaction', () =>
+                  onCreateTransaction(targetDiff),
+                )
+              }
+            >
               <Trans>Create reconciliation transaction</Trans>
-            </Button>
+            </ButtonWithLoading>
           </View>
         )}
       </View>
