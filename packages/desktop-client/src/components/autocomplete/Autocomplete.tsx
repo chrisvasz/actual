@@ -245,9 +245,10 @@ function SingleAutocomplete<T extends AutocompleteItem>({
   );
   const [isChanged, setIsChanged] = useState(false);
   const [originalItem, setOriginalItem] = useState(selectedItem);
+  const searchValue = isChanged ? value : '';
   const filteredSuggestions = useMemo(
-    () => filterSuggestions(suggestions, value),
-    [filterSuggestions, suggestions, value],
+    () => filterSuggestions(suggestions, searchValue),
+    [filterSuggestions, suggestions, searchValue],
   );
   const [highlightedIndex, setHighlightedIndex] = useState(null);
   const [isOpen, setIsOpen] = useState(embedded);
@@ -332,7 +333,7 @@ function SingleAutocomplete<T extends AutocompleteItem>({
     setIsChanged(false);
   }
 
-  const filtered = isChanged ? filteredSuggestions || suggestions : suggestions;
+  const filtered = filteredSuggestions || suggestions;
   const inputRef = useRef(null);
   useProperFocus(inputRef, focused);
 
