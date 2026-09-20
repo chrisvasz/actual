@@ -1,6 +1,6 @@
 import React, { memo, useRef, useState } from 'react';
 import type { ComponentProps, CSSProperties, MouseEvent } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
+import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import {
@@ -197,7 +197,6 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
   onBudgetAction,
   onShowActivity,
 }: CategoryMonthProps) {
-  const { t } = useTranslation();
   const format = useFormat();
 
   const balanceMenuTriggerRef = useRef(null);
