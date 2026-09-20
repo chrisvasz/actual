@@ -10,11 +10,20 @@ import { LazyLoadFailedError } from '@actual-app/core/shared/errors';
 import { retry as promiseRetry } from '@actual-app/core/shared/retry';
 
 type ProplessComponent = ComponentType<Record<string, never>>;
+type Importer = () => Promise<Record<string, ProplessComponent>>;
 type LoadComponentProps<K extends string> = {
   name: K;
   message?: string;
   importer: () => Promise<{ [key in K]: ProplessComponent }>;
 };
+
+// Modules already pulled in by a previous render, so a component whose chunk is
+// already in the module registry can be rendered on the very first render
+// instead of blanking the page for a frame. Keyed by importer identity, so only
+// module-level constant importers get a hit — importers defined inline inside a
+// render (e.g. the reports pages) simply never hit the cache.
+const moduleCache = new Map<Importer, Record<string, ProplessComponent>>();
+
 export function LoadComponent<K extends string>(props: LoadComponentProps<K>) {
   // need to set `key` so the component is reloaded when the name changes
   // otherwise the old component will be rendered while the new one is being loaded
@@ -26,10 +35,23 @@ function LoadComponentInner<K extends string>({
   message,
   importer,
 }: LoadComponentProps<K>) {
-  const [Component, setComponent] = useState<ProplessComponent | null>(null);
+  // Lazy initializer: runs during the first render (before paint), so an
+  // already-loaded module renders synchronously with no blank frame.
+  const [Component, setComponent] = useState<ProplessComponent | null>(
+    () => moduleCache.get(importer)?.[name] ?? null,
+  );
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    const cached = moduleCache.get(importer);
+    if (cached) {
+      // Covers `importer` changing without a remount (e.g. resizing across the
+      // narrow/wide breakpoint keeps `name`, so there is no key change). When
+      // nothing changed this sets the same value and React bails out.
+      setComponent(() => cached[name]);
+      return;
+    }
+
     let isUnmounted = false;
     setError(null);
     setComponent(null);
@@ -39,6 +61,7 @@ function LoadComponentInner<K extends string>({
       retry =>
         importer()
           .then(module => {
+            moduleCache.set(importer, module);
             // Handle possibly being unmounted while retrying.
             if (!isUnmounted) {
               setComponent(() => module[name]);
