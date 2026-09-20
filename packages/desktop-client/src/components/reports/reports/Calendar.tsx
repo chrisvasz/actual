@@ -2,15 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Ref } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router';
-import { animated, config, useSpring } from 'react-spring';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import {
   SvgArrowThickDown,
   SvgArrowThickUp,
-  SvgCheveronDown,
-  SvgCheveronUp,
 } from '@actual-app/components/icons/v1';
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
@@ -26,14 +23,11 @@ import type {
   TimeFrame,
   TransactionEntity,
 } from '@actual-app/core/types/models';
-import { css } from '@emotion/css';
-import { useDrag } from '@use-gesture/react';
 import { format as formatDate, parseISO } from 'date-fns';
 
+import { BackButton } from '#components/common/BackButton';
 import { EditablePageHeaderTitle } from '#components/EditablePageHeaderTitle';
 import { FinancialText } from '#components/FinancialText';
-import { MobileBackButton } from '#components/mobile/MobileBackButton';
-import { TransactionList as TransactionListMobile } from '#components/mobile/transactions/TransactionList';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { DateRange } from '#components/reports/DateRange';
@@ -52,7 +46,6 @@ import { SchedulesProvider } from '#hooks/useCachedSchedules';
 import { useCategories } from '#hooks/useCategories';
 import { useDashboardWidget } from '#hooks/useDashboardWidget';
 import { useDateFormat } from '#hooks/useDateFormat';
-import { DisplayPayeeProvider } from '#hooks/useDisplayPayee';
 import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
@@ -68,9 +61,6 @@ import { useTransactions } from '#hooks/useTransactions';
 import { addNotification } from '#notifications/notificationsSlice';
 import { useDispatch } from '#redux';
 import { useUpdateDashboardWidgetMutation } from '#reports/mutations';
-
-const CHEVRON_HEIGHT = 42;
-const SUMMARY_HEIGHT = 140;
 
 export function Calendar() {
   const params = useParams();
@@ -421,100 +411,6 @@ function CalendarInner({ widget, parameters }: CalendarInnerProps) {
     [sortField],
   );
 
-  const onOpenTransaction = useCallback(
-    (transaction: TransactionEntity) => {
-      void navigate(`/transactions/${transaction.id}`);
-    },
-    [navigate],
-  );
-
-  const refContainer = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (refContainer.current) {
-      setTotalHeight(refContainer.current.clientHeight - SUMMARY_HEIGHT);
-    }
-  }, [query]);
-
-  const [totalHeight, setTotalHeight] = useState(0);
-  const closeY = useRef(3000);
-
-  const openY = 0;
-  const [mobileTransactionsOpen, setMobileTransactionsOpen] = useState(false);
-
-  const [{ y }, api] = useSpring(
-    () => ({
-      from: { y: closeY.current },
-      immediate: false,
-    }),
-    [],
-  );
-
-  useEffect(() => {
-    closeY.current = totalHeight;
-    void api.start({
-      to: { y: mobileTransactionsOpen ? openY : closeY.current },
-      immediate: false,
-    });
-  }, [totalHeight, mobileTransactionsOpen, api]);
-
-  const open = useCallback(
-    ({ canceled }: { canceled: boolean }) => {
-      void api.start({
-        to: { y: openY },
-        immediate: false,
-        config: canceled ? config.wobbly : config.stiff,
-      });
-      setMobileTransactionsOpen(true);
-    },
-    [api],
-  );
-
-  const close = useCallback(
-    (velocity = 0) => {
-      void api.start({
-        to: { y: closeY.current },
-        config: { ...config.stiff, velocity },
-      });
-      setMobileTransactionsOpen(false);
-    },
-    [api],
-  );
-
-  const bind = useDrag(
-    ({ offset: [, oy], cancel }) => {
-      if (oy < 0) {
-        cancel();
-        void api.start({ to: { y: 0 }, immediate: true });
-        return;
-      }
-
-      if (oy > totalHeight * 0.05 && mobileTransactionsOpen) {
-        cancel();
-        close();
-        setMobileTransactionsOpen(false);
-      } else if (!mobileTransactionsOpen) {
-        if (oy / totalHeight > 0.05) {
-          cancel();
-          open({ canceled: true });
-          setMobileTransactionsOpen(true);
-        } else {
-          void api.start({ to: { y: oy }, immediate: true });
-        }
-      }
-    },
-    {
-      from: () => [0, y.get()],
-      filterTaps: true,
-      bounds: {
-        top: -totalHeight + CHEVRON_HEIGHT,
-        bottom: totalHeight - CHEVRON_HEIGHT,
-      },
-      axis: 'y',
-      rubberband: true,
-    },
-  );
-
   const [earliestTransaction, setEarliestTransaction] = useState('');
 
   return (
@@ -523,9 +419,7 @@ function CalendarInner({ widget, parameters }: CalendarInnerProps) {
         isNarrowWidth ? (
           <MobilePageHeader
             title={title}
-            leftContent={
-              <MobileBackButton onPress={() => navigate('/reports')} />
-            }
+            leftContent={<BackButton onPress={() => navigate('/reports')} />}
           />
         ) : (
           <PageHeader
@@ -569,7 +463,7 @@ function CalendarInner({ widget, parameters }: CalendarInnerProps) {
           )}
         </Header>
       </View>
-      <View ref={refContainer as Ref<HTMLDivElement>} style={{ flexGrow: 1 }}>
+      <View style={{ flexGrow: 1 }}>
         <View
           style={{
             backgroundColor: theme.pageBackground,
@@ -644,124 +538,59 @@ function CalendarInner({ widget, parameters }: CalendarInnerProps) {
               // TODO: make TableHandleRef conform to HTMLDivEle
               ref={table as unknown as Ref<HTMLDivElement>}
             >
-              {!isNarrowWidth ? (
-                <SplitsExpandedProvider initialMode="collapse">
-                  <TransactionList
-                    tableRef={table}
-                    account={undefined}
-                    transactions={transactionsGrouped}
-                    allTransactions={allTransactions}
-                    loadMoreTransactions={loadMoreTransactions}
-                    accounts={accounts}
-                    category={undefined}
-                    categoryGroups={categoryGroups}
-                    payees={payees}
-                    balances={null}
-                    showBalances={false}
-                    showReconciled
-                    showCleared={false}
-                    showAccount
-                    isAdding={false}
-                    isNew={() => false}
-                    isMatched={() => false}
-                    dateFormat={dateFormat}
-                    hideFraction={false}
-                    renderEmpty={() => (
-                      <View
-                        style={{
-                          color: theme.tableText,
-                          marginTop: 20,
-                          textAlign: 'center',
-                          fontStyle: 'italic',
-                        }}
-                      >
-                        <Trans>No transactions</Trans>
-                      </View>
-                    )}
-                    onSort={onSort}
-                    sortField={sortField}
-                    ascDesc={ascDesc}
-                    onChange={() => {}}
-                    onRefetch={() => setDirty(true)}
-                    onCloseAddTransaction={() => {}}
-                    onCreatePayee={async () => null}
-                    onApplyFilter={() => {}}
-                    onBatchDelete={() => {}}
-                    onBatchDuplicate={() => {}}
-                    onBatchLinkSchedule={() => {}}
-                    onBatchUnlinkSchedule={() => {}}
-                    onCreateRule={() => {}}
-                    onScheduleAction={() => {}}
-                    onMakeAsNonSplitTransactions={() => {}}
-                    showSelection={false}
-                    allowSplitTransaction={false}
-                    allowReorder={false}
-                  />
-                </SplitsExpandedProvider>
-              ) : (
-                <animated.div
-                  {...bind()}
-                  style={{
-                    y,
-                    touchAction: 'pan-x',
-                    backgroundColor: theme.mobileNavBackground,
-                    borderTop: `1px solid ${theme.menuBorder}`,
-                    ...styles.shadow,
-                    height: totalHeight + CHEVRON_HEIGHT,
-                    width: '100%',
-                    position: 'fixed',
-                    zIndex: 100,
-                    bottom: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Button
-                    variant="bare"
-                    onPress={() =>
-                      !mobileTransactionsOpen
-                        ? open({ canceled: false })
-                        : close()
-                    }
-                    className={css({
-                      color: theme.pageTextSubdued,
-                      height: 42,
-                      '&[data-pressed]': { backgroundColor: 'transparent' },
-                    })}
-                  >
-                    {!mobileTransactionsOpen && (
-                      <>
-                        <SvgCheveronUp width={16} height={16} />
-                        <Trans>Show transactions</Trans>
-                      </>
-                    )}
-                    {mobileTransactionsOpen && (
-                      <>
-                        <SvgCheveronDown width={16} height={16} />
-                        <Trans>Hide transactions</Trans>
-                      </>
-                    )}
-                  </Button>
-                  <View
-                    style={{
-                      height: '100%',
-                      width: '100%',
-                      overflow: 'auto',
-                    }}
-                  >
-                    <DisplayPayeeProvider transactions={allTransactions}>
-                      <TransactionListMobile
-                        isLoading={false}
-                        onLoadMore={loadMoreTransactions}
-                        transactions={allTransactions}
-                        onOpenTransaction={onOpenTransaction}
-                        isLoadingMore={false}
-                      />
-                    </DisplayPayeeProvider>
-                  </View>
-                </animated.div>
-              )}
+              <SplitsExpandedProvider initialMode="collapse">
+                <TransactionList
+                  tableRef={table}
+                  account={undefined}
+                  transactions={transactionsGrouped}
+                  allTransactions={allTransactions}
+                  loadMoreTransactions={loadMoreTransactions}
+                  accounts={accounts}
+                  category={undefined}
+                  categoryGroups={categoryGroups}
+                  payees={payees}
+                  balances={null}
+                  showBalances={false}
+                  showReconciled
+                  showCleared={false}
+                  showAccount
+                  isAdding={false}
+                  isNew={() => false}
+                  isMatched={() => false}
+                  dateFormat={dateFormat}
+                  hideFraction={false}
+                  renderEmpty={() => (
+                    <View
+                      style={{
+                        color: theme.tableText,
+                        marginTop: 20,
+                        textAlign: 'center',
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      <Trans>No transactions</Trans>
+                    </View>
+                  )}
+                  onSort={onSort}
+                  sortField={sortField}
+                  ascDesc={ascDesc}
+                  onChange={() => {}}
+                  onRefetch={() => setDirty(true)}
+                  onCloseAddTransaction={() => {}}
+                  onCreatePayee={async () => null}
+                  onApplyFilter={() => {}}
+                  onBatchDelete={() => {}}
+                  onBatchDuplicate={() => {}}
+                  onBatchLinkSchedule={() => {}}
+                  onBatchUnlinkSchedule={() => {}}
+                  onCreateRule={() => {}}
+                  onScheduleAction={() => {}}
+                  onMakeAsNonSplitTransactions={() => {}}
+                  showSelection={false}
+                  allowSplitTransaction={false}
+                  allowReorder={false}
+                />
+              </SplitsExpandedProvider>
             </View>
           </SchedulesProvider>
         </SelectedProviderWithItems>

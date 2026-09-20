@@ -18,8 +18,8 @@ import {
   MOBILE_FIELD_GAP,
   STACKED_FIELD_FLEX,
 } from '#components/budget/goals/editor/fieldLayout';
+import { TapField } from '#components/common/FormFields';
 import { FormField, FormLabel } from '#components/forms';
-import { TapField } from '#components/mobile/MobileForms';
 import { PercentInput } from '#components/util/PercentInput';
 import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';

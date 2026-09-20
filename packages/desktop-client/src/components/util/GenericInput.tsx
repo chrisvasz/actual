@@ -18,8 +18,8 @@ import { CategoryGroupAutocomplete } from '#components/autocomplete/CategoryGrou
 import { FilterAutocomplete } from '#components/autocomplete/FilterAutocomplete';
 import { PayeeAutocomplete } from '#components/autocomplete/PayeeAutocomplete';
 import { ReportAutocomplete } from '#components/autocomplete/ReportAutocomplete';
+import { hideNativeDateIconClassName } from '#components/common/FormFields';
 import { Checkbox } from '#components/forms';
-import { hideNativeDateIconClassName } from '#components/mobile/MobileForms';
 import { DateSelect } from '#components/select/DateSelect';
 import { RecurringSchedulePicker } from '#components/select/RecurringSchedulePicker';
 import { useCategories } from '#hooks/useCategories';

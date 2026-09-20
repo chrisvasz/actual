@@ -26,8 +26,8 @@ import type {
 } from '@actual-app/core/types/models';
 import * as d from 'date-fns';
 
+import { BackButton } from '#components/common/BackButton';
 import { EditablePageHeaderTitle } from '#components/EditablePageHeaderTitle';
-import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { AgeOfMoneyGraph } from '#components/reports/graphs/AgeOfMoneyGraph';
@@ -258,9 +258,7 @@ function AgeOfMoneyInner({ widget }: AgeOfMoneyInnerProps) {
         isNarrowWidth ? (
           <MobilePageHeader
             title={title}
-            leftContent={
-              <MobileBackButton onPress={() => navigate('/reports')} />
-            }
+            leftContent={<BackButton onPress={() => navigate('/reports')} />}
           />
         ) : (
           <PageHeader

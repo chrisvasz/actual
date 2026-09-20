@@ -6,7 +6,7 @@ import { MonthPicker } from '@actual-app/components/month-picker';
 import {
   hideNativeDateIconClassName,
   InputField,
-} from '#components/mobile/MobileForms';
+} from '#components/common/FormFields';
 import { useLanguage } from '#hooks/useLocale';
 
 type MonthInputProps = {

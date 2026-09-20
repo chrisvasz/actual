@@ -30,8 +30,8 @@ import { debounce } from 'es-toolkit/compat';
 import type { TFunction } from 'i18next';
 import type { SankeyData } from 'recharts/types/chart/Sankey';
 
+import { BackButton } from '#components/common/BackButton';
 import { EditablePageHeaderTitle } from '#components/EditablePageHeaderTitle';
-import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { SankeyGraph } from '#components/reports/graphs/SankeyGraph';
 import { Header } from '#components/reports/Header';
@@ -793,9 +793,7 @@ function SankeyInner({ widget }: SankeyInnerProps) {
         isNarrowWidth ? (
           <MobilePageHeader
             title={title}
-            leftContent={
-              <MobileBackButton onPress={() => navigate('/reports')} />
-            }
+            leftContent={<BackButton onPress={() => navigate('/reports')} />}
           />
         ) : (
           <PageHeader

@@ -12,8 +12,8 @@ import { View } from '@actual-app/components/view';
 import { isElectron } from '@actual-app/core/shared/environment';
 import { css } from '@emotion/css';
 
+import { BackButton } from '#components/common/BackButton';
 import { Link } from '#components/common/Link';
-import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { useServerURL, useSetServerURL } from '#components/ServerContext';
 import { useGlobalPref } from '#hooks/useGlobalPref';
 import { useNavigate } from '#hooks/useNavigate';
@@ -387,7 +387,7 @@ export function ConfigServer() {
   return (
     <View style={{ maxWidth: 500, marginTop: -30 }}>
       {(userData || currentUrl) && (
-        <MobileBackButton
+        <BackButton
           onPress={() =>
             location.key !== 'default' ? navigate(-1) : navigate('/')
           }

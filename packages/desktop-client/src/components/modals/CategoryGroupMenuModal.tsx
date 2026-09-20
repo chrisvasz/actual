@@ -24,13 +24,13 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 
+import { CategoryGroupActionMenu } from '#components/budget/CategoryGroupActionMenu';
 import {
   Modal,
   ModalCloseButton,
   ModalHeader,
   ModalTitle,
 } from '#components/common/Modal';
-import { CategoryGroupActionMenu } from '#components/mobile/budget/CategoryGroupActionMenu';
 import { Notes } from '#components/Notes';
 import { useCategories } from '#hooks/useCategories';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';

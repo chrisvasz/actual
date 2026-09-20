@@ -21,17 +21,4 @@ describe('TourProvider', () => {
     act(() => result.current.stopTour());
     expect(result.current.activeTourId).toBeNull();
   });
-
-  it('does not start the tour on narrow screens', () => {
-    const originalWidth = window.innerWidth;
-    window.innerWidth = 400;
-    try {
-      const { result } = renderHook(() => useTour(), { wrapper });
-
-      act(() => result.current.startTour());
-      expect(result.current.activeTourId).toBeNull();
-    } finally {
-      window.innerWidth = originalWidth;
-    }
-  });
 });

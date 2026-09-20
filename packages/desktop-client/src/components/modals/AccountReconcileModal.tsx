@@ -13,10 +13,10 @@ import {
 } from '@actual-app/core/shared/util';
 import { format as formatDate } from 'date-fns';
 
+import { AmountInput } from '#components/amount/AmountInput';
+import { FieldLabel } from '#components/common/FormFields';
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
 import { FinancialText } from '#components/FinancialText';
-import { FieldLabel } from '#components/mobile/MobileForms';
-import { AmountInput } from '#components/mobile/transactions/AmountInput';
 import { useAccount } from '#hooks/useAccount';
 import { useDateFormat } from '#hooks/useDateFormat';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';

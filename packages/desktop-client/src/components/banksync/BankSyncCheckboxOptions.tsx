@@ -9,8 +9,8 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 
+import { ToggleField } from '#components/common/FormFields';
 import { LabeledCheckbox } from '#components/forms/LabeledCheckbox';
-import { ToggleField } from '#components/mobile/MobileForms';
 
 type CheckboxOptionProps = {
   id: string;

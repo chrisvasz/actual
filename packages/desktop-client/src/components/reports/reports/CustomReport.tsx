@@ -24,9 +24,9 @@ import type { SyncedPrefs } from '@actual-app/core/types/prefs';
 import type { TransObjectLiteral } from '@actual-app/core/types/util';
 
 import { Warning } from '#components/alerts';
+import { BackButton } from '#components/common/BackButton';
 import { AppliedFilters } from '#components/filters/AppliedFilters';
 import { FinancialText } from '#components/FinancialText';
-import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { ChooseGraph } from '#components/reports/ChooseGraph';
@@ -855,7 +855,7 @@ function CustomReportInner({
             title={t('Custom Report: {{name}}', {
               name: report.name ?? t('Unsaved report'),
             })}
-            leftContent={<MobileBackButton onPress={onBackClick} />}
+            leftContent={<BackButton onPress={onBackClick} />}
           />
         ) : (
           <PageHeader

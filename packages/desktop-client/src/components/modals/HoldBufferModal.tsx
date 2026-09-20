@@ -7,8 +7,8 @@ import { styles } from '@actual-app/components/styles';
 import { View } from '@actual-app/components/view';
 
 import { useEnvelopeSheetValue } from '#components/budget/envelope/EnvelopeBudgetComponents';
+import { FieldLabel } from '#components/common/FormFields';
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
-import { FieldLabel } from '#components/mobile/MobileForms';
 import { AmountInput } from '#components/util/AmountInput';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 import type { Modal as ModalType } from '#modals/modalsSlice';
