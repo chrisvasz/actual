@@ -4,12 +4,12 @@ import type { Dispatch, SetStateAction } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
+import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
 import { SpaceBetween } from '@actual-app/components/space-between';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import { send } from '@actual-app/core/platform/client/connection';
 import * as undo from '@actual-app/core/platform/client/undo';
 import { getNormalisedString } from '@actual-app/core/shared/normalisation';
 import { q } from '@actual-app/core/shared/query';
@@ -18,6 +18,7 @@ import type {
   RuleEntity,
   ScheduleEntity,
 } from '@actual-app/core/types/models';
+import { useQuery } from '@tanstack/react-query';
 
 import { useAccounts } from '#hooks/useAccounts';
 import { useCategories } from '#hooks/useCategories';
@@ -26,6 +27,12 @@ import { useSchedules } from '#hooks/useSchedules';
 import { SelectedProvider, useSelected } from '#hooks/useSelected';
 import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
+import {
+  ruleQueries,
+  useDeleteAllRulesMutation,
+  useDeleteRuleMutation,
+  useInvalidateRules,
+} from '#rules';
 import { friendlyOp, mapField } from '#util/rule';
 import { describeSchedule } from '#util/schedule';
 
@@ -121,10 +128,20 @@ export function ManageRules({
 }: ManageRulesProps) {
   const { t } = useTranslation();
 
-  const [allRules, setAllRules] = useState<RuleEntity[]>([]);
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState('');
   const dispatch = useDispatch();
+
+  // `isPlaceholderData` is the only reliable "not loaded yet" signal here:
+  // `placeholderData: []` means `isPending` is never true, and an empty array
+  // would otherwise be indistinguishable from having no rules at all.
+  const { data: allRules = [], isPlaceholderData: isRulesLoading } = useQuery(
+    payeeId ? ruleQueries.listForPayee(payeeId) : ruleQueries.list(),
+  );
+
+  const invalidateRules = useInvalidateRules();
+  const deleteRuleMutation = useDeleteRuleMutation();
+  const deleteAllRulesMutation = useDeleteAllRulesMutation();
 
   const { schedules = [] } = useSchedules({
     query: useMemo(() => q('schedules').select('*'), []),
@@ -167,52 +184,33 @@ export function ManageRules({
     setPage(0);
   };
 
-  async function loadRules() {
-    setLoading(true);
+  // The modal wrapper renders its own loading indicator from this prop; the
+  // page doesn't pass one at all.
+  const onLoadingChange = useEffectEvent((loading: boolean) => {
+    setLoading(loading);
+  });
+  useEffect(() => {
+    onLoadingChange(isRulesLoading);
+  }, [isRulesLoading]);
 
-    let loadedRules = null;
-    if (payeeId) {
-      loadedRules = await send('payees-get-rules', {
-        id: payeeId,
-      });
-    } else {
-      loadedRules = await send('rules-get');
-    }
-
-    setAllRules(loadedRules);
-    return loadedRules;
-  }
-
-  const init = useEffectEvent(() => {
-    async function loadData() {
-      await loadRules();
-      setLoading(false);
-    }
-
+  useEffect(() => {
     if (payeeId) {
       undo.setUndoState('openModal', { name: 'manage-rules', options: {} });
     }
 
-    void loadData();
-
     return () => {
       undo.setUndoState('openModal', null);
     };
-  });
-  useEffect(() => {
-    return init();
-  }, []);
+  }, [payeeId]);
 
   function loadMore() {
     setPage(page => page + 1);
   }
 
   const onDeleteSelected = async () => {
-    setLoading(true);
-
-    const { someDeletionsFailed } = await send('rule-delete-all', [
-      ...selectedInst.items,
-    ]);
+    const { someDeletionsFailed } = await deleteAllRulesMutation.mutateAsync({
+      ids: [...selectedInst.items],
+    });
 
     if (someDeletionsFailed) {
       alert(
@@ -220,16 +218,11 @@ export function ManageRules({
       );
     }
 
-    await loadRules();
     selectedInst.dispatch({ type: 'select-none' });
-    setLoading(false);
   };
 
-  async function onDeleteRule(id: string) {
-    setLoading(true);
-    await send('rule-delete', id);
-    await loadRules();
-    setLoading(false);
+  function onDeleteRule(id: string) {
+    deleteRuleMutation.mutate({ id });
   }
 
   const onEditRule = rule => {
@@ -239,10 +232,7 @@ export function ManageRules({
           name: 'edit-rule',
           options: {
             rule,
-            onSave: async () => {
-              await loadRules();
-              setLoading(false);
-            },
+            onSave: () => invalidateRules(),
           },
         },
       }),
@@ -277,10 +267,7 @@ export function ManageRules({
           name: 'edit-rule',
           options: {
             rule,
-            onSave: async () => {
-              await loadRules();
-              setLoading(false);
-            },
+            onSave: () => invalidateRules(),
           },
         },
       }),
@@ -333,7 +320,18 @@ export function ManageRules({
         <View style={styles.tableContainer}>
           <RulesHeader />
           <InfiniteScrollWrapper loadMore={loadMore}>
-            {filteredRules.length === 0 ? (
+            {isRulesLoading ? (
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  ...styles.delayedFadeIn,
+                }}
+              >
+                <AnimatedLoading width={25} color={theme.tableText} />
+              </View>
+            ) : filteredRules.length === 0 ? (
               <EmptyMessage text={t('No rules')} style={{ marginTop: 15 }} />
             ) : (
               <RulesList
