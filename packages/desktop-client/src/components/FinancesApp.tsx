@@ -345,6 +345,7 @@ export function FinancesApp() {
                       path="/accounts/:id"
                       element={
                         <ErrorBoundary
+                          key={location.pathname}
                           FallbackComponent={FeatureErrorFallback}
                           resetKeys={[location.pathname]}
                         >
