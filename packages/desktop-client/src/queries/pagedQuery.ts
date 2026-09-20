@@ -84,18 +84,21 @@ export class PagedQuery<TResponse = unknown> extends LiveQuery<TResponse> {
     this._fetchDataPromise = this.fetchData(async () => {
       this._hasReachedEnd = false;
 
-      // Also fetch the total count
-      void this.fetchCount();
-
       // If data is null, we haven't fetched anything yet so just
       // fetch the first page
-      return aqlQuery(
+      const page = aqlQuery(
         this.query.limit(
           this.data == null
             ? this._pageCount
             : Math.max(this.data.length, this._pageCount),
         ),
       );
+
+      // Also fetch the total count. Issued after the page query so that the
+      // rows aren't queued behind a full COUNT(*) on the backend thread.
+      void this.fetchCount();
+
+      return page;
     });
 
     return this._fetchDataPromise;

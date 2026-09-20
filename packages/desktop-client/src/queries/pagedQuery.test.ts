@@ -387,8 +387,8 @@ describe('pagedQuery', () => {
       onPageData: data => tracer.event('page-data', data),
     });
 
-    await tracer.expect('server-query', [{ result: { $count: '*' } }]);
     await tracer.expect('server-query', ['id']);
+    await tracer.expect('server-query', [{ result: { $count: '*' } }]);
 
     await tracer.expect('data', async d => {
       expect(d.length).toBe(500);
@@ -449,8 +449,8 @@ describe('pagedQuery', () => {
       options: { pageCount: 10 },
     });
 
-    await tracer.expect('server-query', [{ result: { $count: '*' } }]);
     await tracer.expect('server-query', ['id']);
+    await tracer.expect('server-query', [{ result: { $count: '*' } }]);
 
     // Should only get 10 items back
     await tracer.expect('data', selectData(data, ['id']).slice(0, 10));
@@ -465,8 +465,8 @@ describe('pagedQuery', () => {
       onData: data => tracer.event('data', data),
     });
 
-    await tracer.expect('server-query', [{ result: { $count: '*' } }]);
     await tracer.expect('server-query', ['id']);
+    await tracer.expect('server-query', [{ result: { $count: '*' } }]);
     await tracer.expect('data', vi.fn());
 
     void paged.fetchNext();
@@ -494,8 +494,8 @@ describe('pagedQuery', () => {
       options: { pageCount: 20 },
     });
 
-    await tracer.expect('server-query', [{ result: { $count: '*' } }]);
     await tracer.expect('server-query', ['id']);
+    await tracer.expect('server-query', [{ result: { $count: '*' } }]);
     await tracer.expect('data', d => {
       expect(d.length).toBe(20);
     });
@@ -517,8 +517,8 @@ describe('pagedQuery', () => {
       tables: ['transactions'],
     });
 
-    await tracer.expect('server-query', [{ result: { $count: '*' } }]);
     await tracer.expect('server-query', ['id']);
+    await tracer.expect('server-query', [{ result: { $count: '*' } }]);
     await tracer.expect('data', d => {
       // All 40 we fetched again
       expect(d.length).toBe(40);
@@ -552,8 +552,8 @@ describe('pagedQuery', () => {
     // This is from the paged request, but it ignores the new data
     await tracer.expect('server-query', ['id']);
 
-    await tracer.expect('server-query', [{ result: { $count: '*' } }]);
     await tracer.expect('server-query', ['id']);
+    await tracer.expect('server-query', [{ result: { $count: '*' } }]);
     await tracer.expect('data', d => {
       expect(d.length).toBe(40);
     });
