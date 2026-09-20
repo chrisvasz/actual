@@ -39,6 +39,12 @@ RUN git -c init.defaultBranch=master init -q \
     && git -c user.email=build@docker -c user.name=docker-build add -A \
     && git -c user.email=build@docker -c user.name=docker-build commit -qm build
 
+# The commit this image was built from, baked into the web client so Settings
+# can show what is deployed. .dockerignore omits .git and the throwaway repo
+# below has its own commit, so this has to come in from the build context.
+ARG COMMIT_SHA=""
+ENV COMMIT_SHA=$COMMIT_SHA
+
 RUN yarn build:server
 
 # Focus the workspaces in production mode (including @actual-app/web you just built)

@@ -1,9 +1,10 @@
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { createReadStream } from 'node:fs';
 import { cp, mkdir, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import { promisify } from 'util';
 
 import {
   defaultDbPath,
@@ -236,6 +237,17 @@ const pluginsServiceAssets = (): Plugin => ({
   },
 });
 
+async function readGitHead(): Promise<string> {
+  try {
+    const { stdout } = await promisify(execFile)('git', ['rev-parse', 'HEAD'], {
+      cwd: __dirname,
+    });
+    return stdout.trim();
+  } catch {
+    return '';
+  }
+}
+
 export default defineConfig(async ({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const isVitest = process.env.VITEST === 'true';
@@ -243,6 +255,12 @@ export default defineConfig(async ({ mode, command }) => {
     'Cross-Origin-Opener-Policy': 'same-origin',
     'Cross-Origin-Embedder-Policy': 'require-corp',
   };
+
+  // The commit this bundle was built from, shown in Settings. CI passes it in
+  // (the Docker build has no real .git — see sync-server.Dockerfile); locally
+  // we read it from the checkout so dev builds show something useful.
+  process.env.REACT_APP_COMMIT_SHA =
+    process.env.COMMIT_SHA || process.env.GITHUB_SHA || (await readGitHead());
 
   // Forward Netlify env variables
   if (process.env.REVIEW_ID) {
