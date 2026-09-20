@@ -405,11 +405,6 @@ class AccountInternal extends PureComponent<
   }
 
   componentDidUpdate(prevProps: AccountInternalProps) {
-    // If the active account changes - close the transaction entry mode
-    if (this.state.isAdding && this.props.accountId !== prevProps.accountId) {
-      this.setState({ isAdding: false });
-    }
-
     // If the user was on a different screen and is now coming back to
     // the transactions, automatically refresh the transaction to make
     // sure we have updated state
@@ -420,11 +415,6 @@ class AccountInternal extends PureComponent<
       setTimeout(() => {
         void this.refetchTransactions();
       }, 100);
-    }
-
-    //Resest sort/filter/search on account change
-    if (this.props.accountId !== prevProps.accountId) {
-      this.setState({ sort: null, search: '', filterConditions: [] });
     }
   }
 
@@ -534,10 +524,14 @@ class AccountInternal extends PureComponent<
           }
         }
 
-        const balances = this.state.showBalances
-          ? await this.calculateBalances()
-          : null;
-        const filteredAmount = await this.getFilteredAmount();
+        // Both aggregates are independent of each other and of `data`, so
+        // run them together rather than serially. `filteredAmount` is only
+        // rendered behind `isFiltered`, so skip that round trip entirely
+        // when nothing will read it.
+        const [balances, filteredAmount] = await Promise.all([
+          this.state.showBalances ? this.calculateBalances() : null,
+          isFiltered ? this.getFilteredAmount() : null,
+        ]);
         this.setState(
           {
             transactions: data,
@@ -563,26 +557,6 @@ class AccountInternal extends PureComponent<
         onlySync: true,
       },
     });
-  }
-
-  // oxlint-disable-next-line react/no-unsafe
-  UNSAFE_componentWillReceiveProps(nextProps: AccountInternalProps) {
-    if (this.props.accountId !== nextProps.accountId) {
-      this.setState(
-        {
-          loading: true,
-          search: '',
-          showBalances: nextProps.showBalances,
-          balances: null,
-          showCleared: nextProps.showCleared,
-          showReconciled: nextProps.showReconciled,
-          reconcileAmount: null,
-        },
-        () => {
-          this.fetchTransactions();
-        },
-      );
-    }
   }
 
   onSearch = (value: string) => {
