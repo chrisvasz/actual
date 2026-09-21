@@ -437,7 +437,6 @@
     {
       "files": [
         "packages/desktop-client/src/components/ManageRules.tsx",
-        "packages/desktop-client/src/components/mobile/budget/ExpenseGroupList.tsx",
         "packages/desktop-client/src/components/reports/reports/Calendar.tsx",
         "packages/desktop-client/src/components/table.tsx"
       ],
