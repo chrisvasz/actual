@@ -311,6 +311,7 @@ class AccountInternal extends PureComponent<
   unlisten?: () => void;
   dispatchSelected?: (action: Actions) => void;
   _isOptimisticUpdate: boolean = false;
+  _pendingBalances: Promise<Record<string, number> | null> | null = null;
 
   constructor(props: AccountInternalProps) {
     super(props);
@@ -394,7 +395,15 @@ class AccountInternal extends PureComponent<
 
     // Important that any async work happens last so that the
     // listeners are set up synchronously
-    this.fetchTransactions(this.state.filterConditions);
+    //
+    // Passing conditions routes through `applyFilters`, which costs a full
+    // render before the query is issued. On mount that render has nothing to
+    // do - there are no transactions to clear and no sort to reapply - so go
+    // straight to the query when the screen opens unfiltered.
+    const { filterConditions } = this.state;
+    this.fetchTransactions(
+      filterConditions.length > 0 ? filterConditions : undefined,
+    );
 
     // If there is a pending undo, apply it immediately (this happens
     // when an undo changes the location to this page)
@@ -528,8 +537,12 @@ class AccountInternal extends PureComponent<
         // run them together rather than serially. `filteredAmount` is only
         // rendered behind `isFiltered`, so skip that round trip entirely
         // when nothing will read it.
+        const pendingBalances = this._pendingBalances;
+        this._pendingBalances = null;
         const [balances, filteredAmount] = await Promise.all([
-          this.state.showBalances ? this.calculateBalances() : null,
+          this.state.showBalances
+            ? (pendingBalances ?? this.calculateBalances())
+            : null,
           isFiltered ? this.getFilteredAmount() : null,
         ]);
         this.setState(
@@ -557,6 +570,17 @@ class AccountInternal extends PureComponent<
         onlySync: true,
       },
     });
+
+    // The running balances depend on the query, not on the rows that come
+    // back, so start them alongside the first page instead of waiting for it.
+    const pendingBalances = this.state.showBalances
+      ? this.calculateBalances()
+      : null;
+    // Keep an unconsumed result (the column can be switched off before the
+    // rows land) from surfacing as an unhandled rejection. `onData` still
+    // sees the rejection if it does await this promise.
+    pendingBalances?.catch(() => null);
+    this._pendingBalances = pendingBalances;
   }
 
   onSearch = (value: string) => {
