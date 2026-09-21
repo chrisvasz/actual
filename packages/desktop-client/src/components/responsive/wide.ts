@@ -1,7 +1,6 @@
 export { Budget } from '#components/budget';
 
 export { Schedules } from '#components/schedules';
-export { Schedules as ScheduleEdit } from '#components/schedules';
 
 export { GoCardlessLink } from '#components/gocardless/GoCardlessLink';
 
@@ -11,7 +10,6 @@ export { Account } from '#components/accounts/Account';
 export { ManageRulesPage as Rules } from '#components/ManageRulesPage';
 export { ManageRulesPage as RuleEdit } from '#components/ManageRulesPage';
 export { ManagePayeesPage as Payees } from '#components/payees/ManagePayeesPage';
-export { ManagePayeesPage as PayeeEdit } from '#components/payees/ManagePayeesPage';
 
 export { BankSync } from '#components/banksync';
 

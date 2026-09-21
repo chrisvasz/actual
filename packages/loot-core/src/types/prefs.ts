@@ -11,7 +11,6 @@ export type FeatureFlag =
   | 'enableBanking'
   | 'sankeyReport'
   | 'akahuBankSync'
-  | 'mobileCalculator'
   | 'monteCarloReport';
 
 /**
@@ -103,8 +102,6 @@ export type LocalPrefs = Partial<{
   reportsViewSummary: boolean;
   reportsViewLabel: boolean;
   sidebarWidth: number;
-  'mobile.showSpentColumn': boolean;
-  'mobile.bankSyncProvidersCollapsed': boolean;
 }>;
 
 export type Theme = 'light' | 'dark' | 'auto' | 'midnight' | string;

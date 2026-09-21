@@ -78,15 +78,6 @@
         "util"
       ]
     },
-    "packages/mobile-client": {
-      "entry": ["bin/*"],
-      "ignore": [
-        "android/app/src/main/assets/**",
-        "ios/App/App/public/**",
-        "ios/DerivedData/**"
-      ],
-      "ignoreDependencies": ["@capacitor/splash-screen"]
-    },
     "packages/plugins-service": {
       "entry": ["src/plugin-service-worker.ts"]
     },

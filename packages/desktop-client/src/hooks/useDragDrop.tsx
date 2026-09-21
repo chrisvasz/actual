@@ -46,15 +46,6 @@ import { View } from '@actual-app/components/view';
 // | DropHighlightPosContext    | Not needed (DropIndicator handles this)   |
 //
 // ===========================================================================
-// Components Already Migrated (using useDragAndDrop + GridList/ListBox)
-// ===========================================================================
-//
-// Mobile:
-// - ExpenseGroupList.tsx → GridList + useDragAndDrop
-// - ExpenseCategoryList.tsx → GridList + useDragAndDrop
-// - AccountsPage.tsx (AccountList) → ListBox + useDragAndDrop
-//
-// ===========================================================================
 // Components Still Using react-dnd (To Migrate)
 // ===========================================================================
 //
@@ -74,7 +65,6 @@ import { View } from '@actual-app/components/view';
 //
 // Transactions:
 // - TransactionsTable.tsx → Uses useDrag/useDrop from this module
-// - TransactionList.tsx → Uses isValidBoundaryDrop for validation
 //
 // These hooks wrap react-aria's low-level useDrag/useDrop and add:
 // - Two-phase drag start (preview then start) for UI coordination
@@ -449,7 +439,7 @@ export function useDrop<T extends { id: string }>({
 
 /**
  * MIGRATION: Replace with renderDropIndicator option and <DropIndicator>
- * component from react-aria-components. See ExpenseGroupList.tsx for example:
+ * component from react-aria-components. For example:
  *
  * ```tsx
  * renderDropIndicator: target => (

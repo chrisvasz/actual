@@ -230,6 +230,13 @@ export function FinancesApp() {
                         </ErrorBoundary>
                       }
                     />
+                    {/* The account edit page was narrow-only and is gone, but
+                        it used to bounce wide-width visitors here rather than
+                        to the catch-all's /budget, so keep that destination. */}
+                    <Route
+                      path="/bank-sync/account/:accountId/edit"
+                      element={<Navigate to="/bank-sync" replace />}
+                    />
                     <Route path="/tags" element={<ManageTagsPage />} />
                     <Route
                       path="/notifications"
