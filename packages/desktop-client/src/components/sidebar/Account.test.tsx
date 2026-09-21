@@ -43,6 +43,8 @@ describe('sidebar Account context menu', () => {
     initServer({
       query: async () => ({ data: [], dependencies: [] }),
       'get-cell': async () => ({ name: 'test-cell', value: 0 }),
+      'get-cells': async ({ cells }) =>
+        cells.map(() => ({ name: 'test-cell', value: 0 })),
     });
 
     store = configureTestAppStore({ queryClient: createTestQueryClient() });
