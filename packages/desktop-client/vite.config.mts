@@ -294,8 +294,6 @@ export default defineConfig(async ({ mode, command }) => {
     }
   }
 
-  const browserOpen = env.BROWSER_OPEN ? `//${env.BROWSER_OPEN}` : true;
-
   return {
     base: '/',
     envPrefix: 'REACT_APP_',
@@ -347,11 +345,8 @@ export default defineConfig(async ({ mode, command }) => {
         : ['.orb.local'],
       headers: devHeaders,
       port: +env.PORT || 5173,
-      open: env.BROWSER
-        ? ['chrome', 'firefox', 'edge', 'browser', 'browserPrivate'].includes(
-            env.BROWSER,
-          )
-        : browserOpen,
+      // Never launch a system browser; open the dev server yourself.
+      open: false,
       watch: {
         disableGlobbing: false,
       },
