@@ -30,18 +30,6 @@
   ],
   "shortcuts": [
     {
-      "name": "Add Transaction",
-      "short_name": "Add Transaction",
-      "description": "Add a new transaction",
-      "url": "/transactions/new",
-      "icons": [
-        {
-          "src": "/shortcut-transaction.svg",
-          "sizes": "150x150"
-        }
-      ]
-    },
-    {
       "name": "Accounts",
       "short_name": "Accounts",
       "description": "View all accounts",
@@ -73,13 +61,6 @@
       "label": "Actual Budget Homepage",
       "type": "image/png",
       "sizes": "1280x720"
-    },
-    {
-      "src": "/screenshot_narrow.png",
-      "form_factor": "narrow",
-      "label": "Actual Budget Mobile Homepage",
-      "type": "image/png",
-      "sizes": "350x600"
     }
   ],
   "theme_color": "#5c3dbb",

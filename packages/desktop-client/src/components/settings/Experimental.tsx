@@ -202,12 +202,6 @@ export function ExperimentalFeatures() {
             >
               <Trans>Currency support</Trans>
             </FeatureToggle>
-            <FeatureToggle
-              flag="mobileCalculator"
-              feedbackLink="https://github.com/actualbudget/actual/issues/8255"
-            >
-              <Trans>Mobile calculator</Trans>
-            </FeatureToggle>
             <FeatureToggle flag="newSidebarUI">
               <Trans>New sidebar UI</Trans>
             </FeatureToggle>
