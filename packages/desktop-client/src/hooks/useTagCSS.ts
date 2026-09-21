@@ -37,6 +37,7 @@ export function useTagCSS(opts?: { ellipsis?: boolean }) {
         opacity: tagObj?.hidden ? 0.5 : undefined,
         padding: options.compact ? '0px 7px' : '3px 7px',
         borderRadius: 16,
+        fontSize: 12,
         userSelect: 'none',
         backgroundColor,
         color,
