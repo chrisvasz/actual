@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useEffect, useEffectEvent, useMemo, useState } from 'react';
 
 import { listen } from '@actual-app/core/platform/client/connection';
 import type { Query } from '@actual-app/core/shared/query';
@@ -161,9 +161,14 @@ export function useTransactions({
     splitsOption,
   ]);
 
+  const transactions = useMemo(
+    () => flattenPages(queryResult.data),
+    [queryResult.data],
+  );
+
   return {
     ...queryResult,
-    transactions: flattenPages(queryResult.data),
+    transactions,
     runningBalances,
   };
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { q } from '@actual-app/core/shared/query';
 import type { ObjectExpression, Query } from '@actual-app/core/shared/query';
@@ -141,11 +141,14 @@ export function useSchedules({
     };
   }, [query, upcomingLength]);
 
-  return {
-    isLoading,
-    error,
-    ...data,
-  };
+  return useMemo(
+    () => ({
+      isLoading,
+      error,
+      ...data,
+    }),
+    [isLoading, error, data],
+  );
 }
 
 export function getSchedulesQuery(
