@@ -43,7 +43,6 @@ const DynamicBudgetTable = ({
   type,
   width,
   height,
-  prewarmStartMonth,
   startMonth,
   maxMonths = 3,
   monthBounds,
@@ -75,7 +74,7 @@ const DynamicBudgetTable = ({
   }
 
   function _onMonthSelect(month) {
-    onMonthSelect(getValidMonth(month), numMonths);
+    onMonthSelect(getValidMonth(month));
   }
 
   useHotkeys(
@@ -145,14 +144,13 @@ const DynamicBudgetTable = ({
       <View style={{ width: '100%', maxWidth }}>
         <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
           <BudgetPageHeader
-            startMonth={prewarmStartMonth}
+            startMonth={startMonth}
             numMonths={numMonths}
             monthBounds={monthBounds}
             onMonthSelect={_onMonthSelect}
           />
           <BudgetTable
             type={type}
-            prewarmStartMonth={prewarmStartMonth}
             startMonth={startMonth}
             numMonths={numMonths}
             monthBounds={monthBounds}
@@ -172,7 +170,7 @@ type AutoSizingBudgetTableProps = Omit<
   'numMonths'
 > & {
   maxMonths: number;
-  onMonthSelect: (month: string, numMonths: number) => void;
+  onMonthSelect: (month: string) => void;
 };
 
 export const AutoSizingBudgetTable = (props: AutoSizingBudgetTableProps) => {

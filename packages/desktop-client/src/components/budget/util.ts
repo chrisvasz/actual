@@ -2,24 +2,17 @@
 import { styles } from '@actual-app/components/styles';
 import type { CSSProperties } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
-import { send } from '@actual-app/core/platform/client/connection';
-import * as monthUtils from '@actual-app/core/shared/months';
 import {
   currencyToAmount,
   integerToCurrency,
 } from '@actual-app/core/shared/util';
-import type { Handlers } from '@actual-app/core/types/handlers';
 import type {
   CategoryEntity,
   CategoryGroupEntity,
 } from '@actual-app/core/types/models';
-import type { SyncedPrefs } from '@actual-app/core/types/prefs';
 import { t } from 'i18next';
 
 import type { DropPosition } from '#components/sort';
-import type { useSpreadsheet } from '#hooks/useSpreadsheet';
-
-import { getValidMonthBounds } from './MonthsContext';
 
 // Width of the budget table's category column.
 export const CATEGORY_COLUMN_WIDTH = 200;
@@ -179,41 +172,4 @@ export function findSortUp<T extends { id: string }>(
 
 export function getScrollbarWidth() {
   return Math.max(styles.scrollbarWidth - 2, 0);
-}
-
-export async function prewarmMonth(
-  budgetType: SyncedPrefs['budgetType'],
-  spreadsheet: ReturnType<typeof useSpreadsheet>,
-  month: string,
-) {
-  const method: keyof Handlers =
-    budgetType === 'tracking'
-      ? 'tracking-budget-month'
-      : 'envelope-budget-month';
-
-  const values = await send(method, { month });
-
-  for (const value of values) {
-    spreadsheet.prewarmCache(value.name, value);
-  }
-}
-
-export async function prewarmAllMonths(
-  budgetType: SyncedPrefs['budgetType'],
-  spreadsheet: ReturnType<typeof useSpreadsheet>,
-  bounds: { start: string; end: string },
-  startMonth: string,
-) {
-  const numMonths = 3;
-
-  bounds = getValidMonthBounds(
-    bounds,
-    monthUtils.subMonths(startMonth, 1),
-    monthUtils.addMonths(startMonth, numMonths + 1),
-  );
-  const months = monthUtils.rangeInclusive(bounds.start, bounds.end);
-
-  await Promise.all(
-    months.map(month => prewarmMonth(budgetType, spreadsheet, month)),
-  );
 }

@@ -230,8 +230,9 @@ async function loadBudget({ id }: { id: Budget['id'] }) {
 
   if (currentPrefs) {
     if (currentPrefs.id === id) {
-      // If it's already loaded, do nothing
-      return {};
+      // Already loaded - the backend outlives a page reload - but the client
+      // reconnecting still needs the month range, so report it either way.
+      return { budgetBounds: await budget.createAllBudgets() };
     } else {
       // Otherwise, close the currently loaded budget
       await closeBudget();
@@ -542,6 +543,7 @@ async function _loadBudget(id: Budget['id']): Promise<{
     | 'out-of-sync-migrations'
     | 'out-of-sync-data'
     | 'opening-budget';
+  budgetBounds?: { start: string; end: string };
 }> {
   let dir: string;
   try {
@@ -649,7 +651,7 @@ async function _loadBudget(id: Budget['id']): Promise<{
       ['budgetType'],
     )) ?? {};
   sheet.get().meta().budgetType = budgetType as prefs.BudgetType;
-  await budget.createAllBudgets();
+  const budgetBounds = await budget.createAllBudgets();
 
   // Load all the in-memory state
   await mappings.loadMappings();
@@ -681,7 +683,10 @@ async function _loadBudget(id: Budget['id']): Promise<{
 
   app.events.emit('load-budget', { id });
 
-  return {};
+  // The month range is computed above as part of opening the file. Handing it
+  // back saves the budget page a round trip it would otherwise have to make
+  // before it could render anything.
+  return { budgetBounds };
 }
 
 async function uploadFileWeb({

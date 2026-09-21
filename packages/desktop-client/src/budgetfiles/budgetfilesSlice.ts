@@ -9,6 +9,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import { t } from 'i18next';
 
 import { resetApp, setAppState } from '#app/appSlice';
+import { categoryQueries } from '#budget';
 import { closeModal, pushModal } from '#modals/modalsSlice';
 import { loadGlobalPrefs, loadPrefs } from '#prefs/prefsSlice';
 import { createAppAsyncThunk } from '#redux';
@@ -55,11 +56,17 @@ type LoadBudgetPayload = {
 
 export const loadBudget = createAppAsyncThunk(
   `${sliceName}/loadBudget`,
-  async ({ id, options = {} }: LoadBudgetPayload, { dispatch }) => {
+  async (
+    { id, options = {} }: LoadBudgetPayload,
+    { dispatch, extra: { queryClient } },
+  ) => {
     dispatch(setAppState({ loadingText: t('Loading...') }));
 
     // Loading a budget may fail
-    const { error } = await send('load-budget', { id, ...options });
+    const { error, budgetBounds } = await send('load-budget', {
+      id,
+      ...options,
+    });
 
     if (error) {
       const message = getSyncError(error, id);
@@ -88,6 +95,14 @@ export const loadBudget = createAppAsyncThunk(
         alert(message);
       }
     } else {
+      if (budgetBounds) {
+        dispatch(setBudgetBounds(budgetBounds));
+      }
+
+      // The budget page is where the app lands, so have its categories on the
+      // way before the route mounts.
+      void queryClient.prefetchQuery(categoryQueries.list());
+
       dispatch(closeModal());
       await dispatch(loadPrefs());
     }
@@ -413,13 +428,19 @@ type BudgetsState = {
   budgets: Budget[];
   remoteFiles: RemoteFile[] | null;
   allFiles: File[] | null;
+  // The open file's month range, as reported when it was loaded. Kept here so
+  // the budget page can render its months without waiting on a round trip.
+  budgetBounds: MonthBounds | null;
 };
 
 const initialState: BudgetsState = {
   budgets: [],
   remoteFiles: null,
   allFiles: null,
+  budgetBounds: null,
 };
+
+type MonthBounds = { start: string; end: string };
 
 type SetBudgetsPayload = {
   budgets: Budget[];
@@ -438,6 +459,9 @@ const budgetfilesSlice = createSlice({
   name: sliceName,
   initialState,
   reducers: {
+    setBudgetBounds(state, action: PayloadAction<MonthBounds>) {
+      state.budgetBounds = action.payload;
+    },
     setBudgets(state, action: PayloadAction<SetBudgetsPayload>) {
       state.budgets = action.payload.budgets;
       state.allFiles = reconcileFiles(
@@ -465,7 +489,12 @@ const budgetfilesSlice = createSlice({
     builder.addCase(signOut.fulfilled, state => {
       state.allFiles = null;
     });
-    builder.addCase(resetApp, state => state || initialState);
+    builder.addCase(resetApp, state => {
+      // `state` is a draft and always truthy, so this has to assign rather
+      // than fall back to `initialState`. The bounds belong to the file that
+      // just closed and must not be read by the next one.
+      state.budgetBounds = null;
+    });
   },
 });
 
@@ -491,7 +520,8 @@ export const actions = {
   makeBackup,
 };
 
-export const { setBudgets, setRemoteFiles, setAllFiles } = actions;
+export const { setBudgetBounds, setBudgets, setRemoteFiles, setAllFiles } =
+  actions;
 
 function sortFiles(arr: File[]) {
   arr.sort((x, y) => {

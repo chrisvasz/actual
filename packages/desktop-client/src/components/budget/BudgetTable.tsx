@@ -30,7 +30,6 @@ import {
 
 type BudgetTableProps = {
   type: string;
-  prewarmStartMonth: string;
   startMonth: string;
   numMonths: number;
   monthBounds: MonthBounds;
@@ -61,7 +60,6 @@ type BudgetTableProps = {
 export function BudgetTable(props: BudgetTableProps) {
   const {
     type,
-    prewarmStartMonth,
     startMonth,
     numMonths,
     monthBounds,
@@ -272,7 +270,7 @@ export function BudgetTable(props: BudgetTableProps) {
       >
         <View style={{ width: CATEGORY_COLUMN_WIDTH }} />
         <MonthsProvider
-          startMonth={prewarmStartMonth}
+          startMonth={startMonth}
           numMonths={numMonths}
           monthBounds={monthBounds}
           type={type}

@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React, { useEffect, useEffectEvent, useMemo, useState } from 'react';
+import React, { useEffect, useEffectEvent, useMemo } from 'react';
 import type { ComponentType } from 'react';
 
 import { styles } from '@actual-app/components/styles';
@@ -21,99 +21,51 @@ import {
   useSaveCategoryMutation,
   useSortCategoriesMutation,
 } from '#budget';
+import { setBudgetBounds } from '#budgetfiles/budgetfilesSlice';
 import { useCategories } from '#hooks/useCategories';
 import { useGlobalPref } from '#hooks/useGlobalPref';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { useNavigate } from '#hooks/useNavigate';
 import { SheetNameProvider } from '#hooks/useSheetName';
-import { useSpreadsheet } from '#hooks/useSpreadsheet';
 import { useSyncedPref } from '#hooks/useSyncedPref';
+import { useDispatch, useSelector } from '#redux';
 
 import { AutoSizingBudgetTable } from './DynamicBudgetTable';
 import * as envelopeBudget from './envelope/EnvelopeBudgetComponents';
 import { EnvelopeBudgetProvider } from './envelope/EnvelopeBudgetContext';
 import * as trackingBudget from './tracking/TrackingBudgetComponents';
 import { TrackingBudgetProvider } from './tracking/TrackingBudgetContext';
-import { prewarmAllMonths, prewarmMonth } from './util';
 
 export function Budget() {
   const currentMonth = monthUtils.currentMonth();
-  const spreadsheet = useSpreadsheet();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [summaryCollapsed, setSummaryCollapsedPref] = useLocalPref(
     'budget.summaryCollapsed',
   );
   const [startMonthPref, setStartMonthPref] = useLocalPref('budget.startMonth');
   const startMonth = startMonthPref || currentMonth;
-  const [bounds, setBounds] = useState({
-    start: startMonth,
-    end: startMonth,
-  });
   const [budgetType = 'envelope'] = useSyncedPref('budgetType');
   const [maxMonthsPref] = useGlobalPref('maxMonths');
   const maxMonths = maxMonthsPref || 1;
-  const [initialized, setInitialized] = useState(false);
   const { data: { grouped: categoryGroups } = { grouped: [] } } =
     useCategories();
 
-  const init = useEffectEvent(() => {
-    async function run() {
-      const { start, end } = await send('get-budget-bounds');
-      setBounds({ start, end });
+  // Known from loading the budget file, so the table renders its months on the
+  // first frame. Refreshed below in case the budget has grown a month since.
+  const bounds = useSelector(state => state.budgetfiles.budgetBounds);
 
-      await prewarmAllMonths(
-        budgetType,
-        spreadsheet,
-        { start, end },
-        startMonth,
-      );
-
-      setInitialized(true);
-    }
-
-    void run();
-  });
-  useEffect(() => init(), []);
-
-  const loadBoundBudgets = useEffectEvent(() => {
-    void send('get-budget-bounds').then(({ start, end }) => {
-      if (bounds.start !== start || bounds.end !== end) {
-        setBounds({ start, end });
+  const refreshBounds = useEffectEvent(() => {
+    void send('get-budget-bounds').then(next => {
+      if (next.start !== bounds?.start || next.end !== bounds?.end) {
+        dispatch(setBudgetBounds(next));
       }
     });
   });
-  useEffect(() => loadBoundBudgets(), []);
+  useEffect(() => refreshBounds(), []);
 
-  const onMonthSelect = async (month, numDisplayed) => {
+  const onMonthSelect = (month: string) => {
     setStartMonthPref(month);
-
-    const warmingMonth = month;
-
-    // We could be smarter about this, but this is a good start. We
-    // optimize for the case where users press the left/right button
-    // to move between months. This loads the month data all at once
-    // and "prewarms" the spreadsheet cache. This uses a simple
-    // heuristic that will fail if the user clicks an arbitrary month,
-    // but it will just load in some unnecessary data.
-    if (month < startMonth) {
-      // pre-warm prev month
-      await prewarmMonth(
-        budgetType,
-        spreadsheet,
-        monthUtils.subMonths(month, 1),
-      );
-    } else if (month > startMonth) {
-      // pre-warm next month
-      await prewarmMonth(
-        budgetType,
-        spreadsheet,
-        monthUtils.addMonths(month, numDisplayed),
-      );
-    }
-
-    if (warmingMonth === month) {
-      setStartMonthPref(month);
-    }
   };
 
   const onToggleCollapse = () => {
@@ -175,7 +127,7 @@ export function Budget() {
     applyBudgetAction.mutate({ month, type, args });
   };
 
-  if (!initialized || !categoryGroups) {
+  if (!bounds || !categoryGroups) {
     return null;
   }
 
@@ -189,7 +141,6 @@ export function Budget() {
       >
         <AutoSizingBudgetTable
           type={budgetType}
-          prewarmStartMonth={startMonth}
           startMonth={startMonth}
           monthBounds={bounds}
           maxMonths={maxMonths}
@@ -218,7 +169,6 @@ export function Budget() {
       >
         <AutoSizingBudgetTable
           type={budgetType}
-          prewarmStartMonth={startMonth}
           startMonth={startMonth}
           monthBounds={bounds}
           maxMonths={maxMonths}
