@@ -66,6 +66,18 @@ describe('useSchedules', () => {
     expect(calls).toHaveLength(3);
   });
 
+  it('returns the same result object when nothing changed', () => {
+    const query = q('schedules').select('*');
+    const { result, rerender } = renderHook(() => useSchedules({ query }));
+
+    const first = result.current;
+    rerender();
+
+    // Consumers put this straight into a context value, so a fresh object on
+    // every render would re-render every schedule consumer for nothing.
+    expect(result.current).toBe(first);
+  });
+
   it('unsubscribes both queries on unmount', () => {
     const { unmount } = renderHook(() =>
       useSchedules({ query: q('schedules').select('*') }),

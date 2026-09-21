@@ -133,8 +133,12 @@ export function DisplayPayeeProvider({
     );
   }, [transactions, allSubtransactions, payeesById, accounts, t]);
 
+  // A fresh context value on every render re-renders every consumer (one per
+  // transaction row), so keep its identity tied to `displayPayees`.
+  const value = useMemo(() => ({ displayPayees }), [displayPayees]);
+
   return (
-    <DisplayPayeeContext.Provider value={{ displayPayees }}>
+    <DisplayPayeeContext.Provider value={value}>
       {children}
     </DisplayPayeeContext.Provider>
   );

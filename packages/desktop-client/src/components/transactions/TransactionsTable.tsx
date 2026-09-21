@@ -1,6 +1,5 @@
 import {
   createElement,
-  createRef,
   forwardRef,
   memo,
   useCallback,
@@ -201,23 +200,25 @@ export function useAmountColumnWidths(
   transactions: TransactionEntity[],
   balances: Record<TransactionEntity['id'], IntegerAmount> | null,
 ): AmountColumnWidths {
-  const debitCreditValues = transactions.map(t =>
-    integerToCurrency(Math.abs(t.amount ?? 0)),
-  );
-  const balanceValues = balances
-    ? Object.values(balances).map(balance => integerToCurrency(balance))
-    : [];
+  return useMemo(() => {
+    const debitCreditValues = transactions.map(t =>
+      integerToCurrency(Math.abs(t.amount ?? 0)),
+    );
+    const balanceValues = balances
+      ? Object.values(balances).map(balance => integerToCurrency(balance))
+      : [];
 
-  return {
-    amount: measureAmountColumnWidth(
-      debitCreditValues,
-      DEFAULT_AMOUNT_COLUMN_WIDTHS.amount,
-    ),
-    balance: measureAmountColumnWidth(
-      balanceValues,
-      DEFAULT_AMOUNT_COLUMN_WIDTHS.balance,
-    ),
-  };
+    return {
+      amount: measureAmountColumnWidth(
+        debitCreditValues,
+        DEFAULT_AMOUNT_COLUMN_WIDTHS.amount,
+      ),
+      balance: measureAmountColumnWidth(
+        balanceValues,
+        DEFAULT_AMOUNT_COLUMN_WIDTHS.balance,
+      ),
+    };
+  }, [transactions, balances]);
 }
 
 type TransactionHeaderProps = {
@@ -2608,7 +2609,7 @@ function TransactionTableInner({
   showHiddenCategories,
   ...props
 }: TransactionTableInnerProps) {
-  const containerRef = createRef<HTMLDivElement>();
+  const containerRef = useRef<HTMLDivElement>(null);
   const isAddingPrev = usePrevious(props.isAdding);
   const [scrollWidth, setScrollWidth] = useState(0);
 
@@ -3879,15 +3880,18 @@ export const TransactionTable = forwardRef(
       [onSave],
     );
 
-    function onCloseAddTransaction() {
+    const {
+      currentAccountId,
+      currentCategoryId,
+      onCloseAddTransaction: onCloseAddTransactionProp,
+    } = props;
+
+    const onCloseAddTransaction = useCallback(() => {
       setNewTransactions(
-        makeTemporaryTransactions(
-          props.currentAccountId,
-          props.currentCategoryId,
-        ),
+        makeTemporaryTransactions(currentAccountId, currentCategoryId),
       );
-      props.onCloseAddTransaction();
-    }
+      onCloseAddTransactionProp();
+    }, [currentAccountId, currentCategoryId, onCloseAddTransactionProp]);
 
     const onToggleSplit = useCallback(
       (id: TransactionEntity['id']) =>

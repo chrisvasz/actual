@@ -66,7 +66,7 @@ vi.mock('../../hooks/useFeatureFlag', () => ({
 
 const accounts = [generateAccount('Bank of America')];
 vi.mock('../../hooks/useAccounts', () => ({
-  useAccounts: () => accounts,
+  useAccounts: () => ({ data: accounts }),
 }));
 
 const payees: PayeeEntity[] = [
@@ -1860,5 +1860,19 @@ describe('useAmountColumnWidths', () => {
     expect(result.current.amount).toBeGreaterThan(
       DEFAULT_AMOUNT_COLUMN_WIDTHS.amount,
     );
+  });
+
+  it('keeps the same object when the inputs have not changed', () => {
+    const transactions = [transaction(150)];
+    const { result, rerender } = renderHook(() =>
+      useAmountColumnWidths(transactions, null),
+    );
+
+    const first = result.current;
+    rerender();
+
+    // This object is a prop on every transaction row, so a fresh identity
+    // here defeats `memo()` on all of them.
+    expect(result.current).toBe(first);
   });
 });
