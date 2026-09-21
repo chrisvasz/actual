@@ -25,14 +25,12 @@ import {
 import { FinancialText } from '#components/FinancialText';
 import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
-import { getCustomTick } from '#components/reports/getCustomTick';
 import { numberFormatterTooltip } from '#components/reports/numberFormatter';
 import { useAccounts } from '#hooks/useAccounts';
 import { useCategories } from '#hooks/useCategories';
 import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
 import { useNavigate } from '#hooks/useNavigate';
-import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 import { renderCustomLabel } from './renderCustomLabel';
 import { showActivity } from './showActivity';
@@ -210,7 +208,6 @@ export function StackedBarGraph({
   const navigate = useNavigate();
   const { data: categories = { grouped: [], list: [] } } = useCategories();
   const { data: accounts = [] } = useAccounts();
-  const privacyMode = usePrivacyMode();
   const format = useFormat();
 
   const customLabelWithFormat = props => customLabel({ ...props, format });
@@ -267,10 +264,7 @@ export function StackedBarGraph({
               {!compact && (
                 <YAxis
                   tickFormatter={value =>
-                    getCustomTick(
-                      format(value, 'financial-no-decimals'),
-                      privacyMode,
-                    )
+                    format(value, 'financial-no-decimals')
                   }
                   tick={{ fill: theme.pageText }}
                   tickLine={{ stroke: theme.pageText }}

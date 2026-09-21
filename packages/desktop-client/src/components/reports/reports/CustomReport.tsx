@@ -28,7 +28,6 @@ import { BackButton } from '#components/common/BackButton';
 import { AppliedFilters } from '#components/filters/AppliedFilters';
 import { FinancialText } from '#components/FinancialText';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { ChooseGraph } from '#components/reports/ChooseGraph';
 import {
   defaultsGraphList,
@@ -1028,9 +1027,7 @@ function CustomReportInner({
                       left={<Block>{balanceType}:</Block>}
                       right={
                         <FinancialText>
-                          <PrivacyFilter>
-                            {format(data[balanceTypeOp], 'financial')}
-                          </PrivacyFilter>
+                          {format(data[balanceTypeOp], 'financial')}
                         </FinancialText>
                       }
                     />

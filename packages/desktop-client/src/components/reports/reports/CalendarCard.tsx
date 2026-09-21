@@ -27,7 +27,6 @@ import { format as formatDate } from 'date-fns';
 import { debounce } from 'es-toolkit/compat';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { CalendarCardSkeleton } from '#components/reports/CalendarCardSkeleton';
 import { DateRange } from '#components/reports/DateRange';
 import { CalendarGraph } from '#components/reports/graphs/CalendarGraph';
@@ -218,11 +217,9 @@ export function CalendarCard({
                           </View>
                           <View style={{ color: theme.reportsNumberPositive }}>
                             {totalIncome !== 0 ? (
-                              <PrivacyFilter>
-                                <FinancialText>
-                                  {format(totalIncome, 'financial')}
-                                </FinancialText>
-                              </PrivacyFilter>
+                              <FinancialText>
+                                {format(totalIncome, 'financial')}
+                              </FinancialText>
                             ) : (
                               ''
                             )}
@@ -241,11 +238,9 @@ export function CalendarCard({
                           </View>
                           <View style={{ color: theme.reportsNumberNegative }}>
                             {totalExpense !== 0 ? (
-                              <PrivacyFilter>
-                                <FinancialText>
-                                  {format(totalExpense, 'financial')}
-                                </FinancialText>
-                              </PrivacyFilter>
+                              <FinancialText>
+                                {format(totalExpense, 'financial')}
+                              </FinancialText>
                             ) : (
                               ''
                             )}
@@ -487,11 +482,10 @@ function CalendarCardInner({
                   height={16}
                   style={{ flexShrink: 0 }}
                 />
-                <PrivacyFilter>
-                  <FinancialText>
-                    {format(calendar.totalIncome, 'financial')}
-                  </FinancialText>
-                </PrivacyFilter>
+
+                <FinancialText>
+                  {format(calendar.totalIncome, 'financial')}
+                </FinancialText>
               </>
             ) : (
               ''
@@ -512,11 +506,10 @@ function CalendarCardInner({
                   height={16}
                   style={{ flexShrink: 0 }}
                 />
-                <PrivacyFilter>
-                  <FinancialText>
-                    {format(calendar.totalExpense, 'financial')}
-                  </FinancialText>
-                </PrivacyFilter>
+
+                <FinancialText>
+                  {format(calendar.totalExpense, 'financial')}
+                </FinancialText>
               </>
             ) : (
               ''

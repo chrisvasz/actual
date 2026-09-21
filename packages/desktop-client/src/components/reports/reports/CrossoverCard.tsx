@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
@@ -13,7 +13,6 @@ import type {
   CrossoverWidget,
 } from '@actual-app/core/types/models';
 
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { CrossoverGraph } from '#components/reports/graphs/CrossoverGraph';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
 import { ReportCard } from '#components/reports/ReportCard';
@@ -127,10 +126,6 @@ export function CrossoverCard({
     };
   }, [meta?.timeFrame, locale]);
 
-  const [isCardHovered, setIsCardHovered] = useState(false);
-  const onCardHover = useCallback(() => setIsCardHovered(true), []);
-  const onCardHoverEnd = useCallback(() => setIsCardHovered(false), []);
-
   const showHiddenCategories = meta?.showHiddenCategories ?? false;
 
   // Memoize these to prevent unnecessary re-renders
@@ -194,11 +189,7 @@ export function CrossoverCard({
       to={`/reports/crossover/${widgetId}`}
       onRename={() => setNameMenuOpen(true)}
     >
-      <View
-        style={{ flex: 1 }}
-        onPointerEnter={onCardHover}
-        onPointerLeave={onCardHoverEnd}
-      >
+      <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
@@ -224,13 +215,11 @@ export function CrossoverCard({
                   marginBottom: 5,
                 }}
               >
-                <PrivacyFilter activationFilters={[!isCardHovered]}>
-                  {yearsToRetire != null
-                    ? t('{{years}} years', {
-                        years: format(yearsToRetire, 'number'),
-                      })
-                    : t('N/A')}
-                </PrivacyFilter>
+                {yearsToRetire != null
+                  ? t('{{years}} years', {
+                      years: format(yearsToRetire, 'number'),
+                    })
+                  : t('N/A')}
               </Block>
               <Block
                 style={{

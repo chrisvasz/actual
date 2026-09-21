@@ -18,7 +18,6 @@ import {
 } from 'date-fns';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useFormat } from '#hooks/useFormat';
 import { useResizeObserver } from '#hooks/useResizeObserver';
 
@@ -142,21 +141,15 @@ export function CalendarGraph({
                         }}
                       >
                         {day.incomeValue !== 0 ? (
-                          <PrivacyFilter>
-                            <FinancialText>
-                              {format(day.incomeValue, 'financial')}
-                            </FinancialText>
-                          </PrivacyFilter>
+                          <FinancialText>
+                            {format(day.incomeValue, 'financial')}
+                          </FinancialText>
                         ) : (
                           ''
                         )}
                       </View>
                       <View style={{ marginLeft: 4, flexDirection: 'row' }}>
-                        (
-                        <PrivacyFilter>
-                          {Math.round(day.incomeSize * 100) / 100 + '%'}
-                        </PrivacyFilter>
-                        )
+                        ({Math.round(day.incomeSize * 100) / 100 + '%'})
                       </View>
                       <View
                         style={{
@@ -173,21 +166,15 @@ export function CalendarGraph({
                         }}
                       >
                         {day.expenseValue !== 0 ? (
-                          <PrivacyFilter>
-                            <FinancialText>
-                              {format(day.expenseValue, 'financial')}
-                            </FinancialText>
-                          </PrivacyFilter>
+                          <FinancialText>
+                            {format(day.expenseValue, 'financial')}
+                          </FinancialText>
                         ) : (
                           ''
                         )}
                       </View>
                       <View style={{ marginLeft: 4, flexDirection: 'row' }}>
-                        (
-                        <PrivacyFilter>
-                          {Math.round(day.expenseSize * 100) / 100 + '%'}
-                        </PrivacyFilter>
-                        )
+                        ({Math.round(day.expenseSize * 100) / 100 + '%'})
                       </View>
                     </View>
                   </View>

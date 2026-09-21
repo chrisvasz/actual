@@ -33,7 +33,6 @@ import { Autocomplete } from '#components/autocomplete/Autocomplete';
 import type { AutocompleteItem } from '#components/autocomplete/Autocomplete';
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Cell, Field, Row, Table, TableHeader } from '#components/table';
 import { AmountInput } from '#components/util/AmountInput';
 import { useAccounts } from '#hooks/useAccounts';
@@ -799,15 +798,13 @@ function TableRow({
       </Field>
       {/* Balance */}
       <Field width={120} style={{ textAlign: 'right' }}>
-        <PrivacyFilter>
-          {externalAccount.balance != null ? (
-            <FinancialText>
-              {format(externalAccount.balance.toString(), 'financial')}
-            </FinancialText>
-          ) : (
-            t('Unknown')
-          )}
-        </PrivacyFilter>
+        {externalAccount.balance != null ? (
+          <FinancialText>
+            {format(externalAccount.balance.toString(), 'financial')}
+          </FinancialText>
+        ) : (
+          t('Unknown')
+        )}
       </Field>
       {/* Account in Actual */}
       <Field
@@ -859,16 +856,14 @@ function TableRow({
           {/* Starting Balance */}
           <Field width={120} truncate={false} style={{ textAlign: 'right' }}>
             {startingBalanceInfo ? (
-              <PrivacyFilter>
-                <FinancialText
-                  style={{
-                    color: theme.pageTextSubdued,
-                    fontStyle: 'italic',
-                  }}
-                >
-                  {format(startingBalanceInfo.amount, 'financial')}
-                </FinancialText>
-              </PrivacyFilter>
+              <FinancialText
+                style={{
+                  color: theme.pageTextSubdued,
+                  fontStyle: 'italic',
+                }}
+              >
+                {format(startingBalanceInfo.amount, 'financial')}
+              </FinancialText>
             ) : null}
           </Field>
         </>
@@ -1116,15 +1111,13 @@ function AccountCard({
         }}
       >
         <Trans>Balance:</Trans>{' '}
-        <PrivacyFilter>
-          {externalAccount.balance != null ? (
-            <FinancialText>
-              {format(externalAccount.balance.toString(), 'financial')}
-            </FinancialText>
-          ) : (
-            t('Unknown')
-          )}
-        </PrivacyFilter>
+        {externalAccount.balance != null ? (
+          <FinancialText>
+            {format(externalAccount.balance.toString(), 'financial')}
+          </FinancialText>
+        ) : (
+          t('Unknown')
+        )}
       </View>
 
       <SpaceBetween
@@ -1176,16 +1169,15 @@ function AccountCard({
             <Text style={{ color: theme.pageTextSubdued }}>
               <Trans>Starting balance:</Trans>
             </Text>
-            <PrivacyFilter>
-              <FinancialText
-                style={{
-                  color: theme.pageTextSubdued,
-                  fontStyle: 'italic',
-                }}
-              >
-                {format(startingBalanceInfo.amount, 'financial')}
-              </FinancialText>
-            </PrivacyFilter>
+
+            <FinancialText
+              style={{
+                color: theme.pageTextSubdued,
+                fontStyle: 'italic',
+              }}
+            >
+              {format(startingBalanceInfo.amount, 'financial')}
+            </FinancialText>
           </View>
         </View>
       )}

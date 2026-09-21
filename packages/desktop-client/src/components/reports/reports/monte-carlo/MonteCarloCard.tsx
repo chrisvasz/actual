@@ -9,7 +9,6 @@ import { View } from '@actual-app/components/view';
 import type { MonteCarloWidget } from '@actual-app/core/types/models';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { MonteCarloGraph } from '#components/reports/graphs/MonteCarloGraph';
 import { ReportCard } from '#components/reports/ReportCard';
 import { ReportCardName } from '#components/reports/ReportCardName';
@@ -41,7 +40,6 @@ export function MonteCarloCard({
   const { isNarrowWidth } = useResponsive();
 
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
-  const [isCardHovered, setIsCardHovered] = useState(false);
 
   const config = monteCarloConfigFromMeta(meta);
   const resolvedConfig = useResolvedMonteCarloConfig(config);
@@ -62,11 +60,7 @@ export function MonteCarloCard({
       to={`/reports/monte-carlo/${widgetId}`}
       onRename={() => setNameMenuOpen(true)}
     >
-      <View
-        style={{ flex: 1 }}
-        onPointerEnter={() => setIsCardHovered(true)}
-        onPointerLeave={() => setIsCardHovered(false)}
-      >
+      <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
@@ -90,9 +84,7 @@ export function MonteCarloCard({
                 marginBottom: 5,
               }}
             >
-              <PrivacyFilter activationFilters={[!isCardHovered]}>
-                <FinancialText>{`${successPercent}%`}</FinancialText>
-              </PrivacyFilter>
+              <FinancialText>{`${successPercent}%`}</FinancialText>
             </Block>
             <Block
               style={{

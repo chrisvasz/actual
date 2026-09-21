@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
@@ -22,7 +22,6 @@ import { Container } from '#components/reports/Container';
 import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
-import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 import { computePadding } from './util/computePadding';
 
@@ -211,8 +210,6 @@ export function BudgetAnalysisGraph({
   const { t } = useTranslation();
   const format = useFormat();
   const locale = useLocale();
-  const privacyMode = usePrivacyMode();
-  const [yAxisIsHovered, setYAxisIsHovered] = useState(false);
 
   // Centralize translated labels to avoid repetition
   const budgetedLabel = t('Budgeted');
@@ -266,13 +263,7 @@ export function BudgetAnalysisGraph({
             <YAxis
               tick={{ fill: theme.reportsLabel }}
               tickCount={8}
-              tickFormatter={value =>
-                privacyMode && !yAxisIsHovered
-                  ? '...'
-                  : format(value, 'financial-no-decimals')
-              }
-              onMouseEnter={() => setYAxisIsHovered(true)}
-              onMouseLeave={() => setYAxisIsHovered(false)}
+              tickFormatter={value => format(value, 'financial-no-decimals')}
               stroke={theme.pageTextSubdued}
             />
             <Tooltip

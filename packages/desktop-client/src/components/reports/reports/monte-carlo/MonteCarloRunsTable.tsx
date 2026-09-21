@@ -8,7 +8,6 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { rankSimulationsWorstFirst } from '#components/reports/reports/monte-carlo/monteCarloSimulation';
 import { GROUP_HEADING_STYLE } from '#components/reports/reports/monte-carlo/monteCarloStyles';
 import { useFormat } from '#hooks/useFormat';
@@ -198,27 +197,23 @@ export function MonteCarloRunsTable({
               </Text>
               <Text style={{ width: 160, textAlign: 'right' }}>
                 {hasSurvived ? (
-                  <PrivacyFilter>
-                    <FinancialText as="span">
-                      {format(
-                        Math.round(endingBalances[simulationIndex]),
-                        'financial',
-                      )}
-                    </FinancialText>
-                  </PrivacyFilter>
+                  <FinancialText as="span">
+                    {format(
+                      Math.round(endingBalances[simulationIndex]),
+                      'financial',
+                    )}
+                  </FinancialText>
                 ) : (
                   <FinancialText as="span">-</FinancialText>
                 )}
               </Text>
               <Text style={{ width: 160, textAlign: 'right' }}>
-                <PrivacyFilter>
-                  <FinancialText as="span">
-                    {format(
-                      Math.round(totalWithdrawnBySimulation[simulationIndex]),
-                      'financial',
-                    )}
-                  </FinancialText>
-                </PrivacyFilter>
+                <FinancialText as="span">
+                  {format(
+                    Math.round(totalWithdrawnBySimulation[simulationIndex]),
+                    'financial',
+                  )}
+                </FinancialText>
               </Text>
             </View>
           </Button>

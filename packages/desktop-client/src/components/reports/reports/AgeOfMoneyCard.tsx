@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
@@ -10,7 +10,6 @@ import { send } from '@actual-app/core/platform/client/connection';
 import * as monthUtils from '@actual-app/core/shared/months';
 import type { AgeOfMoneyWidget } from '@actual-app/core/types/models';
 
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { DateRange } from '#components/reports/DateRange';
 import { AgeOfMoneyGraph } from '#components/reports/graphs/AgeOfMoneyGraph';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -58,7 +57,6 @@ export function AgeOfMoneyCard({
 
   const [latestTransaction, setLatestTransaction] = useState<string>('');
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
-  const [isCardHovered, setIsCardHovered] = useState(false);
 
   useEffect(() => {
     async function fetchLatestTransaction() {
@@ -75,9 +73,6 @@ export function AgeOfMoneyCard({
     undefined,
     latestTransaction,
   );
-
-  const onCardHover = useCallback(() => setIsCardHovered(true), []);
-  const onCardHoverEnd = useCallback(() => setIsCardHovered(false), []);
 
   const params = useMemo(
     () =>
@@ -100,11 +95,7 @@ export function AgeOfMoneyCard({
       to={`/reports/age-of-money/${widgetId}`}
       onRename={() => setNameMenuOpen(true)}
     >
-      <View
-        style={{ flex: 1 }}
-        onPointerEnter={onCardHover}
-        onPointerLeave={onCardHoverEnd}
-      >
+      <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
@@ -131,11 +122,9 @@ export function AgeOfMoneyCard({
                   color: getAgeColor(data.currentAge),
                 }}
               >
-                <PrivacyFilter activationFilters={[!isCardHovered]}>
-                  {data.currentAge !== null
-                    ? t('{{days}} days', { days: data.currentAge })
-                    : t('N/A')}
-                </PrivacyFilter>
+                {data.currentAge !== null
+                  ? t('{{days}} days', { days: data.currentAge })
+                  : t('N/A')}
               </Block>
               {data.currentAge !== null && (
                 <Block

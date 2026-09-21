@@ -29,14 +29,12 @@ import type { BarShapeProps } from 'recharts';
 import { FinancialText } from '#components/FinancialText';
 import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
-import { getCustomTick } from '#components/reports/getCustomTick';
 import { numberFormatterTooltip } from '#components/reports/numberFormatter';
 import { useAccounts } from '#hooks/useAccounts';
 import { useCategories } from '#hooks/useCategories';
 import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
 import { useNavigate } from '#hooks/useNavigate';
-import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 import { adjustTextSize } from './adjustTextSize';
 import { renderCustomLabel } from './renderCustomLabel';
@@ -222,7 +220,6 @@ export function BarGraph({
   const navigate = useNavigate();
   const { data: categories = { grouped: [], list: [] } } = useCategories();
   const { data: accounts = [] } = useAccounts();
-  const privacyMode = usePrivacyMode();
   const format = useFormat();
 
   const [pointer, setPointer] = useState('');
@@ -301,10 +298,7 @@ export function BarGraph({
               {!compact && (
                 <YAxis
                   tickFormatter={value =>
-                    getCustomTick(
-                      format(value, 'financial-no-decimals'),
-                      privacyMode,
-                    )
+                    format(value, 'financial-no-decimals')
                   }
                   tick={{ fill: theme.pageText }}
                   tickLine={{ stroke: theme.pageText }}

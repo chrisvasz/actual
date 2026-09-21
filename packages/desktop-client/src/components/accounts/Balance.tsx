@@ -15,7 +15,6 @@ import type { AccountEntity } from '@actual-app/core/types/models';
 import { useHover } from 'usehooks-ts';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { CellValue, CellValueText } from '#components/spreadsheet/CellValue';
 import { useCachedSchedules } from '#hooks/useCachedSchedules';
 import { useFormat } from '#hooks/useFormat';
@@ -45,12 +44,10 @@ function DetailedBalance({
       }}
     >
       {name}{' '}
-      <PrivacyFilter>
-        <FinancialText style={{ fontWeight: 600 }}>
-          {!isExactBalance && '~ '}
-          {format(balance, 'financial')}
-        </FinancialText>
-      </PrivacyFilter>
+      <FinancialText style={{ fontWeight: 600 }}>
+        {!isExactBalance && '~ '}
+        {format(balance, 'financial')}
+      </FinancialText>
     </Text>
   );
 }

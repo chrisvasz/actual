@@ -29,7 +29,6 @@ import { BackButton } from '#components/common/BackButton';
 import { EditablePageHeaderTitle } from '#components/EditablePageHeaderTitle';
 import { FinancialText } from '#components/FinancialText';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { DateRange } from '#components/reports/DateRange';
 import { CalendarGraph } from '#components/reports/graphs/CalendarGraph';
 import { Header } from '#components/reports/Header';
@@ -706,11 +705,9 @@ function CalendarWithHeader({
             }}
             aria-label={t('Income')}
           >
-            <PrivacyFilter>
-              <FinancialText>
-                {format(calendar.totalIncome, 'financial')}
-              </FinancialText>
-            </PrivacyFilter>
+            <FinancialText>
+              {format(calendar.totalIncome, 'financial')}
+            </FinancialText>
           </View>
           <SvgArrowThickDown
             width={16}
@@ -726,11 +723,9 @@ function CalendarWithHeader({
             }}
             aria-label={t('Expenses')}
           >
-            <PrivacyFilter>
-              <FinancialText>
-                {format(calendar.totalExpense, 'financial')}
-              </FinancialText>
-            </PrivacyFilter>
+            <FinancialText>
+              {format(calendar.totalExpense, 'financial')}
+            </FinancialText>
           </View>
         </View>
       </View>
@@ -822,7 +817,7 @@ function CalendarCardHeader({
               <Trans>Income:</Trans>
             </View>
             <View style={{ color: theme.reportsNumberPositive }}>
-              <PrivacyFilter>{format(totalIncome, 'financial')}</PrivacyFilter>
+              {format(totalIncome, 'financial')}
             </View>
 
             <View
@@ -834,7 +829,7 @@ function CalendarCardHeader({
               <Trans>Expenses:</Trans>
             </View>
             <View style={{ color: theme.reportsNumberNegative }}>
-              <PrivacyFilter>{format(totalExpense, 'financial')}</PrivacyFilter>
+              {format(totalExpense, 'financial')}
             </View>
           </View>
         </View>

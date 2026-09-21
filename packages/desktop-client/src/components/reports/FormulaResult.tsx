@@ -12,7 +12,6 @@ import { View } from '@actual-app/components/view';
 import { amountToInteger } from '@actual-app/core/shared/util';
 import { debounce } from 'es-toolkit/compat';
 
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useFormat } from '#hooks/useFormat';
 import { useMergedRefs } from '#hooks/useMergedRefs';
 import { useResizeObserver } from '#hooks/useResizeObserver';
@@ -195,7 +194,7 @@ export function FormulaResult({
                 wordBreak: 'break-word',
               }}
             >
-              <PrivacyFilter>{displayValue}</PrivacyFilter>
+              {displayValue}
             </span>
           )}
         </View>

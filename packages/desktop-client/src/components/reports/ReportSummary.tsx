@@ -12,7 +12,6 @@ import type {
 } from '@actual-app/core/types/models';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useDateFormat } from '#hooks/useDateFormat';
 import { useFormat } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
@@ -113,9 +112,7 @@ export function ReportSummary({
             fontWeight: 800,
           }}
         >
-          <PrivacyFilter>
-            {format(data[balanceTypeOp], 'financial')}
-          </PrivacyFilter>
+          {format(data[balanceTypeOp], 'financial')}
         </FinancialText>
         <Text style={{ fontWeight: 600 }}>
           <Trans>For this time period</Trans>
@@ -154,9 +151,7 @@ export function ReportSummary({
             fontWeight: 800,
           }}
         >
-          <PrivacyFilter>
-            {!isNaN(average) && format(average, 'financial')}
-          </PrivacyFilter>
+          {!isNaN(average) && format(average, 'financial')}
         </FinancialText>
         <Text style={{ fontWeight: 600 }}>
           <Trans>
