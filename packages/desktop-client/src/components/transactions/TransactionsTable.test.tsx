@@ -270,6 +270,8 @@ function initBasicServer() {
       name: 'test-cell',
       value: 129_87,
     }),
+    'get-cells': async ({ cells }) =>
+      cells.map(() => ({ name: 'test-cell', value: 129_87 })),
     'get-categories': async () => ({
       grouped: categoryGroups,
       list: categories,

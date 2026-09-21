@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 
 import { listen, send } from '@actual-app/core/platform/client/connection';
+import { captureException } from '@actual-app/core/platform/exceptions';
 import type { Query } from '@actual-app/core/shared/query';
 import { LRUCache } from 'lru-cache';
 
@@ -33,6 +34,48 @@ function makeSpreadsheet() {
   const LRUValueCache = new LRUCache<string, CellCacheValue>({ max: 1200 });
   const cellCache: CellCache = {};
   let observersDisabled = false;
+
+  type CellRequest = { sheetName: string; name: string };
+  type Waiter = {
+    resolve: (value: CellCacheValue) => void;
+    reject: (error: unknown) => void;
+  };
+  let batch: { cells: CellRequest[]; waiting: Waiter[] } | null = null;
+
+  function flushBatch() {
+    const current = batch;
+    batch = null;
+    if (!current) {
+      return;
+    }
+
+    // Every caller has to settle, or the cells that asked would wait on a
+    // promise that never resolves and never render.
+    const settle = (apply: (waiter: Waiter, index: number) => void): void =>
+      current.waiting.forEach(apply);
+
+    void send('get-cells', { cells: current.cells }).then(
+      values => {
+        // Results are matched to requests by position, so a response of the
+        // wrong shape would hand one cell's value to another cell. Fail the
+        // batch rather than render numbers against the wrong names.
+        if (!Array.isArray(values) || values.length !== current.cells.length) {
+          settle(waiter =>
+            waiter.reject(
+              new Error(
+                `get-cells returned ${
+                  Array.isArray(values) ? values.length : typeof values
+                } results for ${current.cells.length} cells`,
+              ),
+            ),
+          );
+          return;
+        }
+        settle((waiter, i) => waiter.resolve(values[i]));
+      },
+      error => settle(waiter => waiter.reject(error)),
+    );
+  }
 
   class Spreadsheet {
     observeCell(name: string, callback: CellObserverCallback): () => void {
@@ -108,24 +151,50 @@ function makeSpreadsheet() {
         const req = this.get(sheetName, binding.name);
         cellCache[resolvedName] = req;
 
-        void req.then(result => {
-          // We only want to call the callback if it's still waiting on
-          // the same request. If we've received a `cells-changed` event
-          // for this already then it's already been called and we don't
-          // need to call it again (and potentially could be calling it
-          // with an old value depending on the order of messages)
-          if (cellCache[resolvedName] === req) {
-            LRUValueCache.set(resolvedName, result);
-            callback(result);
-          }
-        });
+        void req.then(
+          result => {
+            // We only want to call the callback if it's still waiting on
+            // the same request. If we've received a `cells-changed` event
+            // for this already then it's already been called and we don't
+            // need to call it again (and potentially could be calling it
+            // with an old value depending on the order of messages)
+            if (cellCache[resolvedName] === req) {
+              LRUValueCache.set(resolvedName, result);
+              callback(result);
+            }
+          },
+          error => {
+            // A whole batch fails together, so leaving the rejection cached
+            // would stop every cell in it from ever rendering.
+            if (cellCache[resolvedName] === req) {
+              cellCache[resolvedName] = null;
+            }
+            captureException(error);
+          },
+        );
       }
 
       return cleanup;
     }
 
-    get(sheetName: string, name: string) {
-      return send('get-cell', { sheetName, name });
+    /**
+     * Read a cell, batched with every other cell asked for in the same tick.
+     * A page that binds hundreds of cells does so in one commit, so without
+     * this each one costs its own round trip to the backend worker.
+     */
+    get(sheetName: string, name: string): Promise<CellCacheValue> {
+      if (!batch) {
+        batch = { cells: [], waiting: [] };
+        // Flushed on a microtask: React runs a commit's effects in one
+        // synchronous pass, so everything a page binds lands in this batch.
+        void Promise.resolve().then(flushBatch);
+      }
+
+      const current = batch;
+      return new Promise((resolve, reject) => {
+        current.cells.push({ sheetName, name });
+        current.waiting.push({ resolve, reject });
+      });
     }
 
     getCellNames(sheetName: string) {
