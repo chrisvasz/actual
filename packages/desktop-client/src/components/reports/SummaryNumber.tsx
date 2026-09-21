@@ -7,7 +7,6 @@ import { View } from '@actual-app/components/view';
 import { debounce } from 'es-toolkit/compat';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useFormat } from '#hooks/useFormat';
 import { useMergedRefs } from '#hooks/useMergedRefs';
 import { useResizeObserver } from '#hooks/useResizeObserver';
@@ -114,9 +113,7 @@ export function SummaryNumber({
           {!hasSized ? (
             <ReportCardValueSkeleton />
           ) : (
-            <FinancialText aria-hidden="true">
-              <PrivacyFilter>{displayAmount}</PrivacyFilter>
-            </FinancialText>
+            <FinancialText aria-hidden="true">{displayAmount}</FinancialText>
           )}
         </View>
       )}

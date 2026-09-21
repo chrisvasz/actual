@@ -13,7 +13,6 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { MonteCarloHelpTooltip } from '#components/reports/reports/monte-carlo/MonteCarloHelpTooltip';
 import type {
   MonteCarloPot,
@@ -328,9 +327,7 @@ export function MonteCarloRunDetailTable({
       {cashflowGraph}
 
       <Text style={{ fontSize: 13, color: theme.pageText, marginBottom: 10 }}>
-        <PrivacyFilter>
-          <FinancialText as="span">{getTotalsSentence()}</FinancialText>
-        </PrivacyFilter>
+        <FinancialText as="span">{getTotalsSentence()}</FinancialText>
       </Text>
 
       <View style={{ ...styles.horizontalScrollbar, overflowX: 'auto' }}>
@@ -431,27 +428,21 @@ export function MonteCarloRunDetailTable({
                     </FinancialText>
                   </Text>
                   <Text style={AMOUNT_CELL_STYLE}>
-                    <PrivacyFilter>
-                      <FinancialText as="span">
-                        {format(row.startBalance, 'financial')}
-                      </FinancialText>
-                    </PrivacyFilter>
+                    <FinancialText as="span">
+                      {format(row.startBalance, 'financial')}
+                    </FinancialText>
                   </Text>
                   {hasContributions && (
                     <Text style={AMOUNT_CELL_STYLE}>
-                      <PrivacyFilter>
-                        <FinancialText as="span">
-                          {format(row.contributions, 'financial')}
-                        </FinancialText>
-                      </PrivacyFilter>
+                      <FinancialText as="span">
+                        {format(row.contributions, 'financial')}
+                      </FinancialText>
                     </Text>
                   )}
                   <Text style={AMOUNT_CELL_STYLE}>
-                    <PrivacyFilter>
-                      <FinancialText as="span">
-                        {format(row.withdrawal, 'financial')}
-                      </FinancialText>
-                    </PrivacyFilter>
+                    <FinancialText as="span">
+                      {format(row.withdrawal, 'financial')}
+                    </FinancialText>
                   </Text>
                   <Text
                     style={{
@@ -463,11 +454,9 @@ export function MonteCarloRunDetailTable({
                     }}
                   >
                     {!isFailureRow && (
-                      <PrivacyFilter>
-                        <FinancialText as="span">
-                          {format(row.growth, 'financial')}
-                        </FinancialText>
-                      </PrivacyFilter>
+                      <FinancialText as="span">
+                        {format(row.growth, 'financial')}
+                      </FinancialText>
                     )}
                   </Text>
                   <Text
@@ -496,16 +485,14 @@ export function MonteCarloRunDetailTable({
                     </Text>
                   )}
                   <Text style={AMOUNT_CELL_STYLE}>
-                    <PrivacyFilter>
-                      <FinancialText as="span">
-                        {/* On a bridge-gap failure the true remaining balance
+                    <FinancialText as="span">
+                      {/* On a bridge-gap failure the true remaining balance
                         is the locked money, not zero */}
-                        {format(
-                          row.inaccessibleBalance ?? row.endBalance,
-                          'financial',
-                        )}
-                      </FinancialText>
-                    </PrivacyFilter>
+                      {format(
+                        row.inaccessibleBalance ?? row.endBalance,
+                        'financial',
+                      )}
+                    </FinancialText>
                   </Text>
                 </View>
 
@@ -518,89 +505,74 @@ export function MonteCarloRunDetailTable({
                     }}
                   >
                     <Text style={{ fontSize: 13, color: theme.pageText }}>
-                      <PrivacyFilter>
-                        <FinancialText as="span">
-                          {row.taxPaid > 0
-                            ? t(
-                                'Withdrawal: {{gross}} gross − {{tax}} tax = {{net}} to spend.',
-                                {
-                                  gross: format(row.withdrawal, 'financial'),
-                                  tax: format(row.taxPaid, 'financial'),
-                                  net: format(netSpending, 'financial'),
-                                },
-                              )
-                            : t('Withdrawal: {{gross}}, untaxed.', {
+                      <FinancialText as="span">
+                        {row.taxPaid > 0
+                          ? t(
+                              'Withdrawal: {{gross}} gross − {{tax}} tax = {{net}} to spend.',
+                              {
                                 gross: format(row.withdrawal, 'financial'),
-                              })}
-                        </FinancialText>
-                      </PrivacyFilter>
+                                tax: format(row.taxPaid, 'financial'),
+                                net: format(netSpending, 'financial'),
+                              },
+                            )
+                          : t('Withdrawal: {{gross}}, untaxed.', {
+                              gross: format(row.withdrawal, 'financial'),
+                            })}
+                      </FinancialText>
                     </Text>
                     {row.ruleExplanation != null && (
                       <Text style={{ fontSize: 13, color: theme.pageText }}>
-                        <PrivacyFilter>
-                          <FinancialText as="span">
-                            {getRuleExplanationSentence(row.ruleExplanation)}
-                          </FinancialText>
-                        </PrivacyFilter>
+                        <FinancialText as="span">
+                          {getRuleExplanationSentence(row.ruleExplanation)}
+                        </FinancialText>
                       </Text>
                     )}
                     {row.minimumApplied && (
                       <Text style={{ fontSize: 13, color: theme.pageText }}>
-                        <PrivacyFilter>
-                          <FinancialText as="span">
-                            {t(
-                              'Raised to the minimum withdrawal: {{amount}}.',
-                              {
-                                amount: format(row.withdrawal, 'financial'),
-                              },
-                            )}
-                          </FinancialText>
-                        </PrivacyFilter>
+                        <FinancialText as="span">
+                          {t('Raised to the minimum withdrawal: {{amount}}.', {
+                            amount: format(row.withdrawal, 'financial'),
+                          })}
+                        </FinancialText>
                       </Text>
                     )}
                     {row.contributions > 0 && (
                       <Text style={{ fontSize: 13, color: theme.pageText }}>
-                        <PrivacyFilter>
-                          <FinancialText as="span">
-                            {t(
-                              'Contributions: {{amount}}, added at the start of the year.',
-                              {
-                                amount: format(row.contributions, 'financial'),
-                              },
-                            )}
-                          </FinancialText>
-                        </PrivacyFilter>
+                        <FinancialText as="span">
+                          {t(
+                            'Contributions: {{amount}}, added at the start of the year.',
+                            {
+                              amount: format(row.contributions, 'financial'),
+                            },
+                          )}
+                        </FinancialText>
                       </Text>
                     )}
                     {row.feesPaid > 0 && (
                       <Text style={{ fontSize: 13, color: theme.pageText }}>
-                        <PrivacyFilter>
-                          <FinancialText as="span">
-                            {t(
-                              'Fees paid: {{amount}}, charged at the end of the year.',
-                              {
-                                amount: format(row.feesPaid, 'financial'),
-                              },
-                            )}
-                          </FinancialText>
-                        </PrivacyFilter>
+                        <FinancialText as="span">
+                          {t(
+                            'Fees paid: {{amount}}, charged at the end of the year.',
+                            {
+                              amount: format(row.feesPaid, 'financial'),
+                            },
+                          )}
+                        </FinancialText>
                       </Text>
                     )}
                     {row.inaccessibleBalance != null && (
                       <Text style={{ fontSize: 13, color: theme.pageText }}>
-                        <PrivacyFilter>
-                          <FinancialText as="span">
-                            {t(
-                              '{{amount}} remained locked in pots that had not reached their access age.',
-                              {
-                                amount: format(
-                                  row.inaccessibleBalance,
-                                  'financial',
-                                ),
-                              },
-                            )}
-                          </FinancialText>
-                        </PrivacyFilter>
+                        <FinancialText as="span">
+                          {t(
+                            '{{amount}} remained locked in pots that had not reached their access age.',
+                            {
+                              amount: format(
+                                row.inaccessibleBalance,
+                                'financial',
+                              ),
+                            },
+                          )}
+                        </FinancialText>
                       </Text>
                     )}
 
@@ -751,66 +723,54 @@ export function MonteCarloRunDetailTable({
                                   })}
                               </Text>
                               <Text style={{ ...POT_CELL_STYLE, width: 130 }}>
-                                <PrivacyFilter>
-                                  <FinancialText as="span">
-                                    {format(
-                                      row.potStartBalances[potIndex] ?? 0,
-                                      'financial',
-                                    )}
-                                  </FinancialText>
-                                </PrivacyFilter>
+                                <FinancialText as="span">
+                                  {format(
+                                    row.potStartBalances[potIndex] ?? 0,
+                                    'financial',
+                                  )}
+                                </FinancialText>
                               </Text>
                               {hasContributions && (
                                 <Text style={{ ...POT_CELL_STYLE, width: 130 }}>
-                                  <PrivacyFilter>
-                                    <FinancialText as="span">
-                                      {format(
-                                        row.potContributions[potIndex] ?? 0,
-                                        'financial',
-                                      )}
-                                    </FinancialText>
-                                  </PrivacyFilter>
+                                  <FinancialText as="span">
+                                    {format(
+                                      row.potContributions[potIndex] ?? 0,
+                                      'financial',
+                                    )}
+                                  </FinancialText>
                                 </Text>
                               )}
                               <Text style={{ ...POT_CELL_STYLE, width: 130 }}>
-                                <PrivacyFilter>
-                                  <FinancialText as="span">
-                                    {format(
-                                      row.potWithdrawals[potIndex] ?? 0,
-                                      'financial',
-                                    )}
-                                  </FinancialText>
-                                </PrivacyFilter>
+                                <FinancialText as="span">
+                                  {format(
+                                    row.potWithdrawals[potIndex] ?? 0,
+                                    'financial',
+                                  )}
+                                </FinancialText>
                               </Text>
                               <Text style={{ ...POT_CELL_STYLE, width: 110 }}>
-                                <PrivacyFilter>
-                                  <FinancialText as="span">
-                                    {format(
-                                      row.potTaxables[potIndex] ?? 0,
-                                      'financial',
-                                    )}
-                                  </FinancialText>
-                                </PrivacyFilter>
+                                <FinancialText as="span">
+                                  {format(
+                                    row.potTaxables[potIndex] ?? 0,
+                                    'financial',
+                                  )}
+                                </FinancialText>
                               </Text>
                               <Text style={{ ...POT_CELL_STYLE, width: 110 }}>
-                                <PrivacyFilter>
-                                  <FinancialText as="span">
-                                    {format(
-                                      row.potTaxes[potIndex] ?? 0,
-                                      'financial',
-                                    )}
-                                  </FinancialText>
-                                </PrivacyFilter>
+                                <FinancialText as="span">
+                                  {format(
+                                    row.potTaxes[potIndex] ?? 0,
+                                    'financial',
+                                  )}
+                                </FinancialText>
                               </Text>
                               <Text style={{ ...POT_CELL_STYLE, width: 110 }}>
-                                <PrivacyFilter>
-                                  <FinancialText as="span">
-                                    {format(
-                                      row.potFees[potIndex] ?? 0,
-                                      'financial',
-                                    )}
-                                  </FinancialText>
-                                </PrivacyFilter>
+                                <FinancialText as="span">
+                                  {format(
+                                    row.potFees[potIndex] ?? 0,
+                                    'financial',
+                                  )}
+                                </FinancialText>
                               </Text>
                               <Text
                                 style={{
@@ -831,14 +791,12 @@ export function MonteCarloRunDetailTable({
                                 )}
                               </Text>
                               <Text style={{ ...POT_CELL_STYLE, width: 130 }}>
-                                <PrivacyFilter>
-                                  <FinancialText as="span">
-                                    {format(
-                                      row.potBalances[potIndex] ?? 0,
-                                      'financial',
-                                    )}
-                                  </FinancialText>
-                                </PrivacyFilter>
+                                <FinancialText as="span">
+                                  {format(
+                                    row.potBalances[potIndex] ?? 0,
+                                    'financial',
+                                  )}
+                                </FinancialText>
                               </Text>
                             </View>
                           );

@@ -23,7 +23,6 @@ import { useNavigate } from '#hooks/useNavigate';
 import { useDispatch, useSelector } from '#redux';
 import { getUserData, signOut } from '#users/usersSlice';
 
-import { PrivacyFilter } from './PrivacyFilter';
 import { useMultiuserEnabled, useServerURL } from './ServerContext';
 
 type LoggedInUserProps = {
@@ -283,9 +282,7 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
             <Trans>
               logged in as:{' '}
               <span>
-                <PrivacyFilter>
-                  {{ userName: userData?.displayName } as TransObjectLiteral}
-                </PrivacyFilter>
+                {{ userName: userData?.displayName } as TransObjectLiteral}
               </span>
             </Trans>
             )

@@ -26,7 +26,6 @@ import { BackButton } from '#components/common/BackButton';
 import { EditablePageHeaderTitle } from '#components/EditablePageHeaderTitle';
 import { FinancialText } from '#components/FinancialText';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Change } from '#components/reports/Change';
 import { NetWorthGraph } from '#components/reports/graphs/NetWorthGraph';
 import { Header } from '#components/reports/Header';
@@ -365,15 +364,10 @@ function NetWorthInner({ widget }: NetWorthInnerProps) {
           <View
             style={{ ...styles.largeText, fontWeight: 400, marginBottom: 5 }}
           >
-            <PrivacyFilter>
-              <FinancialText>
-                {format(data.netWorth, 'financial')}
-              </FinancialText>
-            </PrivacyFilter>
+            <FinancialText>{format(data.netWorth, 'financial')}</FinancialText>
           </View>
-          <PrivacyFilter>
-            <Change amount={data.totalChange} />
-          </PrivacyFilter>
+
+          <Change amount={data.totalChange} />
         </View>
 
         <NetWorthGraph

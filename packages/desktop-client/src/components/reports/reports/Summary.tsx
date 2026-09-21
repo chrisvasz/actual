@@ -30,7 +30,6 @@ import { FilterButton } from '#components/filters/FiltersMenu';
 import { FinancialText } from '#components/FinancialText';
 import { Checkbox } from '#components/forms';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Header } from '#components/reports/Header';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
 import { calculateTimeRange } from '#components/reports/reportRanges';
@@ -469,11 +468,9 @@ function SummaryInner({ widget }: SummaryInnerProps) {
               )}
               <View style={{ padding: 16 }}>
                 <Text style={fractionNumberStyle}>
-                  <PrivacyFilter>
-                    <FinancialText>
-                      {format(data?.dividend ?? 0, 'financial')}
-                    </FinancialText>
-                  </PrivacyFilter>
+                  <FinancialText>
+                    {format(data?.dividend ?? 0, 'financial')}
+                  </FinancialText>
                 </Text>
                 <div
                   style={{
@@ -485,9 +482,7 @@ function SummaryInner({ widget }: SummaryInnerProps) {
                   }}
                 />
                 <Text style={fractionNumberStyle}>
-                  <PrivacyFilter>
-                    {getDivisorFormatted(content.type, data?.divisor ?? 0)}
-                  </PrivacyFilter>
+                  {getDivisorFormatted(content.type, data?.divisor ?? 0)}
                 </Text>
               </View>
             </>
@@ -514,12 +509,10 @@ function SummaryInner({ widget }: SummaryInnerProps) {
                     : theme.reportsNumberPositive,
             }}
           >
-            <PrivacyFilter>
-              {content.type === 'percentage'
-                ? format(Math.abs(data?.total ?? 0), 'number')
-                : format(Math.abs(Math.round(data?.total ?? 0)), 'financial')}
-              {content.type === 'percentage' ? '%' : ''}
-            </PrivacyFilter>
+            {content.type === 'percentage'
+              ? format(Math.abs(data?.total ?? 0), 'number')
+              : format(Math.abs(Math.round(data?.total ?? 0)), 'financial')}
+            {content.type === 'percentage' ? '%' : ''}
           </View>
         </View>
       </View>

@@ -15,7 +15,6 @@ import { Pie, PieChart, Sector } from 'recharts';
 import type { PieSectorDataItem, PieSectorShapeProps } from 'recharts';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { useAccounts } from '#hooks/useAccounts';
@@ -176,25 +175,23 @@ const ActiveShapeMobile = ({
       >
         {yAxis}
       </text>
-      <PrivacyFilter>
-        <FinancialText
-          as="text"
-          x={cx + chartOuterRadius * Math.cos(-RADIAN * 240) - 30}
-          y={ey}
-          textAnchor="end"
-          fill={fill}
-        >
-          {format(value, 'financial')}
-        </FinancialText>
-        <text
-          x={cx + chartOuterRadius * Math.cos(-RADIAN * 330) + 10}
-          y={ey}
-          textAnchor="start"
-          fill="#999"
-        >
-          {`${(percent * 100).toFixed(2)}%`}
-        </text>
-      </PrivacyFilter>
+      <FinancialText
+        as="text"
+        x={cx + chartOuterRadius * Math.cos(-RADIAN * 240) - 30}
+        y={ey}
+        textAnchor="end"
+        fill={fill}
+      >
+        {format(value, 'financial')}
+      </FinancialText>
+      <text
+        x={cx + chartOuterRadius * Math.cos(-RADIAN * 330) + 10}
+        y={ey}
+        textAnchor="start"
+        fill="#999"
+      >
+        {`${(percent * 100).toFixed(2)}%`}
+      </text>
       <Sector
         cx={cx}
         cy={cy}
@@ -283,21 +280,19 @@ const ActiveShapeDesktop = ({
       <text x={labelX} y={ey} textAnchor={textAnchor} fill={fill}>
         {yAxis}
       </text>
-      <PrivacyFilter>
-        <FinancialText
-          as="text"
-          x={labelX}
-          y={ey}
-          dy={18}
-          textAnchor={textAnchor}
-          fill={fill}
-        >
-          {format(value, 'financial')}
-        </FinancialText>
-        <text x={labelX} y={ey} dy={36} textAnchor={textAnchor} fill="#999">
-          {`(${(percent * 100).toFixed(2)}%)`}
-        </text>
-      </PrivacyFilter>
+      <FinancialText
+        as="text"
+        x={labelX}
+        y={ey}
+        dy={18}
+        textAnchor={textAnchor}
+        fill={fill}
+      >
+        {format(value, 'financial')}
+      </FinancialText>
+      <text x={labelX} y={ey} dy={36} textAnchor={textAnchor} fill="#999">
+        {`(${(percent * 100).toFixed(2)}%)`}
+      </text>
     </g>
   );
 };

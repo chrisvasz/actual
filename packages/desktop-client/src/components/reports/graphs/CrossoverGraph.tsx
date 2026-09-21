@@ -18,7 +18,6 @@ import { FinancialText } from '#components/FinancialText';
 import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { useFormat } from '#hooks/useFormat';
-import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 type PayloadItem = {
   payload: {
@@ -158,16 +157,11 @@ export function CrossoverGraph({
   compact = false,
   showTooltip = true,
 }: CrossoverGraphProps) {
-  const privacyMode = usePrivacyMode();
   const format = useFormat();
   const animationProps = useRechartsAnimation({ animationDuration: 1000 });
 
-  const tickFormatter = (tick: number) => {
-    if (privacyMode) {
-      return '...';
-    }
-    return `${format(Math.round(tick), 'financial-no-decimals')}`;
-  };
+  const tickFormatter = (tick: number) =>
+    `${format(Math.round(tick), 'financial-no-decimals')}`;
 
   return (
     <Container

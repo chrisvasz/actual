@@ -5,7 +5,6 @@ import type { SVGAttributes } from 'react';
 import { theme } from '@actual-app/components/theme';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 
 export const renderCustomLabel = (
   calcX: SVGAttributes<SVGTextElement>['x'],
@@ -28,7 +27,7 @@ export const renderCustomLabel = (
       dominantBaseline="middle"
       fontSize={textSize}
     >
-      <PrivacyFilter>{display}</PrivacyFilter>
+      {display}
     </FinancialText>
   ) : (
     <text />

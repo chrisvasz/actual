@@ -23,7 +23,6 @@ import { BackButton } from '#components/common/BackButton';
 import { EditablePageHeaderTitle } from '#components/EditablePageHeaderTitle';
 import { FinancialText } from '#components/FinancialText';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Change } from '#components/reports/Change';
 import { CashFlowGraph } from '#components/reports/graphs/CashFlowGraph';
 import { Header } from '#components/reports/Header';
@@ -329,9 +328,7 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
             }
             right={
               <FinancialText style={{ fontWeight: 600 }}>
-                <PrivacyFilter>
-                  {format(totalIncome, 'financial')}
-                </PrivacyFilter>
+                {format(totalIncome, 'financial')}
               </FinancialText>
             }
           />
@@ -345,9 +342,7 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
             }
             right={
               <FinancialText style={{ fontWeight: 600 }}>
-                <PrivacyFilter>
-                  {format(totalExpenses, 'financial')}
-                </PrivacyFilter>
+                {format(totalExpenses, 'financial')}
               </FinancialText>
             }
           />
@@ -361,16 +356,12 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
             }
             right={
               <FinancialText style={{ fontWeight: 600 }}>
-                <PrivacyFilter>
-                  {format(totalTransfers, 'financial')}
-                </PrivacyFilter>
+                {format(totalTransfers, 'financial')}
               </FinancialText>
             }
           />
           <Text style={{ fontWeight: 600 }}>
-            <PrivacyFilter>
-              <Change amount={totalIncome + totalExpenses + totalTransfers} />
-            </PrivacyFilter>
+            <Change amount={totalIncome + totalExpenses + totalTransfers} />
           </Text>
         </View>
 

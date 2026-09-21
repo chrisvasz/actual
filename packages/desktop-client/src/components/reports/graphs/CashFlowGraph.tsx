@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -23,7 +23,6 @@ import { Container } from '#components/reports/Container';
 import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
-import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 const MAX_BAR_SIZE = 50;
 const ANIMATION_DURATION = 1000; // in ms
@@ -142,8 +141,6 @@ export function CashFlowGraph({
   style,
 }: CashFlowGraphProps) {
   const locale = useLocale();
-  const privacyMode = usePrivacyMode();
-  const [yAxisIsHovered, setYAxisIsHovered] = useState(false);
   const format = useFormat();
   const animationProps = useRechartsAnimation({
     animationDuration: ANIMATION_DURATION,
@@ -181,13 +178,7 @@ export function CashFlowGraph({
           <YAxis
             tick={{ fill: theme.reportsLabel }}
             tickCount={8}
-            tickFormatter={value =>
-              privacyMode && !yAxisIsHovered
-                ? '...'
-                : format(value, 'financial-no-decimals')
-            }
-            onMouseEnter={() => setYAxisIsHovered(true)}
-            onMouseLeave={() => setYAxisIsHovered(false)}
+            tickFormatter={value => format(value, 'financial-no-decimals')}
           />
           <Tooltip
             labelFormatter={x => {

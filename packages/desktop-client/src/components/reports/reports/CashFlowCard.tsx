@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { SVGAttributes } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -10,7 +10,6 @@ import type { CashFlowWidget } from '@actual-app/core/types/models';
 import { Bar, BarChart, LabelList } from 'recharts';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Change } from '#components/reports/Change';
 import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
@@ -85,7 +84,7 @@ function CustomLabel({
         textAnchor={anchorValue[position]}
         fill={theme.tableText}
       >
-        <PrivacyFilter>{format(value, 'financial')}</PrivacyFilter>
+        {format(value, 'financial')}
       </FinancialText>
     </>
   );
@@ -131,10 +130,6 @@ export function CashFlowCard({
   );
   const data = useReport('cash_flow_simple', params);
 
-  const [isCardHovered, setIsCardHovered] = useState(false);
-  const onCardHover = useCallback(() => setIsCardHovered(true), []);
-  const onCardHoverEnd = useCallback(() => setIsCardHovered(false), []);
-
   const { graphData } = data || {};
   const expenses = -(graphData?.expense || 0);
   const income = graphData?.income || 0;
@@ -147,11 +142,7 @@ export function CashFlowCard({
       to={`/reports/cash-flow/${widgetId}`}
       onRename={() => setNameMenuOpen(true)}
     >
-      <View
-        style={{ flex: 1 }}
-        onPointerEnter={onCardHover}
-        onPointerLeave={onCardHoverEnd}
-      >
+      <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
@@ -170,9 +161,7 @@ export function CashFlowCard({
           </View>
           {data && (
             <View style={{ textAlign: 'right' }}>
-              <PrivacyFilter activationFilters={[!isCardHovered]}>
-                <Change amount={income - expenses} />
-              </PrivacyFilter>
+              <Change amount={income - expenses} />
             </View>
           )}
         </View>

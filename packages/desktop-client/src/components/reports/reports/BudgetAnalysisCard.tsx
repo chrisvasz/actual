@@ -9,7 +9,6 @@ import * as monthUtils from '@actual-app/core/shared/months';
 import type { BudgetAnalysisWidget } from '@actual-app/core/types/models';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { DateRange } from '#components/reports/DateRange';
 import { BudgetAnalysisGraph } from '#components/reports/graphs/BudgetAnalysisGraph';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -35,8 +34,6 @@ export function BudgetAnalysisCard({
 }: BudgetAnalysisCardProps) {
   const { t } = useTranslation();
   const format = useFormat();
-
-  const [isCardHovered, setIsCardHovered] = useState(false);
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
   const timeFrame = meta?.timeFrame ?? {
@@ -82,11 +79,7 @@ export function BudgetAnalysisCard({
       to={`/reports/budget-analysis/${widgetId}`}
       onRename={() => setNameMenuOpen(true)}
     >
-      <View
-        style={{ flex: 1 }}
-        onPointerEnter={() => setIsCardHovered(true)}
-        onPointerLeave={() => setIsCardHovered(false)}
-      >
+      <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
@@ -116,11 +109,7 @@ export function BudgetAnalysisCard({
                   color: balance >= 0 ? theme.noticeTextLight : theme.errorText,
                 }}
               >
-                <FinancialText>
-                  <PrivacyFilter activationFilters={[!isCardHovered]}>
-                    {format(balance, 'financial')}
-                  </PrivacyFilter>
-                </FinancialText>
+                <FinancialText>{format(balance, 'financial')}</FinancialText>
               </Block>
             </View>
           )}

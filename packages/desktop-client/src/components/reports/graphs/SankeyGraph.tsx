@@ -3,7 +3,6 @@ import type { CSSProperties } from 'react';
 
 import { theme } from '@actual-app/components/theme';
 import { css, keyframes } from '@emotion/css';
-import { t } from 'i18next';
 import {
   Layer,
   Rectangle,
@@ -15,7 +14,6 @@ import type { SankeyData } from 'recharts/types/chart/Sankey';
 
 import { Container } from '#components/reports/Container';
 import { useFormat } from '#hooks/useFormat';
-import { usePrivacyMode } from '#hooks/usePrivacyMode';
 import { useReducedMotion } from '#hooks/useReducedMotion';
 
 const fadeIn = keyframes({
@@ -133,7 +131,6 @@ function SankeyNode({
   phase,
   showPercentages,
 }: SankeyNodeProps) {
-  const privacyMode = usePrivacyMode();
   const format = useFormat();
   const reducedMotion = useReducedMotion();
 
@@ -149,7 +146,6 @@ function SankeyNode({
     yOffset: number,
     fontSize = 13,
     opacity = 1,
-    fontFamily?: string,
     yBase = y,
   ) => (
     <text
@@ -159,7 +155,6 @@ function SankeyNode({
       fontSize={fontSize}
       strokeOpacity={opacity}
       fill={theme.pageText}
-      fontFamily={fontFamily}
     >
       {text}
     </text>
@@ -184,7 +179,6 @@ function SankeyNode({
         height / 2 + 13,
         11,
         0.5,
-        privacyMode ? t('Redacted Script') : undefined,
       )}
     </Layer>
   );
@@ -202,7 +196,6 @@ export function SankeyGraph({
   showTooltip = true,
   showPercentages = false,
 }: SankeyGraphProps) {
-  const privacyMode = usePrivacyMode();
   const format = useFormat();
   const [hoveredLinkIndex, setHoveredLinkIndex] = useState<number | null>(null);
 
@@ -304,15 +297,7 @@ export function SankeyGraph({
                           {name && (
                             <div style={{ marginBottom: 5 }}>{name}</div>
                           )}
-                          <div
-                            style={{
-                              fontFamily: privacyMode
-                                ? t('Redacted Script')
-                                : undefined,
-                            }}
-                          >
-                            {format(value, 'financial')}
-                          </div>
+                          <div>{format(value, 'financial')}</div>
                           {tooltipInfo && tooltipInfo.length > 0 && (
                             <div
                               style={{
@@ -324,15 +309,7 @@ export function SankeyGraph({
                               {tooltipInfo.map(item => (
                                 <div key={item.name}>
                                   {item.name} (
-                                  <span
-                                    style={{
-                                      fontFamily: privacyMode
-                                        ? t('Redacted Script')
-                                        : undefined,
-                                    }}
-                                  >
-                                    {format(item.value, 'financial')}
-                                  </span>
+                                  <span>{format(item.value, 'financial')}</span>
                                   )
                                 </div>
                               ))}
