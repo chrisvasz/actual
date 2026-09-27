@@ -13,7 +13,6 @@ import { vi } from 'vitest';
 import { AuthProvider } from '#auth/AuthProvider';
 import { useNearbyPayees } from '#hooks/useNearbyPayees';
 import { createTestQueryClient, TestProviders } from '#mocks';
-import { payeeQueries } from '#payees';
 
 import { PayeeAutocomplete } from './PayeeAutocomplete';
 import type { PayeeAutocompleteProps } from './PayeeAutocomplete';
@@ -161,7 +160,6 @@ describe('PayeeAutocomplete.getPayeeSuggestions', () => {
 
   beforeEach(() => {
     vi.mocked(useNearbyPayees).mockReturnValue(mockNearbyPayeesResult([]));
-    queryClient.setQueryData(payeeQueries.listCommon().queryKey, []);
   });
 
   function renderPayeeAutocomplete(
@@ -205,81 +203,27 @@ describe('PayeeAutocomplete.getPayeeSuggestions', () => {
     ]);
   });
 
-  test('list with less than the maximum favorites adds common payees', async () => {
-    //Note that the payees list assumes the payees are already sorted
-    const payees: PayeeEntity[] = [
-      makePayee('Alice'),
-      makePayee('Bob'),
-      makePayee('Eve', { favorite: true }),
-      makePayee('Bruce'),
-      makePayee('Carol'),
-      makePayee('Natasha'),
-      makePayee('Steve'),
-      makePayee('Tony'),
-    ];
-    queryClient.setQueryData(payeeQueries.listCommon().queryKey, [
-      makePayee('Bruce'),
-      makePayee('Natasha'),
-      makePayee('Steve'),
-      makePayee('Tony'),
-      makePayee('Carol'),
-    ]);
-    const expectedPayeeOrder = [
-      'Suggested Payees',
-      'Eve',
-      'Bruce',
-      'Natasha',
-      'Steve',
-      'Tony',
-      'Payees',
-      'Alice',
-      'Bob',
-      'Carol',
-    ];
-    await clickAutocomplete(renderPayeeAutocomplete({ payees }));
-
-    expect(extractPayeesAndHeaderNames(screen)).toStrictEqual(
-      expectedPayeeOrder,
-    );
-  });
-
-  test('list with more than the maximum favorites only lists favorites', async () => {
+  test('favorites are listed in their own section above other payees', async () => {
     //Note that the payees list assumes the payees are already sorted
     const payees = [
       makePayee('Alice', { favorite: true }),
-      makePayee('Bob', { favorite: true }),
+      makePayee('Bob'),
       makePayee('Eve', { favorite: true }),
       makePayee('Bruce', { favorite: true }),
-      makePayee('Carol', { favorite: true }),
-      makePayee('Natasha'),
-      makePayee('Steve'),
-      makePayee('Tony', { favorite: true }),
-    ];
-    queryClient.setQueryData(payeeQueries.listCommon().queryKey, [
-      makePayee('Bruce'),
-      makePayee('Natasha'),
-      makePayee('Steve'),
-      makePayee('Tony'),
       makePayee('Carol'),
-    ]);
-    const expectedPayeeOrder = [
-      'Suggested Payees',
-      'Alice',
-      'Bob',
-      'Bruce',
-      'Carol',
-      'Eve',
-      'Tony',
-      'Payees',
-      'Natasha',
-      'Steve',
     ];
     const autocomplete = renderPayeeAutocomplete({ payees });
     await clickAutocomplete(autocomplete);
 
-    expect(extractPayeesAndHeaderNames(screen)).toStrictEqual(
-      expectedPayeeOrder,
-    );
+    expect(extractPayeesAndHeaderNames(screen)).toStrictEqual([
+      'Favorite Payees',
+      'Alice',
+      'Bruce',
+      'Eve',
+      'Payees',
+      'Bob',
+      'Carol',
+    ]);
   });
 
   test('nearby payees appear in their own section before other payees', async () => {
@@ -331,7 +275,7 @@ describe('PayeeAutocomplete.getPayeeSuggestions', () => {
     expect(names).not.toContain('Bob');
   });
 
-  test('nearby payees coexist with favorites and common payees', async () => {
+  test('nearby payees coexist with favorites', async () => {
     const nearbyPayees = [makeNearbyPayee('Coffee Shop', 0.3)];
     const payees = [
       makePayee('Alice'),
@@ -342,10 +286,6 @@ describe('PayeeAutocomplete.getPayeeSuggestions', () => {
     vi.mocked(useNearbyPayees).mockReturnValue(
       mockNearbyPayeesResult(nearbyPayees),
     );
-    queryClient.setQueryData(payeeQueries.listCommon().queryKey, [
-      makePayee('Bob'),
-      makePayee('Carol'),
-    ]);
 
     await clickAutocomplete(renderPayeeAutocomplete({ payees }));
 
@@ -354,12 +294,12 @@ describe('PayeeAutocomplete.getPayeeSuggestions', () => {
     ).toStrictEqual([
       'Nearby Payees',
       'Coffee Shop',
-      'Suggested Payees',
+      'Favorite Payees',
       'Eve',
-      'Bob',
-      'Carol',
       'Payees',
       'Alice',
+      'Bob',
+      'Carol',
     ]);
   });
 
@@ -377,7 +317,7 @@ describe('PayeeAutocomplete.getPayeeSuggestions', () => {
     ).toStrictEqual([
       'Nearby Payees',
       'Eve',
-      'Suggested Payees',
+      'Favorite Payees',
       'Eve',
       'Payees',
       'Alice',
