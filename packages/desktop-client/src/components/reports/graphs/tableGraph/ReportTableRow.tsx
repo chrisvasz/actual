@@ -177,7 +177,6 @@ export const ReportTableRow = memo(
                       })
                     }
                     width="flex"
-                    privacyFilter
                   />
                 );
               })
@@ -192,7 +191,6 @@ export const ReportTableRow = memo(
                     }
                     textAlign="right"
                     width="flex"
-                    privacyFilter
                     style={{
                       minWidth: compact ? 50 : 85,
                       backgroundColor: style?.backgroundColor,
@@ -240,7 +238,6 @@ export const ReportTableRow = memo(
                     }
                     textAlign="right"
                     width="flex"
-                    privacyFilter
                     style={{
                       minWidth: compact ? 50 : 85,
                       backgroundColor: style?.backgroundColor,
@@ -326,7 +323,6 @@ export const ReportTableRow = memo(
               })
             }
             width="flex"
-            privacyFilter
           />
           <Cell
             value={format(average, 'financial')}
@@ -349,7 +345,6 @@ export const ReportTableRow = memo(
             )}
             valueStyle={compactStyle}
             width="flex"
-            privacyFilter
           />
         </View>
       </Row>

@@ -13,7 +13,6 @@ import { css } from '@emotion/css';
 import { useTrackingSheetValue } from '#components/budget/tracking/TrackingBudgetComponents';
 import { makeAmountFullStyle } from '#components/budget/util';
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useFormat } from '#hooks/useFormat';
 import { trackingBudget } from '#spreadsheet/bindings';
 
@@ -80,9 +79,7 @@ export function Saved({ projected, style }: SavedProps) {
                 : theme.templateNumberFunded,
           })}
         >
-          <PrivacyFilter>
-            <FinancialText>{format(saved, 'financial')}</FinancialText>
-          </PrivacyFilter>
+          <FinancialText>{format(saved, 'financial')}</FinancialText>
         </View>
       </Tooltip>
     </View>

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
@@ -13,7 +13,6 @@ import type {
 } from '@actual-app/core/types/models';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Change } from '#components/reports/Change';
 import { DateRange } from '#components/reports/DateRange';
 import { NetWorthGraph } from '#components/reports/graphs/NetWorthGraph';
@@ -53,7 +52,6 @@ export function NetWorthCard({
 
   const [latestTransaction, setLatestTransaction] = useState<string>('');
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
-  const [isCardHovered, setIsCardHovered] = useState(false);
 
   useEffect(() => {
     async function fetchLatestTransaction() {
@@ -70,8 +68,6 @@ export function NetWorthCard({
     undefined,
     latestTransaction,
   );
-  const onCardHover = useCallback(() => setIsCardHovered(true), []);
-  const onCardHoverEnd = useCallback(() => setIsCardHovered(false), []);
 
   const params = useMemo(
     () =>
@@ -110,11 +106,7 @@ export function NetWorthCard({
       to={`/reports/net-worth/${widgetId}`}
       onRename={() => setNameMenuOpen(true)}
     >
-      <View
-        style={{ flex: 1 }}
-        onPointerEnter={onCardHover}
-        onPointerLeave={onCardHoverEnd}
-      >
+      <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
@@ -140,15 +132,12 @@ export function NetWorthCard({
                   marginBottom: 5,
                 }}
               >
-                <PrivacyFilter activationFilters={[!isCardHovered]}>
-                  <FinancialText>
-                    {format(data.netWorth, 'financial')}
-                  </FinancialText>
-                </PrivacyFilter>
+                <FinancialText>
+                  {format(data.netWorth, 'financial')}
+                </FinancialText>
               </Block>
-              <PrivacyFilter activationFilters={[!isCardHovered]}>
-                <Change amount={data.totalChange} />
-              </PrivacyFilter>
+
+              <Change amount={data.totalChange} />
             </View>
           )}
         </View>

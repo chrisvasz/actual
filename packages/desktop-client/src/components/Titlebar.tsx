@@ -9,8 +9,6 @@ import { SvgArrowLeft } from '@actual-app/components/icons/v1';
 import {
   SvgAlertTriangle,
   SvgNavigationMenu,
-  SvgViewHide,
-  SvgViewShow,
 } from '@actual-app/components/icons/v2';
 import { SpaceBetween } from '@actual-app/components/space-between';
 import type { CSSProperties } from '@actual-app/components/styles';
@@ -29,7 +27,6 @@ import { useGlobalPref } from '#hooks/useGlobalPref';
 import { useIsTestEnv } from '#hooks/useIsTestEnv';
 import { useNavigate } from '#hooks/useNavigate';
 import { useSheetValue } from '#hooks/useSheetValue';
-import { useSyncedPref } from '#hooks/useSyncedPref';
 import { useSyncStatus } from '#hooks/useSyncStatus';
 import { useDispatch } from '#redux';
 import * as bindings from '#spreadsheet/bindings';
@@ -62,61 +59,6 @@ function UncategorizedButton() {
     >
       <Trans count={count}>{{ count }} uncategorized transactions</Trans>
     </Link>
-  );
-}
-
-type PrivacyButtonProps = {
-  style?: CSSProperties;
-};
-
-function PrivacyButton({ style }: PrivacyButtonProps) {
-  const { t } = useTranslation();
-  const [isPrivacyEnabledPref, setPrivacyEnabledPref] =
-    useSyncedPref('isPrivacyEnabled');
-  const isPrivacyEnabled = String(isPrivacyEnabledPref) === 'true';
-
-  const privacyIconStyle = { width: 15, height: 15 };
-
-  useHotkeys(
-    'shift+ctrl+p, shift+cmd+p, shift+meta+p',
-    () => {
-      setPrivacyEnabledPref(String(!isPrivacyEnabled));
-    },
-    {
-      preventDefault: true,
-      scopes: ['app'],
-    },
-    [setPrivacyEnabledPref, isPrivacyEnabled],
-  );
-
-  return (
-    <Tooltip
-      placement="bottom end"
-      content={
-        isPrivacyEnabled ? (
-          <Trans>Disable privacy mode</Trans>
-        ) : (
-          <Trans>Enable privacy mode</Trans>
-        )
-      }
-    >
-      <Button
-        variant="bare"
-        aria-label={
-          isPrivacyEnabled
-            ? t('Disable privacy mode')
-            : t('Enable privacy mode')
-        }
-        onPress={() => setPrivacyEnabledPref(String(!isPrivacyEnabled))}
-        style={style}
-      >
-        {isPrivacyEnabled ? (
-          <SvgViewHide style={privacyIconStyle} />
-        ) : (
-          <SvgViewShow style={privacyIconStyle} />
-        )}
-      </Button>
-    </Tooltip>
   );
 }
 
@@ -342,7 +284,6 @@ export function Titlebar({ style }: TitlebarProps) {
       <SpaceBetween gap={10}>
         <UncategorizedButton />
         {isDevelopmentEnvironment() && !isTestEnv && <ThemeSelector />}
-        <PrivacyButton />
         <NotificationsButton />
         {serverURL ? <ServerSyncButton /> : null}
         <SharedArrayBufferWarning />

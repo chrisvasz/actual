@@ -29,7 +29,6 @@ import * as d from 'date-fns';
 import { BackButton } from '#components/common/BackButton';
 import { EditablePageHeaderTitle } from '#components/EditablePageHeaderTitle';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { AgeOfMoneyGraph } from '#components/reports/graphs/AgeOfMoneyGraph';
 import { Header } from '#components/reports/Header';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -330,11 +329,9 @@ function AgeOfMoneyInner({ widget }: AgeOfMoneyInnerProps) {
               color: getAgeColor(data.currentAge),
             }}
           >
-            <PrivacyFilter>
-              {data.currentAge !== null
-                ? t('{{days}} days', { days: data.currentAge })
-                : t('N/A')}
-            </PrivacyFilter>
+            {data.currentAge !== null
+              ? t('{{days}} days', { days: data.currentAge })
+              : t('N/A')}
           </View>
           <View style={{ color: theme.pageTextSubdued }}>
             {data.trend === 'up'

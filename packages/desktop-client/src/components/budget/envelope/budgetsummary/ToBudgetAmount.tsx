@@ -14,7 +14,6 @@ import {
   useEnvelopeSheetValue,
 } from '#components/budget/envelope/EnvelopeBudgetComponents';
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useFormat } from '#hooks/useFormat';
 import { envelopeBudget } from '#spreadsheet/bindings';
 
@@ -75,42 +74,36 @@ export function ToBudgetAmount({
           offset={3}
           triggerProps={{ isDisabled: isTotalsListTooltipDisabled }}
         >
-          <PrivacyFilter
-            style={{
-              textAlign: 'center',
-            }}
-          >
-            <Block
-              onClick={onClick}
-              onContextMenu={onContextMenu}
-              data-cellname={sheetName}
-              className={css([
-                styles.veryLargeText,
-                {
-                  fontWeight: 400,
-                  userSelect: 'none',
-                  cursor: 'pointer',
-                  color: isPositive
+          <Block
+            onClick={onClick}
+            onContextMenu={onContextMenu}
+            data-cellname={sheetName}
+            className={css([
+              styles.veryLargeText,
+              {
+                fontWeight: 400,
+                userSelect: 'none',
+                cursor: 'pointer',
+                color: isPositive
+                  ? theme.toBudgetPositive
+                  : isNegative
+                    ? theme.toBudgetNegative
+                    : theme.toBudgetZero,
+                marginBottom: -1,
+                borderBottom: '1px solid transparent',
+                ':hover': {
+                  borderColor: isPositive
                     ? theme.toBudgetPositive
                     : isNegative
                       ? theme.toBudgetNegative
                       : theme.toBudgetZero,
-                  marginBottom: -1,
-                  borderBottom: '1px solid transparent',
-                  ':hover': {
-                    borderColor: isPositive
-                      ? theme.toBudgetPositive
-                      : isNegative
-                        ? theme.toBudgetNegative
-                        : theme.toBudgetZero,
-                  },
                 },
-                amountStyle,
-              ])}
-            >
-              <FinancialText>{format(num, 'financial')}</FinancialText>
-            </Block>
-          </PrivacyFilter>
+              },
+              amountStyle,
+            ])}
+          >
+            <FinancialText>{format(num, 'financial')}</FinancialText>
+          </Block>
         </Tooltip>
       </View>
     </View>

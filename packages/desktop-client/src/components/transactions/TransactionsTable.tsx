@@ -1934,9 +1934,6 @@ const Transaction = memo(function Transaction({
               onUpdate: onUpdate.bind(null, 'debit'),
               'data-1p-ignore': true,
             }}
-            privacyFilter={{
-              activationFilters: [!isTemporaryId(transaction.id)],
-            }}
           />
         );
       case 'deposit':
@@ -1968,9 +1965,6 @@ const Transaction = memo(function Transaction({
               onUpdate: onUpdate.bind(null, 'credit'),
               'data-1p-ignore': true,
             }}
-            privacyFilter={{
-              activationFilters: [!isTemporaryId(transaction.id)],
-            }}
           />
         );
       case 'balance':
@@ -1993,7 +1987,6 @@ const Transaction = memo(function Transaction({
             style={{ ...styles.tnum, ...amountStyle }}
             width={amountColumnWidths.balance}
             textAlign="right"
-            privacyFilter
           />
         );
       case 'cleared':

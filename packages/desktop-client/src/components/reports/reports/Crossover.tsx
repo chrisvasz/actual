@@ -28,7 +28,6 @@ import { EditablePageHeaderTitle } from '#components/EditablePageHeaderTitle';
 import { FinancialText } from '#components/FinancialText';
 import { Checkbox } from '#components/forms';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { AccountSelector } from '#components/reports/AccountSelector';
 import { CategorySelector } from '#components/reports/CategorySelector';
 import { CrossoverGraph } from '#components/reports/graphs/CrossoverGraph';
@@ -1054,13 +1053,11 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
               >
                 <span>
                   <Trans>Years to Retire</Trans>:{' '}
-                  <PrivacyFilter>
-                    {yearsToRetire != null
-                      ? t('{{years}} years', {
-                          years: format(yearsToRetire, 'number'),
-                        })
-                      : t('N/A')}
-                  </PrivacyFilter>
+                  {yearsToRetire != null
+                    ? t('{{years}} years', {
+                        years: format(yearsToRetire, 'number'),
+                      })
+                    : t('N/A')}
                 </span>
               </View>
               <View
@@ -1070,16 +1067,14 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
               >
                 <span>
                   <Trans>Target Monthly Income</Trans>:{' '}
-                  <PrivacyFilter>
-                    {targetMonthlyIncome != null &&
-                    !isNaN(targetMonthlyIncome) ? (
-                      <FinancialText>
-                        {format(targetMonthlyIncome, 'financial')}
-                      </FinancialText>
-                    ) : (
-                      t('N/A')
-                    )}
-                  </PrivacyFilter>
+                  {targetMonthlyIncome != null &&
+                  !isNaN(targetMonthlyIncome) ? (
+                    <FinancialText>
+                      {format(targetMonthlyIncome, 'financial')}
+                    </FinancialText>
+                  ) : (
+                    t('N/A')
+                  )}
                 </span>
               </View>
               <View
@@ -1089,15 +1084,13 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
               >
                 <span>
                   <Trans>Target Life Savings</Trans>:{' '}
-                  <PrivacyFilter>
-                    {targetNestEgg != null && !isNaN(targetNestEgg) ? (
-                      <FinancialText>
-                        {format(targetNestEgg, 'financial')}
-                      </FinancialText>
-                    ) : (
-                      t('N/A')
-                    )}
-                  </PrivacyFilter>
+                  {targetNestEgg != null && !isNaN(targetNestEgg) ? (
+                    <FinancialText>
+                      {format(targetNestEgg, 'financial')}
+                    </FinancialText>
+                  ) : (
+                    t('N/A')
+                  )}
                 </span>
               </View>
             </View>

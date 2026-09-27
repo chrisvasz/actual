@@ -4,7 +4,6 @@ import React, {
   useCallback,
   useImperativeHandle,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -53,10 +52,6 @@ import type {
 } from '#spreadsheet';
 
 import { FixedSizeList } from './FixedSizeList';
-import {
-  ConditionalPrivacyFilter,
-  mergeConditionalPrivacyFilterProps,
-} from './PrivacyFilter';
 
 export const ROW_HEIGHT = 32;
 
@@ -160,9 +155,6 @@ type CellProps = Omit<ComponentProps<typeof View>, 'children' | 'value'> & {
   value?: string;
   valueStyle?: CSSProperties | null;
   onExpose?: (name: string) => void;
-  privacyFilter?: ComponentProps<
-    typeof ConditionalPrivacyFilter
-  >['privacyFilter'];
 };
 export function Cell({
   width,
@@ -179,7 +171,6 @@ export function Cell({
   style,
   valueStyle,
   unexposedContent,
-  privacyFilter,
   ...viewProps
 }: CellProps) {
   const mouseCoords = useRef(null);
@@ -199,72 +190,46 @@ export function Cell({
     alignItems,
   };
 
-  const conditionalPrivacyFilter = useMemo(
-    () => (
-      <ConditionalPrivacyFilter
-        privacyFilter={mergeConditionalPrivacyFilterProps(
-          {
-            activationFilters: [!focused, !exposed],
-          },
-          privacyFilter,
-        )}
-      >
-        {plain ? (
-          children
-        ) : exposed ? (
-          // @ts-expect-error Missing props refinement
-          children()
-        ) : (
-          <View
-            style={{
-              flexDirection: 'row',
-              flex: 1,
-              padding: '0 5px',
-              alignItems: 'center',
-              ...styles.smallText,
-              ...valueStyle,
-            }}
-            // Can't use click because we only want to expose the cell if
-            // the user does a direct click, not if they also drag the
-            // mouse to select something
-            onMouseDown={e => (mouseCoords.current = [e.clientX, e.clientY])}
-            // When testing, allow the click handler to be used instead
-            onClick={
-              global.IS_TESTING
-                ? () => onExpose?.(name)
-                : e => {
-                    if (
-                      mouseCoords.current &&
-                      Math.abs(e.clientX - mouseCoords.current[0]) < 5 &&
-                      Math.abs(e.clientY - mouseCoords.current[1]) < 5
-                    ) {
-                      onExpose?.(name);
-                    }
-                  }
+  const content = plain ? (
+    children
+  ) : exposed ? (
+    // @ts-expect-error Missing props refinement
+    children()
+  ) : (
+    <View
+      style={{
+        flexDirection: 'row',
+        flex: 1,
+        padding: '0 5px',
+        alignItems: 'center',
+        ...styles.smallText,
+        ...valueStyle,
+      }}
+      // Can't use click because we only want to expose the cell if
+      // the user does a direct click, not if they also drag the
+      // mouse to select something
+      onMouseDown={e => (mouseCoords.current = [e.clientX, e.clientY])}
+      // When testing, allow the click handler to be used instead
+      onClick={
+        global.IS_TESTING
+          ? () => onExpose?.(name)
+          : e => {
+              if (
+                mouseCoords.current &&
+                Math.abs(e.clientX - mouseCoords.current[0]) < 5 &&
+                Math.abs(e.clientY - mouseCoords.current[1]) < 5
+              ) {
+                onExpose?.(name);
+              }
             }
-          >
-            {unexposedContent ? (
-              unexposedContent({ value, formatter })
-            ) : (
-              <UnexposedCellContent value={value} formatter={formatter} />
-            )}
-          </View>
-        )}
-      </ConditionalPrivacyFilter>
-    ),
-    [
-      privacyFilter,
-      focused,
-      exposed,
-      children,
-      plain,
-      valueStyle,
-      onExpose,
-      name,
-      unexposedContent,
-      value,
-      formatter,
-    ],
+      }
+    >
+      {unexposedContent ? (
+        unexposedContent({ value, formatter })
+      ) : (
+        <UnexposedCellContent value={value} formatter={formatter} />
+      )}
+    </View>
   );
 
   const mergedRef = useMergedRefs(viewRef, viewProps.ref, viewProps.innerRef);
@@ -276,7 +241,7 @@ export function Cell({
       innerRef={mergedRef}
       data-testid={name}
     >
-      {conditionalPrivacyFilter}
+      {content}
     </View>
   );
 }
@@ -703,9 +668,6 @@ type SheetCellValueProps<
   getValueStyle?: (value: Spreadsheets[SheetName][FieldName]) => CSSProperties;
   formatExpr?: (value: Spreadsheets[SheetName][FieldName]) => string;
   unformatExpr?: (value: string) => unknown;
-  privacyFilter?: ComponentProps<
-    typeof ConditionalPrivacyFilter
-  >['privacyFilter'];
 };
 
 export type SheetCellProps<
@@ -733,14 +695,7 @@ export function SheetCell<
   onSave,
   ...props
 }: SheetCellProps<SheetName, FieldName>) {
-  const {
-    binding,
-    type,
-    getValueStyle,
-    formatExpr,
-    unformatExpr,
-    privacyFilter,
-  } = valueProps;
+  const { binding, type, getValueStyle, formatExpr, unformatExpr } = valueProps;
 
   const sheetValue = useSheetValue(binding, () => {
     // "close" the cell if it's editing
@@ -762,13 +717,6 @@ export function SheetCell<
       value={String(sheetValue ?? '')}
       formatter={value =>
         props.formatter ? props.formatter(value, type) : format(value, type)
-      }
-      privacyFilter={
-        privacyFilter != null
-          ? privacyFilter
-          : type === 'financial'
-            ? true
-            : undefined
       }
       data-cellname={sheetValue}
     >

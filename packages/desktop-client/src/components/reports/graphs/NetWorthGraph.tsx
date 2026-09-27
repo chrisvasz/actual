@@ -29,7 +29,6 @@ import { getIntervalFormat } from '#components/reports/ReportOptions';
 import { useDateFormat } from '#hooks/useDateFormat';
 import { useFormat } from '#hooks/useFormat';
 import type { UseFormatResult } from '#hooks/useFormat';
-import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 import { computePadding } from './util/computePadding';
 
@@ -249,7 +248,6 @@ export function NetWorthGraph({
   interval = 'Monthly',
   mode = 'trend',
 }: NetWorthGraphProps) {
-  const privacyMode = usePrivacyMode();
   const id = useId();
   const format = useFormat();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
@@ -264,13 +262,8 @@ export function NetWorthGraph({
   const interpolationType =
     interval === 'Daily' || interval === 'Weekly' ? 'basis' : 'monotone';
 
-  const tickFormatter = (tick: number) => {
-    const res = privacyMode
-      ? '...'
-      : `${format(Math.round(tick), 'financial-no-decimals')}`;
-
-    return res;
-  };
+  const tickFormatter = (tick: number) =>
+    `${format(Math.round(tick), 'financial-no-decimals')}`;
 
   // Trend Mode Logic
   const gradientOffset = () => {

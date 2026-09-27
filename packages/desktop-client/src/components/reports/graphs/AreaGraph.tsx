@@ -25,7 +25,6 @@ import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
-import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 import { adjustTextSize } from './adjustTextSize';
 import { renderCustomLabel } from './renderCustomLabel';
@@ -193,8 +192,6 @@ export function AreaGraph({
 }: AreaGraphProps) {
   const format = useFormat();
   const animationProps = useRechartsAnimation({ animationDuration: 1000 });
-
-  const privacyMode = usePrivacyMode();
   const dataMax = Math.max(...data.intervalData.map(i => i[balanceTypeOp]));
   const dataMin = Math.min(...data.intervalData.map(i => i[balanceTypeOp]));
 
@@ -216,10 +213,9 @@ export function AreaGraph({
       : Math.ceil((dataMax + extendRangeAmount) / 100) * 100;
   const lastLabel = data.intervalData.length - 1;
 
-  const tickFormatter = (tick: number) => {
-    if (!privacyMode) return `${format(tick, 'financial-no-decimals')}`; // Formats the tick values as strings with commas
-    return '...';
-  };
+  // Formats the tick values as strings with commas
+  const tickFormatter = (tick: number) =>
+    `${format(tick, 'financial-no-decimals')}`;
 
   const gradientOffset = () => {
     if (dataMax <= 0) {

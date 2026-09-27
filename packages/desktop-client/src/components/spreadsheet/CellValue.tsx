@@ -5,7 +5,6 @@ import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from 'react';
 import { Text } from '@actual-app/components/text';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
 import { useSheetName } from '#hooks/useSheetName';
@@ -53,8 +52,6 @@ export function CellValue<
   );
 }
 
-const PRIVACY_FILTER_TYPES = ['financial', 'financial-with-sign'];
-
 type CellValueTextProps<
   SheetName extends SheetNames,
   FieldName extends SheetFields<SheetName>,
@@ -101,20 +98,14 @@ export function CellValueText<
           ...style,
         }}
       >
-        <PrivacyFilter
-          activationFilters={[PRIVACY_FILTER_TYPES.includes(type)]}
-        >
-          {formatter ? formatter(value, type) : format(value, type)}
-        </PrivacyFilter>
+        {formatter ? formatter(value, type) : format(value, type)}
       </FinancialText>
     );
   }
 
   return (
     <Text {...sharedProps}>
-      <PrivacyFilter activationFilters={[PRIVACY_FILTER_TYPES.includes(type)]}>
-        {formatter ? formatter(value, type) : format(value, type)}
-      </PrivacyFilter>
+      {formatter ? formatter(value, type) : format(value, type)}
     </Text>
   );
 }

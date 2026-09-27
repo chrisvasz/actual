@@ -16,7 +16,6 @@ import {
 
 import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
-import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 type PayloadItem = {
   payload: {
@@ -78,7 +77,6 @@ export function AgeOfMoneyGraph({
 }: AgeOfMoneyGraphProps) {
   const { t } = useTranslation();
   const animationProps = useRechartsAnimation();
-  const privacyMode = usePrivacyMode();
   const id = useId();
   const gradientId = `aom-gradient-${id}`;
 
@@ -138,7 +136,7 @@ export function AgeOfMoneyGraph({
               )}
               {!compact && (
                 <YAxis
-                  tickFormatter={value => (privacyMode ? '•••' : `${value}d`)}
+                  tickFormatter={value => `${value}d`}
                   tick={{ fill: theme.reportsLabel, fontSize: 12 }}
                   tickLine={{ stroke: theme.reportsLabel }}
                   domain={[0, yAxisMax]}

@@ -12,7 +12,6 @@ import { integerToCurrency } from '@actual-app/core/shared/util';
 import { eachMonthOfInterval, format, subMonths } from 'date-fns';
 import { Area, AreaChart, Tooltip as RechartsTooltip, YAxis } from 'recharts';
 
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
 import { useLocale } from '#hooks/useLocale';
@@ -197,9 +196,6 @@ export function BalanceHistoryGraph({
     }
   }, [startingBalance, monthlyTotals, locale]);
 
-  // State to track if the chart is hovered (used to conditionally render PrivacyFilter)
-  const [isHovered, setIsHovered] = useState(false);
-
   return (
     <View ref={ref} style={{ margin: 10, ...style }}>
       <AutoSizer
@@ -224,8 +220,6 @@ export function BalanceHistoryGraph({
                   alignItems: 'stretch',
                   justifyContent: 'space-between',
                 }}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
               >
                 <AreaChart
                   data={balanceData}
@@ -314,9 +308,8 @@ export function BalanceHistoryGraph({
                       <Text style={{ fontWeight: 800 }}>
                         {hoveredValue.date}
                       </Text>
-                      <PrivacyFilter activationFilters={[() => !isHovered]}>
-                        <Text>{integerToCurrency(hoveredValue.balance)}</Text>
-                      </PrivacyFilter>
+
+                      <Text>{integerToCurrency(hoveredValue.balance)}</Text>
                     </View>
                   )}
                 </SpaceBetween>

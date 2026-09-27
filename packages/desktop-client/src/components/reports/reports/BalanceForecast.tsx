@@ -29,9 +29,7 @@ import {
 } from 'recharts';
 
 import { Page, PageHeader } from '#components/Page';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Container } from '#components/reports/Container';
-import { getCustomTick } from '#components/reports/getCustomTick';
 import { computePadding } from '#components/reports/graphs/util/computePadding';
 import { Header } from '#components/reports/Header';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -40,7 +38,6 @@ import { useBalanceForecast } from '#hooks/useBalanceForecast';
 import { useDashboardWidget } from '#hooks/useDashboardWidget';
 import { useFormat } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
-import { usePrivacyMode } from '#hooks/usePrivacyMode';
 import { useRuleConditionFilters } from '#hooks/useRuleConditionFilters';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 import { addNotification } from '#notifications/notificationsSlice';
@@ -76,7 +73,6 @@ type BalanceForecastInnerProps = {
 function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
   const { t } = useTranslation();
   const format = useFormat();
-  const privacyMode = usePrivacyMode();
   const locale = useLocale();
   const dispatch = useDispatch();
   const { data: accounts = [] } = useAccounts();
@@ -300,8 +296,7 @@ function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
     end: chartRange.end,
     granularity,
   });
-  const formatYTick = (value: number) =>
-    getCustomTick(format(value, 'financial-no-decimals'), privacyMode);
+  const formatYTick = (value: number) => format(value, 'financial-no-decimals');
   const yAxisLeftPadding = computePadding(
     chartData.map(point => point.balance),
     formatYTick,
@@ -445,9 +440,7 @@ function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
                   endingPoint.balance < 0 ? theme.errorText : theme.pageText,
               }}
             >
-              <PrivacyFilter>
-                {format(endingPoint.balance, 'financial')}
-              </PrivacyFilter>
+              {format(endingPoint.balance, 'financial')}
             </View>
             <View style={{ color: theme.pageTextLight }}>
               <Trans>Ending Balance</Trans>: {endingPoint.date}
@@ -461,10 +454,7 @@ function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
                 }}
               >
                 <Trans>Lowest visible point</Trans>:{' '}
-                <PrivacyFilter>
-                  {format(lowestPoint.balance, 'financial')}
-                </PrivacyFilter>{' '}
-                ({lowestPoint.date})
+                {format(lowestPoint.balance, 'financial')} ({lowestPoint.date})
               </View>
             ) : null}
           </View>

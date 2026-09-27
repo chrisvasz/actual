@@ -16,7 +16,6 @@ import {
   YAxis,
 } from 'recharts';
 
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { numberFormatterTooltip } from '#components/reports/numberFormatter';
@@ -58,17 +57,15 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
             <strong>{payload[0].payload.date}</strong>
           </div>
           <div style={{ lineHeight: 1.5 }}>
-            <PrivacyFilter>
-              <AlignedText
-                left={t('Assets:')}
-                right={payload[0].payload.assets}
-              />
-              <AlignedText left={t('Debt:')} right={payload[0].payload.debt} />
-              <AlignedText
-                left={t('Change:')}
-                right={<strong>{payload[0].payload.change}</strong>}
-              />
-            </PrivacyFilter>
+            <AlignedText
+              left={t('Assets:')}
+              right={payload[0].payload.assets}
+            />
+            <AlignedText left={t('Debt:')} right={payload[0].payload.debt} />
+            <AlignedText
+              left={t('Change:')}
+              right={<strong>{payload[0].payload.change}</strong>}
+            />
           </div>
         </div>
       </div>

@@ -17,7 +17,6 @@ import type { ScheduleStatuses } from '@actual-app/core/shared/schedules';
 import type { ScheduleEntity } from '@actual-app/core/types/models';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Cell, Field, Row, Table, TableHeader } from '#components/table';
 import { DisplayId } from '#components/util/DisplayId';
 import { useAccounts } from '#hooks/useAccounts';
@@ -138,9 +137,7 @@ export function ScheduleAmountCell({
         }}
         title={cellText}
       >
-        <PrivacyFilter>
-          {num > 0 ? `+${currencyAmount}` : `${currencyAmount}`}
-        </PrivacyFilter>
+        {num > 0 ? `+${currencyAmount}` : `${currencyAmount}`}
       </FinancialText>
     </Cell>
   );

@@ -26,7 +26,6 @@ import { BackButton } from '#components/common/BackButton';
 import { EditablePageHeaderTitle } from '#components/EditablePageHeaderTitle';
 import { FinancialText } from '#components/FinancialText';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Change } from '#components/reports/Change';
 import { BudgetAnalysisGraph } from '#components/reports/graphs/BudgetAnalysisGraph';
 import { Header } from '#components/reports/Header';
@@ -507,9 +506,7 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
                           }
                           right={
                             <FinancialText style={{ fontWeight: 600 }}>
-                              <PrivacyFilter>
-                                {format(data.totalBudgeted, 'financial')}
-                              </PrivacyFilter>
+                              {format(data.totalBudgeted, 'financial')}
                             </FinancialText>
                           }
                         />
@@ -522,9 +519,7 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
                           }
                           right={
                             <FinancialText style={{ fontWeight: 600 }}>
-                              <PrivacyFilter>
-                                {format(data.totalSpent, 'financial')}
-                              </PrivacyFilter>
+                              {format(data.totalSpent, 'financial')}
                             </FinancialText>
                           }
                         />
@@ -537,12 +532,10 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
                           }
                           right={
                             <FinancialText style={{ fontWeight: 600 }}>
-                              <PrivacyFilter>
-                                {format(
-                                  data.totalOverspendingAdjustment,
-                                  'financial',
-                                )}
-                              </PrivacyFilter>
+                              {format(
+                                data.totalOverspendingAdjustment,
+                                'financial',
+                              )}
                             </FinancialText>
                           }
                         />
@@ -555,9 +548,7 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
                           }
                           right={
                             <FinancialText style={{ fontWeight: 600 }}>
-                              <PrivacyFilter>
-                                <Change amount={endingBalance} />
-                              </PrivacyFilter>
+                              <Change amount={endingBalance} />
                             </FinancialText>
                           }
                         />

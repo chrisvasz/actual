@@ -18,7 +18,6 @@ import { EditablePageHeaderTitle } from '#components/EditablePageHeaderTitle';
 import { FinancialText } from '#components/FinancialText';
 import { LabeledCheckbox } from '#components/forms/LabeledCheckbox';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { MonteCarloCashflowGraph } from '#components/reports/graphs/MonteCarloCashflowGraph';
 import { MonteCarloGraph } from '#components/reports/graphs/MonteCarloGraph';
 import type { MonteCarloGraphView } from '#components/reports/graphs/MonteCarloGraphTooltip';
@@ -361,11 +360,9 @@ export function MonteCarlo() {
                 <Trans>Median ending balance</Trans>
               </Text>
               <Text style={{ ...styles.mediumText, fontWeight: 500 }}>
-                <PrivacyFilter>
-                  <FinancialText as="span">
-                    {format(result.medianEndingBalance, 'financial')}
-                  </FinancialText>
-                </PrivacyFilter>
+                <FinancialText as="span">
+                  {format(result.medianEndingBalance, 'financial')}
+                </FinancialText>
               </Text>
             </View>
             <View style={{ gap: 4 }}>
@@ -373,11 +370,9 @@ export function MonteCarlo() {
                 <Trans>Median total withdrawn</Trans>
               </Text>
               <Text style={{ ...styles.mediumText, fontWeight: 500 }}>
-                <PrivacyFilter>
-                  <FinancialText as="span">
-                    {format(result.medianTotalWithdrawn, 'financial')}
-                  </FinancialText>
-                </PrivacyFilter>
+                <FinancialText as="span">
+                  {format(result.medianTotalWithdrawn, 'financial')}
+                </FinancialText>
               </Text>
             </View>
             <View style={{ gap: 4 }}>

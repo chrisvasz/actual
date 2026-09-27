@@ -28,7 +28,6 @@ import { EditablePageHeaderTitle } from '#components/EditablePageHeaderTitle';
 import { AppliedFilters } from '#components/filters/AppliedFilters';
 import { FilterButton } from '#components/filters/FiltersMenu';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { SpendingGraph } from '#components/reports/graphs/SpendingGraph';
 import { LegendItem } from '#components/reports/LegendItem';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -550,12 +549,10 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                         }
                         right={
                           <Text style={{ fontWeight: 600 }}>
-                            <PrivacyFilter>
-                              {format(
-                                Math.abs(data.intervalData[todayDay].compare),
-                                'financial',
-                              )}
-                            </PrivacyFilter>
+                            {format(
+                              Math.abs(data.intervalData[todayDay].compare),
+                              'financial',
+                            )}
                           </Text>
                         }
                       />
@@ -584,12 +581,10 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                         }
                         right={
                           <Text style={{ fontWeight: 600 }}>
-                            <PrivacyFilter>
-                              {format(
-                                Math.abs(data.intervalData[todayDay].compareTo),
-                                'financial',
-                              )}
-                            </PrivacyFilter>
+                            {format(
+                              Math.abs(data.intervalData[todayDay].compareTo),
+                              'financial',
+                            )}
                           </Text>
                         }
                       />
@@ -609,14 +604,12 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                       }
                       right={
                         <Text style={{ fontWeight: 600 }}>
-                          <PrivacyFilter>
-                            {format(
-                              Math.round(
-                                Math.abs(data.intervalData[todayDay].budget),
-                              ),
-                              'financial',
-                            )}
-                          </PrivacyFilter>
+                          {format(
+                            Math.round(
+                              Math.abs(data.intervalData[todayDay].budget),
+                            ),
+                            'financial',
+                          )}
                         </Text>
                       }
                     />
@@ -636,12 +629,10 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                       }
                       right={
                         <Text style={{ fontWeight: 600 }}>
-                          <PrivacyFilter>
-                            {format(
-                              Math.abs(data.intervalData[todayDay].average),
-                              'financial',
-                            )}
-                          </PrivacyFilter>
+                          {format(
+                            Math.abs(data.intervalData[todayDay].average),
+                            'financial',
+                          )}
                         </Text>
                       }
                     />

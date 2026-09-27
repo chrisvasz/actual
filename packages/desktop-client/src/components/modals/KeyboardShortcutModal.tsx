@@ -180,13 +180,6 @@ export function KeyboardShortcutModal() {
             meta: ctrl,
           },
           {
-            id: 'toggle-privacy-filter',
-            shortcut: 'P',
-            description: t('Toggle the privacy filter'),
-            meta: ctrl,
-            shift: true,
-          },
-          {
             id: 'undo-last-change',
             shortcut: 'Z',
             description: t('Undo the last change'),

@@ -19,7 +19,6 @@ import {
   Tooltip,
 } from 'recharts';
 
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Container } from '#components/reports/Container';
 import { DateRange } from '#components/reports/DateRange';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -64,7 +63,6 @@ export function BalanceForecastCard({
   const granularity = meta?.granularity || 'Monthly';
 
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
-  const [isCardHovered, setIsCardHovered] = useState(false);
 
   const defaultTimeFrame = {
     start: monthUtils.currentMonth(),
@@ -108,9 +106,6 @@ export function BalanceForecastCard({
         : null;
   const normalizedForecastData = forecastData ?? null;
   const committedChartRange = useRef({ start, end });
-
-  const onCardHover = () => setIsCardHovered(true);
-  const onCardHoverEnd = () => setIsCardHovered(false);
 
   const chartRange = isPlaceholderData
     ? committedChartRange.current
@@ -156,11 +151,7 @@ export function BalanceForecastCard({
       to={`/reports/forecast/${widgetId}`}
       onRename={() => setNameMenuOpen(true)}
     >
-      <View
-        style={{ flex: 1 }}
-        onPointerEnter={onCardHover}
-        onPointerLeave={onCardHoverEnd}
-      >
+      <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
@@ -189,29 +180,24 @@ export function BalanceForecastCard({
                     : theme.pageText,
                 }}
               >
-                <PrivacyFilter activationFilters={[!isCardHovered]}>
-                  <Trans>Ending</Trans>:{' '}
-                  {format(endingPoint.balance, 'financial')}
-                </PrivacyFilter>
+                <Trans>Ending</Trans>:{' '}
+                {format(endingPoint.balance, 'financial')}
               </Block>
-              <PrivacyFilter activationFilters={[!isCardHovered]}>
-                <Block style={{ fontSize: 12, color: theme.pageTextLight }}>
-                  {endingPoint.date}
-                </Block>
-              </PrivacyFilter>
+
+              <Block style={{ fontSize: 12, color: theme.pageTextLight }}>
+                {endingPoint.date}
+              </Block>
+
               {lowestPoint && lowestPoint.date !== endingPoint.date ? (
-                <PrivacyFilter activationFilters={[!isCardHovered]}>
-                  <Block
-                    style={{
-                      fontSize: 12,
-                      color: theme.pageTextLight,
-                      marginTop: 4,
-                    }}
-                  >
-                    <Trans>Low</Trans>:{' '}
-                    {format(lowestPoint.balance, 'financial')}
-                  </Block>
-                </PrivacyFilter>
+                <Block
+                  style={{
+                    fontSize: 12,
+                    color: theme.pageTextLight,
+                    marginTop: 4,
+                  }}
+                >
+                  <Trans>Low</Trans>: {format(lowestPoint.balance, 'financial')}
+                </Block>
               ) : null}
             </View>
           )}

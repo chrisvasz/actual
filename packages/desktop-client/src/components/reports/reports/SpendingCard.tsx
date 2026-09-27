@@ -9,7 +9,6 @@ import * as monthUtils from '@actual-app/core/shared/months';
 import type { SpendingWidget } from '@actual-app/core/types/models';
 
 import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
 import { DateRange } from '#components/reports/DateRange';
 import { SpendingGraph } from '#components/reports/graphs/SpendingGraph';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -43,8 +42,6 @@ export function SpendingCard({
   const [budgetTypePref] = useSyncedPref('budgetType');
   const budgetType: 'envelope' | 'tracking' =
     budgetTypePref === 'tracking' ? 'tracking' : 'envelope';
-
-  const [isCardHovered, setIsCardHovered] = useState(false);
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
   const spendingReportMode = meta?.mode ?? 'single-month';
@@ -95,11 +92,7 @@ export function SpendingCard({
       to={`/reports/spending/${widgetId}`}
       onRename={() => setNameMenuOpen(true)}
     >
-      <View
-        style={{ flex: 1 }}
-        onPointerEnter={() => setIsCardHovered(true)}
-        onPointerLeave={() => setIsCardHovered(false)}
-      >
+      <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
@@ -138,13 +131,11 @@ export function SpendingCard({
                         : theme.reportsNumberPositive,
                 }}
               >
-                <PrivacyFilter activationFilters={[!isCardHovered]}>
-                  <FinancialText>
-                    {data &&
-                      (difference && difference > 0 ? '+' : '') +
-                        format(difference || 0, 'financial')}
-                  </FinancialText>
-                </PrivacyFilter>
+                <FinancialText>
+                  {data &&
+                    (difference && difference > 0 ? '+' : '') +
+                      format(difference || 0, 'financial')}
+                </FinancialText>
               </Block>
             </View>
           )}
