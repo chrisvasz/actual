@@ -632,6 +632,7 @@ type PayeeCellProps = {
   };
   valueStyle: CSSProperties | null;
   transaction: SerializedTransaction;
+  schedule: ScheduleEntity | null;
   importedPayee?: string;
   isPreview: boolean;
   onEdit: TransactionEditFunction;
@@ -651,6 +652,7 @@ function PayeeCell({
   transferAccountsByTransaction,
   valueStyle,
   transaction,
+  schedule,
   importedPayee,
   isPreview,
   onEdit,
@@ -719,6 +721,7 @@ function PayeeCell({
         >
           <PayeeIcons
             transaction={transaction}
+            schedule={schedule}
             transferAccount={transferAccount}
             onNavigateToTransferAccount={onNavigateToTransferAccount}
             onNavigateToSchedule={onNavigateToSchedule}
@@ -777,6 +780,7 @@ function PayeeCell({
         <>
           <PayeeIcons
             transaction={transaction}
+            schedule={schedule}
             transferAccount={transferAccount}
             onNavigateToTransferAccount={onNavigateToTransferAccount}
             onNavigateToSchedule={onNavigateToSchedule}
@@ -837,6 +841,7 @@ const transferIconStyle = { width: 10, height: 10 };
 
 type PayeeIconsProps = {
   transaction: SerializedTransaction;
+  schedule: ScheduleEntity | null;
   transferAccount: AccountEntity | null;
   onNavigateToTransferAccount: (id: AccountEntity['id']) => void;
   onNavigateToSchedule: (id: ScheduleEntity['id']) => void;
@@ -844,20 +849,12 @@ type PayeeIconsProps = {
 
 function PayeeIcons({
   transaction,
+  schedule,
   transferAccount,
   onNavigateToTransferAccount,
   onNavigateToSchedule,
 }: PayeeIconsProps) {
   const { t } = useTranslation();
-
-  const scheduleId = transaction.schedule;
-  const { isLoading, schedules = [] } = useCachedSchedules();
-
-  if (isLoading) {
-    return null;
-  }
-
-  const schedule = scheduleId ? schedules.find(s => s.id === scheduleId) : null;
 
   if (schedule == null && transferAccount == null) {
     // Neither a valid scheduled transaction nor a transfer.
@@ -879,11 +876,7 @@ function PayeeIcons({
           data-testid="schedule-icon"
           aria-label={t('See schedule details')}
           style={payeeIconButtonStyle}
-          onPress={() => {
-            if (scheduleId) {
-              onNavigateToSchedule(scheduleId);
-            }
-          }}
+          onPress={() => onNavigateToSchedule(schedule.id)}
         >
           {recurring ? (
             <SvgArrowsSynchronize style={scheduleIconStyle} />
@@ -917,6 +910,9 @@ function PayeeIcons({
 type TransactionProps = {
   allTransactions?: TransactionEntity[];
   transaction: TransactionEntity;
+  // Looked up by the table rather than read from the schedules context here,
+  // so that schedules loading only re-renders the rows linked to one.
+  schedule: ScheduleEntity | null;
   subtransactions: TransactionEntity[] | null;
   transferAccountsByTransaction: {
     [id: TransactionEntity['id']]: AccountEntity | null;
@@ -986,6 +982,7 @@ type TransactionProps = {
 const Transaction = memo(function Transaction({
   allTransactions,
   transaction: originalTransaction,
+  schedule,
   subtransactions,
   transferAccountsByTransaction,
   editing,
@@ -1287,11 +1284,6 @@ const Transaction = memo(function Transaction({
     is_parent: isParent,
     _unmatched = false,
   } = transaction;
-
-  const { schedules = [] } = useCachedSchedules();
-  const schedule = transaction.schedule
-    ? schedules.find(s => s.id === transaction.schedule)
-    : null;
 
   const previewStatus = forceUpcoming ? 'upcoming' : categoryId;
 
@@ -1667,6 +1659,7 @@ const Transaction = memo(function Transaction({
             )}
             valueStyle={valueStyle}
             transaction={transaction}
+            schedule={schedule}
             transferAccountsByTransaction={transferAccountsByTransaction}
             importedPayee={importedPayee}
             isPreview={isPreview}
@@ -2384,6 +2377,7 @@ function NewTransaction({
   balance,
   showHiddenCategories,
 }: NewTransactionProps) {
+  const { schedules = [] } = useCachedSchedules();
   const error = transactions[0].error;
   const isDeposit = transactions[0].amount > 0;
   const isFuture = isFutureTransaction(transactions[0]);
@@ -2425,6 +2419,11 @@ function NewTransaction({
         <Transaction
           key={transaction.id}
           index={index}
+          schedule={
+            (transaction.schedule &&
+              schedules.find(s => s.id === transaction.schedule)) ||
+            null
+          }
           amountColumnWidths={amountColumnWidths}
           editing={editingTransaction === transaction.id}
           transaction={transaction}
@@ -2602,6 +2601,11 @@ function TransactionTableInner({
   showHiddenCategories,
   ...props
 }: TransactionTableInnerProps) {
+  const { schedules = [] } = useCachedSchedules();
+  const schedulesById = useMemo(
+    () => new Map(schedules.map(schedule => [schedule.id, schedule])),
+    [schedules],
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const isAddingPrev = usePrevious(props.isAdding);
   const [scrollWidth, setScrollWidth] = useState(0);
@@ -2750,6 +2754,7 @@ function TransactionTableInner({
         allTransactions={props.transactions}
         editing={editing}
         transaction={trans}
+        schedule={(trans.schedule && schedulesById.get(trans.schedule)) || null}
         transferAccountsByTransaction={props.transferAccountsByTransaction}
         subtransactions={childTransactions}
         columns={columns}
