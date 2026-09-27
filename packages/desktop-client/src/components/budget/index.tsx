@@ -24,6 +24,7 @@ import {
 import { useCategories } from '#hooks/useCategories';
 import { useGlobalPref } from '#hooks/useGlobalPref';
 import { useLocalPref } from '#hooks/useLocalPref';
+import { useMetadataPref } from '#hooks/useMetadataPref';
 import { useNavigate } from '#hooks/useNavigate';
 import { SheetNameProvider } from '#hooks/useSheetName';
 import { useSpreadsheet } from '#hooks/useSpreadsheet';
@@ -36,6 +37,15 @@ import * as trackingBudget from './tracking/TrackingBudgetComponents';
 import { TrackingBudgetProvider } from './tracking/TrackingBudgetContext';
 import { prewarmAllMonths, prewarmMonth } from './util';
 
+// The budget this page last finished loading. Coming back to the page for the
+// same budget, the spreadsheet cache already holds its months, so the table
+// renders straight from it and the bounds and prewarm refresh in the background.
+let warmBudget: {
+  id: string;
+  budgetType: string;
+  bounds: { start: string; end: string };
+} | null = null;
+
 export function Budget() {
   const currentMonth = monthUtils.currentMonth();
   const spreadsheet = useSpreadsheet();
@@ -45,21 +55,25 @@ export function Budget() {
   );
   const [startMonthPref, setStartMonthPref] = useLocalPref('budget.startMonth');
   const startMonth = startMonthPref || currentMonth;
-  const [bounds, setBounds] = useState({
-    start: startMonth,
-    end: startMonth,
-  });
+  const [budgetId] = useMetadataPref('id');
   const [budgetType = 'envelope'] = useSyncedPref('budgetType');
+  const isWarm =
+    warmBudget?.id === budgetId && warmBudget?.budgetType === budgetType;
+  const [bounds, setBounds] = useState(() =>
+    isWarm ? warmBudget.bounds : { start: startMonth, end: startMonth },
+  );
   const [maxMonthsPref] = useGlobalPref('maxMonths');
   const maxMonths = maxMonthsPref || 1;
-  const [initialized, setInitialized] = useState(false);
+  const [initialized, setInitialized] = useState(isWarm);
   const { data: { grouped: categoryGroups } = { grouped: [] } } =
     useCategories();
 
   const init = useEffectEvent(() => {
     async function run() {
       const { start, end } = await send('get-budget-bounds');
-      setBounds({ start, end });
+      setBounds(prev =>
+        prev.start === start && prev.end === end ? prev : { start, end },
+      );
 
       await prewarmAllMonths(
         budgetType,
@@ -68,21 +82,13 @@ export function Budget() {
         startMonth,
       );
 
+      warmBudget = { id: budgetId, budgetType, bounds: { start, end } };
       setInitialized(true);
     }
 
     void run();
   });
   useEffect(() => init(), []);
-
-  const loadBoundBudgets = useEffectEvent(() => {
-    void send('get-budget-bounds').then(({ start, end }) => {
-      if (bounds.start !== start || bounds.end !== end) {
-        setBounds({ start, end });
-      }
-    });
-  });
-  useEffect(() => loadBoundBudgets(), []);
 
   const onMonthSelect = async (month, numDisplayed) => {
     setStartMonthPref(month);

@@ -31,7 +31,11 @@ const GLOBAL_SHEET_NAME = '__global';
 
 function makeSpreadsheet() {
   const cellObservers: CellObservers = {};
-  const LRUValueCache = new LRUCache<string, CellCacheValue>({ max: 1200 });
+  // Sized to hold every prewarmed budget month. A month has about six cells per
+  // category, so the six months the budget page prewarms run to a few thousand
+  // entries on a large budget, and an evicted cell renders empty until the
+  // backend answers.
+  const LRUValueCache = new LRUCache<string, CellCacheValue>({ max: 20000 });
   const cellCache: CellCache = {};
   let observersDisabled = false;
 
