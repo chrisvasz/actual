@@ -779,6 +779,10 @@ class AccountInternal extends PureComponent<
     }
   };
 
+  onCloseAddTransaction = () => {
+    this.setState({ isAdding: false });
+  };
+
   onAddTransaction = () => {
     this.setState({ isAdding: true });
   };
@@ -1982,9 +1986,7 @@ class AccountInternal extends PureComponent<
                     this.onMakeAsNonSplitTransactions
                   }
                   onRefetch={this.refetchTransactions}
-                  onCloseAddTransaction={() =>
-                    this.setState({ isAdding: false })
-                  }
+                  onCloseAddTransaction={this.onCloseAddTransaction}
                   onCreatePayee={this.onCreatePayee}
                   onApplyFilter={this.onApplyFilter}
                 />
