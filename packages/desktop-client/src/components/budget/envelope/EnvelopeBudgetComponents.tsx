@@ -17,7 +17,6 @@ import { css } from '@emotion/css';
 
 import { BalanceWithCarryover } from '#components/budget/BalanceWithCarryover';
 import { makeAmountGrey } from '#components/budget/util';
-import { NotesButton } from '#components/NotesButton';
 import { CellValue, CellValueText } from '#components/spreadsheet/CellValue';
 import { Field, Row, SheetCell } from '#components/table';
 import type { SheetCellProps } from '#components/table';
@@ -237,41 +236,14 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
         backgroundColor: monthUtils.isCurrentMonth(month)
           ? theme.budgetCurrentMonth
           : theme.budgetOtherMonth,
-        '& .hover-visible': {
-          opacity: 0,
-          transition: 'opacity .25s',
-        },
-        '&:hover .hover-visible, & .force-visible .hover-visible': {
-          opacity: 1,
-        },
       }}
     >
       <View
         style={{
           flex: 1,
           flexDirection: 'row',
-          position: 'relative',
         }}
       >
-        {!editing && (
-          // Floated clear of the flow so the amount keeps the whole cell.
-          // The z-index keeps it clickable over the spent cell it sits on.
-          <View
-            style={{
-              position: 'absolute',
-              top: 0,
-              bottom: 0,
-              right: -18,
-              zIndex: 1,
-              justifyContent: 'center',
-            }}
-          >
-            <NotesButton
-              id={`${category.id}-${month}`}
-              defaultColor={theme.pageTextLight}
-            />
-          </View>
-        )}
         <EnvelopeSheetCell
           name="budget"
           exposed={editing}

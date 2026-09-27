@@ -7,13 +7,11 @@ import {
   SvgCheveronDown,
   SvgCheveronUp,
 } from '@actual-app/components/icons/v1';
-import { SvgNotesPaper } from '@actual-app/components/icons/v2';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { amountToInteger, integerToAmount } from '@actual-app/core/shared/util';
-import { t } from 'i18next';
 
 import { AmountInput } from '#components/amount/AmountInput';
 import { BudgetMenu } from '#components/budget/tracking/BudgetMenu';
@@ -24,10 +22,8 @@ import {
   ModalHeader,
   ModalTitle,
 } from '#components/common/Modal';
-import { Notes } from '#components/Notes';
 import { useCategory } from '#hooks/useCategory';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
-import { useNotes } from '#hooks/useNotes';
 import type { Modal as ModalType } from '#modals/modalsSlice';
 import { trackingBudget } from '#spreadsheet/bindings';
 
@@ -43,8 +39,6 @@ export function TrackingBudgetMenuModal({
   onSetMonthsAverage,
   onApplyBudgetTemplate,
   onCopyUntilYearEnd,
-  onEditNotes,
-  month,
 }: TrackingBudgetMenuModalProps) {
   const defaultMenuItemStyle: CSSProperties = {
     ...styles.mobileMenuItem,
@@ -65,17 +59,9 @@ export function TrackingBudgetMenuModal({
   );
   const { data: category } = useCategory(categoryId);
   const mobileCalculatorEnabled = useFeatureFlag('mobileCalculator');
-  const notesId = category ? `${category.id}-${month}` : '';
-  const originalNotes = useNotes(notesId) ?? '';
 
   const _onUpdateBudget = (amount: number) => {
     onUpdateBudget?.(amountToInteger(amount));
-  };
-
-  const _onEditNotes = () => {
-    if (category && month) {
-      onEditNotes?.(`${category.id}-${month}`, month);
-    }
   };
 
   const [showMore, setShowMore] = useState(false);
@@ -124,45 +110,6 @@ export function TrackingBudgetMenuModal({
               autoFocusDelay={150}
               variant="large"
             />
-          </View>
-          <View
-            style={{
-              display: showMore ? 'none' : undefined,
-              overflowY: 'auto',
-              flex: 1,
-            }}
-          >
-            <Notes
-              notes={originalNotes.length > 0 ? originalNotes : t('No notes')}
-              editable={false}
-              focused={false}
-              getStyle={() => ({
-                borderRadius: 6,
-                ...(originalNotes.length === 0 && {
-                  justifySelf: 'center',
-                  alignSelf: 'center',
-                  color: theme.pageTextSubdued,
-                }),
-              })}
-            />
-          </View>
-          <View
-            style={{
-              display: showMore ? 'none' : undefined,
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              justifyContent: 'space-between',
-              alignContent: 'space-between',
-            }}
-          >
-            <Button style={buttonStyle} onPress={_onEditNotes}>
-              <SvgNotesPaper
-                width={20}
-                height={20}
-                style={{ paddingRight: 5 }}
-              />
-              <Trans>Edit notes</Trans>
-            </Button>
           </View>
           <View>
             <Button variant="bare" style={buttonStyle} onPress={onShowMore}>
