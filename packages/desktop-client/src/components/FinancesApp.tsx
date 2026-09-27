@@ -1,7 +1,6 @@
 import React, { useEffect, useEffectEvent, useRef } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
-import { Navigate, Route, Routes, useHref, useLocation } from 'react-router';
+import { useHref, useLocation } from 'react-router';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { theme } from '@actual-app/components/theme';
@@ -9,41 +8,40 @@ import { View } from '@actual-app/components/view';
 import * as undo from '@actual-app/core/platform/client/undo';
 
 import { getLatestAppVersion, sync } from '#app/appSlice';
-import { ProtectedRoute } from '#auth/ProtectedRoute';
-import { Permissions } from '#auth/types';
 import { useMetaThemeColor } from '#hooks/useMetaThemeColor';
 import { useNewsNotification } from '#hooks/useNewsNotification';
 import { ScrollProvider } from '#hooks/useScrollListener';
 import { addNotification } from '#notifications/notificationsSlice';
 import { useDispatch } from '#redux';
 
-import { UserAccessPage } from './admin/UserAccess/UserAccessPage';
-import { UserDirectoryPage } from './admin/UserDirectory/UserDirectoryPage';
 import { BankSyncStatus } from './BankSyncStatus';
 import { CommandBar } from './CommandBar';
 import { ContextMenu } from './ContextMenu';
-import { EnableBankingCallback } from './EnableBankingCallback';
-import { FeatureErrorFallback } from './FeatureErrorFallback';
+import { FinancesAppRoutes } from './FinancesAppRoutes';
 import { GlobalKeys } from './GlobalKeys';
-import { NotificationsPage } from './news/NotificationsPage';
 import { Notifications } from './Notifications';
 import { MobilePageHeaderProvider, MobilePageHeaderSlot } from './Page';
-import { Reports } from './reports';
-import { WideComponent } from './responsive';
-import { useMultiuserEnabled } from './ServerContext';
-import { Settings } from './settings';
 import { FloatableSidebar } from './sidebar';
-import { ManageTagsPage } from './tags/ManageTagsPage';
 import { Titlebar } from './Titlebar';
 import { Tour } from './tour/Tour';
 import { TourProvider } from './tour/TourProvider';
 
+/**
+ * Location-dependent side effects live here, in a component that renders
+ * nothing, rather than in `FinancesApp`. Anything calling `useLocation()` (or a
+ * hook that calls it) re-renders on every navigation, and `FinancesApp` renders
+ * the whole app shell — sidebar, titlebar, notifications, command bar — none of
+ * which depends on the location.
+ */
 function RouterBehaviors() {
   const location = useLocation();
   const href = useHref(location);
   useEffect(() => {
     undo.setUndoState('url', href);
   }, [href]);
+
+  // Calls `useLocation()` internally.
+  useNewsNotification();
 
   return null;
 }
@@ -52,13 +50,8 @@ export function FinancesApp() {
   const { isNarrowWidth } = useResponsive();
   useMetaThemeColor(theme.mobileViewTheme);
 
-  const location = useLocation();
   const dispatch = useDispatch();
   const { t } = useTranslation();
-
-  const multiuserEnabled = useMultiuserEnabled();
-
-  useNewsNotification();
 
   const init = useEffectEvent(() => {
     // Wait a little bit to make sure the sync button will get the
@@ -154,164 +147,7 @@ export function FinancesApp() {
                   <BankSyncStatus />
                   {isNarrowWidth && <MobilePageHeaderSlot />}
 
-                  <Routes>
-                    <Route
-                      path="/"
-                      element={<Navigate to="/budget" replace />}
-                    />
-
-                    <Route path="/reports/*" element={<Reports />} />
-
-                    <Route
-                      path="/budget"
-                      element={
-                        <ErrorBoundary
-                          FallbackComponent={FeatureErrorFallback}
-                          resetKeys={[location.pathname]}
-                        >
-                          <WideComponent name="Budget" />
-                        </ErrorBoundary>
-                      }
-                    />
-
-                    <Route
-                      path="/schedules"
-                      element={
-                        <ErrorBoundary
-                          FallbackComponent={FeatureErrorFallback}
-                          resetKeys={[location.pathname]}
-                        >
-                          <WideComponent name="Schedules" />
-                        </ErrorBoundary>
-                      }
-                    />
-
-                    <Route
-                      path="/payees"
-                      element={
-                        <ErrorBoundary
-                          FallbackComponent={FeatureErrorFallback}
-                          resetKeys={[location.pathname]}
-                        >
-                          <WideComponent name="Payees" />
-                        </ErrorBoundary>
-                      }
-                    />
-                    <Route
-                      path="/rules"
-                      element={
-                        <ErrorBoundary
-                          FallbackComponent={FeatureErrorFallback}
-                          resetKeys={[location.pathname]}
-                        >
-                          <WideComponent name="Rules" />
-                        </ErrorBoundary>
-                      }
-                    />
-                    <Route
-                      path="/rules/:id"
-                      element={
-                        <ErrorBoundary
-                          FallbackComponent={FeatureErrorFallback}
-                          resetKeys={[location.pathname]}
-                        >
-                          <WideComponent name="RuleEdit" />
-                        </ErrorBoundary>
-                      }
-                    />
-                    <Route
-                      path="/bank-sync"
-                      element={
-                        <ErrorBoundary
-                          FallbackComponent={FeatureErrorFallback}
-                          resetKeys={[location.pathname]}
-                        >
-                          <WideComponent name="BankSync" />
-                        </ErrorBoundary>
-                      }
-                    />
-                    <Route path="/tags" element={<ManageTagsPage />} />
-                    <Route
-                      path="/notifications"
-                      element={<NotificationsPage />}
-                    />
-                    <Route path="/settings" element={<Settings />} />
-
-                    <Route
-                      path="/gocardless/link"
-                      element={<WideComponent name="GoCardlessLink" />}
-                    />
-
-                    <Route
-                      path="/enablebanking/auth_callback"
-                      element={<EnableBankingCallback />}
-                    />
-
-                    <Route
-                      path="/accounts"
-                      element={
-                        <ErrorBoundary
-                          FallbackComponent={FeatureErrorFallback}
-                          resetKeys={[location.pathname]}
-                        >
-                          <WideComponent name="Accounts" />
-                        </ErrorBoundary>
-                      }
-                    />
-
-                    <Route
-                      path="/accounts/:id"
-                      element={
-                        <ErrorBoundary
-                          key={location.pathname}
-                          FallbackComponent={FeatureErrorFallback}
-                          resetKeys={[location.pathname]}
-                        >
-                          <WideComponent name="Account" />
-                        </ErrorBoundary>
-                      }
-                    />
-
-                    <Route
-                      path="/categories/:id"
-                      element={
-                        <ErrorBoundary
-                          FallbackComponent={FeatureErrorFallback}
-                          resetKeys={[location.pathname]}
-                        >
-                          <WideComponent name="Category" />
-                        </ErrorBoundary>
-                      }
-                    />
-                    {multiuserEnabled && (
-                      <Route
-                        path="/user-directory"
-                        element={
-                          <ProtectedRoute
-                            permission={Permissions.ADMINISTRATOR}
-                            element={<UserDirectoryPage />}
-                          />
-                        }
-                      />
-                    )}
-                    {multiuserEnabled && (
-                      <Route
-                        path="/user-access"
-                        element={
-                          <ProtectedRoute
-                            permission={Permissions.ADMINISTRATOR}
-                            validateOwner
-                            element={<UserAccessPage />}
-                          />
-                        }
-                      />
-                    )}
-                    {/* redirect all other traffic to the budget page */}
-                    <Route
-                      path="/*"
-                      element={<Navigate to="/budget" replace />}
-                    />
-                  </Routes>
+                  <FinancesAppRoutes />
                 </View>
               </MobilePageHeaderProvider>
             </ScrollProvider>
