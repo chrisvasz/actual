@@ -933,7 +933,8 @@ type TransactionProps = {
   categoryGroups: CategoryGroupEntity[];
   payees: PayeeEntity[];
   accounts: AccountEntity[];
-  balance: number;
+  // `null` while the running balances are still loading.
+  balance: number | null;
   dateFormat: string;
   hideFraction: boolean;
   onSave: (
@@ -1309,7 +1310,8 @@ const Transaction = memo(function Transaction({
   const backgroundFocus = focusedField === 'select';
   const amountStyle = hideFraction ? { letterSpacing: -0.5 } : null;
 
-  const runningBalance = !isTemporaryId(id) ? balance : balance + amount;
+  const runningBalance =
+    balance == null || !isTemporaryId(id) ? balance : balance + amount;
 
   // Ok this entire logic is a dirty, dirty hack.. but let me explain.
   // Problem: the split-error Popover (which has the buttons to distribute/add split)
@@ -1975,7 +1977,7 @@ const Transaction = memo(function Transaction({
             }
             valueStyle={{
               color:
-                runningBalance < 0
+                runningBalance != null && runningBalance < 0
                   ? theme.numberNegative
                   : theme.numberPositive,
             }}
@@ -2804,7 +2806,7 @@ function TransactionTableInner({
         expanded={isExpanded?.(trans.id)}
         matched={isMatched?.(trans.id)}
         showZeroInDeposit={isChildDeposit}
-        balance={balances?.[trans.id] ?? 0}
+        balance={balances?.[trans.id] ?? null}
         amountColumnWidths={amountColumnWidths}
         focusedField={editing ? tableNavigator.focusedField : undefined}
         accounts={accounts}
