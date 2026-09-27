@@ -311,6 +311,8 @@ type DateSelectProps = {
   clearOnBlur?: boolean;
   onUpdate?: (selectedDate: string) => void;
   onSelect: (selectedDate: string) => void;
+  // Called after a date is clicked in the calendar
+  onCalendarSelect?: (selectedDate: string) => void;
   transferDateSyncChecked?: boolean;
   onTransferDateSyncChange?: (checked: boolean) => void;
 };
@@ -329,6 +331,7 @@ function DateSelectDesktop({
   clearOnBlur = true,
   onUpdate,
   onSelect,
+  onCalendarSelect,
   transferDateSyncChecked,
   onTransferDateSyncChange,
 }: DateSelectProps) {
@@ -544,6 +547,7 @@ function DateSelectDesktop({
               setValue(format(date, dateFormat));
               onSelect(format(date, 'yyyy-MM-dd'));
               setOpen(false);
+              onCalendarSelect?.(format(date, 'yyyy-MM-dd'));
             }}
           />
           {onTransferDateSyncChange && (
