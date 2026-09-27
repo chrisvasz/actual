@@ -24,21 +24,15 @@ global.ResizeObserver = class {
 type Size = { height: number; width: number };
 
 type AutoSizerProps = {
-  renderProp?: (size: Size) => ReactNode;
-  children?: (size: Size) => ReactNode;
+  renderProp: (size: Size) => ReactNode;
 };
 
-vi.mock('react-virtualized-auto-sizer', () => {
-  const AutoSizer = (props: AutoSizerProps) => {
-    const render = props.renderProp ?? props.children;
-    return render ? render({ height: 1000, width: 600 }) : null;
-  };
-
-  return {
-    AutoSizer,
-    default: AutoSizer,
-  };
-});
+// jsdom has no layout, so every element measures 0x0 and the sized content
+// would never render. Hand it a fixed size instead.
+vi.mock('#components/util/AutoSizer', () => ({
+  AutoSizer: ({ renderProp }: AutoSizerProps) =>
+    renderProp({ height: 1000, width: 600 }),
+}));
 
 global.Date.now = () => 123456789;
 

@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { TextArea } from 'react-aria-components';
 import { Trans, useTranslation } from 'react-i18next';
-import { AutoSizer } from 'react-virtualized-auto-sizer';
 
 import { Button } from '@actual-app/components/button';
 import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
@@ -14,6 +13,7 @@ import { View } from '@actual-app/components/view';
 
 import { Link } from '#components/common/Link';
 import { FixedSizeList } from '#components/FixedSizeList';
+import { AutoSizer } from '#components/util/AutoSizer';
 import { useGlobalPref } from '#hooks/useGlobalPref';
 import { useThemeCatalog } from '#hooks/useThemeCatalog';
 import {

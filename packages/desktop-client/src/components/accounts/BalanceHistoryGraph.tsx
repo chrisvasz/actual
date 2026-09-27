@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties, Ref } from 'react';
-import { AutoSizer } from 'react-virtualized-auto-sizer';
 
 import { SpaceBetween } from '@actual-app/components/space-between';
 import { styles } from '@actual-app/components/styles';
@@ -14,6 +13,7 @@ import { Area, AreaChart, Tooltip as RechartsTooltip, YAxis } from 'recharts';
 
 import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
+import { AutoSizer } from '#components/util/AutoSizer';
 import { useLocale } from '#hooks/useLocale';
 import * as query from '#queries';
 import { liveQuery } from '#queries/liveQuery';
