@@ -25,16 +25,14 @@ import { SpaceBetween } from '@actual-app/components/space-between';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
-import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
-import { tsToRelativeTime } from '@actual-app/core/shared/util';
 import type {
   AccountEntity,
   RuleConditionEntity,
   TransactionEntity,
   TransactionFilterEntity,
 } from '@actual-app/core/types/models';
-import { differenceInCalendarDays, format as formatDate } from 'date-fns';
+import { differenceInCalendarDays } from 'date-fns';
 import type { TFunction } from 'i18next';
 
 import { isAccountFailedSync } from '#accounts/syncStatus';
@@ -45,9 +43,7 @@ import { FiltersStack } from '#components/filters/FiltersStack';
 import type { SavedFilter } from '#components/filters/SavedFilterMenuButton';
 import { NotesButton } from '#components/NotesButton';
 import { SelectedTransactionsButton } from '#components/transactions/SelectedTransactionsButton';
-import { useDateFormat } from '#hooks/useDateFormat';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
-import { useLocale } from '#hooks/useLocale';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { useSplitsExpanded } from '#hooks/useSplitsExpanded';
 import { useSyncedPref } from '#hooks/useSyncedPref';
@@ -198,9 +194,6 @@ export function AccountHeader({
     `show-account-${accountId}-net-worth-chart`,
   );
   const showNetWorthChart = showNetWorthChartPref === 'true';
-
-  const dateFormat = useDateFormat() || 'MM/dd/yyyy';
-  const locale = useLocale();
 
   let canSync = !!(account?.account_id && isUsingServer);
   if (!account) {
@@ -382,62 +375,33 @@ export function AccountHeader({
                 gap: 6,
               }}
             >
-              <Tooltip
-                style={{
-                  ...styles.tooltip,
-                  marginBottom: 10,
-                }}
-                content={
-                  account.last_reconciled
-                    ? t(
-                        'Reconciled {{ relativeTimeAgo }} ({{ absoluteDate }})',
-                        {
-                          relativeTimeAgo: tsToRelativeTime(
-                            account.last_reconciled,
-                            locale,
-                          ),
-                          absoluteDate: formatDate(
-                            new Date(parseInt(account.last_reconciled, 10)),
-                            dateFormat,
-                            { locale },
-                          ),
-                        },
-                      )
-                    : t('Not yet reconciled')
-                }
-                placement="top"
-                triggerProps={{
-                  isDisabled: reconcileOpen,
+              <Button
+                ref={reconcileRef}
+                variant="bare"
+                onPress={() => {
+                  setReconcileOpen(true);
                 }}
               >
-                <Button
-                  ref={reconcileRef}
-                  variant="bare"
-                  onPress={() => {
-                    setReconcileOpen(true);
-                  }}
-                >
-                  <SvgLockClosed
-                    width={13}
-                    height={13}
-                    style={{ marginRight: 4 }}
-                  />{' '}
-                  <Trans>Reconcile</Trans>
-                </Button>
-                <Popover
-                  placement="bottom"
-                  triggerRef={reconcileRef}
-                  style={{ width: 275 }}
-                  isOpen={reconcileOpen}
-                  onOpenChange={() => setReconcileOpen(false)}
-                >
-                  <ReconcileMenu
-                    account={account}
-                    onClose={() => setReconcileOpen(false)}
-                    onReconcile={onReconcile}
-                  />
-                </Popover>
-              </Tooltip>
+                <SvgLockClosed
+                  width={13}
+                  height={13}
+                  style={{ marginRight: 4 }}
+                />{' '}
+                <Trans>Reconcile</Trans>
+              </Button>
+              <Popover
+                placement="bottom"
+                triggerRef={reconcileRef}
+                style={{ width: 275 }}
+                isOpen={reconcileOpen}
+                onOpenChange={() => setReconcileOpen(false)}
+              >
+                <ReconcileMenu
+                  account={account}
+                  onClose={() => setReconcileOpen(false)}
+                  onReconcile={onReconcile}
+                />
+              </Popover>
               {account.last_reconciled && (
                 <Text
                   style={{
