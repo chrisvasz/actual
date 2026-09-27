@@ -1930,7 +1930,9 @@ class AccountInternal extends PureComponent<
                   categoryGroups={categoryGroups}
                   payees={payees}
                   balances={allBalances}
-                  showBalances={!!allBalances}
+                  // Follow the setting rather than whether balances have
+                  // loaded, so the column doesn't pop in after the rows.
+                  showBalances={!!showBalances && this.canCalculateBalance()}
                   showReconciled={showReconciled}
                   showCleared={!!showCleared}
                   showGroup={this.props.showGroup}
@@ -2106,7 +2108,7 @@ export function Account() {
     <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
       <SchedulesProvider query={schedulesQuery}>
         <SplitsExpandedProvider
-          initialMode={expandSplits ? 'collapse' : 'expand'}
+          initialMode={expandSplits ? 'expand' : 'collapse'}
         >
           <AccountHack
             newTransactions={newTransactions}
