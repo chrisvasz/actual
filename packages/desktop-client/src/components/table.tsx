@@ -697,12 +697,22 @@ export function SheetCell<
 }: SheetCellProps<SheetName, FieldName>) {
   const { binding, type, getValueStyle, formatExpr, unformatExpr } = valueProps;
 
-  const sheetValue = useSheetValue(binding, () => {
+  // The value just saved from the input, shown until the spreadsheet
+  // reports the new value so the cell doesn't flash the old one while
+  // the save round-trips to the server.
+  const [pendingValue, setPendingValue] = useState<{
+    value: Spreadsheets[SheetName][FieldName];
+  } | null>(null);
+
+  const latestSheetValue = useSheetValue(binding, () => {
+    setPendingValue(null);
+
     // "close" the cell if it's editing
     if (props.exposed && inputProps && inputProps.onBlur) {
       inputProps.onBlur();
     }
   });
+  const sheetValue = pendingValue ? pendingValue.value : latestSheetValue;
   const format = useFormat();
 
   return (
@@ -725,7 +735,13 @@ export function SheetCell<
           <InputValue
             value={formatExpr ? formatExpr(sheetValue) : sheetValue.toString()}
             onUpdate={value => {
-              onSave(unformatExpr ? unformatExpr(value) : value);
+              const newValue = unformatExpr ? unformatExpr(value) : value;
+              if (typeof newValue === 'number' && newValue !== sheetValue) {
+                setPendingValue({
+                  value: newValue as Spreadsheets[SheetName][FieldName],
+                });
+              }
+              onSave(newValue);
             }}
             {...inputProps}
             style={{ textAlign, ...(inputProps?.style || {}) }}
