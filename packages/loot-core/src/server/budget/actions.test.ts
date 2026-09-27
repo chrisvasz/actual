@@ -205,7 +205,6 @@ describe('coverOverbudgeted', () => {
     await coverOverbudgeted({
       month: '2024-02',
       category: 'cat1',
-      currencyCode: 'USD',
     });
     await sheet.waitOnSpreadsheet();
 
@@ -221,7 +220,6 @@ describe('coverOverbudgeted', () => {
     await coverOverbudgeted({
       month: '2024-02',
       category: 'cat3',
-      currencyCode: 'USD',
     });
     await sheet.waitOnSpreadsheet();
 

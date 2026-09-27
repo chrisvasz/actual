@@ -666,7 +666,6 @@ type ApplyBudgetActionPayload =
         to: CategoryEntity['id'];
         from: CategoryEntity['id'];
         amount?: IntegerAmount;
-        currencyCode: string;
       };
     }
   | {
@@ -683,7 +682,6 @@ type ApplyBudgetActionPayload =
       args: {
         category: CategoryEntity['id'];
         amount?: IntegerAmount;
-        currencyCode: string;
       };
     }
   | {
@@ -693,7 +691,6 @@ type ApplyBudgetActionPayload =
         amount: number;
         from: CategoryEntity['id'];
         to: CategoryEntity['id'];
-        currencyCode: string;
       };
     }
   | {
@@ -816,7 +813,6 @@ export function useBudgetActions() {
             to: args.to,
             from: args.from,
             amount: args.amount,
-            currencyCode: args.currencyCode,
           });
           return null;
         case 'transfer-available':
@@ -831,7 +827,6 @@ export function useBudgetActions() {
             month,
             category: args.category,
             amount: args.amount,
-            currencyCode: args.currencyCode,
           });
           return null;
         case 'transfer-category':
@@ -840,7 +835,6 @@ export function useBudgetActions() {
             amount: args.amount,
             from: args.from,
             to: args.to,
-            currencyCode: args.currencyCode,
           });
           return null;
         case 'carryover': {

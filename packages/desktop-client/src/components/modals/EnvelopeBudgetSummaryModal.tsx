@@ -94,7 +94,6 @@ export function EnvelopeBudgetSummaryModal({
               void onBudgetAction(month, 'cover-overbudgeted', {
                 category: categoryId,
                 amount,
-                currencyCode: format.currency.code,
               });
               dispatch(collapseModals({ rootModalName: 'cover' }));
               showUndoNotification({

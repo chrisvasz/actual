@@ -1,6 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
 
-import { useFormat } from '#hooks/useFormat';
 import { envelopeBudget } from '#spreadsheet/bindings';
 
 import { BalanceMenu } from './BalanceMenu';
@@ -21,8 +20,6 @@ export function BalanceMovementMenu({
   onBudgetAction,
   onClose,
 }: BalanceMovementMenuProps) {
-  const format = useFormat();
-
   const catBalance =
     useEnvelopeSheetValue(envelopeBudget.catBalance(categoryId)) ?? 0;
 
@@ -66,7 +63,6 @@ export function BalanceMovementMenu({
               amount,
               from: categoryId,
               to: toCategoryId,
-              currencyCode: format.currency.code,
             });
           }}
         />
@@ -82,7 +78,6 @@ export function BalanceMovementMenu({
               to: categoryId,
               from: fromCategoryId,
               amount,
-              currencyCode: format.currency.code,
             });
           }}
         />

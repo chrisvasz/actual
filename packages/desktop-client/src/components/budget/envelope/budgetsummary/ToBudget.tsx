@@ -8,7 +8,6 @@ import { CoverMenu } from '#components/budget/envelope/CoverMenu';
 import { useEnvelopeSheetValue } from '#components/budget/envelope/EnvelopeBudgetComponents';
 import { HoldMenu } from '#components/budget/envelope/HoldMenu';
 import { TransferMenu } from '#components/budget/envelope/TransferMenu';
-import { useFormat } from '#hooks/useFormat';
 import { envelopeBudget } from '#spreadsheet/bindings';
 
 import { ToBudgetAmount } from './ToBudgetAmount';
@@ -34,7 +33,6 @@ export function ToBudget({
 }: ToBudgetProps) {
   const [menuStep, _setMenuStep] = useState<string>('actions');
   const triggerRef = useRef(null);
-  const format = useFormat();
 
   const ref = useRef<HTMLSpanElement>(null);
   const setMenuStep = useCallback(
@@ -141,7 +139,6 @@ export function ToBudget({
                 onBudgetAction(month, 'cover-overbudgeted', {
                   category: categoryId,
                   amount,
-                  currencyCode: format.currency.code,
                 });
               }}
             />
