@@ -6,6 +6,7 @@ import { resolveName, unresolveName } from './util';
 
 export type SpreadsheetHandlers = {
   'get-cell': typeof getCell;
+  'get-cells': typeof getCells;
   'get-cell-names': typeof getCellNames;
   'create-query': typeof createQuery;
 };
@@ -13,6 +14,7 @@ export type SpreadsheetHandlers = {
 // Expose functions to the client
 export const app = createApp<SpreadsheetHandlers>();
 app.method('get-cell', getCell);
+app.method('get-cells', getCells);
 app.method('get-cell-names', getCellNames);
 app.method('create-query', createQuery);
 
@@ -25,6 +27,21 @@ async function getCell({
 }) {
   const node = sheet.get()._getNode(resolveName(sheetName, name));
   return { name: node.name, value: node.value };
+}
+
+// Reading cells is a plain in-memory lookup, so the cost of fetching a lot of
+// them is almost entirely the round trip. Pages that bind many cells at once -
+// the budget table binds roughly six per category per month - ask for them
+// together rather than one message each.
+async function getCells({
+  cells,
+}: {
+  cells: Array<{ sheetName: string; name: string }>;
+}) {
+  return cells.map(({ sheetName, name }) => {
+    const node = sheet.get()._getNode(resolveName(sheetName, name));
+    return { name: node.name, value: node.value };
+  });
 }
 
 async function getCellNames({ sheetName }: { sheetName: string }) {
