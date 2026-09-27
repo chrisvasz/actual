@@ -14,7 +14,9 @@ import { useDispatch } from '#redux';
 type UseContextMenuProps = {
   triggerRef: RefObject<HTMLElement | null>;
   enabled?: boolean;
-  items: Falsy<ContextMenuItem>[];
+  // Pass a function to build the items when the menu opens rather than on
+  // every render.
+  items: Falsy<ContextMenuItem>[] | (() => Falsy<ContextMenuItem>[]);
 };
 
 export function useContextMenu({
@@ -24,13 +26,14 @@ export function useContextMenu({
 }: UseContextMenuProps) {
   const dispatch = useDispatch();
 
-  const processedItems = items.filter(
-    item => item && (typeof item === 'symbol' || !item.hidden),
-  ) as ContextMenuItem[];
-
   useRefEventListener(triggerRef, 'contextmenu', (e: MouseEvent) => {
     if (enabled) {
       e.preventDefault();
+      const processedItems = (
+        typeof items === 'function' ? items() : items
+      ).filter(
+        item => item && (typeof item === 'symbol' || !item.hidden),
+      ) as ContextMenuItem[];
       dispatch(addItems(processedItems));
       dispatch(setContextMenuPosition({ x: e.clientX, y: e.clientY }));
     }

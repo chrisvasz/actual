@@ -84,22 +84,6 @@ export function useTransactionRowContextActions({
     };
   }, [selectedIds]);
 
-  const ambiguousDuplication = useMemo(() => {
-    const transactions = selectedIds.map(id => getTransaction(id));
-
-    return transactions.some(tx => tx && tx.is_child);
-  }, [selectedIds, getTransaction]);
-
-  const linked = useMemo(() => {
-    return (
-      !types.preview &&
-      selectedIds.every(id => {
-        const t = getTransaction(id);
-        return t && t.schedule;
-      })
-    );
-  }, [types.preview, selectedIds, getTransaction]);
-
   const canBeSkipped = useMemo(() => {
     const recurringSchedules = selectedSchedules.filter(s => {
       const { date: dateCond } = extractScheduleConds(s._conditions);
@@ -117,22 +101,6 @@ export function useTransactionRowContextActions({
 
     return singleSchedules.length === selectedSchedules.length;
   }, [selectedSchedules]);
-
-  const canUnsplitTransactions = useMemo(() => {
-    if (selectedIds.length === 0 || types.preview) {
-      return false;
-    }
-
-    const transactions = selectedIds.map(id => getTransaction(id));
-
-    const areNoReconciledTransactions = transactions.every(
-      tx => tx && !tx.reconciled,
-    );
-    const areAllSplitTransactions = transactions.every(
-      tx => tx && (tx.is_parent || tx.is_child),
-    );
-    return areNoReconciledTransactions && areAllSplitTransactions;
-  }, [selectedIds, types, getTransaction]);
 
   function onViewSchedule() {
     const firstId = selectedIds[0];
@@ -185,54 +153,70 @@ export function useTransactionRowContextActions({
     },
   ];
 
-  const transactionActions: ContextMenuItem[] = [
-    {
-      name: 'duplicate',
-      text: t('Duplicate'),
-      onClick: () => onDuplicate(selectedIds),
-      hidden: ambiguousDuplication,
-    },
-    {
-      name: 'delete',
-      text: t('Delete'),
-      onClick: () => onDelete(selectedIds),
-    },
-    {
-      name: 'view-schedule',
-      text: t('View Schedule'),
-      onClick: onViewSchedule,
-      hidden: !(selectedIds.length === 1 && linked),
-    },
-    {
-      name: 'unlink-schedule',
-      text: t('Unlink schedule'),
-      onClick: () => onUnlinkSchedule(selectedIds),
-      hidden: !linked,
-    },
-    {
-      name: 'link-schedule',
-      text: t('Link schedule'),
-      onClick: () => onLinkSchedule(selectedIds),
-      hidden: linked,
-    },
-    {
-      name: 'create-rule',
-      text: t('Create rule'),
-      onClick: () => onCreateRule(selectedIds),
-      hidden: linked,
-    },
-    {
-      name: 'unsplit-transactions',
-      text: t('Unsplit {{count}} transactions', {
-        count: selectedIds.length,
-      }),
-      onClick: () => onMakeAsNonSplitTransactions(selectedIds),
-      hidden: !canUnsplitTransactions,
-    },
-  ];
+  // Built when the menu opens: these flags read other selected transactions
+  // through `getTransaction`, which the row doesn't re-render for.
+  function getTransactionActions(): ContextMenuItem[] {
+    const selectedTransactions = selectedIds.map(id => getTransaction(id));
+    const ambiguousDuplication = selectedTransactions.some(
+      tx => tx && tx.is_child,
+    );
+    const linked =
+      !types.preview && selectedTransactions.every(tx => tx && tx.schedule);
+    const canUnsplitTransactions =
+      selectedIds.length > 0 &&
+      !types.preview &&
+      selectedTransactions.every(tx => tx && !tx.reconciled) &&
+      selectedTransactions.every(tx => tx && (tx.is_parent || tx.is_child));
+
+    return [
+      {
+        name: 'duplicate',
+        text: t('Duplicate'),
+        onClick: () => onDuplicate(selectedIds),
+        hidden: ambiguousDuplication,
+      },
+      {
+        name: 'delete',
+        text: t('Delete'),
+        onClick: () => onDelete(selectedIds),
+      },
+      {
+        name: 'view-schedule',
+        text: t('View Schedule'),
+        onClick: onViewSchedule,
+        hidden: !(selectedIds.length === 1 && linked),
+      },
+      {
+        name: 'unlink-schedule',
+        text: t('Unlink schedule'),
+        onClick: () => onUnlinkSchedule(selectedIds),
+        hidden: !linked,
+      },
+      {
+        name: 'link-schedule',
+        text: t('Link schedule'),
+        onClick: () => onLinkSchedule(selectedIds),
+        hidden: linked,
+      },
+      {
+        name: 'create-rule',
+        text: t('Create rule'),
+        onClick: () => onCreateRule(selectedIds),
+        hidden: linked,
+      },
+      {
+        name: 'unsplit-transactions',
+        text: t('Unsplit {{count}} transactions', {
+          count: selectedIds.length,
+        }),
+        onClick: () => onMakeAsNonSplitTransactions(selectedIds),
+        hidden: !canUnsplitTransactions,
+      },
+    ];
+  }
 
   useContextMenu({
     triggerRef: rowRef,
-    items: types.trans ? transactionActions : scheduleActions,
+    items: () => (types.trans ? getTransactionActions() : scheduleActions),
   });
 }
