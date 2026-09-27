@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React from 'react';
+import React, { memo } from 'react';
 import type { ComponentProps } from 'react';
 
 import { theme } from '@actual-app/components/theme';
@@ -26,7 +26,10 @@ import { useBudgetComponents } from '.';
 type ExpenseCategoryProps = {
   cat: CategoryEntity;
   categoryGroup?: CategoryGroupEntity;
-  editingCell: { id: string; cell: string } | null;
+  // Which of this row's cells is being edited ('name' or a month), if any.
+  // Rows get only their own cell so moving the edit re-renders just two rows.
+  editingCell: string | null;
+  canDrag: boolean;
   dragState: DragState<CategoryEntity> | DragState<CategoryGroupEntity> | null;
   onEditName?: ComponentProps<typeof SidebarCategory>['onEditName'];
   onEditMonth?: (id: CategoryEntity['id'], month: string) => void;
@@ -38,10 +41,11 @@ type ExpenseCategoryProps = {
   onReorder: OnDropCallback;
 };
 
-export function ExpenseCategory({
+export const ExpenseCategory = memo(function ExpenseCategory({
   cat,
   categoryGroup,
   editingCell,
+  canDrag,
   dragState,
   onEditName,
   onEditMonth,
@@ -62,7 +66,7 @@ export function ExpenseCategory({
     type: 'category',
     onDragChange,
     item: cat,
-    canDrag: editingCell === null,
+    canDrag,
   });
   const handleDragRef = useDragRef(dragRef);
 
@@ -92,11 +96,7 @@ export function ExpenseCategory({
           categoryGroup={categoryGroup}
           dragPreview={dragging && dragState.preview}
           dragging={dragging && !dragState.preview}
-          editing={
-            editingCell &&
-            editingCell.cell === 'name' &&
-            editingCell.id === cat.id
-          }
+          editing={editingCell === 'name'}
           onEditName={onEditName}
           onSave={onSave}
           onDelete={onDelete}
@@ -106,11 +106,7 @@ export function ExpenseCategory({
           {({ month }) => (
             <MonthComponent
               month={month}
-              editing={
-                editingCell &&
-                editingCell.id === cat.id &&
-                editingCell.cell === month
-              }
+              editing={editingCell === month}
               category={cat}
               onEdit={onEditMonth}
               onBudgetAction={onBudgetAction}
@@ -121,4 +117,4 @@ export function ExpenseCategory({
       </View>
     </Row>
   );
-}
+});

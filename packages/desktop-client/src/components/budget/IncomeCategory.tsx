@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React from 'react';
+import React, { memo } from 'react';
 import type { ComponentProps } from 'react';
 
 import type { CategoryEntity } from '@actual-app/core/types/models';
@@ -17,7 +17,10 @@ import { useBudgetComponents } from '.';
 type IncomeCategoryProps = {
   cat: CategoryEntity;
   isLast?: boolean;
-  editingCell: { id: CategoryEntity['id']; cell: string } | null;
+  // Which of this row's cells is being edited ('name' or a month), if any.
+  // Rows get only their own cell so moving the edit re-renders just two rows.
+  editingCell: string | null;
+  canDrag: boolean;
   onEditName: ComponentProps<typeof SidebarCategory>['onEditName'];
   onEditMonth?: (id: CategoryEntity['id'], month: string) => void;
   onSave: ComponentProps<typeof SidebarCategory>['onSave'];
@@ -28,10 +31,11 @@ type IncomeCategoryProps = {
   onShowActivity: (id: CategoryEntity['id'], month: string) => void;
 };
 
-export function IncomeCategory({
+export const IncomeCategory = memo(function IncomeCategory({
   cat,
   isLast,
   editingCell,
+  canDrag,
   onEditName,
   onEditMonth,
   onSave,
@@ -45,7 +49,7 @@ export function IncomeCategory({
     type: 'income-category',
     onDragChange,
     item: cat,
-    canDrag: editingCell === null,
+    canDrag,
   });
   const handleDragRef = useDragRef(dragRef);
 
@@ -71,11 +75,7 @@ export function IncomeCategory({
         innerRef={handleDragRef}
         category={cat}
         isLast={isLast}
-        editing={
-          editingCell &&
-          editingCell.cell === 'name' &&
-          editingCell.id === cat.id
-        }
+        editing={editingCell === 'name'}
         onEditName={onEditName}
         onSave={onSave}
         onDelete={onDelete}
@@ -84,11 +84,7 @@ export function IncomeCategory({
         {({ month }) => (
           <MonthComponent
             month={month}
-            editing={
-              editingCell &&
-              editingCell.id === cat.id &&
-              editingCell.cell === month
-            }
+            editing={editingCell === month}
             category={cat}
             isLast={isLast}
             onEdit={onEditMonth}
@@ -99,4 +95,4 @@ export function IncomeCategory({
       </RenderMonths>
     </Row>
   );
-}
+});

@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React from 'react';
+import React, { memo } from 'react';
 
 import { theme } from '@actual-app/components/theme';
 import type { CategoryGroupEntity } from '@actual-app/core/types/models';
@@ -13,7 +13,9 @@ import { useBudgetComponents } from '.';
 
 type IncomeGroupProps = {
   group: CategoryGroupEntity;
-  editingCell: { id: CategoryGroupEntity['id']; cell: string } | null;
+  // Which of this row's cells is being edited ('name' or a month), if any.
+  // Rows get only their own cell so moving the edit re-renders just two rows.
+  editingCell: string | null;
   collapsed: boolean;
   onEditName: (id: CategoryGroupEntity['id']) => void;
   onSave: (group: CategoryGroupEntity) => void;
@@ -25,7 +27,7 @@ type IncomeGroupProps = {
   onShowNewCategory: (groupId: CategoryGroupEntity['id']) => void;
 };
 
-export function IncomeGroup({
+export const IncomeGroup = memo(function IncomeGroup({
   group,
   editingCell,
   collapsed,
@@ -47,11 +49,7 @@ export function IncomeGroup({
       <SidebarGroup
         group={group}
         collapsed={collapsed}
-        editing={
-          editingCell &&
-          editingCell.cell === 'name' &&
-          editingCell.id === group.id
-        }
+        editing={editingCell === 'name'}
         onEdit={onEditName}
         onSave={onSave}
         onSortCategories={onSortCategories}
@@ -63,4 +61,4 @@ export function IncomeGroup({
       </RenderMonths>
     </Row>
   );
-}
+});

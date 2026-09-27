@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React from 'react';
+import React, { memo } from 'react';
 import type { ComponentProps } from 'react';
 
 import { theme } from '@actual-app/components/theme';
@@ -26,7 +26,10 @@ import { useBudgetComponents } from '.';
 type ExpenseGroupProps = {
   group: ComponentProps<typeof SidebarGroup>['group'];
   collapsed: boolean;
-  editingCell: { id: string; cell: string } | null;
+  // Which of this row's cells is being edited ('name' or a month), if any.
+  // Rows get only their own cell so moving the edit re-renders just two rows.
+  editingCell: string | null;
+  canDrag: boolean;
   dragState: DragState<CategoryEntity> | DragState<CategoryGroupEntity> | null;
   onEditName?: ComponentProps<typeof SidebarGroup>['onEdit'];
   onSave?: ComponentProps<typeof SidebarGroup>['onSave'];
@@ -44,10 +47,11 @@ type ExpenseGroupProps = {
   onShowNewCategory?: ComponentProps<typeof SidebarGroup>['onShowNewCategory'];
 };
 
-export function ExpenseGroup({
+export const ExpenseGroup = memo(function ExpenseGroup({
   group,
   collapsed,
   editingCell,
+  canDrag,
   dragState,
   onEditName,
   onSave,
@@ -66,7 +70,7 @@ export function ExpenseGroup({
     type: 'group',
     onDragChange,
     item: group,
-    canDrag: editingCell === null,
+    canDrag,
   });
   const handleDragRef = useDragRef(dragRef);
 
@@ -128,11 +132,7 @@ export function ExpenseGroup({
         <SidebarGroup
           innerRef={handleDragRef}
           group={group}
-          editing={
-            editingCell &&
-            editingCell.cell === 'name' &&
-            editingCell.id === group.id
-          }
+          editing={editingCell === 'name'}
           dragPreview={dragging && dragState.preview}
           collapsed={collapsed}
           onToggleCollapse={onToggleCollapse}
@@ -149,4 +149,4 @@ export function ExpenseGroup({
       </View>
     </Row>
   );
-}
+});
