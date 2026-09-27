@@ -32,17 +32,8 @@ export function FinancesAppRoutes() {
 
       <Route path="/reports/*" element={<Reports />} />
 
-      <Route
-        path="/budget"
-        element={
-          <ErrorBoundary
-            FallbackComponent={FeatureErrorFallback}
-            resetKeys={[location.pathname]}
-          >
-            <WideComponent name="Budget" />
-          </ErrorBoundary>
-        }
-      />
+      {/* Rendered by `KeptBudgetPage`, outside the routes, so it survives navigation. */}
+      <Route path="/budget" element={null} />
 
       <Route
         path="/schedules"

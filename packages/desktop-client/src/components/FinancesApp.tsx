@@ -19,6 +19,7 @@ import { CommandBar } from './CommandBar';
 import { ContextMenu } from './ContextMenu';
 import { FinancesAppRoutes } from './FinancesAppRoutes';
 import { GlobalKeys } from './GlobalKeys';
+import { KeptBudgetPage } from './KeptBudgetPage';
 import { Notifications } from './Notifications';
 import { MobilePageHeaderProvider, MobilePageHeaderSlot } from './Page';
 import { FloatableSidebar } from './sidebar';
@@ -147,6 +148,7 @@ export function FinancesApp() {
                   <BankSyncStatus />
                   {isNarrowWidth && <MobilePageHeaderSlot />}
 
+                  <KeptBudgetPage />
                   <FinancesAppRoutes />
                 </View>
               </MobilePageHeaderProvider>

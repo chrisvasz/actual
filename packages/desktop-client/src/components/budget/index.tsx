@@ -24,9 +24,9 @@ import {
 import { useCategories } from '#hooks/useCategories';
 import { useGlobalPref } from '#hooks/useGlobalPref';
 import { useLocalPref } from '#hooks/useLocalPref';
-import { useNavigate } from '#hooks/useNavigate';
 import { SheetNameProvider } from '#hooks/useSheetName';
 import { useSpreadsheet } from '#hooks/useSpreadsheet';
+import { useStableNavigate } from '#hooks/useStableNavigate';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 
 import { AutoSizingBudgetTable } from './DynamicBudgetTable';
@@ -39,7 +39,7 @@ import { prewarmAllMonths, prewarmMonth } from './util';
 export function Budget() {
   const currentMonth = monthUtils.currentMonth();
   const spreadsheet = useSpreadsheet();
-  const navigate = useNavigate();
+  const navigate = useStableNavigate();
   const [summaryCollapsed, setSummaryCollapsedPref] = useLocalPref(
     'budget.summaryCollapsed',
   );

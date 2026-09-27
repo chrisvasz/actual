@@ -4,10 +4,6 @@ import type { ComponentProps, CSSProperties } from 'react';
 import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
-import {
-  SvgArrowsSynchronize,
-  SvgCalendar3,
-} from '@actual-app/components/icons/v2';
 import { Popover } from '@actual-app/components/popover';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
@@ -17,13 +13,13 @@ import * as monthUtils from '@actual-app/core/shared/months';
 import { css } from '@emotion/css';
 
 import { BalanceWithCarryover } from '#components/budget/BalanceWithCarryover';
+import { ScheduleIndicatorButton } from '#components/budget/ScheduleIndicatorButton';
 import { makeAmountGrey } from '#components/budget/util';
 import { CellValue, CellValueText } from '#components/spreadsheet/CellValue';
 import { Field, SheetCell } from '#components/table';
 import type { SheetCellProps } from '#components/table';
 import { useCategoryScheduleGoalTemplateIndicator } from '#hooks/useCategoryScheduleGoalTemplateIndicator';
 import { useFormat } from '#hooks/useFormat';
-import { useNavigate } from '#hooks/useNavigate';
 import { useSheetValue } from '#hooks/useSheetValue';
 import type { Binding, SheetFields } from '#spreadsheet';
 import { trackingBudget } from '#spreadsheet/bindings';
@@ -204,8 +200,6 @@ export const CategoryMonth = memo(function CategoryMonth({
     setBalanceMenuOpen(false);
   };
 
-  const navigate = useNavigate();
-
   const { schedule, scheduleStatus, isScheduleRecurring, description } =
     useCategoryScheduleGoalTemplateIndicator({
       category,
@@ -285,30 +279,12 @@ export const CategoryMonth = memo(function CategoryMonth({
           }}
         >
           {showScheduleIndicator && (
-            <View title={description}>
-              <Button
-                variant="bare"
-                style={{
-                  color:
-                    scheduleStatus === 'missed'
-                      ? theme.budgetNumberNegative
-                      : scheduleStatus === 'due'
-                        ? theme.templateNumberUnderFunded
-                        : theme.upcomingText,
-                }}
-                onPress={() =>
-                  schedule._account
-                    ? navigate(`/accounts/${schedule._account}`)
-                    : navigate('/accounts')
-                }
-              >
-                {isScheduleRecurring ? (
-                  <SvgArrowsSynchronize style={{ width: 12, height: 12 }} />
-                ) : (
-                  <SvgCalendar3 style={{ width: 12, height: 12 }} />
-                )}
-              </Button>
-            </View>
+            <ScheduleIndicatorButton
+              schedule={schedule}
+              scheduleStatus={scheduleStatus}
+              isScheduleRecurring={isScheduleRecurring}
+              description={description}
+            />
           )}
           <TrackingCellValue
             binding={trackingBudget.catSumAmount(category.id)}
