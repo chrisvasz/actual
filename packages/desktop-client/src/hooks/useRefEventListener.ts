@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 
 export function useRefEventListener<
@@ -18,17 +18,28 @@ export function useRefEventListener<
   callbackRef.current = callback;
 
   // Mutating `ref.current` doesn't re-run effects, so the element can't go in
-  // a dependency array. Re-resolve it after every render and mirror it into
-  // state; `setTarget` bails out when the element hasn't moved.
-  const [target, setTarget] = useState<EventTarget | null>(null);
-  // oxlint-disable-next-line react-hooks/exhaustive-deps -- must run every render; the bail-out stops the update chain
-  useEffect(() => {
-    setTarget(
-      ref instanceof Document || ref instanceof Window ? ref : ref.current,
-    );
-  });
+  // a dependency array. Re-resolve it after every render and rebind only when
+  // it (or `event`) has actually changed. The binding lives in refs rather
+  // than state: mirroring the element into state costs every caller a second
+  // render right after mount, which adds up in lists (one per transaction
+  // row).
+  const bound = useRef<{
+    target: EventTarget;
+    event: EventType;
+    remove: () => void;
+  } | null>(null);
 
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- must run every render to notice a moved element
   useEffect(() => {
+    const target =
+      ref instanceof Document || ref instanceof Window ? ref : ref.current;
+    const current = bound.current;
+    if (current && current.target === target && current.event === event) {
+      return;
+    }
+
+    current?.remove();
+    bound.current = null;
     if (!target) return;
 
     const listener: EventListener = e =>
@@ -37,8 +48,18 @@ export function useRefEventListener<
         e as HTMLElementEventMap[EventType],
       );
     target.addEventListener(event, listener);
-    return () => {
-      target.removeEventListener(event, listener);
+    bound.current = {
+      target,
+      event,
+      remove: () => target.removeEventListener(event, listener),
     };
-  }, [target, event]);
+  });
+
+  useEffect(
+    () => () => {
+      bound.current?.remove();
+      bound.current = null;
+    },
+    [],
+  );
 }
