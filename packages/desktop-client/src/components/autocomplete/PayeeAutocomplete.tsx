@@ -34,7 +34,6 @@ import { css, cx } from '@emotion/css';
 import { Fzf } from 'fzf';
 
 import { useAccounts } from '#hooks/useAccounts';
-import { useCommonPayees } from '#hooks/useCommonPayees';
 import { useLocationPermission } from '#hooks/useLocationPermission';
 import { useNearbyPayees } from '#hooks/useNearbyPayees';
 import { usePayees } from '#hooks/usePayees';
@@ -53,12 +52,7 @@ type PayeeAutocompleteItem = PayeeEntity &
     distance?: number;
   };
 
-const MAX_AUTO_SUGGESTIONS = 5;
-
-function getPayeeSuggestions(
-  commonPayees: PayeeEntity[],
-  payees: PayeeEntity[],
-): PayeeAutocompleteItem[] {
+function getPayeeSuggestions(payees: PayeeEntity[]): PayeeAutocompleteItem[] {
   const favoritePayees: PayeeAutocompleteItem[] = payees
     .filter(p => p.favorite)
     .map(p => {
@@ -66,35 +60,13 @@ function getPayeeSuggestions(
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  let additionalCommonPayees: PayeeAutocompleteItem[] = [];
-  if (commonPayees?.length > 0) {
-    if (favoritePayees.length < MAX_AUTO_SUGGESTIONS) {
-      additionalCommonPayees = commonPayees
-        .filter(
-          p => !(p.favorite || favoritePayees.map(fp => fp.id).includes(p.id)),
-        )
-        .slice(0, MAX_AUTO_SUGGESTIONS - favoritePayees.length)
-        .map(p => {
-          return { ...p, itemType: determineItemType(p, true) };
-        })
-        .sort((a, b) => a.name.localeCompare(b.name));
-    }
-  }
+  const otherPayees: PayeeAutocompleteItem[] = payees
+    .filter(p => !p.favorite)
+    .map(p => {
+      return { ...p, itemType: determineItemType(p, false) };
+    });
 
-  if (favoritePayees.length + additionalCommonPayees.length) {
-    const filteredPayees: PayeeAutocompleteItem[] = payees
-      .filter(p => !favoritePayees.find(fp => fp.id === p.id))
-      .filter(p => !additionalCommonPayees.find(fp => fp.id === p.id))
-      .map<PayeeAutocompleteItem>(p => {
-        return { ...p, itemType: determineItemType(p, false) };
-      });
-
-    return favoritePayees.concat(additionalCommonPayees).concat(filteredPayees);
-  }
-
-  return payees.map(p => {
-    return { ...p, itemType: determineItemType(p, false) };
-  });
+  return favoritePayees.concat(otherPayees);
 }
 
 function filterActivePayees<T extends PayeeEntity>(
@@ -126,7 +98,6 @@ function stripNew(value) {
 
 type PayeeListProps = {
   items: (PayeeAutocompleteItem & PayeeItemType)[];
-  commonPayees: PayeeEntity[];
   getItemProps: (arg: {
     item: PayeeAutocompleteItem;
   }) => ComponentProps<typeof View>;
@@ -146,14 +117,14 @@ type PayeeListProps = {
   onForgetLocation?: (locationId: string) => void;
 };
 
-type ItemTypes = 'account' | 'payee' | 'common_payee' | 'nearby_payee';
+type ItemTypes = 'account' | 'payee' | 'favorite_payee' | 'nearby_payee';
 type PayeeItemType = {
   itemType: ItemTypes;
 };
 
 function determineItemType(
   item: PayeeEntity,
-  isCommon: boolean,
+  isFavorite: boolean,
   isNearby: boolean = false,
 ): ItemTypes {
   if (item.transfer_acct) {
@@ -162,8 +133,8 @@ function determineItemType(
   if (isNearby) {
     return 'nearby_payee';
   }
-  if (isCommon) {
-    return 'common_payee';
+  if (isFavorite) {
+    return 'favorite_payee';
   } else {
     return 'payee';
   }
@@ -187,15 +158,15 @@ function PayeeList({
   // with the value of the input so it always shows whatever the user
   // entered
 
-  const { newPayee, suggestedPayees, payees, transferPayees, nearbyPayees } =
+  const { newPayee, favoritePayees, payees, transferPayees, nearbyPayees } =
     useMemo(() => {
       let currentIndex = 0;
       const result = items.reduce(
         (acc, item) => {
           if (item.id === 'new') {
             acc.newPayee = { ...item };
-          } else if (item.itemType === 'common_payee') {
-            acc.suggestedPayees.push({ ...item });
+          } else if (item.itemType === 'favorite_payee') {
+            acc.favoritePayees.push({ ...item });
           } else if (item.itemType === 'payee') {
             acc.payees.push({ ...item });
           } else if (item.itemType === 'account') {
@@ -208,7 +179,7 @@ function PayeeList({
         {
           newPayee: null as PayeeAutocompleteItem | null,
           nearbyPayees: [] as Array<PayeeAutocompleteItem>,
-          suggestedPayees: [] as Array<PayeeAutocompleteItem>,
+          favoritePayees: [] as Array<PayeeAutocompleteItem>,
           payees: [] as Array<PayeeAutocompleteItem>,
           transferPayees: [] as Array<PayeeAutocompleteItem>,
         },
@@ -224,7 +195,7 @@ function PayeeList({
         highlightedIndex: currentIndex++,
       }));
 
-      const suggestedPayeesWithIndex = result.suggestedPayees.map(item => ({
+      const favoritePayeesWithIndex = result.favoritePayees.map(item => ({
         ...item,
         highlightedIndex: currentIndex++,
       }));
@@ -242,7 +213,7 @@ function PayeeList({
       return {
         newPayee: newPayeeWithIndex,
         nearbyPayees: nearbyPayeesWithIndex,
-        suggestedPayees: suggestedPayeesWithIndex,
+        favoritePayees: favoritePayeesWithIndex,
         payees: payeesWithIndex,
         transferPayees: transferPayeesWithIndex,
       };
@@ -283,9 +254,9 @@ function PayeeList({
           </Fragment>
         ))}
 
-        {suggestedPayees.length > 0 &&
-          renderPayeeItemGroupHeader({ title: t('Suggested Payees') })}
-        {suggestedPayees.map(item => (
+        {favoritePayees.length > 0 &&
+          renderPayeeItemGroupHeader({ title: t('Favorite Payees') })}
+        {favoritePayees.map(item => (
           <Fragment key={item.id}>
             {renderPayeeItem({
               ...(getItemProps ? getItemProps({ item }) : {}),
@@ -386,7 +357,6 @@ export function PayeeAutocomplete({
   ...props
 }: PayeeAutocompleteProps) {
   const { t } = useTranslation();
-  const { data: commonPayees } = useCommonPayees();
   const { data: retrievedPayees = [] } = usePayees();
   const { isGranted } = useLocationPermission();
   const { data: retrievedNearbyPayees = [] } = useNearbyPayees({
@@ -411,7 +381,7 @@ export function PayeeAutocomplete({
   const [rawPayee, setRawPayee] = useState('');
   const hasPayeeInput = !!rawPayee;
   const payeeSuggestions: PayeeAutocompleteItem[] = useMemo(() => {
-    const suggestions = getPayeeSuggestions(commonPayees, payees);
+    const suggestions = getPayeeSuggestions(payees);
 
     let filteredSuggestions: PayeeAutocompleteItem[] = [...suggestions];
 
@@ -432,7 +402,6 @@ export function PayeeAutocomplete({
       ...filteredSuggestions,
     ];
   }, [
-    commonPayees,
     payees,
     focusTransferPayees,
     accounts,
@@ -592,7 +561,6 @@ export function PayeeAutocomplete({
       renderItems={(items, getItemProps, highlightedIndex, inputValue) => (
         <PayeeList
           items={[...filteredNearbyPayees, ...items]}
-          commonPayees={commonPayees}
           getItemProps={getItemProps}
           highlightedIndex={highlightedIndex}
           inputValue={inputValue}

@@ -27,17 +27,6 @@ export const payeeQueries = {
       // Manually invalidated when payees change via sync events
       staleTime: Infinity,
     }),
-  listCommon: () =>
-    queryOptions<PayeeEntity[]>({
-      queryKey: [...payeeQueries.lists(), 'common'],
-      queryFn: async () => {
-        const payees: PayeeEntity[] = (await send('common-payees-get')) ?? [];
-        return translatePayees(payees);
-      },
-      placeholderData: [],
-      // Manually invalidated when payees change via sync events
-      staleTime: Infinity,
-    }),
   listOrphaned: () =>
     queryOptions<Pick<PayeeEntity, 'id'>[]>({
       queryKey: [...payeeQueries.lists(), 'orphaned'],
