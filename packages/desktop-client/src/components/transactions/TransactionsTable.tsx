@@ -911,7 +911,11 @@ function PayeeIcons({
 }
 
 type TransactionProps = {
-  allTransactions?: TransactionEntity[];
+  // A stable lookup rather than the transactions array itself, so that rows
+  // don't all re-render whenever any transaction in the list changes.
+  getTransaction?: (
+    id: TransactionEntity['id'],
+  ) => TransactionEntity | undefined;
   transaction: TransactionEntity;
   // Looked up by the table rather than read from the schedules context here,
   // so that schedules loading only re-renders the rows linked to one.
@@ -982,8 +986,12 @@ type TransactionProps = {
   amountColumnWidths: AmountColumnWidths;
 };
 
+function getNoTransaction() {
+  return undefined;
+}
+
 const Transaction = memo(function Transaction({
-  allTransactions,
+  getTransaction = getNoTransaction,
   transaction: originalTransaction,
   schedule,
   subtransactions,
@@ -1321,6 +1329,8 @@ const Transaction = memo(function Transaction({
   // a variable (with a small delay in order for the next render cycle to pick up
   // the change instead of the current). We pass the integer to the Popover which
   // causes it to re-calculate the positioning. Thus fixing the problem.
+  // `splitError` is a new element every time the table renders its rows, so
+  // this re-runs on every table update, including transactions changing.
   useEffect(() => {
     // The hack applies to only transactions with split errors
     if (!splitError) {
@@ -1331,7 +1341,7 @@ const Transaction = memo(function Transaction({
       window.dispatchEvent(new Event('resize')); // Force popover to recalculate position
     }, 1);
     return () => clearTimeout(id);
-  }, [splitError, allTransactions]);
+  }, [splitError]);
 
   // Drag and drop support
   const isChildTransaction = transaction.is_child;
@@ -1446,7 +1456,7 @@ const Transaction = memo(function Transaction({
   useTransactionRowContextActions({
     rowRef: triggerRef,
     transaction,
-    getTransaction: id => allTransactions?.find(t => t.id === id),
+    getTransaction,
     onDelete: ids => onBatchDelete?.(ids),
     onDuplicate: ids => onBatchDuplicate?.(ids),
     onLinkSchedule: ids => onBatchLinkSchedule?.(ids),
@@ -2654,6 +2664,17 @@ function TransactionTableInner({
     () => new Map(schedules.map(schedule => [schedule.id, schedule])),
     [schedules],
   );
+  // Rows look transactions up through a stable function instead of receiving
+  // the array, so a change elsewhere in the list doesn't break their memo.
+  const latestTransactions = useRef(props.transactions);
+  useLayoutEffect(() => {
+    latestTransactions.current = props.transactions;
+  }, [props.transactions]);
+  const getTransaction = useCallback(
+    (id: TransactionEntity['id']) =>
+      latestTransactions.current.find(t => t.id === id),
+    [],
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const isAddingPrev = usePrevious(props.isAdding);
   const {
@@ -2791,7 +2812,7 @@ function TransactionTableInner({
 
     return (
       <Transaction
-        allTransactions={props.transactions}
+        getTransaction={getTransaction}
         editing={editing}
         transaction={trans}
         schedule={(trans.schedule && schedulesById.get(trans.schedule)) || null}
