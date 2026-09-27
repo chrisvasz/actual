@@ -115,6 +115,10 @@ function makeSpreadsheet() {
               observers.forEach(func => func(node));
               cellCache[node.name] = Promise.resolve(node);
               LRUValueCache.set(node.name, node);
+            } else if (LRUValueCache.has(node.name)) {
+              // Nothing is showing this cell right now (e.g. the budget page
+              // is hidden), but it renders from this value when it comes back.
+              LRUValueCache.set(node.name, node);
             }
           });
         }
