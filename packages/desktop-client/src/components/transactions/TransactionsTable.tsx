@@ -10,6 +10,7 @@ import {
   useState,
 } from 'react';
 import type {
+  ComponentProps,
   CSSProperties,
   ForwardedRef,
   KeyboardEvent,
@@ -1350,14 +1351,6 @@ const Transaction = memo(function Transaction({
     canDrag &&
     !isOnlyTransactionOnDate &&
     (!editing || focusedField === 'select' || focusedField === 'cleared');
-  const { dragRef, dragProps } = useDrag<TransactionEntity>({
-    item: originalTransaction,
-    type: 'transaction',
-    canDrag: allowRowDrag,
-    onDragChange,
-    preview: previewRef,
-  });
-
   // Gate callbacks for non-reorderable rows (children/previews) to avoid invalid drop operations
   // For child transactions, allow drops only from siblings (same parent)
   // For previews, allow drops only from another preview on the same date
@@ -1382,9 +1375,6 @@ const Transaction = memo(function Transaction({
     id: transaction.id,
     onDrop: safeOnDrop,
   });
-
-  // Merge refs: drag on row, drop on outer view
-  const rowRef = useMergedRefs(triggerRef, dragRef);
 
   // Check if this row is a valid drop target for the currently dragged transaction
   const isValidDropTarget = useMemo(() => {
@@ -2019,9 +2009,12 @@ const Transaction = memo(function Transaction({
       }}
     >
       <DropHighlight pos={showDropHighlight ? dropPos : null} />
-      <Row
-        ref={rowRef}
-        {...dragProps}
+      <TransactionDragRow
+        rowRef={triggerRef}
+        item={originalTransaction}
+        canDrag={allowRowDrag}
+        onDragChange={onDragChange}
+        preview={previewRef}
         style={{
           backgroundColor: selected
             ? theme.tableRowBackgroundHighlight
@@ -2076,7 +2069,7 @@ const Transaction = memo(function Transaction({
         {columns.slice(selectionCellIndex).map(renderColumnCell)}
 
         <Cell width={5} />
-      </Row>
+      </TransactionDragRow>
       <DragPreview ref={previewRef}>
         {() => (
           <View
@@ -2144,6 +2137,45 @@ const Transaction = memo(function Transaction({
     </View>
   );
 });
+
+type TransactionDragRowProps = {
+  rowRef: Ref<HTMLDivElement>;
+  item: TransactionEntity;
+  canDrag: boolean;
+  onDragChange?: OnDragChangeCallback<TransactionEntity>;
+  preview: RefObject<DragPreviewRenderer | null>;
+  style: ComponentProps<typeof Row>['style'];
+  children: ReactNode;
+};
+
+// react-aria's useDrag sets a description id in a layout effect right after
+// mount, which re-renders whatever component calls it. Keeping the hook in
+// this small wrapper means that re-render only touches the row element: the
+// cells come in as `children`, which are unchanged, so React skips them.
+function TransactionDragRow({
+  rowRef,
+  item,
+  canDrag,
+  onDragChange,
+  preview,
+  style,
+  children,
+}: TransactionDragRowProps) {
+  const { dragRef, dragProps } = useDrag<TransactionEntity>({
+    item,
+    type: 'transaction',
+    canDrag,
+    onDragChange,
+    preview,
+  });
+  const ref = useMergedRefs(rowRef, dragRef);
+
+  return (
+    <Row ref={ref} {...dragProps} style={style}>
+      {children}
+    </Row>
+  );
+}
 
 type NotesCellProps = {
   note: string;
