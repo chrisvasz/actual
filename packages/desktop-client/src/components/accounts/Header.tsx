@@ -23,6 +23,7 @@ import { Menu } from '@actual-app/components/menu';
 import { Popover } from '@actual-app/components/popover';
 import { SpaceBetween } from '@actual-app/components/space-between';
 import { styles } from '@actual-app/components/styles';
+import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
@@ -33,7 +34,8 @@ import type {
   TransactionEntity,
   TransactionFilterEntity,
 } from '@actual-app/core/types/models';
-import { format as formatDate } from 'date-fns';
+import { differenceInCalendarDays, format as formatDate } from 'date-fns';
+import type { TFunction } from 'i18next';
 
 import { isAccountFailedSync } from '#accounts/syncStatus';
 import { AnimatedRefresh } from '#components/AnimatedRefresh';
@@ -371,6 +373,84 @@ export function AccountHeader({
             {/* @ts-expect-error fix me */}
             <FilterButton onApply={onApplyFilter} />
           </View>
+          {account && (
+            <View
+              style={{
+                flexShrink: 0,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <Tooltip
+                style={{
+                  ...styles.tooltip,
+                  marginBottom: 10,
+                }}
+                content={
+                  account.last_reconciled
+                    ? t(
+                        'Reconciled {{ relativeTimeAgo }} ({{ absoluteDate }})',
+                        {
+                          relativeTimeAgo: tsToRelativeTime(
+                            account.last_reconciled,
+                            locale,
+                          ),
+                          absoluteDate: formatDate(
+                            new Date(parseInt(account.last_reconciled, 10)),
+                            dateFormat,
+                            { locale },
+                          ),
+                        },
+                      )
+                    : t('Not yet reconciled')
+                }
+                placement="top"
+                triggerProps={{
+                  isDisabled: reconcileOpen,
+                }}
+              >
+                <Button
+                  ref={reconcileRef}
+                  variant="bare"
+                  onPress={() => {
+                    setReconcileOpen(true);
+                  }}
+                >
+                  <SvgLockClosed
+                    width={13}
+                    height={13}
+                    style={{ marginRight: 4 }}
+                  />{' '}
+                  <Trans>Reconcile</Trans>
+                </Button>
+                <Popover
+                  placement="bottom"
+                  triggerRef={reconcileRef}
+                  style={{ width: 275 }}
+                  isOpen={reconcileOpen}
+                  onOpenChange={() => setReconcileOpen(false)}
+                >
+                  <ReconcileMenu
+                    account={account}
+                    onClose={() => setReconcileOpen(false)}
+                    onReconcile={onReconcile}
+                  />
+                </Popover>
+              </Tooltip>
+              {account.last_reconciled && (
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: theme.pageTextLight,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {formatDaysSinceReconciled(account.last_reconciled, t)}
+                </Text>
+              )}
+            </View>
+          )}
           <View style={{ flex: 1 }} />
 
           <Search
@@ -402,67 +482,6 @@ export function AccountHeader({
               onMergeTransactions={onMergeTransactions}
             />
           )}
-          <View style={{ flex: '0 0 auto' }}>
-            {account && (
-              <Tooltip
-                style={{
-                  ...styles.tooltip,
-                  marginBottom: 10,
-                }}
-                content={
-                  account?.last_reconciled
-                    ? t(
-                        'Reconciled {{ relativeTimeAgo }} ({{ absoluteDate }})',
-                        {
-                          relativeTimeAgo: tsToRelativeTime(
-                            account.last_reconciled,
-                            locale,
-                          ),
-                          absoluteDate: formatDate(
-                            new Date(
-                              parseInt(account.last_reconciled ?? '0', 10),
-                            ),
-                            dateFormat,
-                            { locale },
-                          ),
-                        },
-                      )
-                    : t('Not yet reconciled')
-                }
-                placement="top"
-                triggerProps={{
-                  isDisabled: reconcileOpen,
-                }}
-              >
-                <Button
-                  ref={reconcileRef}
-                  variant="bare"
-                  aria-label={t('Reconcile')}
-                  style={{ padding: 6 }}
-                  onPress={() => {
-                    setReconcileOpen(true);
-                  }}
-                >
-                  <View>
-                    <SvgLockClosed width={14} height={14} />
-                  </View>
-                </Button>
-                <Popover
-                  placement="bottom"
-                  triggerRef={reconcileRef}
-                  style={{ width: 275 }}
-                  isOpen={reconcileOpen}
-                  onOpenChange={() => setReconcileOpen(false)}
-                >
-                  <ReconcileMenu
-                    account={account}
-                    onClose={() => setReconcileOpen(false)}
-                    onReconcile={onReconcile}
-                  />
-                </Popover>
-              </Tooltip>
-            )}
-          </View>
           <Button
             variant="bare"
             aria-label={
@@ -814,4 +833,22 @@ function AccountMenu({
       ]}
     />
   );
+}
+
+function formatDaysSinceReconciled(lastReconciled: string, t: TFunction) {
+  const days = Math.max(
+    0,
+    differenceInCalendarDays(
+      new Date(),
+      new Date(parseInt(lastReconciled, 10)),
+    ),
+  );
+  if (days === 0) {
+    return t('Today');
+  }
+  return t('{{count}} days ago', {
+    count: days,
+    defaultValue_one: '{{count}} day ago',
+    defaultValue_other: '{{count}} days ago',
+  });
 }
