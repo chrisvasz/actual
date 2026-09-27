@@ -53,8 +53,10 @@ export function Budget() {
   const [maxMonthsPref] = useGlobalPref('maxMonths');
   const maxMonths = maxMonthsPref || 1;
   const [initialized, setInitialized] = useState(false);
-  const { data: { grouped: categoryGroups } = { grouped: [] } } =
-    useCategories();
+  // Not destructured with a default: the React Compiler can't compile
+  // object-pattern defaults, and this component relies on its memoization.
+  const { data: categoryData } = useCategories();
+  const categoryGroups = categoryData?.grouped ?? [];
 
   const init = useEffectEvent(() => {
     // Effects re-run each time the kept budget page is shown again, but its

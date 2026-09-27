@@ -77,8 +77,10 @@ export function BudgetTable(props: BudgetTableProps) {
     onBudgetAction,
   } = props;
 
-  const { data: { grouped: categoryGroups } = { grouped: [] } } =
-    useCategories();
+  // Not destructured with a default: the React Compiler can't compile
+  // object-pattern defaults, and this component relies on its memoization.
+  const { data: categoryData } = useCategories();
+  const categoryGroups = categoryData?.grouped ?? [];
   const [collapsedGroupIds = [], setCollapsedGroupIdsPref] =
     useLocalPref('budget.collapsed');
   const [showHiddenCategories, setShowHiddenCategoriesPef] = useLocalPref(
@@ -112,7 +114,7 @@ export function BudgetTable(props: BudgetTableProps) {
       const group = categoryGroups.find(g => g.id === groupId);
 
       if (group) {
-        const { categories = [] } = group;
+        const categories = group.categories ?? [];
         onReorderCategory({
           id,
           groupId: group.id,
@@ -123,8 +125,8 @@ export function BudgetTable(props: BudgetTableProps) {
         });
       }
     } else {
-      const group = categoryGroups.find(({ categories = [] }) =>
-        categories.some(cat => cat.id === targetId),
+      const group = categoryGroups.find(({ categories }) =>
+        categories?.some(cat => cat.id === targetId),
       );
 
       if (group) {
