@@ -190,6 +190,25 @@ function AllTransactions({
   return children(allTransactions, allBalances);
 }
 
+// A row's running balance is the total less every row above it. Pages load
+// from the top, so the rows above a loaded row are always loaded too. Child
+// rows are skipped because their parent's amount already includes theirs.
+function calculateRunningBalancesFromTotal(
+  transactions: TransactionEntity[],
+  total: IntegerAmount,
+) {
+  const balances: Record<TransactionEntity['id'], IntegerAmount> = {};
+  let balance = total;
+  for (const transaction of transactions) {
+    if (transaction.is_child) {
+      continue;
+    }
+    balances[transaction.id] = balance;
+    balance -= transaction.amount;
+  }
+  return balances;
+}
+
 function getField(field?: string) {
   if (!field) {
     return 'date';
@@ -311,7 +330,7 @@ class AccountInternal extends PureComponent<
   unlisten?: () => void;
   dispatchSelected?: (action: Actions) => void;
   _isOptimisticUpdate: boolean = false;
-  _pendingBalances: Promise<Record<string, number> | null> | null = null;
+  _pendingBalanceTotal: Promise<number | null> | null = null;
 
   constructor(props: AccountInternalProps) {
     super(props);
@@ -499,7 +518,7 @@ class AccountInternal extends PureComponent<
           this._isOptimisticUpdate = false;
           const transactionsSnapshot = data;
           const balances = this.state.showBalances
-            ? await this.calculateBalances()
+            ? await this.calculateBalances(data)
             : null;
           // Wrap in startTransition so React treats this as a low-priority
           // update. Without this, setState blocks the main thread for the
@@ -537,11 +556,11 @@ class AccountInternal extends PureComponent<
         // run them together rather than serially. `filteredAmount` is only
         // rendered behind `isFiltered`, so skip that round trip entirely
         // when nothing will read it.
-        const pendingBalances = this._pendingBalances;
-        this._pendingBalances = null;
+        const pendingBalanceTotal = this._pendingBalanceTotal;
+        this._pendingBalanceTotal = null;
         const [balances, filteredAmount] = await Promise.all([
           this.state.showBalances
-            ? (pendingBalances ?? this.calculateBalances())
+            ? this.calculateBalances(data, pendingBalanceTotal ?? undefined)
             : null,
           isFiltered ? this.getFilteredAmount() : null,
         ]);
@@ -571,16 +590,16 @@ class AccountInternal extends PureComponent<
       },
     });
 
-    // The running balances depend on the query, not on the rows that come
-    // back, so start them alongside the first page instead of waiting for it.
-    const pendingBalances = this.state.showBalances
-      ? this.calculateBalances()
+    // The balance total depends on the query, not on the rows that come
+    // back, so start it alongside the first page instead of waiting for it.
+    const pendingBalanceTotal = this.state.showBalances
+      ? this.getBalanceTotal()
       : null;
     // Keep an unconsumed result (the column can be switched off before the
     // rows land) from surfacing as an unhandled rejection. `onData` still
     // sees the rejection if it does await this promise.
-    pendingBalances?.catch(() => null);
-    this._pendingBalances = pendingBalances;
+    pendingBalanceTotal?.catch(() => null);
+    this._pendingBalanceTotal = pendingBalanceTotal;
   }
 
   onSearch = (value: string) => {
@@ -700,22 +719,30 @@ class AccountInternal extends PureComponent<
     }
   };
 
-  async calculateBalances() {
+  getBalanceTotal = async (): Promise<number | null> => {
     if (!this.canCalculateBalance() || !this.paged) {
       return null;
     }
 
-    const { data }: { data: { id: string; balance: number }[] } =
-      await aqlQuery(
-        this.paged.query
-          .options({ splits: 'none' })
-          .select([{ balance: { $sumOver: '$amount' } }]),
-      );
+    const { data }: { data: number | null } = await aqlQuery(
+      this.paged.query
+        .options({ splits: 'none' })
+        .calculate({ $sum: '$amount' }),
+    );
+    return data ?? 0;
+  };
 
-    return data.reduce((balances: Record<string, number>, row) => {
-      balances[row.id] = row.balance;
-      return balances;
-    }, {});
+  // Running balances for the loaded rows only. Computing them for every row
+  // in the account cost a window query over all of them, plus formatting
+  // each one to size the balance column.
+  async calculateBalances(
+    transactions: TransactionEntity[],
+    pendingTotal: Promise<number | null> = this.getBalanceTotal(),
+  ) {
+    const total = await pendingTotal;
+    return total == null
+      ? null
+      : calculateRunningBalancesFromTotal(transactions, total);
   }
 
   onRunRules = async (ids: string[]) => {
