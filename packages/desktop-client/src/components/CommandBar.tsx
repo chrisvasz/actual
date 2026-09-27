@@ -38,7 +38,7 @@ import {
 } from '#spreadsheet/bindings';
 
 import { CellValue, CellValueText } from './spreadsheet/CellValue';
-import { useTour } from './tour/TourProvider';
+import { useTour } from './tour/TourContext';
 
 type SearchableItem = {
   id: string;

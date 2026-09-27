@@ -11,8 +11,8 @@ import { useReducedMotion } from '#hooks/useReducedMotion';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 
 import { ADD_ACCOUNT_STEP_ID, getTourSteps } from './steps';
-import { useTour } from './TourProvider';
-import type { TourId } from './TourProvider';
+import { useTour } from './TourContext';
+import type { TourId } from './TourContext';
 import { TourTooltip } from './TourTooltip';
 
 // Must stay below MODAL_Z_INDEX (3000) and the notifications layer (2999).

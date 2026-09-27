@@ -5,7 +5,7 @@ import * as monthUtils from '@actual-app/core/shared/months';
 
 import { Link } from '#components/common/Link';
 
-import type { TourId } from './TourProvider';
+import type { TourId } from './TourContext';
 
 export const ADD_ACCOUNT_STEP_ID = 'add-account';
 

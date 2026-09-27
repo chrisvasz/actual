@@ -1,17 +1,10 @@
-import { createContext, useContext, useState } from 'react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 
-export type TourId = 'budget-tour';
-
-type TourContextValue = {
-  activeTourId: TourId | null;
-  startTour: (tourId?: TourId) => void;
-  stopTour: () => void;
-};
-
-const TourContext = createContext<TourContextValue | null>(null);
+import { TourContext } from './TourContext';
+import type { TourId } from './TourContext';
 
 type TourProviderProps = {
   children: ReactNode;
@@ -37,12 +30,4 @@ export function TourProvider({ children }: TourProviderProps) {
       {children}
     </TourContext.Provider>
   );
-}
-
-export function useTour(): TourContextValue {
-  const context = useContext(TourContext);
-  if (!context) {
-    throw new Error('useTour must be used within a TourProvider');
-  }
-  return context;
 }

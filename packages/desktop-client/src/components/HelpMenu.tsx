@@ -14,7 +14,7 @@ import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 
-import { useTour } from './tour/TourProvider';
+import { useTour } from './tour/TourContext';
 
 const getPageDocs = (page: string) => {
   switch (page) {
