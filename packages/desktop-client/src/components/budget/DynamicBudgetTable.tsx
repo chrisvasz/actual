@@ -3,12 +3,12 @@ import React, { useEffect } from 'react';
 import type { ComponentProps } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { AutoSizer } from 'react-virtualized-auto-sizer';
 
 import { View } from '@actual-app/components/view';
 import * as monthUtils from '@actual-app/core/shared/months';
 
 import { FeatureErrorFallback } from '#components/FeatureErrorFallback';
+import { AutoSizer } from '#components/util/AutoSizer';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
 
 import { useBudgetMonthCount } from './BudgetMonthCountContext';

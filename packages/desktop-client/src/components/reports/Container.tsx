@@ -1,8 +1,9 @@
 import React, { useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { AutoSizer } from 'react-virtualized-auto-sizer';
 
 import { View } from '@actual-app/components/view';
+
+import { AutoSizer } from '#components/util/AutoSizer';
 
 type ContainerProps = {
   style?: CSSProperties;

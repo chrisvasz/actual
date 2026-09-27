@@ -202,8 +202,8 @@ export function SankeyGraph({
   // play the load animation once: wait until the card scrolls into view,
   // run the fade-in, then stay in 'done' so later data changes (filters,
   // date range) don't re-animate the chart in place. the viewport element
-  // is tracked as state because AutoSizer renders it on a later tick, so a
-  // useRef-based observer would attach before the element exists.
+  // is tracked as state because AutoSizer only renders it once it has
+  // measured, so a useRef-based observer would attach before it exists.
   const [viewportEl, setViewportEl] = useState<HTMLDivElement | null>(null);
   const [phase, setPhase] = useState<'waiting' | 'animating' | 'done'>(
     'waiting',
