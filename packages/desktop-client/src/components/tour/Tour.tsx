@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 
-import { useTour } from './TourProvider';
+import { useTour } from './TourContext';
 
 const TourHost = lazy(() =>
   import('./TourHost').then(module => ({ default: module.TourHost })),
