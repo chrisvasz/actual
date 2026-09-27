@@ -57,6 +57,12 @@ export function Budget() {
     useCategories();
 
   const init = useEffectEvent(() => {
+    // Effects re-run each time the kept budget page is shown again, but its
+    // cells stay cached while it's hidden, so only the first showing warms them.
+    if (initialized) {
+      return;
+    }
+
     async function run() {
       const { start, end } = await send('get-budget-bounds');
       setBounds({ start, end });
