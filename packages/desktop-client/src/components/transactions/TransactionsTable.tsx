@@ -224,7 +224,6 @@ export function useAmountColumnWidths(
 type TransactionHeaderProps = {
   hasSelected: boolean;
   columns: TransactionTableColumnId[];
-  scrollWidth: number;
   showSelection: boolean;
   onSort: (field: string, ascDesc: 'asc' | 'desc') => void;
   ascDesc: 'asc' | 'desc';
@@ -236,7 +235,6 @@ const TransactionHeader = memo(
   ({
     hasSelected,
     columns,
-    scrollWidth,
     onSort,
     ascDesc,
     field,
@@ -342,7 +340,11 @@ const TransactionHeader = memo(
           zIndex: 200,
           color: theme.tableHeaderText,
           backgroundColor: theme.tableHeaderBackground,
-          paddingRight: `${5 + (scrollWidth ?? 0)}px`,
+          paddingRight: 5,
+          // Reserve the same scrollbar space as the list below, so the
+          // columns line up whether or not the list scrolls.
+          overflow: 'hidden',
+          scrollbarGutter: 'stable',
           borderTopWidth: 1,
           borderBottomWidth: 1,
           borderColor: theme.tableBorder,
@@ -2407,6 +2409,10 @@ function NewTransaction({
         borderBottom: '1px solid ' + theme.tableBorderHover,
         paddingBottom: 6,
         backgroundColor: theme.tableBackground,
+        // Reserve the same scrollbar space as the header and the list below,
+        // so the columns line up.
+        overflow: 'hidden',
+        scrollbarGutter: 'stable',
       }}
       data-testid="new-transaction"
       onKeyDown={e => {
@@ -2608,14 +2614,6 @@ function TransactionTableInner({
   );
   const containerRef = useRef<HTMLDivElement>(null);
   const isAddingPrev = usePrevious(props.isAdding);
-  const [scrollWidth, setScrollWidth] = useState(0);
-
-  function saveScrollWidth(parent: number, child: number) {
-    const width = parent > 0 && child > 0 && parent - child;
-
-    setScrollWidth(!width ? 0 : width);
-  }
-
   const {
     onCloseAddTransaction: onCloseAddTransactionProp,
     onNavigateToTransferAccount: onNavigateToTransferAccountProp,
@@ -2835,7 +2833,6 @@ function TransactionTableInner({
         <TransactionHeader
           hasSelected={props.selectedItems.size > 0}
           columns={props.columns}
-          scrollWidth={scrollWidth}
           onSort={props.onSort}
           ascDesc={props.ascDesc}
           field={props.sortField}
@@ -2901,7 +2898,7 @@ function TransactionTableInner({
           loadMore={props.loadMoreTransactions}
           isSelected={id => props.selectedItems.has(id)}
           onKeyDown={e => props.onCheckEnter(e)}
-          saveScrollWidth={saveScrollWidth}
+          stableScrollbarGutter
         />
 
         {props.isAdding && (
