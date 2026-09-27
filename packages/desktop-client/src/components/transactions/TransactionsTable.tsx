@@ -1575,6 +1575,16 @@ const Transaction = memo(function Transaction({
                 clearOnBlur
                 onUpdate={onUpdate}
                 onSelect={onSave}
+                onCalendarSelect={() => {
+                  if (isTemporaryId(id)) {
+                    const nextColumn = columns
+                      .slice(columns.indexOf('date') + 1)
+                      .find(c => !isTransactionTableColumnDisplayOnly(c));
+                    if (nextColumn) {
+                      onEdit(id, columnToField(nextColumn));
+                    }
+                  }
+                }}
                 transferDateSyncChecked={syncTransferDate}
                 onTransferDateSyncChange={
                   transaction.transfer_id ||
@@ -3382,15 +3392,6 @@ export const TransactionTable = forwardRef(
       }
     }, [newTransactions, props, props.transactions]);
 
-    function columnToField(columnId: TransactionTableColumnId) {
-      // The payment/deposit columns map to the debit/credit fields
-      return columnId === 'payment'
-        ? 'debit'
-        : columnId === 'deposit'
-          ? 'credit'
-          : columnId;
-    }
-
     function getFocusableFields() {
       return visibleColumns
         .filter(columnId => !isTransactionTableColumnDisplayOnly(columnId))
@@ -3983,3 +3984,12 @@ const getGroupByCatId = memoizeOne(
     return res;
   },
 );
+
+function columnToField(columnId: TransactionTableColumnId) {
+  // The payment/deposit columns map to the debit/credit fields
+  return columnId === 'payment'
+    ? 'debit'
+    : columnId === 'deposit'
+      ? 'credit'
+      : columnId;
+}
