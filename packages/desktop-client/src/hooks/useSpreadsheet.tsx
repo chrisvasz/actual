@@ -101,6 +101,10 @@ function makeSpreadsheet() {
       observersDisabled = false;
     }
 
+    getCachedValue(name: string): CellCacheValue | undefined {
+      return LRUValueCache.get(name);
+    }
+
     prewarmCache(name: string, value: CellCacheValue): void {
       LRUValueCache.set(name, value);
     }

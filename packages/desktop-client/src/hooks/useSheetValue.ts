@@ -37,10 +37,22 @@ export function useSheetValue<
   );
 
   const spreadsheet = useSpreadsheet();
-  const [result, setResult] = useState<SheetValueResult<SheetName, FieldName>>({
-    name: fullSheetName,
-    value: memoizedBinding.value ? memoizedBinding.value : null,
-  });
+  // Start from the cached value when there is one. `bind` below would deliver
+  // it anyway, but only after the first render, so every cell would render
+  // twice before the page first paints.
+  const [result, setResult] = useState<SheetValueResult<SheetName, FieldName>>(
+    () => {
+      const cached = spreadsheet.getCachedValue(fullSheetName);
+      return {
+        name: fullSheetName,
+        value: cached
+          ? (cached.value as Spreadsheets[SheetName][FieldName])
+          : memoizedBinding.value
+            ? memoizedBinding.value
+            : null,
+      };
+    },
+  );
   const latestOnChange = useRef(onChange);
   latestOnChange.current = onChange;
 
