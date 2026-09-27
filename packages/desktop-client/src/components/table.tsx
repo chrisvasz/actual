@@ -917,7 +917,9 @@ export type TableProps<T extends TableItem = TableItem> = {
   onScroll?: () => void;
   onKeyDown?: (e: KeyboardEvent) => void;
   isSelected?: (id: T['id']) => boolean;
-  saveScrollWidth?: (parent, child) => void;
+  // Reserve the list's scrollbar space even when it doesn't scroll, so a
+  // header can reserve the same space and stay lined up with the rows.
+  stableScrollbarGutter?: boolean;
 };
 
 export const Table = forwardRef(
@@ -938,7 +940,7 @@ export const Table = forwardRef(
       navigator,
       onScroll,
       isSelected,
-      saveScrollWidth,
+      stableScrollbarGutter,
       listContainerRef,
       ...props
     },
@@ -1022,23 +1024,7 @@ export const Table = forwardRef(
         list.current?.setRowAnimation(true);
         listInitialized.current = true;
       }
-
-      if (scrollContainer.current && saveScrollWidth) {
-        const timeout = setTimeout(saveScrollDelayed, 200);
-        // Without this, the timer can fire after unmount and call setState
-        // on a dead component (crashes test teardown)
-        return () => clearTimeout(timeout);
-      }
     });
-
-    function saveScrollDelayed() {
-      saveScrollWidth(
-        scrollContainer.current?.offsetParent
-          ? scrollContainer.current?.offsetParent.clientWidth
-          : 0,
-        scrollContainer.current ? scrollContainer.current.clientWidth : 0,
-      );
-    }
 
     function renderRow({ index, style, key }) {
       const item = items[index];
@@ -1168,6 +1154,7 @@ export const Table = forwardRef(
                       header={contentHeader}
                       innerRef={listContainer}
                       outerRef={scrollContainer}
+                      stableScrollbarGutter={stableScrollbarGutter}
                       width={width}
                       height={height}
                       renderRow={renderRow}

@@ -26,6 +26,8 @@ type FixedSizeListProps = {
   initialScrollOffset?: number;
   itemCount?: number;
   outerRef?: RefObject<HTMLDivElement>;
+  // Reserve the scrollbar's space whether or not the list overflows.
+  stableScrollbarGutter?: boolean;
   itemSize?: number;
   onItemsRendered?: (config: {
     overscanStartIndex: number;
@@ -194,6 +196,7 @@ export class FixedSizeList extends PureComponent<
       itemKey = defaultItemKey,
       useIsScrolling,
       width,
+      stableScrollbarGutter,
     } = this.props;
     const { isScrolling } = this.state;
 
@@ -248,6 +251,7 @@ export class FixedSizeList extends PureComponent<
           height,
           width,
           overflow: 'hidden auto',
+          scrollbarGutter: stableScrollbarGutter ? 'stable' : undefined,
         }}
       >
         <View>{header}</View>
