@@ -80,6 +80,12 @@ function execTransactions(
 }
 
 function _isUnhappy(filter) {
+  // `$and`/`$or` can hold a list of filters; check each one rather
+  // than treating the list's indexes as field names
+  if (Array.isArray(filter)) {
+    return filter.some(_isUnhappy);
+  }
+
   // These fields can be filtered - all split transactions will
   // still be returned regardless
   for (const key of Object.keys(filter)) {
