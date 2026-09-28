@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 
@@ -22,158 +21,151 @@ import { ManageTagsPage } from './tags/ManageTagsPage';
  * `FinancesApp` subscribed to the location, the whole app shell (sidebar,
  * notifications, command bar, …) would re-render on every route
  * change even though none of it depends on the pathname.
- *
- * The one `Suspense` boundary sits above every route and is never remounted.
- * Navigations run in a transition, so when the incoming screen suspends on its
- * data React keeps the current screen up until it is ready. The fallback only
- * shows when a screen suspends on a direct load.
  */
 export function FinancesAppRoutes() {
   const location = useLocation();
   const multiuserEnabled = useMultiuserEnabled();
 
   return (
-    <Suspense fallback={null}>
-      <Routes>
-        <Route path="/" element={<Navigate to="/budget" replace />} />
+    <Routes>
+      <Route path="/" element={<Navigate to="/budget" replace />} />
 
-        <Route path="/reports/*" element={<Reports />} />
+      <Route path="/reports/*" element={<Reports />} />
 
-        {/* Rendered by `KeptBudgetPage`, outside the routes, so it survives navigation. */}
-        <Route path="/budget" element={null} />
+      {/* Rendered by `KeptBudgetPage`, outside the routes, so it survives navigation. */}
+      <Route path="/budget" element={null} />
 
+      <Route
+        path="/schedules"
+        element={
+          <ErrorBoundary
+            FallbackComponent={FeatureErrorFallback}
+            resetKeys={[location.pathname]}
+          >
+            <WideComponent name="Schedules" />
+          </ErrorBoundary>
+        }
+      />
+
+      <Route
+        path="/payees"
+        element={
+          <ErrorBoundary
+            FallbackComponent={FeatureErrorFallback}
+            resetKeys={[location.pathname]}
+          >
+            <WideComponent name="Payees" />
+          </ErrorBoundary>
+        }
+      />
+      <Route
+        path="/rules"
+        element={
+          <ErrorBoundary
+            FallbackComponent={FeatureErrorFallback}
+            resetKeys={[location.pathname]}
+          >
+            <WideComponent name="Rules" />
+          </ErrorBoundary>
+        }
+      />
+      <Route
+        path="/rules/:id"
+        element={
+          <ErrorBoundary
+            FallbackComponent={FeatureErrorFallback}
+            resetKeys={[location.pathname]}
+          >
+            <WideComponent name="RuleEdit" />
+          </ErrorBoundary>
+        }
+      />
+      <Route
+        path="/bank-sync"
+        element={
+          <ErrorBoundary
+            FallbackComponent={FeatureErrorFallback}
+            resetKeys={[location.pathname]}
+          >
+            <WideComponent name="BankSync" />
+          </ErrorBoundary>
+        }
+      />
+      <Route path="/tags" element={<ManageTagsPage />} />
+      <Route path="/notifications" element={<NotificationsPage />} />
+      <Route path="/settings" element={<Settings />} />
+
+      <Route
+        path="/gocardless/link"
+        element={<WideComponent name="GoCardlessLink" />}
+      />
+
+      <Route
+        path="/enablebanking/auth_callback"
+        element={<EnableBankingCallback />}
+      />
+
+      <Route
+        path="/accounts"
+        element={
+          <ErrorBoundary
+            FallbackComponent={FeatureErrorFallback}
+            resetKeys={[location.pathname]}
+          >
+            <WideComponent name="Accounts" />
+          </ErrorBoundary>
+        }
+      />
+
+      <Route
+        path="/accounts/:id"
+        element={
+          <ErrorBoundary
+            key={location.pathname}
+            FallbackComponent={FeatureErrorFallback}
+            resetKeys={[location.pathname]}
+          >
+            <WideComponent name="Account" />
+          </ErrorBoundary>
+        }
+      />
+
+      <Route
+        path="/categories/:id"
+        element={
+          <ErrorBoundary
+            FallbackComponent={FeatureErrorFallback}
+            resetKeys={[location.pathname]}
+          >
+            <WideComponent name="Category" />
+          </ErrorBoundary>
+        }
+      />
+      {multiuserEnabled && (
         <Route
-          path="/schedules"
+          path="/user-directory"
           element={
-            <ErrorBoundary
-              FallbackComponent={FeatureErrorFallback}
-              resetKeys={[location.pathname]}
-            >
-              <WideComponent name="Schedules" />
-            </ErrorBoundary>
+            <ProtectedRoute
+              permission={Permissions.ADMINISTRATOR}
+              element={<UserDirectoryPage />}
+            />
           }
         />
-
+      )}
+      {multiuserEnabled && (
         <Route
-          path="/payees"
+          path="/user-access"
           element={
-            <ErrorBoundary
-              FallbackComponent={FeatureErrorFallback}
-              resetKeys={[location.pathname]}
-            >
-              <WideComponent name="Payees" />
-            </ErrorBoundary>
+            <ProtectedRoute
+              permission={Permissions.ADMINISTRATOR}
+              validateOwner
+              element={<UserAccessPage />}
+            />
           }
         />
-        <Route
-          path="/rules"
-          element={
-            <ErrorBoundary
-              FallbackComponent={FeatureErrorFallback}
-              resetKeys={[location.pathname]}
-            >
-              <WideComponent name="Rules" />
-            </ErrorBoundary>
-          }
-        />
-        <Route
-          path="/rules/:id"
-          element={
-            <ErrorBoundary
-              FallbackComponent={FeatureErrorFallback}
-              resetKeys={[location.pathname]}
-            >
-              <WideComponent name="RuleEdit" />
-            </ErrorBoundary>
-          }
-        />
-        <Route
-          path="/bank-sync"
-          element={
-            <ErrorBoundary
-              FallbackComponent={FeatureErrorFallback}
-              resetKeys={[location.pathname]}
-            >
-              <WideComponent name="BankSync" />
-            </ErrorBoundary>
-          }
-        />
-        <Route path="/tags" element={<ManageTagsPage />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/settings" element={<Settings />} />
-
-        <Route
-          path="/gocardless/link"
-          element={<WideComponent name="GoCardlessLink" />}
-        />
-
-        <Route
-          path="/enablebanking/auth_callback"
-          element={<EnableBankingCallback />}
-        />
-
-        <Route
-          path="/accounts"
-          element={
-            <ErrorBoundary
-              FallbackComponent={FeatureErrorFallback}
-              resetKeys={[location.pathname]}
-            >
-              <WideComponent name="Accounts" />
-            </ErrorBoundary>
-          }
-        />
-
-        <Route
-          path="/accounts/:id"
-          element={
-            <ErrorBoundary
-              key={location.pathname}
-              FallbackComponent={FeatureErrorFallback}
-              resetKeys={[location.pathname]}
-            >
-              <WideComponent name="Account" />
-            </ErrorBoundary>
-          }
-        />
-
-        <Route
-          path="/categories/:id"
-          element={
-            <ErrorBoundary
-              FallbackComponent={FeatureErrorFallback}
-              resetKeys={[location.pathname]}
-            >
-              <WideComponent name="Category" />
-            </ErrorBoundary>
-          }
-        />
-        {multiuserEnabled && (
-          <Route
-            path="/user-directory"
-            element={
-              <ProtectedRoute
-                permission={Permissions.ADMINISTRATOR}
-                element={<UserDirectoryPage />}
-              />
-            }
-          />
-        )}
-        {multiuserEnabled && (
-          <Route
-            path="/user-access"
-            element={
-              <ProtectedRoute
-                permission={Permissions.ADMINISTRATOR}
-                validateOwner
-                element={<UserAccessPage />}
-              />
-            }
-          />
-        )}
-        {/* redirect all other traffic to the budget page */}
-        <Route path="/*" element={<Navigate to="/budget" replace />} />
-      </Routes>
-    </Suspense>
+      )}
+      {/* redirect all other traffic to the budget page */}
+      <Route path="/*" element={<Navigate to="/budget" replace />} />
+    </Routes>
   );
 }

@@ -101,6 +101,28 @@ type ConditionEntity = Partial<RuleConditionEntity> | TransactionFilterEntity;
 
 const TRANSACTIONS_PAGE_COUNT = 150;
 
+// The rows query for a transactions query. Hidden reconciled transactions
+// are only filtered out when running balances aren't shown, since those are
+// derived from every row. Shared by the screen's paged query and the preload
+// of its first page, which have to fetch the same rows.
+function selectTransactionRows(
+  query: Query,
+  {
+    showReconciled,
+    showBalances,
+    canCalculateBalance,
+  }: {
+    showReconciled: boolean;
+    showBalances: boolean | undefined;
+    canCalculateBalance: boolean;
+  },
+) {
+  if (!showReconciled && (!showBalances || !canCalculateBalance)) {
+    query = query.filter({ reconciled: { $eq: false } });
+  }
+  return query.select('*');
+}
+
 /**
  * The first page of transactions, loaded before the account screen mounts so
  * it can render complete on its first paint. `null` when the screen opens
@@ -511,16 +533,13 @@ class AccountInternal extends PureComponent<
       this.paged.unsubscribe();
     }
 
-    // Filter out reconciled transactions if they are hidden
-    // and we're not showing balances.
-    if (
-      !this.state.showReconciled &&
-      (!this.state.showBalances || !this.canCalculateBalance())
-    ) {
-      query = query.filter({ reconciled: { $eq: false } });
-    }
+    const rowsQuery = selectTransactionRows(query, {
+      showReconciled: this.state.showReconciled,
+      showBalances: this.state.showBalances,
+      canCalculateBalance: this.canCalculateBalance(),
+    });
 
-    this.paged = pagedQuery(query.select('*'), {
+    this.paged = pagedQuery(rowsQuery, {
       onData: async (groupedData, prevData) => {
         const data = ungroupTransactions([...groupedData]);
         const firstLoad = prevData == null;
@@ -2106,16 +2125,13 @@ async function loadAccountPreload({
     return null;
   }
 
-  // Mirrors the query `AccountInternal` issues on mount: see `updateQuery`
-  // and `canCalculateBalance`.
-  const canCalculateBalance = accounts.some(
-    account => account.id === accountId,
-  );
-  let query = queries.transactions(accountId);
-  if (!showReconciled && (!showBalances || !canCalculateBalance)) {
-    query = query.filter({ reconciled: { $eq: false } });
-  }
-  query = query.select('*');
+  // The query `AccountInternal` issues on mount. With no search, filter or
+  // sort applied yet, `canCalculateBalance` comes down to the account existing.
+  const query = selectTransactionRows(queries.transactions(accountId), {
+    showReconciled,
+    showBalances,
+    canCalculateBalance: accounts.some(account => account.id === accountId),
+  });
 
   const { data } = await aqlQuery(query.limit(TRANSACTIONS_PAGE_COUNT));
 
