@@ -82,39 +82,27 @@ function AppInner() {
       );
       await initConnection();
 
-      // Load any global prefs
-      dispatch(
-        setAppState({
-          loadingText: t('Loading global preferences...'),
-        }),
-      );
-      await dispatch(loadGlobalPrefs());
-
-      // Open the last opened budget, if any
+      // Load global prefs and look up the last opened budget in parallel
       dispatch(
         setAppState({
           loadingText: t('Opening last budget...'),
         }),
       );
-      const budgetId = await send('get-last-opened-backup');
+      const [, budgetId] = await Promise.all([
+        dispatch(loadGlobalPrefs()),
+        send('get-last-opened-backup'),
+      ]);
       if (budgetId) {
         await dispatch(loadBudget({ id: budgetId }));
 
         // Check to see if this file has been remotely deleted (but
         // don't block on this in case they are offline or something)
-        dispatch(
-          setAppState({
-            loadingText: t('Retrieving remote files...'),
-          }),
-        );
-
-        const files = await send('get-remote-files');
-        if (files) {
-          const remoteFile = files.find(f => f.fileId === cloudFileId);
+        void send('get-remote-files').then(files => {
+          const remoteFile = files?.find(f => f.fileId === cloudFileId);
           if (remoteFile && remoteFile.deleted) {
             void dispatch(closeBudget());
           }
-        }
+        });
 
         await maybeUpdate();
       }
