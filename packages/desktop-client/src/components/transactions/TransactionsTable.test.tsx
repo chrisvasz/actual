@@ -12,7 +12,11 @@ import {
   splitTransaction,
   updateTransaction,
 } from '@actual-app/core/shared/transactions';
-import { integerToCurrency } from '@actual-app/core/shared/util';
+import {
+  integerToCurrency,
+  numberFormats,
+  setNumberFormat,
+} from '@actual-app/core/shared/util';
 import type {
   AccountEntity,
   CategoryEntity,
@@ -1862,6 +1866,69 @@ describe('useAmountColumnWidths', () => {
     expect(result.current.amount).toBeGreaterThan(
       DEFAULT_AMOUNT_COLUMN_WIDTHS.amount,
     );
+  });
+
+  it('sizes the balance column for a wide negative balance', () => {
+    const { result: withNegative } = renderHook(() =>
+      useAmountColumnWidths([transaction(150)], {
+        'tx-1': 100,
+        'tx-2': -123456789012345,
+      }),
+    );
+    const { result: withPositive } = renderHook(() =>
+      useAmountColumnWidths([transaction(150)], {
+        'tx-1': 100,
+        'tx-2': 123456789012345,
+      }),
+    );
+
+    // The minus sign adds one character.
+    expect(withNegative.current.balance).toBeGreaterThan(
+      withPositive.current.balance,
+    );
+  });
+
+  it('matches the widths from formatting every value', () => {
+    const amounts = [
+      0, 4, -4, 40, -40, 50, -50, 99, -99, 100, -100, 99950, -99950, 100000,
+      -100000, 123456789, -123456789, 999999999999, -999999999999,
+    ];
+    const transactions = amounts.map(transaction);
+    const balances = Object.fromEntries(
+      amounts.map((amount, i) => [`tx-${i}`, amount]),
+    );
+
+    try {
+      for (const { value: format } of numberFormats) {
+        for (const hideFraction of [false, true]) {
+          setNumberFormat({ format, hideFraction });
+          for (let size = 1; size <= amounts.length; size++) {
+            const subset = amounts.slice(0, size);
+            const { result } = renderHook(() =>
+              useAmountColumnWidths(
+                transactions.slice(0, size),
+                Object.fromEntries(Object.entries(balances).slice(0, size)),
+              ),
+            );
+            const widest = (values: string[]) =>
+              Math.max(...values.map(value => value.length)) * 7 + 16;
+
+            expect(result.current).toEqual({
+              amount: Math.max(
+                DEFAULT_AMOUNT_COLUMN_WIDTHS.amount,
+                widest(subset.map(a => integerToCurrency(Math.abs(a)))),
+              ),
+              balance: Math.max(
+                DEFAULT_AMOUNT_COLUMN_WIDTHS.balance,
+                widest(subset.map(a => integerToCurrency(a))),
+              ),
+            });
+          }
+        }
+      }
+    } finally {
+      setNumberFormat({ format: 'comma-dot', hideFraction: false });
+    }
   });
 
   it('keeps the same object when the inputs have not changed', () => {

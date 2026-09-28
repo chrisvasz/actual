@@ -2,6 +2,7 @@ import {
   amountToCurrencyInteger,
   currencyToAmount,
   getNumberFormat,
+  integerToCurrency,
   integerToCurrencyWithDecimal,
   looselyParseAmount,
   setNumberFormat,
@@ -141,6 +142,110 @@ describe('utility functions', () => {
     expect(formatter.format(Number('-0.5'))).toBe('-1');
     expect(formatter.format(Number('-0.9'))).toBe('-1');
     expect(formatter.format(Number('-1.2'))).toBe('-1');
+  });
+
+  describe('cached number formats', () => {
+    afterEach(() => {
+      setNumberFormat({ format: 'comma-dot', hideFraction: false });
+    });
+
+    const expected = {
+      'comma-dot': {
+        full: ['0.00', '-0.01', '1,234.56', '-1,234.56', '12,345,678,901.23'],
+        hidden: ['0', '0', '1,235', '-1,235', '12,345,678,901'],
+      },
+      'dot-comma': {
+        full: ['0,00', '-0,01', '1.234,56', '-1.234,56', '12.345.678.901,23'],
+        hidden: ['0', '0', '1.235', '-1.235', '12.345.678.901'],
+      },
+      'space-comma': {
+        full: [
+          '0,00',
+          '-0,01',
+          '1\u202F234,56',
+          '-1\u202F234,56',
+          '12\u202F345\u202F678\u202F901,23',
+        ],
+        hidden: [
+          '0',
+          '0',
+          '1\u202F235',
+          '-1\u202F235',
+          '12\u202F345\u202F678\u202F901',
+        ],
+      },
+      'apostrophe-dot': {
+        full: [
+          '0.00',
+          '-0.01',
+          '1\u2019234.56',
+          '-1\u2019234.56',
+          '12\u2019345\u2019678\u2019901.23',
+        ],
+        hidden: [
+          '0',
+          '0',
+          '1\u2019235',
+          '-1\u2019235',
+          '12\u2019345\u2019678\u2019901',
+        ],
+      },
+      'comma-dot-in': {
+        full: ['0.00', '-0.01', '1,234.56', '-1,234.56', '12,34,56,78,901.23'],
+        hidden: ['0', '0', '1,235', '-1,235', '12,34,56,78,901'],
+      },
+    } as const;
+    const amounts = [0, -1, 123456, -123456, 1234567890123];
+
+    test.each(Object.keys(expected) as Array<keyof typeof expected>)(
+      'integerToCurrency formats %s after switching formats',
+      format => {
+        // Switch back and forth so a stale cached formatter would show up.
+        for (const hideFraction of [false, true, false, true]) {
+          setNumberFormat({ format, hideFraction });
+          expect(amounts.map(amount => integerToCurrency(amount))).toEqual(
+            expected[format][hideFraction ? 'hidden' : 'full'],
+          );
+        }
+      },
+    );
+
+    test('returns the same formatter for the same settings', () => {
+      setNumberFormat({ format: 'dot-comma', hideFraction: false });
+      expect(getNumberFormat().formatter).toBe(getNumberFormat().formatter);
+      expect(
+        getNumberFormat({ format: 'dot-comma', hideFraction: false }),
+      ).toBe(getNumberFormat());
+      expect(
+        getNumberFormat({ format: 'dot-comma', hideFraction: true }),
+      ).not.toBe(getNumberFormat());
+    });
+
+    test('keeps decimal places separate from the configured fraction', () => {
+      setNumberFormat({ format: 'comma-dot', hideFraction: false });
+      const threeDecimals = getNumberFormat({ decimalPlaces: 3 }).formatter;
+      const noDecimals = getNumberFormat({ decimalPlaces: 0 }).formatter;
+
+      expect(integerToCurrency(-1234567, threeDecimals, 3)).toBe('-1,234.567');
+      expect(integerToCurrency(0, threeDecimals, 3)).toBe('0.000');
+      expect(integerToCurrency(-1234567, noDecimals, 0)).toBe('-1,234,567');
+      expect(integerToCurrency(-1234567)).toBe('-12,345.67');
+      expect(integerToCurrencyWithDecimal(-1234567, 'JPY')).toBe('-1,234,567');
+    });
+
+    test('reports the separators for the requested format', () => {
+      setNumberFormat({ format: 'comma-dot', hideFraction: false });
+      expect(getNumberFormat({ format: 'space-comma' })).toMatchObject({
+        value: 'space-comma',
+        thousandsSeparator: ' ',
+        decimalSeparator: ',',
+      });
+      expect(getNumberFormat()).toMatchObject({
+        value: 'comma-dot',
+        thousandsSeparator: ',',
+        decimalSeparator: '.',
+      });
+    });
   });
 
   test('currencyToAmount works with basic numbers', () => {

@@ -195,6 +195,24 @@ function measureAmountColumnWidth(values: string[], minWidth: number) {
   );
 }
 
+// A formatted amount only gets longer as its magnitude grows (negatives add a
+// sign), so the widest one is always the smallest or the largest value.
+function widestAmountCandidates(values: IntegerAmount[]): string[] {
+  if (values.length === 0) {
+    return [];
+  }
+  let min = values[0];
+  let max = values[0];
+  for (const value of values) {
+    if (value < min) {
+      min = value;
+    } else if (value > max) {
+      max = value;
+    }
+  }
+  return [integerToCurrency(min), integerToCurrency(max)];
+}
+
 // Widths are computed from every transaction currently loaded so the
 // column doesn't jump width while scrolling.
 export function useAmountColumnWidths(
@@ -202,11 +220,11 @@ export function useAmountColumnWidths(
   balances: Record<TransactionEntity['id'], IntegerAmount> | null,
 ): AmountColumnWidths {
   return useMemo(() => {
-    const debitCreditValues = transactions.map(t =>
-      integerToCurrency(Math.abs(t.amount ?? 0)),
+    const debitCreditValues = widestAmountCandidates(
+      transactions.map(t => Math.abs(t.amount ?? 0)),
     );
     const balanceValues = balances
-      ? Object.values(balances).map(balance => integerToCurrency(balance))
+      ? widestAmountCandidates(Object.values(balances))
       : [];
 
     return {
