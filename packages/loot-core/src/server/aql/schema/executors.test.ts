@@ -138,6 +138,14 @@ describe('isHappyPathQuery', () => {
     expect(isHappyPathQuery(query.serialize())).toBe(true);
   });
 
+  it('ignores empty entries in `$and`/`$or` lists', () => {
+    const query = q('transactions').filter({
+      $and: [{ date: '2017-01-20' }, undefined, null],
+    });
+
+    expect(isHappyPathQuery(query.serialize())).toBe(true);
+  });
+
   it('rejects other fields inside `$and`/`$or` lists', () => {
     const query = q('transactions').filter({
       $and: [{ 'account.offbudget': false }, { cleared: true }],
