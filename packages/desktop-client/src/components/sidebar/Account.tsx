@@ -22,6 +22,7 @@ import { useDragRef } from '#hooks/useDragRef';
 import { openAccountCloseModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 import type { Binding, SheetFields } from '#spreadsheet';
+import { isTouchDevice } from '#util/isTouchDevice';
 
 export const accountNameStyle: CSSProperties = {
   marginTop: -2,
@@ -98,10 +99,7 @@ export function Account<FieldName extends SheetFields<'account'>>({
 
   const [isEditing, setIsEditing] = useState(false);
 
-  const isTouchDevice =
-    window.matchMedia('(hover: none)').matches ||
-    window.matchMedia('(pointer: coarse)').matches;
-  const supportsHover = !!account?.id && !isTouchDevice;
+  const supportsHover = !!account?.id && !isTouchDevice();
   const reopenAccount = useReopenAccountMutation();
   const updateAccount = useUpdateAccountMutation();
 
