@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { ConfigurationPage } from './page-models/configuration-page';
 
-test.describe('Help menu', () => {
+test.describe('Help', () => {
   let page: Page;
   let configurationPage: ConfigurationPage;
 
@@ -24,17 +24,8 @@ test.describe('Help menu', () => {
     await page?.close();
   });
 
-  test('Check the help menu visuals', async () => {
-    await page.getByRole('button', { name: 'Help' }).click();
-    await expect(page.locator('[data-popover]')).toBeVisible();
-    await expect(page.getByText('Keyboard shortcuts')).toBeVisible();
-    await expect(page).toMatchThemeScreenshots();
-    await page.keyboard.press('Escape');
-  });
-
   test('Check the keyboard shortcuts modal visuals', async () => {
-    await page.getByRole('button', { name: 'Help' }).click();
-    await page.getByText('Keyboard shortcuts').click();
+    await page.keyboard.press('?');
 
     const keyboardShortcutsModal = page.getByRole('dialog', {
       name: 'Modal dialog',
@@ -60,7 +51,7 @@ test.describe('Help menu', () => {
 
     await keyboardShortcutsModal.getByText('Global').click();
     await expect(
-      keyboardShortcutsModal.getByText('Open the help menu'),
+      keyboardShortcutsModal.getByText('Show keyboard shortcuts'),
     ).toBeVisible();
     await expect(page).toMatchThemeScreenshots();
   });

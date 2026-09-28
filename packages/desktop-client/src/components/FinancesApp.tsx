@@ -14,16 +14,20 @@ import { ScrollProvider } from '#hooks/useScrollListener';
 import { addNotification } from '#notifications/notificationsSlice';
 import { useDispatch } from '#redux';
 
+import { AppShellEffects } from './AppShellEffects';
 import { BankSyncStatus } from './BankSyncStatus';
 import { CommandBar } from './CommandBar';
 import { ContextMenu } from './ContextMenu';
 import { FinancesAppRoutes } from './FinancesAppRoutes';
+import {
+  FLOATING_SIDEBAR_BUTTON_ATTR,
+  FloatingSidebarButton,
+} from './FloatingSidebarButton';
 import { GlobalKeys } from './GlobalKeys';
 import { KeptBudgetPage } from './KeptBudgetPage';
 import { Notifications } from './Notifications';
 import { MobilePageHeaderProvider, MobilePageHeaderSlot } from './Page';
 import { FloatableSidebar } from './sidebar';
-import { Titlebar } from './Titlebar';
 import { Tour } from './tour/Tour';
 import { TourProvider } from './tour/TourProvider';
 
@@ -31,7 +35,7 @@ import { TourProvider } from './tour/TourProvider';
  * Location-dependent side effects live here, in a component that renders
  * nothing, rather than in `FinancesApp`. Anything calling `useLocation()` (or a
  * hook that calls it) re-renders on every navigation, and `FinancesApp` renders
- * the whole app shell — sidebar, titlebar, notifications, command bar — none of
+ * the whole app shell — sidebar, notifications, command bar — none of
  * which depends on the location.
  */
 function RouterBehaviors() {
@@ -100,6 +104,7 @@ export function FinancesApp() {
       <View style={{ height: '100%' }}>
         <RouterBehaviors />
         <GlobalKeys />
+        <AppShellEffects />
         <CommandBar />
         <ContextMenu />
         <Tour />
@@ -132,18 +137,14 @@ export function FinancesApp() {
                     flex: 1,
                     overflow: 'auto',
                     position: 'relative',
+                    // Pages pad their top by this (see `styles.page`); make
+                    // room for the floating sidebar button only while it shows.
+                    [`&:has([${FLOATING_SIDEBAR_BUTTON_ATTR}])`]: {
+                      '--page-top-inset': '36px',
+                    },
                   }}
                 >
-                  <Titlebar
-                    style={{
-                      WebkitAppRegion: 'drag',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      zIndex: 1000,
-                    }}
-                  />
+                  <FloatingSidebarButton />
                   <Notifications />
                   <BankSyncStatus />
                   {isNarrowWidth && <MobilePageHeaderSlot />}

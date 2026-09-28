@@ -165,7 +165,7 @@ export function KeyboardShortcutModal() {
           {
             id: 'help',
             shortcut: '?',
-            description: t('Open the help menu'),
+            description: t('Show keyboard shortcuts'),
           },
           {
             id: 'command-palette',

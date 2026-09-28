@@ -34,9 +34,11 @@ import { EncryptionSettings } from './Encryption';
 import { ExperimentalFeatures } from './Experimental';
 import { ExportBudget } from './Export';
 import { FormatSettings } from './Format';
+import { HelpSettings } from './Help';
 import { LanguageSettings } from './LanguageSettings';
 import { RepairTransactions } from './RepairTransactions';
 import { ResetCache, ResetSync } from './Reset';
+import { ServerSettings } from './Server';
 import { ThemeSettings } from './Themes';
 import { AdvancedToggle, Setting } from './UI';
 
@@ -257,6 +259,8 @@ export function Settings() {
         )}
         <DeployedCommit />
         <About />
+        <ServerSettings />
+        <HelpSettings />
         <ThemeSettings />
         <FormatSettings />
         {isCurrencyExperimentalEnabled && <CurrencySettings />}

@@ -92,7 +92,6 @@ export const TagRow = memo(
       ];
       void navigate('/accounts', {
         state: {
-          goBack: true,
           filterConditions,
         },
       });

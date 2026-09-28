@@ -116,12 +116,12 @@ test.describe('Onboarding', () => {
     await expect(accountPage.accountBalance).toHaveText('0.00');
   });
 
-  test('navigates back to start page by clicking on "no server" in an empty budget file', async () => {
+  test('navigates back to start page from the server settings in an empty budget file', async () => {
     const budgetPage = await configurationPage.startFresh();
 
     await expect(budgetPage.budgetTable).toBeVisible();
 
-    await navigation.clickOnNoServer();
+    await navigation.goToSettingsPage();
     await page.getByRole('button', { name: 'Start using a server' }).click();
 
     await expect(configurationPage.heading).toHaveText('Connect to a server');

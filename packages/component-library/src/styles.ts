@@ -62,9 +62,10 @@ export const styles: CSSProperties = {
     '@media (max-height: 550px)': {
       minHeight: 700, // ensure we can scroll on small screens
     },
-    paddingTop: 8, // height of the titlebar
+    paddingTop: 8,
     [`@media (min-width: ${tokens.breakpoint_small})`]: {
-      paddingTop: 36,
+      // Grows while the floating sidebar button shows (see FinancesApp).
+      paddingTop: 'var(--page-top-inset, 12px)',
     },
   },
   pageContent: {
