@@ -247,7 +247,6 @@ __metadata:
     "@internationalized/date": "npm:^3.12.2"
     "@lezer/highlight": "npm:^1.2.3"
     "@playwright/test": "npm:1.61.1"
-    "@react-aria/interactions": "npm:^3.28.1"
     "@reduxjs/toolkit": "npm:^2.12.0"
     "@rolldown/plugin-babel": "npm:~0.2.3"
     "@rollup/plugin-inject": "npm:^5.0.5"
@@ -260,7 +259,6 @@ __metadata:
     "@types/react-dom": "npm:^19.2.3"
     "@typescript/native-preview": "npm:beta"
     "@uiw/react-codemirror": "npm:^4.25.11"
-    "@use-gesture/react": "npm:^10.3.1"
     "@vitejs/plugin-basic-ssl": "npm:^2.3.0"
     "@vitejs/plugin-react": "npm:^6.0.3"
     auto-text-size: "npm:^0.2.3"
@@ -296,7 +294,6 @@ __metadata:
     react-markdown: "npm:^10.1.0"
     react-redux: "npm:^9.3.0"
     react-router: "npm:8.3.0"
-    react-simple-pull-to-refresh: "npm:^1.3.4"
     react-spring: "npm:^10.0.4"
     react-swipeable: "npm:^7.0.2"
     recharts: "npm:^3.9.2"
@@ -6922,20 +6919,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-aria/interactions@npm:^3.28.1":
-  version: 3.28.1
-  resolution: "@react-aria/interactions@npm:3.28.1"
-  dependencies:
-    "@react-types/shared": "npm:^3.34.0"
-    "@swc/helpers": "npm:^0.5.0"
-    react-aria: "npm:^3.48.0"
-  peerDependencies:
-    react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-    react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-  checksum: 10/cc0ea32ecd28cc0a81c37e8bd2cf0d7b9af264df97702840d4679c5324c55f5fde3ff84f790f8df5d88e26f399968882fc078082a64ae4381366cd48f5894e20
-  languageName: node
-  linkType: hard
-
 "@react-dnd/asap@npm:^5.0.1":
   version: 5.0.2
   resolution: "@react-dnd/asap@npm:5.0.2"
@@ -7088,7 +7071,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-types/shared@npm:^3.34.0, @react-types/shared@npm:^3.36.0":
+"@react-types/shared@npm:^3.36.0":
   version: 3.36.0
   resolution: "@react-types/shared@npm:3.36.0"
   peerDependencies:
@@ -9532,24 +9515,6 @@ __metadata:
     d3-transition:
       optional: true
   checksum: 10/84505be440490666566a6f59e765e1f24b154e4ca45cfed9102f02261be45912149f706e21b3cc7a6247816a8703e1f1b667561295b587c6dcc3162a9a48a5f2
-  languageName: node
-  linkType: hard
-
-"@use-gesture/core@npm:10.3.1":
-  version: 10.3.1
-  resolution: "@use-gesture/core@npm:10.3.1"
-  checksum: 10/66c5bda4cf75927e0d1f9cb1b1a0a06d9812f918dfd634b768b6011385ce7b295ca89e0b016f4fe7a6d97d571726653b75c4271fd7f635bb8c159bf7886ce21c
-  languageName: node
-  linkType: hard
-
-"@use-gesture/react@npm:^10.3.1":
-  version: 10.3.1
-  resolution: "@use-gesture/react@npm:10.3.1"
-  dependencies:
-    "@use-gesture/core": "npm:10.3.1"
-  peerDependencies:
-    react: ">= 16.8.0"
-  checksum: 10/2c01c1b73bbdeecb9d51370f9117418953accad6789818e1b50f505dcba9e38685612b3fcb25a5dfcbf3a10ae561506378f5ab7586c773c4485ef86107d53898
   languageName: node
   linkType: hard
 
@@ -23156,7 +23121,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-aria@npm:3.50.0, react-aria@npm:^3.48.0, react-aria@npm:^3.50.0":
+"react-aria@npm:3.50.0, react-aria@npm:^3.50.0":
   version: 3.50.0
   resolution: "react-aria@npm:3.50.0"
   dependencies:
@@ -23582,16 +23547,6 @@ __metadata:
     react-dom:
       optional: true
   checksum: 10/6ef9ee17910356e7a7c1d262d3c3a943a25e36bf871a199628438d1436d1a16828091da30a5df7c318030dff434c5b3f003c16f82c7ffca9cf37545316f6525c
-  languageName: node
-  linkType: hard
-
-"react-simple-pull-to-refresh@npm:^1.3.4":
-  version: 1.3.4
-  resolution: "react-simple-pull-to-refresh@npm:1.3.4"
-  peerDependencies:
-    react: ^16.10.2 || ^17.0.0 || ^18.0.0 || ^19.0.0
-    react-dom: ^16.10.2 || ^17.0.0 || ^18.0.0 || ^19.0.0
-  checksum: 10/e89dffd516b20a2d4f794134e2b9c5af4f32557c0c760ed1f42b11c46f9a44f26abc6abe41f72fb3c8dc80ee8559116a9d3f7e996901019582ed99b71e8c7983
   languageName: node
   linkType: hard
 
