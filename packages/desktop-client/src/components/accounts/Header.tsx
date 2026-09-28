@@ -43,6 +43,7 @@ import { FiltersStack } from '#components/filters/FiltersStack';
 import type { SavedFilter } from '#components/filters/SavedFilterMenuButton';
 import { NotesButton } from '#components/NotesButton';
 import { SelectedTransactionsButton } from '#components/transactions/SelectedTransactionsButton';
+import { UncategorizedChip } from '#components/UncategorizedChip';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { useSplitsExpanded } from '#hooks/useSplitsExpanded';
@@ -50,6 +51,7 @@ import { useSyncedPref } from '#hooks/useSyncedPref';
 import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
 
 import type { TableRef } from './Account';
+import { AccountSyncCheck } from './AccountSyncCheck';
 import { Balances } from './Balance';
 import { BalanceHistoryGraph } from './BalanceHistoryGraph';
 import { ReconcileMenu, ReconcilingMessage } from './Reconcile';
@@ -303,6 +305,10 @@ export function AccountHeader({
                 saveNameError={saveNameError}
                 onSaveName={onSaveName}
               />
+              <View style={{ marginLeft: 7, flexDirection: 'row', gap: 7 }}>
+                <AccountSyncCheck />
+                <UncategorizedChip />
+              </View>
             </View>
 
             <Balances

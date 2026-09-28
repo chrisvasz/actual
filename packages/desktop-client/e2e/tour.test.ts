@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import { ConfigurationPage } from './page-models/configuration-page';
+import { Navigation } from './page-models/navigation';
 
 test.describe('Tour', () => {
   let page: Page;
@@ -19,14 +20,14 @@ test.describe('Tour', () => {
     await page?.close();
   });
 
-  async function startTourFromHelpMenu() {
-    await page.getByRole('button', { name: 'Help' }).click();
-    await page.getByText('Take a tour').click();
+  async function startTourFromSettings() {
+    await new Navigation(page).goToSettingsPage();
+    await page.getByRole('button', { name: 'Take a tour' }).click();
     return page.getByTestId('tour-tooltip');
   }
 
   test('walks through every step of the tour', async () => {
-    const tooltip = await startTourFromHelpMenu();
+    const tooltip = await startTourFromSettings();
 
     await expect(tooltip).toBeVisible();
     await expect(tooltip).toContainText('Welcome to Actual!');
@@ -41,13 +42,13 @@ test.describe('Tour', () => {
       await expect(counter).toHaveText(`${step} of ${total}`);
     }
 
-    await expect(tooltip).toContainText('Getting Help');
+    await expect(tooltip).toContainText('Add Your Accounts');
     await tooltip.getByRole('button', { name: 'Finish' }).click();
     await expect(tooltip).not.toBeVisible();
   });
 
   test('skipping the tour dismisses it', async () => {
-    const tooltip = await startTourFromHelpMenu();
+    const tooltip = await startTourFromSettings();
 
     await expect(tooltip).toBeVisible();
     await tooltip.getByRole('button', { name: 'Skip tour' }).click();

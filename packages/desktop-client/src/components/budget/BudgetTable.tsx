@@ -11,6 +11,7 @@ import type {
 } from '@actual-app/core/types/models';
 
 import type { DropPosition } from '#components/sort';
+import { UncategorizedChip } from '#components/UncategorizedChip';
 import { SchedulesProvider } from '#hooks/useCachedSchedules';
 import { useCategories } from '#hooks/useCategories';
 import { useLocalPref } from '#hooks/useLocalPref';
@@ -250,7 +251,16 @@ export function BudgetTable(props: BudgetTableProps) {
           paddingRight: 5 + getScrollbarWidth(),
         }}
       >
-        <View style={{ width: CATEGORY_COLUMN_WIDTH }} />
+        <View
+          style={{
+            width: CATEGORY_COLUMN_WIDTH,
+            justifyContent: 'flex-end',
+            alignItems: 'flex-start',
+            paddingBottom: 8,
+          }}
+        >
+          <UncategorizedChip />
+        </View>
         <MonthsProvider
           startMonth={prewarmStartMonth}
           numMonths={numMonths}

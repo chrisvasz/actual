@@ -63,7 +63,7 @@ test.describe('Budget', () => {
     const accountPage = await budgetPage.clickOnSpentAmountForRow(1);
     expect(page.url()).toContain('/accounts');
     expect(await accountPage.accountName.textContent()).toMatch('All Accounts');
-    await page.getByRole('button', { name: 'Back' }).click();
+    await page.goBack();
   });
 
   test('right clicking a category opens context menu', async () => {
@@ -143,7 +143,7 @@ test.describe('Budget scroll position', () => {
     await budgetPage.clickOnSpentAmountForLastVisibleRow();
     expect(page.url()).toContain('/accounts');
 
-    await page.getByRole('button', { name: 'Back' }).click();
+    await page.goBack();
     await budgetPage.waitFor();
 
     const scrollTopAfterReturningFromSpent = await budgetPage.getScrollTop();

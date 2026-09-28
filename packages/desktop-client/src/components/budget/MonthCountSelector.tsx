@@ -55,9 +55,7 @@ export function MonthCountSelector({
     <View
       style={{
         flexDirection: 'row',
-        marginRight: 20,
-        marginTop: -1,
-        WebkitAppRegion: 'no-drag',
+        paddingLeft: 5,
         '& svg': {
           transition: 'transform .15s',
         },

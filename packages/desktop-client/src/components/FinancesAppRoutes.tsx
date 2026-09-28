@@ -19,7 +19,7 @@ import { ManageTagsPage } from './tags/ManageTagsPage';
  * The routing table lives in its own component so that `useLocation()` — which
  * re-renders its caller on every navigation — stays out of `FinancesApp`. If
  * `FinancesApp` subscribed to the location, the whole app shell (sidebar,
- * titlebar, notifications, command bar, …) would re-render on every route
+ * notifications, command bar, …) would re-render on every route
  * change even though none of it depends on the pathname.
  */
 export function FinancesAppRoutes() {

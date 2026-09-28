@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
@@ -11,7 +11,6 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
-import { listen } from '@actual-app/core/platform/client/connection';
 import type { RemoteFile, SyncedLocalFile } from '@actual-app/core/types/file';
 import type { TransObjectLiteral } from '@actual-app/core/types/util';
 
@@ -20,8 +19,9 @@ import { Permissions } from '#auth/types';
 import { closeBudget } from '#budgetfiles/budgetfilesSlice';
 import { useMetadataPref } from '#hooks/useMetadataPref';
 import { useNavigate } from '#hooks/useNavigate';
+import { useUserData } from '#hooks/useUserData';
 import { useDispatch, useSelector } from '#redux';
-import { getUserData, signOut } from '#users/usersSlice';
+import { signOut } from '#users/usersSlice';
 
 import { useMultiuserEnabled, useServerURL } from './ServerContext';
 
@@ -34,8 +34,7 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const userData = useSelector(state => state.user.data);
-  const [loading, setLoading] = useState(true);
+  const { userData, isLoading: loading } = useUserData();
   const [menuOpen, setMenuOpen] = useState(false);
   const serverUrl = useServerURL();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -50,41 +49,6 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
   ) as (SyncedLocalFile | RemoteFile)[];
   const currentFile = remoteFiles.find(f => f.cloudFileId === cloudFileId);
   const hasSyncedPrefs = useSelector(state => state.prefs.synced);
-
-  const initializeUserData = useCallback(async () => {
-    try {
-      await dispatch(getUserData());
-    } catch (error) {
-      console.error('Failed to initialize user data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [dispatch]);
-
-  useEffect(() => {
-    void initializeUserData();
-  }, [initializeUserData]);
-
-  useEffect(() => {
-    return listen('sync-event', ({ type }) => {
-      if (type === 'start') {
-        setLoading(true);
-
-        return;
-      }
-
-      const shouldReinitialize =
-        userData &&
-        ((type === 'success' && userData.offline) ||
-          (type === 'error' && !userData.offline));
-
-      if (shouldReinitialize) {
-        void initializeUserData();
-      } else {
-        setLoading(false);
-      }
-    });
-  }, [initializeUserData, userData]);
 
   async function onCloseBudget() {
     await dispatch(closeBudget());

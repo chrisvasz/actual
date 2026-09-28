@@ -169,8 +169,8 @@ function getBudgetTourSteps({ navigate, budgetType }: TourStepDeps): Step[] {
       content: (
         <Trans>
           The sidebar takes you to your budget, reports, and scheduled
-          transactions. You can find payees, rules, and the settings under{' '}
-          <strong>More</strong>.
+          transactions. You can find payees, rules, and the settings (with help
+          and your server connection) under <strong>More</strong>.
         </Trans>
       ),
     },
@@ -191,18 +191,6 @@ function getBudgetTourSteps({ navigate, budgetType }: TourStepDeps): Step[] {
             link the account to your bank
           </Link>{' '}
           to import them automatically.
-        </Trans>
-      ),
-    },
-    {
-      id: 'help-menu',
-      target: '[data-testid="help-menu-button"]',
-      placement: 'bottom-end',
-      title: <Trans>Getting Help</Trans>,
-      content: (
-        <Trans>
-          The Help menu is always here when you need it. Use it to replay this
-          tour, browse the documentation, or ask the community on Discord.
         </Trans>
       ),
     },

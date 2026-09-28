@@ -151,7 +151,6 @@ export function Budget() {
     ];
     void navigate('/accounts', {
       state: {
-        goBack: true,
         filterConditions,
         categoryId,
       },
