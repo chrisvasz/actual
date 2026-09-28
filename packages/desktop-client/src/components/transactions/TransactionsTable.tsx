@@ -2250,8 +2250,15 @@ function NotesCell({
 
   const displayedNote = note || scheduleNote || '';
 
-  useLayoutEffect(() => {
-    checkTruncated();
+  // The resize observer reports the first size (and any resize) after layout,
+  // so mounting a row never forces a layout. A new note in a cell that keeps
+  // its size isn't a resize, so recheck after that change is painted.
+  const checkedNote = useRef(displayedNote);
+  useEffect(() => {
+    if (checkedNote.current !== displayedNote) {
+      checkedNote.current = displayedNote;
+      checkTruncated();
+    }
   }, [displayedNote, checkTruncated]);
 
   return (
