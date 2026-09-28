@@ -417,4 +417,176 @@ describe('transaction executors', () => {
       };
     });
   }, 20_000);
+
+  describe('grouped splits', () => {
+    function trans(id: string, date: string, fields = {}) {
+      return {
+        id,
+        account: 'acct',
+        date,
+        amount: -100,
+        sort_order: 1,
+        ...fields,
+      };
+    }
+
+    function shape(data) {
+      return data.map(t => ({
+        id: t.id,
+        ...(t._unmatched ? { _unmatched: true } : {}),
+        subtransactions: t.subtransactions.map(s =>
+          s._unmatched ? `${s.id} (unmatched)` : s.id,
+        ),
+      }));
+    }
+
+    beforeEach(() =>
+      insertTransactions([
+        trans('t1', '2020-01-03'),
+        trans('p1', '2020-01-02', { is_parent: true, amount: -300 }),
+        trans('p1/c1', '2020-01-02', {
+          is_child: true,
+          parent_id: 'p1',
+          sort_order: 2,
+          amount: -200,
+        }),
+        trans('p1/c2', '2020-01-02', {
+          is_child: true,
+          parent_id: 'p1',
+          sort_order: 3,
+          amount: -50,
+        }),
+        trans('p1/c3', '2020-01-02', {
+          is_child: true,
+          parent_id: 'p1',
+          sort_order: 4,
+          tombstone: true,
+        }),
+        trans('p2', '2020-01-01', { is_parent: true, tombstone: true }),
+        trans('p2/c1', '2020-01-01', { is_child: true, parent_id: 'p2' }),
+        trans('t2', '2020-01-01', { tombstone: true }),
+      ]),
+    );
+
+    it('groups alive children under their parent', async () => {
+      const { data } = await aqlQuery(
+        q('transactions')
+          .options({ splits: 'grouped' })
+          .select('*')
+          .serialize(),
+      );
+      expect(shape(data)).toEqual([
+        { id: 't1', subtransactions: [] },
+        { id: 'p1', subtransactions: ['p1/c2', 'p1/c1'] },
+      ]);
+      expect(data[1].subtransactions.map(t => t.parent_id)).toEqual([
+        'p1',
+        'p1',
+      ]);
+    });
+
+    it('includes dead transactions with `withDead`', async () => {
+      const { data } = await aqlQuery(
+        q('transactions')
+          .options({ splits: 'grouped' })
+          .withDead()
+          .select('*')
+          .serialize(),
+      );
+      expect(shape(data)).toEqual([
+        { id: 't1', subtransactions: [] },
+        { id: 'p1', subtransactions: ['p1/c3', 'p1/c2', 'p1/c1'] },
+        { id: 'p2', subtransactions: ['p2/c1'] },
+        { id: 't2', subtransactions: [] },
+      ]);
+    });
+
+    it('marks unmatched rows when filtering on a child', async () => {
+      const { data } = await aqlQuery(
+        q('transactions')
+          .filter({ amount: -200 })
+          .options({ splits: 'grouped' })
+          .select('*')
+          .serialize(),
+      );
+      expect(shape(data)).toEqual([
+        {
+          id: 'p1',
+          _unmatched: true,
+          subtransactions: ['p1/c2 (unmatched)', 'p1/c1'],
+        },
+      ]);
+    });
+
+    it('pages groups without splitting them', async () => {
+      const query = q('transactions')
+        .options({ splits: 'grouped' })
+        .withDead()
+        .select('*');
+      const pages = [];
+      for (let offset = 0; offset < 4; offset++) {
+        const { data } = await aqlQuery(
+          query.limit(1).offset(offset).serialize(),
+        );
+        pages.push(...data);
+      }
+      const { data: all } = await aqlQuery(query.serialize());
+      expect(pages).toEqual(all);
+    });
+  });
+
+  it('returns the same rows for large and small sets of groups', async () => {
+    // Pages of groups look up their rows by id, while very large sets
+    // walk every transaction instead. Both must return the same data.
+    const arr = [];
+    for (let i = 0; i < 1100; i++) {
+      const date = `2020-01-${String((i % 28) + 1).padStart(2, '0')}`;
+      const id = `t${i}`;
+      if (i % 50 === 0) {
+        arr.push({ id, account: 'acct', date, amount: -30, is_parent: true });
+        for (let c = 0; c < 3; c++) {
+          arr.push({
+            id: `${id}/${c}`,
+            account: 'acct',
+            date,
+            amount: -10,
+            is_child: true,
+            parent_id: id,
+            sort_order: c,
+            tombstone: c === 2 && i % 100 === 0,
+          });
+        }
+      } else {
+        arr.push({
+          id,
+          account: 'acct',
+          date,
+          amount: -i,
+          sort_order: i,
+          tombstone: i % 97 === 0,
+        });
+      }
+    }
+    await insertTransactions(arr);
+
+    for (const query of [
+      q('transactions').options({ splits: 'grouped' }).select('*'),
+      q('transactions')
+        .filter({ amount: { $gt: -1050 } })
+        .options({ splits: 'grouped' })
+        .select('*'),
+    ]) {
+      const { data: all } = await aqlQuery(query.serialize());
+      expect(all.length).toBeGreaterThan(1000);
+
+      const pages = [];
+      for (let offset = 0; offset < all.length; offset += 150) {
+        const { data } = await aqlQuery(
+          query.limit(150).offset(offset).serialize(),
+        );
+        pages.push(...data);
+      }
+      expect(pages).toEqual(all);
+    }
+  }, 20_000);
 });
