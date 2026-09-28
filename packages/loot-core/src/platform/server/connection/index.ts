@@ -109,7 +109,9 @@ export const init: T.Init = function (serverChn, handlers) {
   const MAX_RECONNECT_ATTEMPTS = 500;
   let reconnectAttempts = 0;
 
-  const reconnectToClientInterval = setInterval(() => {
+  // Announce immediately instead of waiting for the first 200ms interval
+  // tick; keep the interval as the retry path.
+  function tryConnect() {
     logger.info('Backend: Trying to connect to client');
     serverChannel.postMessage({ type: 'connect' });
     reconnectAttempts++;
@@ -118,7 +120,12 @@ export const init: T.Init = function (serverChn, handlers) {
       send('server-error');
       clearInterval(reconnectToClientInterval);
     }
-  }, RECONNECT_INTERVAL_MS);
+  }
+  const reconnectToClientInterval = setInterval(
+    tryConnect,
+    RECONNECT_INTERVAL_MS,
+  );
+  tryConnect();
 };
 
 export const send: T.Send = function (name, args) {
