@@ -94,9 +94,15 @@ export class PagedQuery<TResponse = unknown> extends LiveQuery<TResponse> {
         ),
       );
 
-      // Also fetch the total count. Issued after the page query so that the
-      // rows aren't queued behind a full COUNT(*) on the backend thread.
-      void this.fetchCount();
+      // Also fetch the total count, but only once the page is back. The
+      // backend runs one query at a time, so sending it now would queue a
+      // full COUNT(*) ahead of anything the caller sends right after
+      // creating the query (e.g. the account's balance total).
+      // A failed page is reported through `fetchData`; skip the count then.
+      void page.then(
+        () => this.fetchCount(),
+        () => null,
+      );
 
       return page;
     });
