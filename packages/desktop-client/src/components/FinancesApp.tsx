@@ -1,4 +1,4 @@
-import React, { useEffect, useEffectEvent, useRef } from 'react';
+import React, { Suspense, useEffect, useEffectEvent, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHref, useLocation } from 'react-router';
 
@@ -150,7 +150,13 @@ export function FinancesApp() {
                   {isNarrowWidth && <MobilePageHeaderSlot />}
 
                   <KeptBudgetPage />
-                  <FinancesAppRoutes />
+                  {/* One boundary above every route, never remounted.
+                      Navigations run in a transition, so a screen that
+                      suspends on its data keeps the current one up until it's
+                      ready; the fallback only shows on a direct load. */}
+                  <Suspense fallback={null}>
+                    <FinancesAppRoutes />
+                  </Suspense>
                 </View>
               </MobilePageHeaderProvider>
             </ScrollProvider>

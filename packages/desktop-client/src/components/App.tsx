@@ -5,7 +5,6 @@ import { ErrorBoundary, useErrorBoundary } from 'react-error-boundary';
 import type { FallbackProps } from 'react-error-boundary';
 import { HotkeysProvider } from 'react-hotkeys-hook';
 import { useTranslation } from 'react-i18next';
-import { BrowserRouter } from 'react-router';
 
 import { styles } from '@actual-app/components/styles';
 import { View } from '@actual-app/components/view';
@@ -36,6 +35,7 @@ import { signOut } from '#users/usersSlice';
 import { ExposeNavigate } from '#util/router-tools';
 
 import { AppBackground } from './AppBackground';
+import { AppRouter } from './AppRouter';
 import { BudgetMonthCountProvider } from './budget/BudgetMonthCountContext';
 import { AriaRouterProvider } from './common/AriaRouterProvider';
 import { DevelopmentTopBar } from './DevelopmentTopBar';
@@ -191,7 +191,7 @@ export function App() {
   const [theme] = useTheme();
 
   return (
-    <BrowserRouter>
+    <AppRouter>
       <ExposeNavigate />
       <AriaRouterProvider>
         <HotkeysProvider initiallyActiveScopes={['app']}>
@@ -237,6 +237,6 @@ export function App() {
           </SpreadsheetProvider>
         </HotkeysProvider>
       </AriaRouterProvider>
-    </BrowserRouter>
+    </AppRouter>
   );
 }

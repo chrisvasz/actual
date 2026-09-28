@@ -35,11 +35,13 @@ import type {
   TransactionEntity,
   TransactionFilterEntity,
 } from '@actual-app/core/types/models';
+import { useSuspenseQueries, useSuspenseQuery } from '@tanstack/react-query';
 import { debounce, isEqual } from 'es-toolkit/compat';
 import { t } from 'i18next';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
+  accountQueries,
   useReopenAccountMutation,
   useSyncAndDownloadMutation,
   useUnlinkAccountMutation,
@@ -47,6 +49,7 @@ import {
 } from '#accounts';
 import { markAccountRead } from '#accounts/accountsSlice';
 import * as reconciliation from '#accounts/reconciliation';
+import { categoryQueries } from '#budget';
 import { FeatureErrorFallback } from '#components/FeatureErrorFallback';
 import type { SavedFilter } from '#components/filters/SavedFilterMenuButton';
 import type {
@@ -56,12 +59,9 @@ import type {
 import { TransactionList } from '#components/transactions/TransactionList';
 import { validateAccountName } from '#components/util/accountValidation';
 import { useAccountPreviewTransactions } from '#hooks/useAccountPreviewTransactions';
-import { useAccounts } from '#hooks/useAccounts';
 import { SchedulesProvider } from '#hooks/useCachedSchedules';
-import { useCategories } from '#hooks/useCategories';
 import { useDateFormat } from '#hooks/useDateFormat';
 import { useLocalPref } from '#hooks/useLocalPref';
-import { usePayees } from '#hooks/usePayees';
 import { getSchedulesQuery } from '#hooks/useSchedules';
 import { SelectedProviderWithItems } from '#hooks/useSelected';
 import type { Actions } from '#hooks/useSelected';
@@ -69,6 +69,7 @@ import {
   SplitsExpandedProvider,
   useSplitsExpanded,
 } from '#hooks/useSplitsExpanded';
+import { useSpreadsheet } from '#hooks/useSpreadsheet';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 import { useTransactionBatchActions } from '#hooks/useTransactionBatchActions';
 import { useTransactionFilters } from '#hooks/useTransactionFilters';
@@ -84,7 +85,7 @@ import {
 } from '#modals/modalsSlice';
 import type { ConfirmTransactionEditReason } from '#modals/modalsSlice';
 import { addNotification } from '#notifications/notificationsSlice';
-import { useCreatePayeeMutation } from '#payees';
+import { payeeQueries, useCreatePayeeMutation } from '#payees';
 import * as queries from '#queries';
 import { aqlQuery } from '#queries/aqlQuery';
 import { pagedQuery } from '#queries/pagedQuery';
@@ -97,6 +98,39 @@ import { AccountEmptyMessage } from './AccountEmptyMessage';
 import { AccountHeader } from './Header';
 
 type ConditionEntity = Partial<RuleConditionEntity> | TransactionFilterEntity;
+
+const TRANSACTIONS_PAGE_COUNT = 150;
+
+// The rows query for a transactions query. Hidden reconciled transactions
+// are only filtered out when running balances aren't shown, since those are
+// derived from every row. Shared by the screen's paged query and the preload
+// of its first page, which have to fetch the same rows.
+function selectTransactionRows(
+  query: Query,
+  {
+    showReconciled,
+    showBalances,
+    canCalculateBalance,
+  }: {
+    showReconciled: boolean;
+    showBalances: boolean | undefined;
+    canCalculateBalance: boolean;
+  },
+) {
+  if (!showReconciled && (!showBalances || !canCalculateBalance)) {
+    query = query.filter({ reconciled: { $eq: false } });
+  }
+  return query.select('*');
+}
+
+/**
+ * The first page of transactions, loaded before the account screen mounts so
+ * it can render complete on its first paint. `null` when the screen opens
+ * filtered and loads the usual way instead.
+ */
+type AccountPreload = {
+  transactions: TransactionEntity[];
+} | null;
 
 function isTransactionFilterEntity(
   filter: ConditionEntity,
@@ -282,6 +316,7 @@ type AccountInternalProps = {
   onUnlinkAccount: (id: AccountEntity['id']) => void;
   onSyncAndDownload: (accountId?: AccountEntity['id']) => void;
   onCreatePayee: (name: PayeeEntity['name']) => Promise<PayeeEntity['id']>;
+  preload: AccountPreload;
 };
 
 type AccountInternalState = {
@@ -342,10 +377,12 @@ class AccountInternal extends PureComponent<
       filterConditions: props.filterConditions || [],
       filterId: undefined,
       filterConditionsOp: 'and',
-      loading: true,
+      // With a preload the screen mounts with its first page already in
+      // hand; the paged query below still runs to take over live updates.
+      loading: props.preload == null,
       workingHard: false,
       reconcileAmount: null,
-      transactions: [],
+      transactions: props.preload?.transactions ?? [],
       showBalances: props.showBalances,
       balances: null,
       showCleared: props.showCleared,
@@ -496,16 +533,13 @@ class AccountInternal extends PureComponent<
       this.paged.unsubscribe();
     }
 
-    // Filter out reconciled transactions if they are hidden
-    // and we're not showing balances.
-    if (
-      !this.state.showReconciled &&
-      (!this.state.showBalances || !this.canCalculateBalance())
-    ) {
-      query = query.filter({ reconciled: { $eq: false } });
-    }
+    const rowsQuery = selectTransactionRows(query, {
+      showReconciled: this.state.showReconciled,
+      showBalances: this.state.showBalances,
+      canCalculateBalance: this.canCalculateBalance(),
+    });
 
-    this.paged = pagedQuery(query.select('*'), {
+    this.paged = pagedQuery(rowsQuery, {
       onData: async (groupedData, prevData) => {
         const data = ungroupTransactions([...groupedData]);
         const firstLoad = prevData == null;
@@ -585,7 +619,7 @@ class AccountInternal extends PureComponent<
         );
       },
       options: {
-        pageCount: 150,
+        pageCount: TRANSACTIONS_PAGE_COUNT,
         onlySync: true,
       },
     });
@@ -2040,6 +2074,70 @@ type AccountHackProps = Omit<
   | 'onSetTransfer'
 >;
 
+// Computes the header's balance cells and seeds the spreadsheet cache with
+// them, so the header binds to real values instead of drawing 0.00 first.
+// Names and queries mirror `getBalanceQuery` and the header's `Balances`.
+async function prewarmHeaderBalances(
+  spreadsheet: ReturnType<typeof useSpreadsheet>,
+  accountId: AccountInternalProps['accountId'],
+  showExtraBalances: boolean,
+) {
+  const name = `balance-query-${accountId}`;
+  const query = queries.transactions(accountId).calculate({ $sum: '$amount' });
+  const cells = [{ name, query }];
+  if (showExtraBalances) {
+    cells.push(
+      { name: `${name}-cleared`, query: query.filter({ cleared: true }) },
+      { name: `${name}-uncleared`, query: query.filter({ cleared: false }) },
+    );
+  }
+
+  await Promise.all(
+    cells.map(async cell => {
+      const { data } = await aqlQuery(cell.query);
+      const fullName = `__global!${cell.name}`;
+      spreadsheet.prewarmCache(fullName, { name: fullName, value: data });
+    }),
+  );
+}
+
+async function loadAccountPreload({
+  spreadsheet,
+  accounts,
+  accountId,
+  isFiltered,
+  showBalances,
+  showReconciled,
+  showExtraBalances,
+}: {
+  spreadsheet: ReturnType<typeof useSpreadsheet>;
+  accounts: AccountEntity[];
+  accountId: AccountInternalProps['accountId'];
+  isFiltered: boolean;
+  showBalances: boolean | undefined;
+  showReconciled: boolean;
+  showExtraBalances: boolean;
+}): Promise<AccountPreload> {
+  await prewarmHeaderBalances(spreadsheet, accountId, showExtraBalances);
+
+  // A filtered screen builds its query through `applyFilters`; let it.
+  if (isFiltered) {
+    return null;
+  }
+
+  // The query `AccountInternal` issues on mount. With no search, filter or
+  // sort applied yet, `canCalculateBalance` comes down to the account existing.
+  const query = selectTransactionRows(queries.transactions(accountId), {
+    showReconciled,
+    showBalances,
+    canCalculateBalance: accounts.some(account => account.id === accountId),
+  });
+
+  const { data } = await aqlQuery(query.limit(TRANSACTIONS_PAGE_COUNT));
+
+  return { transactions: ungroupTransactions(data) };
+}
+
 function AccountHack(props: AccountHackProps) {
   const { dispatch: splitsExpandedDispatch } = useSplitsExpanded();
   const dispatch = useDispatch();
@@ -2071,17 +2169,30 @@ export function Account() {
   const params = useParams();
   const location = useLocation();
 
-  const { data: { grouped: categoryGroups } = { grouped: [] } } =
-    useCategories();
+  // Suspend until the screen has what it needs to draw complete. Navigations
+  // run in a transition, so React keeps the previous screen up meanwhile
+  // instead of drawing this one empty and filling it in. Without these lists
+  // rows would draw with blank payees and categories, and with no accounts
+  // the screen would mistake the account for a deleted one and redirect.
+  const [
+    { data: accounts },
+    { data: payees },
+    {
+      data: { grouped: categoryGroups },
+    },
+  ] = useSuspenseQueries({
+    queries: [
+      accountQueries.list(),
+      payeeQueries.list(),
+      categoryQueries.list(),
+    ],
+  });
   const newTransactions = useSelector(
     state => state.transactions.newTransactions,
   );
   const matchedTransactions = useSelector(
     state => state.transactions.matchedTransactions,
   );
-  const { data: accounts = [], isPlaceholderData: isAccountListLoading } =
-    useAccounts();
-  const { data: payees = [] } = usePayees();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
   const [hideFraction] = useSyncedPref('hideFraction');
   const [expandSplits] = useLocalPref('expand-splits');
@@ -2132,12 +2243,25 @@ export function Account() {
   const onCreatePayee = (name: PayeeEntity['name']) =>
     createPayee.mutateAsync({ name });
 
-  // The register decides how to query its rows, and whether it can show
-  // running balances, from the account list. Right after a reload that list
-  // may still be loading, so wait for it rather than build the query blind.
-  if (isAccountListLoading) {
-    return null;
-  }
+  const spreadsheet = useSpreadsheet();
+  const showReconciled = String(hideReconciled) !== 'true';
+  // Only the screen's first render reads this, so it never refetches while
+  // mounted; it's dropped once the screen unmounts, so coming back loads fresh.
+  const { data: preload } = useSuspenseQuery({
+    queryKey: ['account-screen-preload', location.pathname],
+    queryFn: () =>
+      loadAccountPreload({
+        spreadsheet,
+        accounts,
+        accountId: params.id,
+        isFiltered: filterConditions.length > 0,
+        showBalances,
+        showReconciled,
+        showExtraBalances: String(showExtraBalances) === 'true',
+      }),
+    staleTime: Infinity,
+    gcTime: 0,
+  });
 
   return (
     <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
@@ -2156,7 +2280,7 @@ export function Account() {
             showNetWorthChart={String(showNetWorthChart) === 'true'}
             setShowNetWorthChart={val => setShowNetWorthChart(String(val))}
             showCleared={showCleared}
-            showReconciled={String(hideReconciled) !== 'true'}
+            showReconciled={showReconciled}
             setShowReconciled={val => setHideReconciled(String(!val))}
             showGroup={showGroup}
             showExtraBalances={String(showExtraBalances) === 'true'}
@@ -2180,6 +2304,7 @@ export function Account() {
             onUnlinkAccount={onUnlinkAccount}
             onSyncAndDownload={onSyncAndDownload}
             onCreatePayee={onCreatePayee}
+            preload={preload}
           />
         </SplitsExpandedProvider>
       </SchedulesProvider>
