@@ -127,6 +127,26 @@ async function expectPagedData(query, numTransactions, allData) {
   expect(pagedData).toEqual(allData);
 }
 
+describe('isHappyPathQuery', () => {
+  it('accepts account and date filters inside `$and`/`$or` lists', () => {
+    const query = q('transactions')
+      .filter({
+        $and: [{ 'account.offbudget': false }, { 'account.closed': false }],
+      })
+      .filter({ $or: [{ date: { $gt: '2017-01-01' } }, { account: 'a' }] });
+
+    expect(isHappyPathQuery(query.serialize())).toBe(true);
+  });
+
+  it('rejects other fields inside `$and`/`$or` lists', () => {
+    const query = q('transactions').filter({
+      $and: [{ 'account.offbudget': false }, { cleared: true }],
+    });
+
+    expect(isHappyPathQuery(query.serialize())).toBe(false);
+  });
+});
+
 describe('transaction executors', () => {
   it('queries with `splits: inline` returns only non-parents', async () => {
     await fc.assert(
