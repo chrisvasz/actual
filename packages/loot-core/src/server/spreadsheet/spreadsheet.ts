@@ -20,6 +20,7 @@ export type Node = {
   value: string | number | boolean;
   sheet: unknown;
   query?: QueryState;
+  queryKey?: string;
   sql?: { sqlPieces: unknown; state: { dependencies: unknown[] } };
   dynamic?: boolean;
   _run?: unknown;
@@ -359,7 +360,12 @@ export class Spreadsheet {
     const name = resolveName(sheetName, cellName);
     const node = this._getNode(name);
 
-    if (node.query !== query) {
+    // Every bind sends a fresh copy of the query, so compare it by value.
+    // Database changes keep a compiled cell current (`triggerDatabaseChanges`)
+    // and query cells are never cached, so re-binding the same query can skip
+    // the recompute.
+    const queryKey = JSON.stringify(query);
+    if (node.queryKey !== queryKey) {
       node.query = query;
       const { sqlPieces, state } = compileQuery(
         node.query,
@@ -367,6 +373,7 @@ export class Spreadsheet {
         schemaConfig,
       );
       node.sql = { sqlPieces, state };
+      node.queryKey = queryKey;
 
       this.transaction(() => {
         this._markDirty(name);
