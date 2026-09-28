@@ -2079,7 +2079,8 @@ export function Account() {
   const matchedTransactions = useSelector(
     state => state.transactions.matchedTransactions,
   );
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts = [], isPlaceholderData: isAccountListLoading } =
+    useAccounts();
   const { data: payees = [] } = usePayees();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
   const [hideFraction] = useSyncedPref('hideFraction');
@@ -2130,6 +2131,13 @@ export function Account() {
   const createPayee = useCreatePayeeMutation();
   const onCreatePayee = (name: PayeeEntity['name']) =>
     createPayee.mutateAsync({ name });
+
+  // The register decides how to query its rows, and whether it can show
+  // running balances, from the account list. Right after a reload that list
+  // may still be loading, so wait for it rather than build the query blind.
+  if (isAccountListLoading) {
+    return null;
+  }
 
   return (
     <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
