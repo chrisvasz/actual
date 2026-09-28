@@ -197,9 +197,8 @@ async function execTransactionsGrouped(
   const from =
     groupIds.length <= MAX_INDEXED_GROUP_LOOKUP
       ? `(
-          SELECT id AS _candidate_id FROM transactions WHERE ${whereIn(groupIds, 'id')}
-          UNION
-          SELECT id FROM transactions WHERE ${whereIn(groupIds, 'parent_id')}
+          SELECT id AS _candidate_id FROM transactions
+          WHERE ${whereIn(groupIds, 'id')} OR ${whereIn(groupIds, 'parent_id')}
         ) _candidates
         CROSS JOIN ${sqlPieces.from}
           ON ${sqlPieces.from}.id = _candidates._candidate_id`
