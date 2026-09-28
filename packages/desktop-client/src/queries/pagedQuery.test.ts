@@ -4,6 +4,7 @@ import { subDays } from '@actual-app/core/shared/months';
 import { q } from '@actual-app/core/shared/query';
 import { resetTracer, tracer } from '@actual-app/core/shared/test-helpers';
 
+import { aqlQuery } from './aqlQuery';
 import { pagedQuery } from './pagedQuery';
 
 function wait(n) {
@@ -454,6 +455,23 @@ describe('pagedQuery', () => {
 
     // Should only get 10 items back
     await tracer.expect('data', selectData(data, ['id']).slice(0, 10));
+  });
+
+  it('pagedQuery sends the count after the first page returns', async () => {
+    mockPagingServer(50, { delay: 10 });
+    tracer.start();
+
+    const query = q('transactions').select('id');
+    pagedQuery(query, {
+      onData: data => tracer.event('data', data),
+      options: { pageCount: 10 },
+    });
+    // Anything the caller sends right away goes ahead of the count
+    void aqlQuery(query.limit(1));
+
+    await tracer.expect('server-query', ['id']);
+    await tracer.expect('server-query', ['id']);
+    await tracer.expect('server-query', [{ result: { $count: '*' } }]);
   });
 
   it('pagedQuery only runs `fetchNext` once at a time', () => async done => {
