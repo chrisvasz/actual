@@ -3,4 +3,4 @@ category: Enhancements
 authors: [chrisvasz]
 ---
 
-Remove the popover that appeared when hovering an account in the sidebar
+Remove the popover that appeared when hovering an account in the sidebar, including the experimental new sidebar
