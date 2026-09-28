@@ -20,6 +20,10 @@ import { aqlQuery } from '..';
 
 type SplitsOption = 'all' | 'inline' | 'none' | 'grouped';
 
+// Above this many groups, walking every transaction beats per-id
+// index lookups when fetching the rows of a grouped query
+const MAX_INDEXED_GROUP_LOOKUP = 1000;
+
 function toGroup(parents, children, mapper = x => x) {
   return parents.reduce((list, parent) => {
     const childs = children.get(parent.id) || [];
@@ -176,12 +180,32 @@ async function execTransactionsGrouped(
     );
   }
 
+  const groupIds = rows.map(row => row.group_id);
   const where = whereIn(
-    rows.map(row => row.group_id),
+    groupIds,
     `IFNULL(${sqlPieces.from}.parent_id, ${sqlPieces.from}.id)`,
   );
+  // The view computes `parent_id` with a CASE expression, so the
+  // `IFNULL(parent_id, id) IN (...)` filter can't use an index and
+  // SQLite walks every transaction. For a page of groups, start from
+  // the candidate rows instead: each group's parent (or standalone
+  // transaction) by `id`, plus the rows whose raw `parent_id` points
+  // at it, both indexed. CROSS JOIN pins that join order so the
+  // planner can't fall back to the full walk. The original filter
+  // still applies, so the result is unchanged. For a large set of
+  // groups the full walk is cheaper, so keep it there.
+  const from =
+    groupIds.length <= MAX_INDEXED_GROUP_LOOKUP
+      ? `(
+          SELECT id AS _candidate_id FROM transactions WHERE ${whereIn(groupIds, 'id')}
+          UNION
+          SELECT id FROM transactions WHERE ${whereIn(groupIds, 'parent_id')}
+        ) _candidates
+        CROSS JOIN ${sqlPieces.from}
+          ON ${sqlPieces.from}.id = _candidates._candidate_id`
+      : sqlPieces.from;
   const finalSql = `
-    SELECT ${sqlPieces.select}, parent_id AS _parent_id FROM ${sqlPieces.from}
+    SELECT ${sqlPieces.select}, parent_id AS _parent_id FROM ${from}
     ${sqlPieces.joins}
     WHERE ${where} ${whereDead}
     ${sqlPieces.orderBy}
