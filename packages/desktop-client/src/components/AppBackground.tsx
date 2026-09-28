@@ -18,38 +18,49 @@ type AppBackgroundProps = {
 export function AppBackground({ isLoading }: AppBackgroundProps) {
   const loadingText = useSelector(state => state.app.loadingText);
   const showLoading = isLoading || loadingText !== null;
-  const transitions = useTransition(loadingText, {
-    from: { opacity: 0, transform: 'translateY(-100px)' },
-    enter: { opacity: 1, transform: 'translateY(0)' },
-    leave: { opacity: 0, transform: 'translateY(100px)' },
+  // Transition on whether we're loading, not on the text itself, so the
+  // loader stays put while startup steps update the message in place.
+  const transitions = useTransition(showLoading, {
+    from: { opacity: 0 },
+    enter: { opacity: 1 },
+    leave: { opacity: 0 },
   });
 
   return (
     <>
       <Background />
 
-      {showLoading &&
-        transitions((style, item) => (
-          <animated.div key={item} style={style}>
-            <View
-              className={css({
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                padding: 50,
-                paddingTop: 200,
-                color: theme.pageText,
-                alignItems: 'center',
-              })}
-            >
-              <Block style={{ marginBottom: 20, fontSize: 18 }}>
-                {loadingText}
-              </Block>
-              <AnimatedLoading width={25} color={theme.pageText} />
-            </View>
-          </animated.div>
-        ))}
+      {transitions(
+        (style, isShown) =>
+          isShown && (
+            <animated.div style={style}>
+              <View
+                className={css({
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  padding: 50,
+                  paddingTop: 200,
+                  color: theme.pageText,
+                  alignItems: 'center',
+                })}
+              >
+                <Block
+                  style={{
+                    marginBottom: 20,
+                    fontSize: 18,
+                    lineHeight: '24px',
+                    minHeight: 24,
+                  }}
+                >
+                  {loadingText}
+                </Block>
+                <AnimatedLoading width={25} color={theme.pageText} />
+              </View>
+            </animated.div>
+          ),
+      )}
     </>
   );
 }
