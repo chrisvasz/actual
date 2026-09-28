@@ -317,6 +317,17 @@ export function setNumberFormat(config: typeof numberFormatConfig) {
   numberFormatConfig = config;
 }
 
+type NumberFormatResult = {
+  value: NumberFormats;
+  thousandsSeparator: string;
+  decimalSeparator: string;
+  formatter: { format: (value: number) => string };
+};
+
+// Building an `Intl.NumberFormat` is expensive and `getNumberFormat` runs for
+// every formatted amount, so results are cached per distinct set of inputs.
+const numberFormatCache = new Map<string, NumberFormatResult>();
+
 export function getNumberFormat({
   format = numberFormatConfig.format,
   hideFraction = numberFormatConfig.hideFraction,
@@ -325,14 +336,26 @@ export function getNumberFormat({
   format?: NumberFormats;
   hideFraction?: boolean;
   decimalPlaces?: number;
-} = numberFormatConfig) {
-  let locale, thousandsSeparator, decimalSeparator;
-
+} = numberFormatConfig): NumberFormatResult {
   const currentFormat = format || numberFormatConfig.format;
   const currentHideFraction =
     typeof hideFraction === 'boolean'
       ? hideFraction
       : numberFormatConfig.hideFraction;
+  const fractionDigits =
+    typeof decimalPlaces === 'number'
+      ? decimalPlaces
+      : currentHideFraction
+        ? 0
+        : 2;
+
+  const cacheKey = `${format}|${currentFormat}|${fractionDigits}`;
+  const cached = numberFormatCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  let locale, thousandsSeparator, decimalSeparator;
 
   switch (format) {
     case 'space-comma':
@@ -362,21 +385,10 @@ export function getNumberFormat({
       decimalSeparator = '.';
   }
 
-  const fractionDigitsOptions: {
-    minimumFractionDigits: number;
-    maximumFractionDigits: number;
-  } =
-    typeof decimalPlaces === 'number'
-      ? {
-          minimumFractionDigits: decimalPlaces,
-          maximumFractionDigits: decimalPlaces,
-        }
-      : {
-          minimumFractionDigits: currentHideFraction ? 0 : 2,
-          maximumFractionDigits: currentHideFraction ? 0 : 2,
-        };
-
-  const intlFormatter = new Intl.NumberFormat(locale, fractionDigitsOptions);
+  const intlFormatter = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
 
   // Wrapper to handle -0 edge case
   // Normalize apostrophe-dot to U+2019 for consistency across
@@ -391,12 +403,14 @@ export function getNumberFormat({
     },
   };
 
-  return {
+  const result = {
     value: currentFormat,
     thousandsSeparator,
     decimalSeparator,
     formatter,
   };
+  numberFormatCache.set(cacheKey, result);
+  return result;
 }
 
 // Number utilities
