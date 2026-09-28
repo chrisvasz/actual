@@ -135,7 +135,13 @@ export class FixedSizeList extends PureComponent<
   componentDidMount() {
     const { initialScrollOffset } = this.props;
 
-    if (typeof initialScrollOffset === 'number' && this._outerRef != null) {
+    // A new scroll container already sits at the top, and writing scrollTop
+    // forces a layout in the middle of the commit, so only scroll when needed.
+    if (
+      typeof initialScrollOffset === 'number' &&
+      initialScrollOffset > 0 &&
+      this._outerRef != null
+    ) {
       const outerRef = this._outerRef;
       outerRef.scrollTop = initialScrollOffset;
     }

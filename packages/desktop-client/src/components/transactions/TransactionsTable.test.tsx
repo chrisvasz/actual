@@ -1767,8 +1767,33 @@ describe('Transactions', () => {
       Element.prototype,
       'clientWidth',
     )!;
+    // The global stub never reports. Browsers report an element's size once
+    // it's observed, which is when the notes cell first checks truncation.
+    const OriginalResizeObserver = global.ResizeObserver;
 
     beforeAll(() => {
+      global.ResizeObserver = class {
+        constructor(private callback: ResizeObserverCallback) {}
+        observe(target: Element) {
+          setTimeout(() =>
+            this.callback(
+              [
+                {
+                  target,
+                  contentRect: target.getBoundingClientRect(),
+                } as ResizeObserverEntry,
+              ],
+              this,
+            ),
+          );
+        }
+        unobserve() {
+          // no-op
+        }
+        disconnect() {
+          // no-op
+        }
+      };
       Object.defineProperty(Element.prototype, 'scrollWidth', {
         configurable: true,
         get() {
@@ -1784,6 +1809,7 @@ describe('Transactions', () => {
     });
 
     afterAll(() => {
+      global.ResizeObserver = OriginalResizeObserver;
       Object.defineProperty(
         Element.prototype,
         'scrollWidth',

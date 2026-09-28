@@ -1138,48 +1138,46 @@ export const Table = forwardRef(
             backgroundColor,
           }}
         >
-          {isEmpty ? (
-            getEmptyContent(renderEmpty)
-          ) : (
-            <AutoSizer
-              renderProp={({ width = 0, height = 0 }) => {
-                if (width === 0 || height === 0) {
-                  return null;
-                }
+          {/* Stays mounted while the table is empty (as it is while it
+              loads), so it has measured by the time rows arrive and they
+              render at the right size in one pass. */}
+          <AutoSizer
+            renderProp={({ width = 0, height = 0 }) => {
+              if (isEmpty || width === 0 || height === 0) {
+                return null;
+              }
 
-                return (
-                  <AvoidRefocusScrollProvider>
-                    <FixedSizeList
-                      ref={list}
-                      header={contentHeader}
-                      innerRef={listContainer}
-                      outerRef={scrollContainer}
-                      stableScrollbarGutter={stableScrollbarGutter}
-                      width={width}
-                      height={height}
-                      renderRow={renderRow}
-                      itemCount={count || items.length}
-                      itemSize={rowHeight - 1}
-                      itemKey={
-                        getItemKey || ((index: number) => items[index].id)
-                      }
-                      indexForKey={key =>
-                        items.findIndex(item => item.id === key)
-                      }
-                      initialScrollOffset={
-                        initialScrollTo.current
-                          ? getScrollOffset(height, initialScrollTo.current)
-                          : 0
-                      }
-                      overscanCount={5}
-                      onItemsRendered={onItemsRendered}
-                      onScroll={onScroll}
-                    />
-                  </AvoidRefocusScrollProvider>
-                );
-              }}
-            />
-          )}
+              return (
+                <AvoidRefocusScrollProvider>
+                  <FixedSizeList
+                    ref={list}
+                    header={contentHeader}
+                    innerRef={listContainer}
+                    outerRef={scrollContainer}
+                    stableScrollbarGutter={stableScrollbarGutter}
+                    width={width}
+                    height={height}
+                    renderRow={renderRow}
+                    itemCount={count || items.length}
+                    itemSize={rowHeight - 1}
+                    itemKey={getItemKey || ((index: number) => items[index].id)}
+                    indexForKey={key =>
+                      items.findIndex(item => item.id === key)
+                    }
+                    initialScrollOffset={
+                      initialScrollTo.current
+                        ? getScrollOffset(height, initialScrollTo.current)
+                        : 0
+                    }
+                    overscanCount={5}
+                    onItemsRendered={onItemsRendered}
+                    onScroll={onScroll}
+                  />
+                </AvoidRefocusScrollProvider>
+              );
+            }}
+          />
+          {isEmpty && getEmptyContent(renderEmpty)}
         </View>
       </View>
     );
