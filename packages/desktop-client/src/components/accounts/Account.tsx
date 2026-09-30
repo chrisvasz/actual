@@ -124,12 +124,13 @@ function selectTransactionRows(
 }
 
 /**
- * The first page of transactions, loaded before the account screen mounts so
- * it can render complete on its first paint. `null` when the screen opens
- * filtered and loads the usual way instead.
+ * The first page of transactions and their running balances, loaded before
+ * the account screen mounts so it can render complete on its first paint.
+ * `null` when the screen opens filtered and loads the usual way instead.
  */
 type AccountPreload = {
   transactions: TransactionEntity[];
+  balances: Record<TransactionEntity['id'], IntegerAmount> | null;
 } | null;
 
 function isTransactionFilterEntity(
@@ -384,7 +385,7 @@ class AccountInternal extends PureComponent<
       reconcileAmount: null,
       transactions: props.preload?.transactions ?? [],
       showBalances: props.showBalances,
-      balances: null,
+      balances: props.preload?.balances ?? null,
       showCleared: props.showCleared,
       showReconciled: props.showReconciled,
       nameError: '',
@@ -2127,15 +2128,33 @@ async function loadAccountPreload({
 
   // The query `AccountInternal` issues on mount. With no search, filter or
   // sort applied yet, `canCalculateBalance` comes down to the account existing.
+  const canCalculateBalance = accounts.some(
+    account => account.id === accountId,
+  );
   const query = selectTransactionRows(queries.transactions(accountId), {
     showReconciled,
     showBalances,
-    canCalculateBalance: accounts.some(account => account.id === accountId),
+    canCalculateBalance,
   });
 
-  const { data } = await aqlQuery(query.limit(TRANSACTIONS_PAGE_COUNT));
+  // Mirrors `getBalanceTotal`, so the balance column draws filled in too.
+  const [{ data }, total] = await Promise.all([
+    aqlQuery(query.limit(TRANSACTIONS_PAGE_COUNT)),
+    showBalances && canCalculateBalance
+      ? aqlQuery(
+          query.options({ splits: 'none' }).calculate({ $sum: '$amount' }),
+        ).then(({ data }: { data: number | null }) => data ?? 0)
+      : null,
+  ]);
+  const transactions = ungroupTransactions(data);
 
-  return { transactions: ungroupTransactions(data) };
+  return {
+    transactions,
+    balances:
+      total == null
+        ? null
+        : calculateRunningBalancesFromTotal(transactions, total),
+  };
 }
 
 function AccountHack(props: AccountHackProps) {
