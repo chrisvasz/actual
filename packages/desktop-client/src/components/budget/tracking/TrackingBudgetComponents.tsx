@@ -53,6 +53,13 @@ const headerLabelStyle: CSSProperties = {
   textAlign: 'right',
 };
 
+// Trades 2px of the row's top and bottom padding for space between each
+// label and its total, so the header row keeps its height.
+const totalsLabelStyle: CSSProperties = {
+  ...headerLabelStyle,
+  gap: 4,
+};
+
 const cellStyle: CSSProperties = {
   color: theme.tableHeaderText,
   fontWeight: 600,
@@ -65,11 +72,11 @@ export const BudgetTotalsMonth = memo(function BudgetTotalsMonth() {
         flex: 1,
         flexDirection: 'row',
         marginRight: styles.monthRightPadding,
-        paddingTop: 10,
-        paddingBottom: 10,
+        paddingTop: 8,
+        paddingBottom: 8,
       }}
     >
-      <View style={headerLabelStyle}>
+      <View style={totalsLabelStyle}>
         <Text style={{ color: theme.tableHeaderText }}>
           <Trans>Budgeted</Trans>
         </Text>
@@ -80,7 +87,7 @@ export const BudgetTotalsMonth = memo(function BudgetTotalsMonth() {
           {props => <CellValueText {...props} style={cellStyle} />}
         </TrackingCellValue>
       </View>
-      <View style={headerLabelStyle}>
+      <View style={totalsLabelStyle}>
         <Text style={{ color: theme.tableHeaderText }}>
           <Trans>Spent</Trans>
         </Text>
@@ -88,7 +95,7 @@ export const BudgetTotalsMonth = memo(function BudgetTotalsMonth() {
           {props => <CellValueText {...props} style={cellStyle} />}
         </TrackingCellValue>
       </View>
-      <View style={headerLabelStyle}>
+      <View style={totalsLabelStyle}>
         <Text style={{ color: theme.tableHeaderText }}>
           <Trans>Balance</Trans>
         </Text>
