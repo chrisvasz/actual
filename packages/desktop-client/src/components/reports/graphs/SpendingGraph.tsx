@@ -17,7 +17,6 @@ import {
 } from 'recharts';
 
 import { FinancialText } from '#components/FinancialText';
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { numberFormatterTooltip } from '#components/reports/numberFormatter';
 import { useFormat } from '#hooks/useFormat';
@@ -161,7 +160,6 @@ export function SpendingGraph({
   compare,
   compareTo,
 }: SpendingGraphProps) {
-  const animationProps = useRechartsAnimation({ animationDuration: 1000 });
   const balanceTypeOp = 'cumulative';
   const format = useFormat();
 
@@ -314,7 +312,7 @@ export function SpendingGraph({
                   fillOpacity: 1,
                   r: 10,
                 }}
-                {...animationProps}
+                isAnimationActive={false}
                 dataKey={val => getVal(val, compare)}
                 stroke={`url(#stroke${balanceTypeOp})`}
                 strokeWidth={3}
@@ -325,7 +323,7 @@ export function SpendingGraph({
                 type="linear"
                 dot={false}
                 activeDot={false}
-                {...animationProps}
+                isAnimationActive={false}
                 dataKey={val => getVal(val, selection)}
                 stroke={theme.reportsGray}
                 strokeDasharray="10 10"

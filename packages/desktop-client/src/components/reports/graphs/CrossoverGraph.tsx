@@ -15,7 +15,6 @@ import {
 } from 'recharts';
 
 import { FinancialText } from '#components/FinancialText';
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { useFormat } from '#hooks/useFormat';
 
@@ -158,7 +157,6 @@ export function CrossoverGraph({
   showTooltip = true,
 }: CrossoverGraphProps) {
   const format = useFormat();
-  const animationProps = useRechartsAnimation({ animationDuration: 1000 });
 
   const tickFormatter = (tick: number) =>
     `${format(Math.round(tick), 'financial-no-decimals')}`;
@@ -211,7 +209,7 @@ export function CrossoverGraph({
             dot={false}
             stroke={theme.reportsNumberPositive}
             strokeWidth={2}
-            {...animationProps}
+            isAnimationActive={false}
           />
           <Line
             type="monotone"
@@ -219,7 +217,7 @@ export function CrossoverGraph({
             dot={false}
             stroke={theme.reportsNumberNegative}
             strokeWidth={2}
-            {...animationProps}
+            isAnimationActive={false}
           />
           <Line
             type="monotone"
@@ -228,7 +226,7 @@ export function CrossoverGraph({
             stroke={theme.reportsNumberNegative}
             strokeWidth={2}
             strokeDasharray="5 5"
-            {...animationProps}
+            isAnimationActive={false}
           />
         </LineChart>
       )}

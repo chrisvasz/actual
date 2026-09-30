@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { CSSProperties } from 'react';
 
 import { theme } from '@actual-app/components/theme';
-import { css, keyframes } from '@emotion/css';
+import { css } from '@emotion/css';
 import {
   Layer,
   Rectangle,
@@ -14,23 +14,6 @@ import type { SankeyData } from 'recharts/types/chart/Sankey';
 
 import { Container } from '#components/reports/Container';
 import { useFormat } from '#hooks/useFormat';
-import { useReducedMotion } from '#hooks/useReducedMotion';
-
-const fadeIn = keyframes({
-  from: { opacity: 0 },
-  to: { opacity: 1 },
-});
-
-// kept invisible until the card scrolls into view
-const hiddenClass = css({ opacity: 0 });
-
-// stagger the load fade-in left-to-right, keyed off horizontal position
-function fadeInClass(fraction: number) {
-  const delay = Math.max(0, Math.min(1, fraction)) * 0.3;
-  return css({
-    animation: `${fadeIn} 0.3s ease-out ${delay}s both`,
-  });
-}
 
 type SankeyGraphNode = SankeyData['nodes'][number] & {
   value: number;
@@ -54,8 +37,6 @@ type SankeyLinkProps = {
   targetY: number;
   targetControlX: number;
   linkWidth: number;
-  containerWidth: number;
-  phase: 'waiting' | 'animating' | 'done';
   payload: SankeyLinkPayload;
   isHovered: boolean;
   onMouseEnter: () => void;
@@ -70,33 +51,20 @@ function SankeyLink({
   targetY,
   targetControlX,
   linkWidth,
-  containerWidth,
-  phase,
   payload,
   isHovered,
   onMouseEnter,
   onMouseLeave,
 }: SankeyLinkProps) {
-  const reducedMotion = useReducedMotion();
-
   if (payload.value <= 0) {
     return null;
   }
   const linkColor = payload.color ?? theme.reportsGray;
   const strokeWidth = linkWidth;
   const strokeOpacity = isHovered ? 1 : 0.6;
-  // use the link's midpoint so it eases in with the columns it spans
-  const fraction = (sourceX + targetX) / 2 / containerWidth;
 
   return (
     <path
-      className={
-        reducedMotion || phase === 'done'
-          ? undefined
-          : phase === 'animating'
-            ? fadeInClass(fraction)
-            : hiddenClass
-      }
       d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`}
       fill="none"
       stroke={linkColor}
@@ -117,7 +85,6 @@ type SankeyNodeProps = {
   height: number;
   payload: SankeyGraphNode;
   containerWidth: number;
-  phase: 'waiting' | 'animating' | 'done';
   showPercentages?: boolean;
   color?: string;
 };
@@ -128,11 +95,9 @@ function SankeyNode({
   height,
   payload,
   containerWidth,
-  phase,
   showPercentages,
 }: SankeyNodeProps) {
   const format = useFormat();
-  const reducedMotion = useReducedMotion();
 
   if (payload.value <= 0) {
     return null;
@@ -161,15 +126,7 @@ function SankeyNode({
   );
 
   return (
-    <Layer
-      className={
-        reducedMotion || phase === 'done'
-          ? undefined
-          : phase === 'animating'
-            ? fadeInClass(x / containerWidth)
-            : hiddenClass
-      }
-    >
+    <Layer>
       <Rectangle x={x} y={y} width={width} height={height} fill={fillColor} />
       {renderText(payload.name || '', height / 2)}
       {renderText(
@@ -199,39 +156,10 @@ export function SankeyGraph({
   const format = useFormat();
   const [hoveredLinkIndex, setHoveredLinkIndex] = useState<number | null>(null);
 
-  // play the load animation once: wait until the card scrolls into view,
-  // run the fade-in, then stay in 'done' so later data changes (filters,
-  // date range) don't re-animate the chart in place. the viewport element
-  // is tracked as state because AutoSizer only renders it once it has
-  // measured, so a useRef-based observer would attach before it exists.
-  const [viewportEl, setViewportEl] = useState<HTMLDivElement | null>(null);
-  const [phase, setPhase] = useState<'waiting' | 'animating' | 'done'>(
-    'waiting',
-  );
-
-  useEffect(() => {
-    if (!viewportEl || phase !== 'waiting') return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setPhase('animating');
-        observer.disconnect();
-      }
-    });
-    observer.observe(viewportEl);
-    return () => observer.disconnect();
-  }, [viewportEl, phase]);
-
-  useEffect(() => {
-    if (phase !== 'animating') return;
-    // 0.3s duration + 0.3s max stagger, plus buffer
-    const timer = setTimeout(() => setPhase('done'), 700);
-    return () => clearTimeout(timer);
-  }, [phase]);
-
   return (
     <Container style={style}>
       {(width, height) => (
-        <div ref={setViewportEl} style={{ width: '100%', height: '100%' }}>
+        <div style={{ width: '100%', height: '100%' }}>
           <ResponsiveContainer>
             <Sankey
               data={data}
@@ -239,15 +167,12 @@ export function SankeyGraph({
                 <SankeyNode
                   {...props}
                   containerWidth={width}
-                  phase={phase}
                   showPercentages={showPercentages}
                 />
               )}
               link={props => (
                 <SankeyLink
                   {...props}
-                  containerWidth={width}
-                  phase={phase}
                   isHovered={hoveredLinkIndex === props.index}
                   onMouseEnter={() => setHoveredLinkIndex(props.index)}
                   onMouseLeave={() => setHoveredLinkIndex(null)}
