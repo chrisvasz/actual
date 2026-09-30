@@ -17,7 +17,6 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Button, ButtonWithLoading } from '@actual-app/components/button';
 import { Input } from '@actual-app/components/input';
 import { Select } from '@actual-app/components/select';
-import { SpaceBetween } from '@actual-app/components/space-between';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
@@ -31,8 +30,7 @@ import {
   useImportPreviewTransactionsMutation,
   useImportTransactionsMutation,
 } from '#accounts';
-import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
-import { SectionLabel } from '#components/forms';
+import { Modal, ModalCloseButton } from '#components/common/Modal';
 import { LabeledCheckbox } from '#components/forms/LabeledCheckbox';
 import { TableHeader, TableWithNavigator } from '#components/table';
 import { useCategories } from '#hooks/useCategories';
@@ -40,16 +38,14 @@ import { useDateFormat } from '#hooks/useDateFormat';
 import { useSyncedPrefs } from '#hooks/useSyncedPrefs';
 import { payeeQueries } from '#payees';
 
-import { DateFormatSelect } from './DateFormatSelect';
 import { FieldMappings } from './FieldMappings';
-import { InOutOption } from './InOutOption';
-import { MultiplierOption } from './MultiplierOption';
 import { Transaction } from './Transaction';
 import type { DateFormat, FieldMapping, ImportTransaction } from './utils';
 import {
   applyFieldMappings,
   dateFormats,
   filterByStartDate,
+  formatDate,
   isDateFormat,
   parseAmountFields,
   parseCategoryFields,
@@ -230,9 +226,14 @@ export function ImportTransactionsModal({
   const [fieldMappings, setFieldMappings] = useState<FieldMapping | null>(null);
   const [splitMode, setSplitMode] = useState(false);
   const [flipAmount, setFlipAmount] = useState(false);
-  const [multiplierEnabled, setMultiplierEnabled] = useState(false);
-  const [reconcile, setReconcile] = useState(true);
-  const [importNotes, setImportNotes] = useState(true);
+  const [reconcile, setReconcile] = useState(
+    String(prefs[`import-merge-${accountId}`]) !== 'false',
+  );
+  const [importNotes, setImportNotes] = useState(
+    String(
+      prefs[`import-notes-${accountId}-${getFileType(originalFileName)}`],
+    ) !== 'false',
+  );
 
   // This cannot be set after parsing the file, because changing it
   // requires re-parsing the file. This is different from the other
@@ -274,14 +275,17 @@ export function ImportTransactionsModal({
     String(prefs[`camt-swap-payee-memo-${accountId}`]) === 'true',
   );
   const [reimportDeleted, setReimportDeleted] = useState(
-    String(prefs[`import-reimport-deleted-${accountId}`] || 'true') === 'true',
+    String(prefs[`import-reimport-deleted-${accountId}`]) === 'true',
   );
 
   const [parseDateFormat, setParseDateFormat] = useState<DateFormat | null>(
     null,
   );
 
-  const [clearOnImport, setClearOnImport] = useState(true);
+  const [clearOnImport, setClearOnImport] = useState(
+    String(prefs[`import-clear-${accountId}`]) !== 'false',
+  );
+  const [showFileOptions, setShowFileOptions] = useState(false);
   const [startDate, setStartDate] = useState('');
   const lastParseRef = useRef<LastParse | null>(null);
 
@@ -435,9 +439,12 @@ export function ImportTransactionsModal({
             // @ts-expect-error - mappings might not have outflow/inflow properties
             setFieldMappings(mappings);
 
-            // Set initial split mode based on any saved mapping
-            // @ts-expect-error - mappings might not have outflow/inflow properties
-            const splitMode = !!(mappings.outflow || mappings.inflow);
+            // Set initial split mode based on any saved mapping. In/Out mode
+            // reads from the amount column, so it takes precedence.
+            const splitMode =
+              // @ts-expect-error - mappings might not have outflow/inflow properties
+              !!(mappings.outflow || mappings.inflow) &&
+              String(prefs[`csv-in-out-mode-${accountId}`]) !== 'true';
             setSplitMode(splitMode);
 
             const parseDateFormat =
@@ -711,7 +718,9 @@ export function ImportTransactionsModal({
         date,
         amount: amountToInteger(amount),
         cleared: clearOnImport,
-        notes: importNotes ? finalTransaction.notes : null,
+        // CSV notes come from the column mapping, not this option
+        notes:
+          importNotes || filetype === 'csv' ? finalTransaction.notes : null,
       });
     }
 
@@ -753,6 +762,11 @@ export function ImportTransactionsModal({
     if (filetype === 'csv' || filetype === 'qif') {
       savePrefs({
         [`flip-amount-${accountId}-${filetype}`]: String(flipAmount),
+      });
+    }
+
+    if (filetype !== 'csv') {
+      savePrefs({
         [`import-notes-${accountId}-${filetype}`]: String(importNotes),
       });
     }
@@ -771,7 +785,10 @@ export function ImportTransactionsModal({
 
     savePrefs({
       [`import-reimport-deleted-${accountId}`]: String(reimportDeleted),
+      [`import-clear-${accountId}`]: String(clearOnImport),
     });
+
+    savePrefs({ [`import-merge-${accountId}`]: String(reconcile) });
 
     importTransactions.mutate(
       {
@@ -933,21 +950,100 @@ export function ImportTransactionsModal({
     });
   }
 
+  const importCount = transactions.filter(
+    trans => !trans.isMatchedTransaction && trans.selected && !trans.tombstone,
+  ).length;
+  const sinceDate = formatDate(startDate, dateFormat);
+  // File format options are remembered per account, so keep them out of the
+  // way unless the file didn't parse
+  const fileOptionsOpen =
+    showFileOptions ||
+    !!error?.parsed ||
+    (loadingState === null && parsedTransactions.length === 0);
+  const delimiterNames = {
+    ',': t('Comma'),
+    ';': t('Semicolon'),
+    '|': t('Pipe'),
+    '\t': t('Tab'),
+    '~': t('Tilde'),
+  };
+  const fileFormatSummary = [
+    delimiterNames[delimiter] ?? delimiter,
+    hasHeaderRow ? t('header row') : t('no header row'),
+    csvEncoding === 'auto' ? null : csvEncoding.toUpperCase(),
+    skipStartLines + skipEndLines > 0
+      ? t('skip {{start}} start, {{end}} end lines', {
+          start: skipStartLines,
+          end: skipEndLines,
+        })
+      : null,
+  ]
+    .filter(Boolean)
+    .join(', ');
+  const swapPayeeAndMemo = isOfxFile(filetype)
+    ? { checked: ofxSwapPayeeAndMemo, onChange: setOfxSwapPayeeAndMemo }
+    : filetype === 'qif'
+      ? { checked: qifSwapPayeeAndMemo, onChange: setQifSwapPayeeAndMemo }
+      : isCamtFile(filetype)
+        ? { checked: camtSwapPayeeAndMemo, onChange: setCamtSwapPayeeAndMemo }
+        : null;
+
   return (
     <Modal
       name="import-transactions"
       isLoading={loadingState === 'parsing'}
-      containerProps={{ style: { width: 800 } }}
+      containerProps={{
+        style: {
+          width: 900,
+          height: 'calc(var(--visual-viewport-height) * 0.9)',
+        },
+      }}
     >
       {({ state }) => (
         <>
-          <ModalHeader
-            title={
-              t('Import transactions') +
-              (filetype ? ` (${filetype.toUpperCase()})` : '')
-            }
-            rightContent={<ModalCloseButton onPress={() => state.close()} />}
-          />
+          {/* Sticky so the import button stays reachable on short screens */}
+          <View
+            style={{
+              position: 'sticky',
+              top: -10,
+              zIndex: 300,
+              flexShrink: 0,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 5,
+              margin: '-10px -10px 0',
+              padding: 10,
+              backgroundColor: theme.modalBackground,
+            }}
+          >
+            <ModalCloseButton onPress={() => state.close()} />
+            <h1
+              style={{
+                flex: 1,
+                margin: 0,
+                fontSize: 25,
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              <Trans>Import transactions</Trans>
+            </h1>
+            <ButtonWithLoading
+              variant="primary"
+              autoFocus
+              isDisabled={importCount === 0}
+              isLoading={loadingState === 'importing'}
+              onPress={() => {
+                void onImport(() => state.close());
+              }}
+            >
+              <Trans count={importCount}>
+                Import {{ count: importCount }} transactions
+              </Trans>
+            </ButtonWithLoading>
+          </View>
           {error && !error.parsed && (
             <View style={{ alignItems: 'center', marginBottom: 15 }}>
               <Text style={{ marginRight: 10, color: theme.errorText }}>
@@ -960,9 +1056,28 @@ export function ImportTransactionsModal({
           )}
           {(!error || !error.parsed) && (
             <View
-              style={{ ...styles.tableContainer, height: 300, flex: 'unset' }}
+              style={{
+                ...styles.tableContainer,
+                flex: '1 1 0',
+                minHeight: 200,
+              }}
             >
               <TableHeader headers={headers} />
+              {(filetype === 'csv' || filetype === 'qif') && (
+                <FieldMappings
+                  transactions={parsedTransactions}
+                  mappings={filetype === 'csv' ? fieldMappings : null}
+                  onChange={onUpdateFields}
+                  parseDateFormat={parseDateFormat}
+                  onChangeDateFormat={value => {
+                    setParseDateFormat(isDateFormat(value) ? value : null);
+                  }}
+                  splitMode={splitMode}
+                  inOutMode={inOutMode}
+                  hasHeaderRow={hasHeaderRow}
+                  reconcile={reconcile}
+                />
+              )}
 
               {/* @ts-expect-error - ImportTransaction is not a TableItem */}
               <TableWithNavigator<ImportTransaction>
@@ -984,7 +1099,13 @@ export function ImportTransactionsModal({
                         fontStyle: 'italic',
                       }}
                     >
-                      <Trans>No transactions found</Trans>
+                      {startDate && parsedTransactions.length > 0 ? (
+                        <Trans>
+                          No transactions found since {{ sinceDate }}
+                        </Trans>
+                      ) : (
+                        <Trans>No transactions found</Trans>
+                      )}
                     </View>
                   );
                 }}
@@ -1032,242 +1153,145 @@ export function ImportTransactionsModal({
 
           <View
             style={{
-              marginTop: 10,
               flexDirection: 'row',
-              alignItems: 'center',
-              gap: 5,
+              flexWrap: 'wrap',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: '10px 20px',
+              marginTop: 10,
+              flexShrink: 0,
             }}
           >
-            <label
-              htmlFor="start-date-filter"
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                gap: 5,
-                alignItems: 'baseline',
-              }}
-            >
-              <Trans>Only import transactions since:</Trans>
-              <Input
-                id="start-date-filter"
-                type="date"
-                value={startDate}
-                onChangeValue={value => setStartDate(value)}
-                style={{ width: 150 }}
-              />
-            </label>
-            {startDate && (
-              <Button onPress={() => setStartDate('')}>
-                <Trans>Clear</Trans>
-              </Button>
-            )}
-          </View>
-
-          {filetype === 'csv' && (
-            <View style={{ marginTop: 10 }}>
-              <FieldMappings
-                transactions={transactions}
-                onChange={onUpdateFields}
-                mappings={fieldMappings || undefined}
-                splitMode={splitMode}
-                inOutMode={inOutMode}
-                hasHeaderRow={hasHeaderRow}
-              />
-            </View>
-          )}
-
-          {isOfxFile(filetype) && (
-            <>
+            <OptionGroup title={t('Import options')}>
+              <InlineLabel htmlFor="start-date-filter">
+                <Trans>Only import since:</Trans>
+                <Input
+                  id="start-date-filter"
+                  type="date"
+                  value={startDate}
+                  onChangeValue={value => setStartDate(value)}
+                  style={{ width: 130 }}
+                />
+                {startDate && (
+                  <Button variant="bare" onPress={() => setStartDate('')}>
+                    <Trans>Clear</Trans>
+                  </Button>
+                )}
+              </InlineLabel>
               <CheckboxToggle
-                id="form_fallback_missing_payee"
-                checked={fallbackMissingPayeeToMemo}
-                onChange={setFallbackMissingPayeeToMemo}
+                id="form_dont_reconcile"
+                checked={reconcile}
+                onChange={setReconcile}
               >
-                <Trans>Use Memo as a fallback for empty Payees</Trans>
+                <Trans>Merge with existing transactions</Trans>
               </CheckboxToggle>
+              {reconcile && (
+                <CheckboxToggle
+                  id="form_reimport_deleted"
+                  checked={reimportDeleted}
+                  onChange={setReimportDeleted}
+                >
+                  <Trans>Reimport deleted transactions</Trans>
+                </CheckboxToggle>
+              )}
               <CheckboxToggle
-                id="form_ofx_swap_payee_memo"
-                checked={ofxSwapPayeeAndMemo}
-                onChange={setOfxSwapPayeeAndMemo}
+                id="clear_on_import"
+                checked={clearOnImport}
+                onChange={setClearOnImport}
               >
-                <Trans>Swap Payee and Memo</Trans>
+                <Trans>Clear transactions on import</Trans>
               </CheckboxToggle>
-            </>
-          )}
+              {filetype !== 'csv' && (
+                <CheckboxToggle
+                  id="import_notes"
+                  checked={importNotes}
+                  onChange={setImportNotes}
+                >
+                  <Trans>Import notes from file</Trans>
+                </CheckboxToggle>
+              )}
+              {swapPayeeAndMemo && (
+                <CheckboxToggle
+                  id="form_swap_payee_memo"
+                  checked={swapPayeeAndMemo.checked}
+                  onChange={swapPayeeAndMemo.onChange}
+                >
+                  <Trans>Swap Payee and Memo</Trans>
+                </CheckboxToggle>
+              )}
+              {isOfxFile(filetype) && (
+                <CheckboxToggle
+                  id="form_fallback_missing_payee"
+                  checked={fallbackMissingPayeeToMemo}
+                  onChange={setFallbackMissingPayeeToMemo}
+                >
+                  <Trans>Use Memo as a fallback for empty Payees</Trans>
+                </CheckboxToggle>
+              )}
+            </OptionGroup>
 
-          {filetype !== 'csv' && (
-            <CheckboxToggle
-              id="import_notes"
-              checked={importNotes}
-              onChange={setImportNotes}
-            >
-              <Trans>Import notes from file</Trans>
-            </CheckboxToggle>
-          )}
-
-          {filetype === 'qif' && (
-            <CheckboxToggle
-              id="form_qif_swap_payee_memo"
-              checked={qifSwapPayeeAndMemo}
-              onChange={setQifSwapPayeeAndMemo}
-            >
-              <Trans>Swap Payee and Memo</Trans>
-            </CheckboxToggle>
-          )}
-
-          {isCamtFile(filetype) && (
-            <CheckboxToggle
-              id="form_camt_swap_payee_memo"
-              checked={camtSwapPayeeAndMemo}
-              onChange={setCamtSwapPayeeAndMemo}
-            >
-              <Trans>Swap Payee and Memo</Trans>
-            </CheckboxToggle>
-          )}
-
-          {(isOfxFile(filetype) || isCamtFile(filetype)) && (
-            <CheckboxToggle
-              id="form_dont_reconcile"
-              checked={reconcile}
-              onChange={setReconcile}
-            >
-              <Trans>Merge with existing transactions</Trans>
-            </CheckboxToggle>
-          )}
-
-          {(isOfxFile(filetype) || isCamtFile(filetype)) && reconcile && (
-            <CheckboxToggle
-              id="form_reimport_deleted"
-              checked={reimportDeleted}
-              onChange={setReimportDeleted}
-            >
-              <Trans>Reimport deleted transactions</Trans>
-            </CheckboxToggle>
-          )}
-
-          {/*Import Options */}
-          {(filetype === 'qif' || filetype === 'csv') && (
-            <View style={{ marginTop: 10 }}>
-              <SpaceBetween
-                gap={5}
-                style={{ marginTop: 5, alignItems: 'flex-start' }}
-              >
-                {/* Date Format */}
-                <View>
-                  {(filetype === 'qif' || filetype === 'csv') && (
-                    <DateFormatSelect
-                      transactions={transactions}
-                      fieldMappings={fieldMappings || undefined}
-                      parseDateFormat={parseDateFormat || undefined}
-                      onChange={value => {
-                        setParseDateFormat(isDateFormat(value) ? value : null);
-                      }}
-                    />
-                  )}
-                </View>
-
-                {/* CSV Options */}
+            {(filetype === 'qif' || filetype === 'csv') && (
+              <OptionGroup title={t('Amount options')}>
+                <CheckboxToggle
+                  id="form_flip"
+                  checked={flipAmount}
+                  onChange={setFlipAmount}
+                >
+                  <Trans>Flip amount</Trans>
+                </CheckboxToggle>
+                <InlineLabel htmlFor="multiply-amount">
+                  <Trans>Multiply by:</Trans>
+                  <Input
+                    id="multiply-amount"
+                    value={multiplierAmount}
+                    placeholder="1"
+                    onChangeValue={onMultiplierChange}
+                    style={{ width: 70 }}
+                  />
+                </InlineLabel>
                 {filetype === 'csv' && (
-                  <View style={{ marginLeft: 10, gap: 5 }}>
-                    <SectionLabel title={t('CSV OPTIONS')} />
-                    <label
-                      htmlFor="csv-delimiter-select"
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        gap: 5,
-                        alignItems: 'baseline',
-                      }}
-                    >
-                      <Trans>Delimiter:</Trans>
+                  <>
+                    <InlineLabel htmlFor="csv-amount-format">
+                      <Trans>Amounts:</Trans>
                       <Select
-                        id="csv-delimiter-select"
+                        id="csv-amount-format"
                         options={[
-                          [',', ','],
-                          [';', ';'],
-                          ['|', '|'],
-                          ['\t', 'tab'],
-                          ['~', '~'],
+                          ['amount', t('One column')],
+                          ['split', t('Outflow + inflow columns')],
+                          ['inOut', t('Amount + in/out column')],
                         ]}
-                        value={delimiter}
+                        value={
+                          splitMode ? 'split' : inOutMode ? 'inOut' : 'amount'
+                        }
                         onChange={value => {
-                          setDelimiter(value);
+                          setInOutMode(value === 'inOut');
+                          if ((value === 'split') !== splitMode) {
+                            onSplitMode();
+                          }
                         }}
-                        style={{ width: 50 }}
                       />
-                    </label>
-                    <label
-                      htmlFor="csv-encoding-select"
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        gap: 5,
-                        alignItems: 'baseline',
-                      }}
-                    >
-                      <Trans>Encoding:</Trans>
-                      <Select
-                        id="csv-encoding-select"
-                        options={[
-                          ['auto', t('Auto (detect)')],
-                          ['utf-8', t('UTF-8')],
-                          ['utf-16le', t('UTF-16 LE')],
-                          ['utf-16be', t('UTF-16 BE')],
-                          ['windows-1252', t('Windows-1252')],
-                          ['windows-1250', t('Windows-1250')],
-                          ['iso-8859-2', t('ISO-8859-2')],
-                        ]}
-                        value={csvEncoding}
-                        onChange={value => {
-                          setCsvEncoding(value);
-                        }}
-                        style={{ width: 130 }}
-                      />
-                    </label>
-                    <label
-                      htmlFor="csv-skip-start-lines"
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        gap: 5,
-                        alignItems: 'baseline',
-                      }}
-                    >
-                      <Trans>Skip start lines:</Trans>
-                      <Input
-                        id="csv-skip-start-lines"
-                        type="number"
-                        value={skipStartLines}
-                        min="0"
-                        step="1"
-                        onChangeValue={value => {
-                          setSkipStartLines(Math.abs(parseInt(value, 10) || 0));
-                        }}
-                        style={{ width: 50 }}
-                      />
-                    </label>
-                    <label
-                      htmlFor="csv-skip-end-lines"
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        gap: 5,
-                        alignItems: 'baseline',
-                      }}
-                    >
-                      <Trans>Skip end lines:</Trans>
-                      <Input
-                        id="csv-skip-end-lines"
-                        type="number"
-                        value={skipEndLines}
-                        min="0"
-                        step="1"
-                        onChangeValue={value => {
-                          setSkipEndLines(Math.abs(parseInt(value, 10) || 0));
-                        }}
-                        style={{ width: 50 }}
-                      />
-                    </label>
+                    </InlineLabel>
+                    {inOutMode && (
+                      <InlineLabel htmlFor="csv-out-value">
+                        <Trans>Outflow value:</Trans>
+                        <Input
+                          id="csv-out-value"
+                          value={outValue}
+                          onChangeValue={setOutValue}
+                          placeholder={t('e.g. Debit')}
+                          style={{ width: 100 }}
+                        />
+                      </InlineLabel>
+                    )}
+                  </>
+                )}
+              </OptionGroup>
+            )}
+
+            {filetype === 'csv' && (
+              <OptionGroup title={t('File format')}>
+                {fileOptionsOpen ? (
+                  <>
                     <CheckboxToggle
                       id="form_has_header"
                       checked={hasHeaderRow}
@@ -1275,117 +1299,141 @@ export function ImportTransactionsModal({
                     >
                       <Trans>File has header row</Trans>
                     </CheckboxToggle>
-                    <CheckboxToggle
-                      id="clear_on_import"
-                      checked={clearOnImport}
-                      onChange={setClearOnImport}
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                      <InlineLabel htmlFor="csv-delimiter-select">
+                        <Trans>Delimiter:</Trans>
+                        <Select
+                          id="csv-delimiter-select"
+                          options={[
+                            [',', ','],
+                            [';', ';'],
+                            ['|', '|'],
+                            ['\t', 'tab'],
+                            ['~', '~'],
+                          ]}
+                          value={delimiter}
+                          onChange={value => {
+                            setDelimiter(value);
+                          }}
+                          style={{ width: 50 }}
+                        />
+                      </InlineLabel>
+                      <InlineLabel htmlFor="csv-encoding-select">
+                        <Trans>Encoding:</Trans>
+                        <Select
+                          id="csv-encoding-select"
+                          options={[
+                            ['auto', t('Auto (detect)')],
+                            ['utf-8', t('UTF-8')],
+                            ['utf-16le', t('UTF-16 LE')],
+                            ['utf-16be', t('UTF-16 BE')],
+                            ['windows-1252', t('Windows-1252')],
+                            ['windows-1250', t('Windows-1250')],
+                            ['iso-8859-2', t('ISO-8859-2')],
+                          ]}
+                          value={csvEncoding}
+                          onChange={value => {
+                            setCsvEncoding(value);
+                          }}
+                          style={{ width: 110 }}
+                        />
+                      </InlineLabel>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                      <InlineLabel htmlFor="csv-skip-start-lines">
+                        <Trans>Skip start lines:</Trans>
+                        <Input
+                          id="csv-skip-start-lines"
+                          type="number"
+                          value={skipStartLines}
+                          min="0"
+                          step="1"
+                          onChangeValue={value => {
+                            setSkipStartLines(
+                              Math.abs(parseInt(value, 10) || 0),
+                            );
+                          }}
+                          style={{ width: 45 }}
+                        />
+                      </InlineLabel>
+                      <InlineLabel htmlFor="csv-skip-end-lines">
+                        <Trans>end lines:</Trans>
+                        <Input
+                          id="csv-skip-end-lines"
+                          type="number"
+                          value={skipEndLines}
+                          min="0"
+                          step="1"
+                          onChangeValue={value => {
+                            setSkipEndLines(Math.abs(parseInt(value, 10) || 0));
+                          }}
+                          style={{ width: 45 }}
+                        />
+                      </InlineLabel>
+                    </View>
+                  </>
+                ) : (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    <Text style={{ color: theme.pageTextSubdued }}>
+                      {fileFormatSummary}
+                    </Text>
+                    <Button
+                      variant="bare"
+                      onPress={() => setShowFileOptions(true)}
                     >
-                      <Trans>Clear transactions on import</Trans>
-                    </CheckboxToggle>
-                    <CheckboxToggle
-                      id="form_dont_reconcile"
-                      checked={reconcile}
-                      onChange={setReconcile}
-                    >
-                      <Trans>Merge with existing transactions</Trans>
-                    </CheckboxToggle>
-                    {reconcile && (
-                      <CheckboxToggle
-                        id="form_reimport_deleted_csv"
-                        checked={reimportDeleted}
-                        onChange={setReimportDeleted}
-                      >
-                        <Trans>Reimport deleted transactions</Trans>
-                      </CheckboxToggle>
-                    )}
+                      <Trans>Change</Trans>
+                    </Button>
                   </View>
                 )}
-
-                <View style={{ flex: 1 }} />
-
-                <View style={{ marginRight: 10, gap: 5 }}>
-                  <SectionLabel title={t('AMOUNT OPTIONS')} />
-                  <CheckboxToggle
-                    id="form_flip"
-                    checked={flipAmount}
-                    onChange={setFlipAmount}
-                  >
-                    <Trans>Flip amount</Trans>
-                  </CheckboxToggle>
-                  <MultiplierOption
-                    multiplierEnabled={multiplierEnabled}
-                    multiplierAmount={multiplierAmount}
-                    onToggle={() => {
-                      setMultiplierEnabled(!multiplierEnabled);
-                      setMultiplierAmount('');
-                    }}
-                    onChangeAmount={onMultiplierChange}
-                  />
-                  {filetype === 'csv' && (
-                    <>
-                      <LabeledCheckbox
-                        id="form_split"
-                        checked={splitMode}
-                        onChange={() => {
-                          onSplitMode();
-                        }}
-                      >
-                        <Trans>
-                          Split amount into separate inflow/outflow columns
-                        </Trans>
-                      </LabeledCheckbox>
-                      <InOutOption
-                        inOutMode={inOutMode}
-                        outValue={outValue}
-                        onToggle={() => {
-                          setInOutMode(!inOutMode);
-                        }}
-                        onChangeText={setOutValue}
-                      />
-                    </>
-                  )}
-                </View>
-              </SpaceBetween>
-            </View>
-          )}
-
-          <View style={{ flexDirection: 'row', marginTop: 5 }}>
-            {/*Submit Button */}
-            <View
-              style={{
-                alignSelf: 'flex-end',
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: '1em',
-              }}
-            >
-              {(() => {
-                const count = transactions?.filter(
-                  trans =>
-                    !trans.isMatchedTransaction &&
-                    trans.selected &&
-                    !trans.tombstone,
-                ).length;
-
-                return (
-                  <ButtonWithLoading
-                    variant="primary"
-                    autoFocus
-                    isDisabled={count === 0}
-                    isLoading={loadingState === 'importing'}
-                    onPress={() => {
-                      void onImport(() => state.close());
-                    }}
-                  >
-                    <Trans count={count}>Import {{ count }} transactions</Trans>
-                  </ButtonWithLoading>
-                );
-              })()}
-            </View>
+              </OptionGroup>
+            )}
           </View>
         </>
       )}
     </Modal>
+  );
+}
+
+function OptionGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <View style={{ gap: 5 }}>
+      <Text style={{ fontWeight: 600 }}>{title}</Text>
+      {children}
+    </View>
+  );
+}
+
+function InlineLabel({
+  htmlFor,
+  children,
+}: {
+  htmlFor: string;
+  children: ReactNode;
+}) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        gap: 5,
+        alignItems: 'center',
+      }}
+    >
+      {children}
+    </label>
   );
 }
 
