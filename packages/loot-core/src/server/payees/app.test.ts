@@ -3,6 +3,7 @@ import { loadMappings } from '#server/db/mappings';
 import { app } from '#server/payees/app';
 import { createSchedule, updateSchedule } from '#server/schedules/app';
 import {
+  deleteRule,
   insertRule,
   loadRules,
   resetState,
@@ -17,11 +18,13 @@ beforeEach(async () => {
 
 describe('payees app', () => {
   describe('payees-get-orphaned', () => {
-    it('returns only payees with no transactions or rules', async () => {
+    it('returns only payees with no transactions or live rules', async () => {
       await db.insertAccount({ id: 'acct', name: 'Account' });
       const orphanId = await db.insertPayee({ name: 'Orphan' });
       const usedId = await db.insertPayee({ name: 'Used' });
       const ruleOnlyId = await db.insertPayee({ name: 'Rule only' });
+      const deletedRuleId = await db.insertPayee({ name: 'Deleted rule' });
+      const oneOfId = await db.insertPayee({ name: 'One of' });
 
       await db.insertTransaction({
         account: 'acct',
@@ -36,9 +39,32 @@ describe('payees app', () => {
         actions: [{ op: 'set', field: 'category', value: null }],
       });
 
+      await insertRule({
+        stage: 'pre',
+        conditionsOp: 'and',
+        conditions: [{ op: 'oneOf', field: 'payee', value: [oneOfId] }],
+        actions: [{ op: 'set', field: 'category', value: null }],
+      });
+      // A rule with an empty payee must not hide every other payee
+      await insertRule({
+        stage: 'pre',
+        conditionsOp: 'and',
+        conditions: [{ op: 'is', field: 'payee', value: null }],
+        actions: [{ op: 'set', field: 'category', value: null }],
+      });
+      const deletedId = await insertRule({
+        stage: 'pre',
+        conditionsOp: 'and',
+        conditions: [{ op: 'is', field: 'payee', value: deletedRuleId }],
+        actions: [{ op: 'set', field: 'category', value: null }],
+      });
+      await deleteRule(deletedId);
+
       const orphaned = await app.handlers['payees-get-orphaned']();
 
-      expect(orphaned.map(p => p.id)).toEqual([orphanId]);
+      expect(orphaned.map(p => p.id).sort()).toEqual(
+        [orphanId, deletedRuleId].sort(),
+      );
     });
   });
 
