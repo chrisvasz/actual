@@ -6,7 +6,6 @@ import {
   SvgCheveronDown,
   SvgCheveronRight,
   SvgCog,
-  SvgCreditCard,
   SvgReports,
   SvgStoreFront,
   SvgTag,
@@ -15,9 +14,6 @@ import {
 } from '@actual-app/components/icons/v1';
 import { SvgCalendar3 } from '@actual-app/components/icons/v2';
 import { View } from '@actual-app/components/view';
-
-import { useIsTestEnv } from '#hooks/useIsTestEnv';
-import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
 
 import { Item } from './Item';
 import { SecondaryItem } from './SecondaryItem';
@@ -28,17 +24,9 @@ export function PrimaryButtons() {
   const onToggle = useCallback(() => setOpen(open => !open), []);
   const location = useLocation();
 
-  const syncServerStatus = useSyncServerStatus();
-  const isTestEnv = useIsTestEnv();
-  const isUsingServer = syncServerStatus !== 'no-server' || isTestEnv;
-
-  const isActive = [
-    '/payees',
-    '/rules',
-    '/bank-sync',
-    '/settings',
-    '/tools',
-  ].some(route => location.pathname.startsWith(route));
+  const isActive = ['/payees', '/rules', '/settings', '/tools'].some(route =>
+    location.pathname.startsWith(route),
+  );
 
   useEffect(() => {
     if (isActive) {
@@ -72,14 +60,6 @@ export function PrimaryButtons() {
             to="/rules"
             indent={15}
           />
-          {isUsingServer && (
-            <SecondaryItem
-              title={t('Bank Sync')}
-              Icon={SvgCreditCard}
-              to="/bank-sync"
-              indent={15}
-            />
-          )}
           <SecondaryItem
             title={t('Tags')}
             Icon={SvgTag}
