@@ -93,7 +93,7 @@ Run all yarn commands from the repo root.
 
 6. Optionally Read one generated PNG to sanity-check it shows the intended UI,
    then commit the test + PNGs (commit messages need the `[AI]` prefix — see
-   the committing-actual-changes skill).
+   `.github/agents/pr-and-commit-rules.md`).
 
 ## Fallback without docker
 
