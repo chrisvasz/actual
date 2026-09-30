@@ -127,7 +127,11 @@ export function BudgetSummary({ month }: BudgetSummaryProps) {
               textDecorationSkip: 'ink',
             })}
           >
-            {monthUtils.format(month, 'MMMM', locale)}
+            {monthUtils.format(
+              month,
+              monthUtils.getMonthIndex(month) === 0 ? 'MMMM yyyy' : 'MMMM',
+              locale,
+            )}
           </div>
 
           <View
