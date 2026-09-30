@@ -12,8 +12,10 @@ import type {
   ScheduleEntity,
   TransactionEntity,
 } from '@actual-app/core/types/models';
+import { queryOptions, useQueryClient } from '@tanstack/react-query';
 
 import { accountFilter } from '#queries';
+import { aqlQuery } from '#queries/aqlQuery';
 import { liveQuery } from '#queries/liveQuery';
 import type { LiveQuery } from '#queries/liveQuery';
 import { getStatusLabel } from '#util/schedule';
@@ -25,6 +27,44 @@ export type ScheduleStatusLabels = Map<
   ScheduleEntity['id'],
   ScheduleStatusLabelType
 >;
+function getStatuses(
+  schedules: readonly ScheduleEntity[],
+  scheduleTransactions: readonly TransactionEntity[],
+  upcomingLength: string = '7',
+) {
+  const hasTrans = new Set(
+    scheduleTransactions.filter(Boolean).map(row => row.schedule),
+  );
+
+  return new Map(
+    schedules.map(s => [
+      s.id,
+      getStatus(
+        s.next_date,
+        s.completed,
+        hasTrans.has(s.id),
+        s.custom_upcoming_length ?? upcomingLength,
+      ),
+    ]),
+  ) as ScheduleStatuses;
+}
+
+function toScheduleData(
+  schedules: readonly ScheduleEntity[],
+  statuses: ScheduleStatuses,
+): ScheduleData {
+  return {
+    schedules,
+    statuses,
+    statusLabels: new Map(
+      [...statuses.keys()].map(key => [
+        key,
+        getStatusLabel(statuses.get(key) || ''),
+      ]),
+    ),
+  };
+}
+
 function loadStatuses(
   schedules: readonly ScheduleEntity[],
   onData: (data: ScheduleStatuses) => void,
@@ -33,25 +73,40 @@ function loadStatuses(
 ) {
   return liveQuery<TransactionEntity>(getHasTransactionsQuery(schedules), {
     onData: data => {
-      const hasTrans = new Set(data.filter(Boolean).map(row => row.schedule));
-
-      const scheduleStatuses = new Map(
-        schedules.map(s => [
-          s.id,
-          getStatus(
-            s.next_date,
-            s.completed,
-            hasTrans.has(s.id),
-            s.custom_upcoming_length ?? upcomingLength,
-          ),
-        ]),
-      ) as ScheduleStatuses;
-
-      onData?.(scheduleStatuses);
+      onData?.(getStatuses(schedules, data, upcomingLength));
     },
     onError,
   });
 }
+
+/**
+ * A one-shot load of what `useSchedules` returns for `query`. A screen can
+ * suspend on it so it mounts with its schedules in hand; while it's cached,
+ * every `useSchedules` with the same query starts from it instead of from an
+ * empty, loading state, and its live query then takes over.
+ */
+export function schedulesSnapshotQuery(
+  query: Query,
+  upcomingLength: string | undefined,
+) {
+  return queryOptions<ScheduleData>({
+    queryKey: ['schedules', 'snapshot', query.serialize(), upcomingLength],
+    queryFn: async () => {
+      const { data: schedules }: { data: ScheduleEntity[] } =
+        await aqlQuery(query);
+      const { data: scheduleTransactions }: { data: TransactionEntity[] } =
+        await aqlQuery(getHasTransactionsQuery(schedules));
+      return toScheduleData(
+        schedules,
+        getStatuses(schedules, scheduleTransactions, upcomingLength),
+      );
+    },
+    staleTime: Infinity,
+    // Only kept while a screen holds it; the next visit loads fresh.
+    gcTime: 0,
+  });
+}
+
 export type UseSchedulesProps = {
   query?: Query;
 };
@@ -68,14 +123,28 @@ export type UseSchedulesResult = ScheduleData & {
 export function useSchedules({
   query,
 }: UseSchedulesProps = {}): UseSchedulesResult {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | undefined>(undefined);
-  const [data, setData] = useState<ScheduleData>({
-    schedules: [],
-    statuses: new Map(),
-    statusLabels: new Map(),
-  });
   const [upcomingLength] = useSyncedPref('upcomingScheduledTransactionLength');
+  const queryClient = useQueryClient();
+  // Start from a snapshot a screen suspended on, if there is one.
+  const [snapshot] = useState(() =>
+    query
+      ? queryClient.getQueryData(
+          schedulesSnapshotQuery(query, upcomingLength).queryKey,
+        )
+      : undefined,
+  );
+  const [isLoading, setIsLoading] = useState(snapshot == null);
+  const [error, setError] = useState<Error | undefined>(undefined);
+  const [data, setData] = useState<ScheduleData>(
+    snapshot ?? {
+      schedules: [],
+      statuses: new Map(),
+      statusLabels: new Map(),
+    },
+  );
+  // The first live query only refreshes the snapshot, so it doesn't show as
+  // loading.
+  const isRefreshingSnapshotRef = useRef(snapshot != null);
 
   const scheduleQueryRef = useRef<LiveQuery<ScheduleEntity> | null>(null);
   const statusQueryRef = useRef<LiveQuery<TransactionEntity> | null>(null);
@@ -102,7 +171,11 @@ export function useSchedules({
       return;
     }
 
-    setIsLoading(true);
+    if (isRefreshingSnapshotRef.current) {
+      isRefreshingSnapshotRef.current = false;
+    } else {
+      setIsLoading(true);
+    }
 
     scheduleQueryRef.current = liveQuery<ScheduleEntity>(query, {
       onData: async schedules => {
@@ -114,16 +187,7 @@ export function useSchedules({
           schedules,
           (statuses: ScheduleStatuses) => {
             if (!isUnmounted) {
-              setData({
-                schedules,
-                statuses,
-                statusLabels: new Map(
-                  [...statuses.keys()].map(key => [
-                    key,
-                    getStatusLabel(statuses.get(key) || ''),
-                  ]),
-                ),
-              });
+              setData(toScheduleData(schedules, statuses));
               setIsLoading(false);
             }
           },
