@@ -1,5 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
-
 import { send } from '@actual-app/core/platform/client/connection';
 import {
   createBudgetQueryPrefetchKey,
@@ -15,6 +13,7 @@ import type {
   RuleConditionEntity,
   TimeFrame,
 } from '@actual-app/core/types/models';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { HyperFormula } from 'hyperformula';
 
 import {
@@ -25,6 +24,7 @@ import {
   asMonthSlidingTimeFrame,
   calculateTimeRange,
 } from '#components/reports/reportRanges';
+import { reportDataQueries } from '#reports';
 import { bootstrapHyperFormula } from '#util/bootstrapHyperFormula';
 
 import { useGlobalPref } from './useGlobalPref';
@@ -144,127 +144,124 @@ export function useFormulaExecution(
 ) {
   const locale = useLocale();
   const [language] = useGlobalPref('language');
-  const [result, setResult] = useState<number | string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Callers pass `queries`/`namedExpressions`/`accounts` as plain objects, and
-  // several of them build a fresh object on every render. Keying the effect on
-  // the object identity would re-execute the formula on every render (and each
-  // execution toggles `isLoading`, which renders again — an endless loop).
-  // Depend on the serialized contents instead, and read the live objects
-  // through refs.
-  const queriesKey = JSON.stringify(queries ?? {});
-  const namedExpressionsKey = JSON.stringify(namedExpressions ?? null);
-  const accountsKey = JSON.stringify(accounts ?? null);
+  // Run through the query cache, keyed on the inputs' contents, so a card
+  // visited again draws its last result straight away, callers can pass fresh
+  // objects every render, and sync events refresh it like the other report
+  // data. The dates are keyed because query time frames slide with them.
+  const { data, error, isPending, isPlaceholderData } = useQuery({
+    queryKey: [
+      ...reportDataQueries.all(),
+      'formula',
+      {
+        formula,
+        queries: queries ?? {},
+        queriesVersion,
+        namedExpressions: namedExpressions ?? null,
+        accounts: accounts ?? null,
+        locale,
+        language,
+        currentMonth: monthUtils.currentMonth(),
+        today: monthUtils.currentDay(),
+      },
+    ],
+    queryFn: () =>
+      executeFormula({
+        formula,
+        queries,
+        namedExpressions,
+        accounts,
+        locale,
+        language,
+      }),
+    staleTime: Infinity,
+    gcTime: 30 * 60 * 1000,
+    retry: false,
+    // While a changed formula runs, keep showing the last result, as the
+    // editor did before this was cached.
+    placeholderData: keepPreviousData,
+  });
 
-  const queriesRef = useRef(queries);
-  queriesRef.current = queries;
-  const namedExpressionsRef = useRef(namedExpressions);
-  namedExpressionsRef.current = namedExpressions;
-  const accountsRef = useRef(accounts);
-  accountsRef.current = accounts;
+  return {
+    result: error ? null : (data ?? null),
+    // Loading only while there's no result for these inputs yet, not while a
+    // sync event refreshes one, so the card doesn't flash its skeleton.
+    isLoading: isPending || isPlaceholderData,
+    error: error ? error.message : null,
+  };
+}
 
-  useEffect(() => {
-    let cancelled = false;
+async function executeFormula({
+  formula,
+  queries,
+  namedExpressions,
+  accounts,
+  locale,
+  language,
+}: {
+  formula: string;
+  queries: QueriesMap;
+  namedExpressions?: Record<string, number | string>;
+  accounts?: SimpleAccount[];
+  locale: ReturnType<typeof useLocale>;
+  language: string | undefined;
+}): Promise<number | string> {
+  if (!formula || !formula.startsWith('=')) {
+    throw new Error('Formula must start with =');
+  }
 
-    async function executeFormula() {
-      if (!formula || !formula.startsWith('=')) {
-        setResult(null);
-        setError('Formula must start with =');
-        setIsLoading(false);
-        return;
-      }
+  try {
+    const browserLocale =
+      typeof navigator === 'undefined' ? undefined : navigator.language;
+    const formulaLocale = language || browserLocale || locale || 'en-US';
 
-      const currentQueries = queriesRef.current;
-      const currentNamedExpressions = namedExpressionsRef.current;
-      const currentAccounts = accountsRef.current;
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const browserLocale =
-          typeof navigator === 'undefined' ? undefined : navigator.language;
-        const formulaLocale = language || browserLocale || locale || 'en-US';
-
-        try {
-          setCachedUserPreferences(
-            await send('formula-load-user-preferences', {
-              selectedLocale: language,
-              browserLocale,
-            }),
-          );
-        } catch (err) {
-          console.error('Error loading formula preferences:', err);
-        }
-
-        const formulaQueryContext = createFormulaQueryContext();
-
-        evaluateFormulaWithContext({
-          formula,
-          formulaQueryContext,
-          locale: formulaLocale,
-          namedExpressions: currentNamedExpressions,
-          throwOnCellError: false,
-        });
-
-        await prefetchFormulaQueries(formulaQueryContext, currentQueries);
-        await prefetchAccountBalances(
-          formulaQueryContext,
-          currentAccounts ?? [],
-        );
-
-        formulaQueryContext.budgetQueryRequests.clear();
-        evaluateFormulaWithContext({
-          formula,
-          formulaQueryContext,
-          locale: formulaLocale,
-          namedExpressions: currentNamedExpressions,
-          throwOnCellError: false,
-        });
-
-        await prefetchBudgetQueries(formulaQueryContext);
-
-        const cellValue = evaluateFormulaWithContext({
-          formula,
-          formulaQueryContext,
-          locale: formulaLocale,
-          namedExpressions: currentNamedExpressions,
-        });
-
-        if (cancelled) return;
-
-        setResult(cellValue as number | string);
-        setError(null);
-      } catch (err) {
-        if (cancelled) return;
-        console.error('Formula execution error:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        setResult(null);
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
+    try {
+      setCachedUserPreferences(
+        await send('formula-load-user-preferences', {
+          selectedLocale: language,
+          browserLocale,
+        }),
+      );
+    } catch (err) {
+      console.error('Error loading formula preferences:', err);
     }
 
-    void executeFormula();
+    const formulaQueryContext = createFormulaQueryContext();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    formula,
-    queriesVersion,
-    locale,
-    language,
-    queriesKey,
-    namedExpressionsKey,
-    accountsKey,
-  ]);
+    evaluateFormulaWithContext({
+      formula,
+      formulaQueryContext,
+      locale: formulaLocale,
+      namedExpressions,
+      throwOnCellError: false,
+    });
 
-  return { result, isLoading, error };
+    await prefetchFormulaQueries(formulaQueryContext, queries);
+    await prefetchAccountBalances(formulaQueryContext, accounts ?? []);
+
+    formulaQueryContext.budgetQueryRequests.clear();
+    evaluateFormulaWithContext({
+      formula,
+      formulaQueryContext,
+      locale: formulaLocale,
+      namedExpressions,
+      throwOnCellError: false,
+    });
+
+    await prefetchBudgetQueries(formulaQueryContext);
+
+    const cellValue = evaluateFormulaWithContext({
+      formula,
+      formulaQueryContext,
+      locale: formulaLocale,
+      namedExpressions,
+    });
+
+    return cellValue as number | string;
+  } catch (err) {
+    console.error('Formula execution error:', err);
+    throw err instanceof Error ? err : new Error('Unknown error');
+  }
 }
 
 async function prefetchFormulaQueries(

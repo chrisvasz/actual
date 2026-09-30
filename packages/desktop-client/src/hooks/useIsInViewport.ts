@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import type { RefObject } from 'react';
 
 /**
@@ -14,6 +14,26 @@ export function useIsInViewport(ref: RefObject<Element | null>) {
       ),
     [],
   );
+
+  // The observer reports asynchronously, after the first paint. Take the
+  // first reading from the element's position instead, so something visible
+  // from the start renders before the browser paints.
+  useLayoutEffect(() => {
+    const view = ref.current;
+    if (!view) {
+      return;
+    }
+
+    const rect = view.getBoundingClientRect();
+    if (
+      rect.bottom > 0 &&
+      rect.right > 0 &&
+      rect.top < window.innerHeight &&
+      rect.left < window.innerWidth
+    ) {
+      setIsIntersecting(true);
+    }
+  }, [ref]);
 
   useEffect(() => {
     const view = ref.current;

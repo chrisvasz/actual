@@ -10,7 +10,7 @@ import type {
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { TestProviders } from '#mocks';
+import { resetTestProviders, TestProviders } from '#mocks';
 
 import {
   buildFilteredTransactionsQuery,
@@ -308,6 +308,8 @@ describe('formula execution stability', () => {
 
   beforeEach(() => {
     executionCount = 0;
+    // Results are cached, so start each test from an empty cache.
+    resetTestProviders();
     initServer({
       'formula-load-user-preferences': async () => {
         executionCount += 1;
@@ -350,6 +352,23 @@ describe('formula execution stability', () => {
     rerender();
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(executionCount).toBe(1);
+  });
+
+  it('reuses the cached result when mounted again', async () => {
+    const first = renderHook(() => useFormulaExecution('=SUM(1, 2, 3)', {}), {
+      wrapper: TestProviders,
+    });
+    await waitFor(() => expect(first.result.current.result).toBe(6));
+    first.unmount();
+
+    const second = renderHook(() => useFormulaExecution('=SUM(1, 2, 3)', {}), {
+      wrapper: TestProviders,
+    });
+
+    // Drawn from the cache on the first render, without running again.
+    expect(second.result.current.result).toBe(6);
+    expect(second.result.current.isLoading).toBe(false);
     expect(executionCount).toBe(1);
   });
 
