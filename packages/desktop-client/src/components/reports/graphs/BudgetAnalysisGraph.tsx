@@ -288,19 +288,19 @@ export function BudgetAnalysisGraph({
               dataKey="budgeted"
               fill={theme.reportsNumberPositive}
               name={budgetedLabel}
-              animationDuration={1000}
+              isAnimationActive={false}
             />
             <Bar
               dataKey="spent"
               fill={theme.reportsNumberNegative}
               name={spentLabel}
-              animationDuration={1000}
+              isAnimationActive={false}
             />
             <Bar
               dataKey="overspendingAdjustment"
               fill={theme.templateNumberUnderFunded}
               name={overspendingLabel}
-              animationDuration={1000}
+              isAnimationActive={false}
             />
             {showBalance && (
               <Line
@@ -310,7 +310,7 @@ export function BudgetAnalysisGraph({
                 strokeWidth={2}
                 name={balanceLabel}
                 dot={false}
-                animationDuration={1000}
+                isAnimationActive={false}
               />
             )}
           </ComposedChart>
@@ -325,7 +325,7 @@ export function BudgetAnalysisGraph({
                 strokeWidth={2}
                 name={budgetedLabel}
                 dot={false}
-                animationDuration={1000}
+                isAnimationActive={false}
               />
             )}
             {!balanceOnly && (
@@ -336,7 +336,7 @@ export function BudgetAnalysisGraph({
                 strokeWidth={2}
                 name={spentLabel}
                 dot={false}
-                animationDuration={1000}
+                isAnimationActive={false}
               />
             )}
             {!balanceOnly && (
@@ -347,7 +347,7 @@ export function BudgetAnalysisGraph({
                 strokeWidth={2}
                 name={overspendingLabel}
                 dot={false}
-                animationDuration={1000}
+                isAnimationActive={false}
               />
             )}
             {(showBalance || balanceOnly) && (
@@ -358,7 +358,7 @@ export function BudgetAnalysisGraph({
                 strokeWidth={2}
                 name={balanceLabel}
                 dot={false}
-                animationDuration={1000}
+                isAnimationActive={false}
               />
             )}
           </LineChart>

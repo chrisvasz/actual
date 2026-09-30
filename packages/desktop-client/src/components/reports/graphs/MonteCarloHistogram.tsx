@@ -10,7 +10,6 @@ import {
   YAxis,
 } from 'recharts';
 
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { MonteCarloHistogramTooltip } from '#components/reports/graphs/MonteCarloHistogramTooltip';
 
@@ -32,8 +31,6 @@ export function MonteCarloHistogram({
   simulationCount,
   showTooltip = true,
 }: MonteCarloHistogramProps) {
-  const animationProps = useRechartsAnimation({ animationDuration: 1000 });
-
   const data = depletionHistogram.map(entry => ({
     ...entry,
     // The age of the year that couldn't be funded, matching the drill-in
@@ -79,7 +76,7 @@ export function MonteCarloHistogram({
           <Bar
             dataKey="count"
             fill={theme.reportsNumberNegative}
-            {...animationProps}
+            isAnimationActive={false}
           />
         </BarChart>
       )}

@@ -14,7 +14,6 @@ import {
   YAxis,
 } from 'recharts';
 
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { MonteCarloCashflowGraphTooltip } from '#components/reports/graphs/MonteCarloCashflowGraphTooltip';
 import { MonteCarloCashflowLegendGroup } from '#components/reports/graphs/MonteCarloCashflowLegendGroup';
@@ -65,7 +64,6 @@ export function MonteCarloCashflowGraph({
   const { t } = useTranslation();
   const format = useFormat();
   const tickFormatter = useMonteCarloTickFormatter();
-  const animationProps = useRechartsAnimation({ animationDuration: 1000 });
 
   const { data, inflowSeries, outflowSeries, tooltipGroups, stackExtents } =
     buildMonteCarloCashflowChart({
@@ -123,7 +121,7 @@ export function MonteCarloCashflowGraph({
                 stackId="flow"
                 fill={series.color}
                 maxBarSize={MAX_BAR_SIZE}
-                {...animationProps}
+                isAnimationActive={false}
               >
                 {/* Only spending remains after the plan runs out; dim it
                     so those years read as planned-but-unfunded */}

@@ -14,7 +14,6 @@ import {
   YAxis,
 } from 'recharts';
 
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 
 type PayloadItem = {
@@ -76,7 +75,6 @@ export function AgeOfMoneyGraph({
   showTooltip = true,
 }: AgeOfMoneyGraphProps) {
   const { t } = useTranslation();
-  const animationProps = useRechartsAnimation();
   const id = useId();
   const gradientId = `aom-gradient-${id}`;
 
@@ -170,7 +168,7 @@ export function AgeOfMoneyGraph({
                 fillOpacity={1}
                 dot={!compact && data.length <= 90}
                 activeDot={{ r: 6, fill: theme.reportsChartFill }}
-                {...animationProps}
+                isAnimationActive={false}
               />
             </AreaChart>
           </div>

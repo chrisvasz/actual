@@ -10,7 +10,6 @@ import {
   YAxis,
 } from 'recharts';
 
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import type {
   FanChartDataPoint,
@@ -47,7 +46,6 @@ export function MonteCarloGraph({
 }: MonteCarloGraphProps) {
   const format = useFormat();
   const tickFormatter = useMonteCarloTickFormatter();
-  const animationProps = useRechartsAnimation({ animationDuration: 1000 });
 
   const data: FanChartDataPoint[] = percentileBands.map(band => ({
     year: band.year,
@@ -116,7 +114,7 @@ export function MonteCarloGraph({
                 stroke="none"
                 fill={theme.reportsChartFill}
                 fillOpacity={0.15}
-                {...animationProps}
+                isAnimationActive={false}
               />
               <Area
                 type="monotone"
@@ -124,7 +122,7 @@ export function MonteCarloGraph({
                 stroke="none"
                 fill={theme.reportsChartFill}
                 fillOpacity={0.3}
-                {...animationProps}
+                isAnimationActive={false}
               />
               <Line
                 type="monotone"
@@ -132,7 +130,7 @@ export function MonteCarloGraph({
                 dot={false}
                 stroke={theme.reportsChartFill}
                 strokeWidth={2}
-                {...animationProps}
+                isAnimationActive={false}
               />
             </>
           ) : (
@@ -143,7 +141,7 @@ export function MonteCarloGraph({
               strokeWidth={2}
               fill={theme.reportsChartFill}
               fillOpacity={0.08}
-              {...animationProps}
+              isAnimationActive={false}
             />
           )}
         </ComposedChart>

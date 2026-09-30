@@ -23,7 +23,6 @@ import {
 } from 'recharts';
 
 import { FinancialText } from '#components/FinancialText';
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { numberFormatterTooltip } from '#components/reports/numberFormatter';
 import { useAccounts } from '#hooks/useAccounts';
@@ -204,7 +203,6 @@ export function StackedBarGraph({
   showTooltip = true,
   interval,
 }: StackedBarGraphProps) {
-  const animationProps = useRechartsAnimation();
   const navigate = useNavigate();
   const { data: categories = { grouped: [], list: [] } } = useCategories();
   const { data: accounts = [] } = useAccounts();
@@ -280,7 +278,7 @@ export function StackedBarGraph({
                     dataKey={entry.dataKey}
                     stackId="a"
                     fill={entry.color}
-                    {...animationProps}
+                    isAnimationActive={false}
                     onMouseLeave={() => {
                       setPointer('');
                       setTooltip('');
