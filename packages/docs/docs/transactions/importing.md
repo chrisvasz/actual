@@ -25,12 +25,12 @@ If your bank doesn't support downloading financial files, you can import a CSV f
 2. Press the **Import** button and select the file.
 3. Select the **CSV** option.
 4. Set up the fields to match the CSV file.
-   - For the "CSV Fields" dropdowns, leave them as "Choose field…" to leave the related field blank. Otherwise select the column from your CSV that corresponds to each field.
-   - If the date is not being imported correctly (the green date is how Actual interprets the date), you can change the date format to match your CSV file. If your date format is not shown in the dropdown, check that the date column is correctly selected from your CSV file.
-   - If the file can't be imported at all, try changing the CSV delimiter to match your file. (Let us know if your file uses a different delimiter that isn't listed!)
+   - Under each table heading there is a dropdown for picking the column from your CSV that holds that field. Leave it as "Choose field…" to leave the field blank.
+   - If the date is not being imported correctly, change the date format in the dropdown next to the date column picker. Dates that don't match the selected format are shown in red. Hover over a date to see how it appears in your file.
+   - If the file can't be imported at all, press **Change** next to **File format** to adjust the delimiter, encoding, header row and lines to skip. (Let us know if your file uses a different delimiter that isn't listed!) These settings are remembered for each account.
    - You can optionally toggle on "Flip amount" if you want to negate all of the amounts in the CSV file.
-   - You can optionally toggle on "Split amount into separate inflow/outflow columns" if your CSV file has separate columns for inflow and outflow amounts (also known as debit and credit.)
-   - You can toggle on "Add Multiplier" to add a multiplier to all of the amounts in the CSV file. This can be useful if you want to make an approximate currency conversion.
+   - Use the **Amounts** dropdown if your CSV file doesn't have a single amount column. Choose "Outflow + inflow columns" if it has separate columns for outflow and inflow amounts (also known as debit and credit), or "Amount + in/out column" if a separate column says whether each amount is going in or out.
+   - You can enter a number in **Multiply by** to multiply all of the amounts in the CSV file. This can be useful if you want to make an approximate currency conversion.
 5. Once you're happy with the settings, press **Import**.
 
 ![CSV Import](/img/import/import-csv@2x.webp)
@@ -51,7 +51,7 @@ After checking the **id**, Actual will look for transactions around the same dat
 
 It will always favor the imported transaction. If it matches a manually-entered transaction, it will update the date to match the imported transaction. **Keeping dates in sync with your bank is important** as it allows you to compare the balance at any point in time with your bank.
 
-When "Merge with existing transactions" is enabled, a **Reimport deleted transactions** checkbox is also available. When checked (the default for file imports), any transactions that were previously imported and then deleted will be reimported. Disable this option if you do _not_ want deleted transactions to reappear during import.
+When "Merge with existing transactions" is enabled, a **Reimport deleted transactions** checkbox is also available. When checked, any transactions that were previously imported and then deleted will be reimported. It is off by default. Your choice is remembered for each account.
 
 :::note
 The [API](../api/reference.md#importtransactions) defaults `reimportDeleted` to `true` for backward compatibility. If you are importing via the API and want to skip deleted transactions, pass `reimportDeleted: false` explicitly.
