@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { SvgExclamationSolid } from '@actual-app/components/icons/v1';
@@ -7,13 +7,12 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
-import { send } from '@actual-app/core/platform/client/connection';
-import * as monthUtils from '@actual-app/core/shared/months';
 import type { CustomReportEntity } from '@actual-app/core/types/models';
 
 import { DateRange } from '#components/reports/DateRange';
 import { ReportCard } from '#components/reports/ReportCard';
 import { ReportCardName } from '#components/reports/ReportCardName';
+import { useTransactionDates } from '#components/reports/useReport';
 import { calculateHasWarning } from '#components/reports/util';
 import { useAccounts } from '#hooks/useAccounts';
 import { useCategories } from '#hooks/useCategories';
@@ -68,12 +67,13 @@ function CustomReportListCardsInner({
   const dispatch = useDispatch();
 
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
-  const [earliestTransaction, setEarliestTransaction] = useState('');
-  const [latestTransaction, setLatestTransaction] = useState('');
-
-  const { data: payees = [] } = usePayees();
-  const { data: accounts = [] } = useAccounts();
-  const { data: categories = { list: [], grouped: [] } } = useCategories();
+  const { data: payees = [], isSuccess: isPayeesLoaded } = usePayees();
+  const { data: accounts = [], isSuccess: isAccountsLoaded } = useAccounts();
+  const {
+    data: categories = { list: [], grouped: [] },
+    isSuccess: isCategoriesLoaded,
+  } = useCategories();
+  const transactionDates = useTransactionDates();
 
   const hasWarning = calculateHasWarning(report.conditions ?? [], {
     categories: categories.list,
@@ -83,20 +83,6 @@ function CustomReportListCardsInner({
 
   const [_firstDayOfWeekIdx] = useSyncedPref('firstDayOfWeekIdx');
   const firstDayOfWeekIdx = _firstDayOfWeekIdx || '0';
-
-  useEffect(() => {
-    async function run() {
-      const earliestTrans = await send('get-earliest-transaction');
-      const latestTrans = await send('get-latest-transaction');
-      setEarliestTransaction(
-        earliestTrans ? earliestTrans.date : monthUtils.currentDay(),
-      );
-      setLatestTransaction(
-        latestTrans ? latestTrans.date : monthUtils.currentDay(),
-      );
-    }
-    void run();
-  }, []);
 
   const updateReportMutation = useUpdateReportMutation();
 
@@ -165,10 +151,16 @@ function CustomReportListCardsInner({
           payees={payees}
           accounts={accounts}
           categories={categories}
-          earliestTransaction={earliestTransaction}
-          latestTransaction={latestTransaction}
+          earliestTransaction={transactionDates?.earliest ?? ''}
+          latestTransaction={transactionDates?.latest ?? ''}
           firstDayOfWeekIdx={firstDayOfWeekIdx}
           showTooltip={!isEditing}
+          enabled={
+            transactionDates != null &&
+            isPayeesLoaded &&
+            isAccountsLoaded &&
+            isCategoriesLoaded
+          }
         />
       </View>
       {hasWarning && (

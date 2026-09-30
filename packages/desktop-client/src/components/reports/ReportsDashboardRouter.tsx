@@ -8,7 +8,7 @@ import { useSuspenseQueries } from '@tanstack/react-query';
 
 import { accountQueries } from '#accounts';
 import { useNavigate } from '#hooks/useNavigate';
-import { dashboardQueries, reportQueries } from '#reports';
+import { dashboardQueries, reportDataQueries, reportQueries } from '#reports';
 
 import { LoadingIndicator } from './LoadingIndicator';
 import { Overview } from './Overview';
@@ -20,13 +20,16 @@ export function ReportsDashboardRouter() {
 
   // Suspend until the dashboard has what it lays out, so navigating here
   // keeps the previous screen up instead of showing a loading message first.
-  // The cards still load their own data.
+  // The cards still load their own data, but most start from the transaction
+  // dates loaded here rather than waiting on them.
   const [{ data: dashboardPages }] = useSuspenseQueries({
     queries: [
       dashboardQueries.listDashboardPages(),
       dashboardQueries.listDashboardWidgets(),
       reportQueries.list(),
       accountQueries.list(),
+      reportDataQueries.earliestTransactionDate(),
+      reportDataQueries.latestTransactionDate(),
     ],
   });
 

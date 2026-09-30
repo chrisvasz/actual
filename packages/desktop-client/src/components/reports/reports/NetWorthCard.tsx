@@ -1,12 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { styles } from '@actual-app/components/styles';
 import { View } from '@actual-app/components/view';
-import { send } from '@actual-app/core/platform/client/connection';
-import * as monthUtils from '@actual-app/core/shared/months';
 import type {
   AccountEntity,
   NetWorthWidget,
@@ -21,7 +19,10 @@ import { ReportCard } from '#components/reports/ReportCard';
 import { ReportCardName } from '#components/reports/ReportCardName';
 import { calculateTimeRange } from '#components/reports/reportRanges';
 import { createSpreadsheet as netWorthSpreadsheet } from '#components/reports/spreadsheets/net-worth-spreadsheet';
-import { useReport } from '#components/reports/useReport';
+import {
+  useReportQuery,
+  useTransactionDates,
+} from '#components/reports/useReport';
 import { useDateFormat } from '#hooks/useDateFormat';
 import { useFormat } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
@@ -50,26 +51,16 @@ export function NetWorthCard({
   const format = useFormat();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
 
-  const [latestTransaction, setLatestTransaction] = useState<string>('');
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchLatestTransaction() {
-      const latestTrans = await send('get-latest-transaction');
-      setLatestTransaction(
-        latestTrans ? latestTrans.date : monthUtils.currentDay(),
-      );
-    }
-    void fetchLatestTransaction();
-  }, []);
-
+  const transactionDates = useTransactionDates();
   const [start, end] = calculateTimeRange(
     meta?.timeFrame,
     undefined,
-    latestTransaction,
+    transactionDates?.latest ?? '',
   );
 
-  const params = useMemo(
+  const data = useReportQuery(
     () =>
       netWorthSpreadsheet(
         start,
@@ -95,8 +86,8 @@ export function NetWorthCard({
       format,
       dateFormat,
     ],
+    { name: 'net_worth', enabled: transactionDates != null },
   );
-  const data = useReport('net_worth', params);
 
   return (
     <ReportCard
