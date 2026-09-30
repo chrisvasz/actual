@@ -16,6 +16,32 @@ beforeEach(async () => {
 });
 
 describe('payees app', () => {
+  describe('payees-get-orphaned', () => {
+    it('returns only payees with no transactions or rules', async () => {
+      await db.insertAccount({ id: 'acct', name: 'Account' });
+      const orphanId = await db.insertPayee({ name: 'Orphan' });
+      const usedId = await db.insertPayee({ name: 'Used' });
+      const ruleOnlyId = await db.insertPayee({ name: 'Rule only' });
+
+      await db.insertTransaction({
+        account: 'acct',
+        date: '2020-01-01',
+        amount: -100,
+        payee: usedId,
+      });
+      await insertRule({
+        stage: 'pre',
+        conditionsOp: 'and',
+        conditions: [{ op: 'is', field: 'payee', value: ruleOnlyId }],
+        actions: [{ op: 'set', field: 'category', value: null }],
+      });
+
+      const orphaned = await app.handlers['payees-get-orphaned']();
+
+      expect(orphaned.map(p => p.id)).toEqual([orphanId]);
+    });
+  });
+
   describe('payees-get-rule-counts', () => {
     it('counts payee rules but excludes rules linked to completed schedules', async () => {
       const activePayeeId = await db.insertPayee({ name: 'Active Payee' });
