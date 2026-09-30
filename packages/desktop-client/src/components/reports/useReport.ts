@@ -44,8 +44,10 @@ export function useReport<T>(
 /**
  * Load a report through the query cache, so a card visited again draws its
  * last result straight away. `deps` are the cache key alongside `name`, so like
- * `useMemo` they must list everything `createLoader` reads; lint checks this.
- * Values that `useFormat` and `useLocale` depend on are keyed automatically.
+ * `useMemo` they must list everything `createLoader` reads; lint checks props
+ * and locals, but not refs or module-level state, so don't read those in
+ * `createLoader`. The preferences in `useReportEnvironment` and today's date
+ * are keyed automatically.
  */
 export function useReportQuery<T>(
   createLoader: () => ReportDataLoader<T>,
@@ -88,9 +90,10 @@ export function useTransactionDates(): {
   return { earliest: earliest ?? today, latest: latest ?? today };
 }
 
-// Preferences that change what a report produces without being passed to it:
-// the number and date formatting behind `useFormat`, `useDateFormat` and the
-// locale, which spreadsheets bake into labels.
+// What changes a report's result without being passed to it: the number and
+// date formatting behind `useFormat`, `useDateFormat` and the locale, which
+// spreadsheets bake into labels; the budget type, which decides the budget
+// cells some reports read; and today's date, which ranges are clamped to.
 function useReportEnvironment() {
   const language = useLanguage();
   const dateFormat = useDateFormat();
@@ -99,6 +102,7 @@ function useReportEnvironment() {
   const [currencyCode] = useSyncedPref('defaultCurrencyCode');
   const [symbolPosition] = useSyncedPref('currencySymbolPosition');
   const [symbolSpace] = useSyncedPref('currencySpaceBetweenAmountAndSymbol');
+  const [budgetType] = useSyncedPref('budgetType');
   return {
     language,
     dateFormat,
@@ -107,5 +111,7 @@ function useReportEnvironment() {
     currencyCode,
     symbolPosition,
     symbolSpace,
+    budgetType,
+    today: monthUtils.currentDay(),
   };
 }

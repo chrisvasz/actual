@@ -42,10 +42,8 @@ export function CrossoverCard({
   onMetaChange,
 }: CrossoverCardProps) {
   const { t } = useTranslation();
-  const {
-    data: categories = { grouped: [], list: [] },
-    isSuccess: isCategoriesLoaded,
-  } = useCategories();
+  const { data: categoriesData } = useCategories();
+  const categories = categoriesData ?? { grouped: [], list: [] };
   const { isNarrowWidth } = useResponsive();
 
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
@@ -110,7 +108,8 @@ export function CrossoverCard({
     ],
     {
       name: 'crossover',
-      enabled: earliestTransactionDate !== undefined && isCategoriesLoaded,
+      enabled:
+        earliestTransactionDate !== undefined && categoriesData !== undefined,
     },
   );
 

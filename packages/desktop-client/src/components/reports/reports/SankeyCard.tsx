@@ -5,7 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { Block } from '@actual-app/components/block';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import type { SankeyWidget } from '@actual-app/core/types/models';
+import type {
+  CategoryGroupEntity,
+  SankeyWidget,
+} from '@actual-app/core/types/models';
 import * as d from 'date-fns';
 import { debounce } from 'es-toolkit/compat';
 
@@ -35,6 +38,8 @@ import { useCategories } from '#hooks/useCategories';
 import { useLocale } from '#hooks/useLocale';
 import { useResizeObserver } from '#hooks/useResizeObserver';
 
+const noCategoryGroups: CategoryGroupEntity[] = [];
+
 type SankeyCardProps = {
   widgetId: string;
   isEditing?: boolean;
@@ -50,10 +55,8 @@ export function SankeyCard({
   const { t } = useTranslation();
   const locale = useLocale();
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
-  const {
-    data: { grouped: groupedCategories = [] } = { grouped: [] },
-    isSuccess: isCategoriesLoaded,
-  } = useCategories();
+  const { data: categoriesData } = useCategories();
+  const groupedCategories = categoriesData?.grouped ?? noCategoryGroups;
   const transactionDates = useTransactionDates();
   const earliestTransaction = transactionDates?.earliest ?? '';
   const latestTransaction = transactionDates?.latest ?? '';
@@ -139,7 +142,7 @@ export function SankeyCard({
     ],
     {
       name: 'sankey',
-      enabled: transactionDates != null && isCategoriesLoaded,
+      enabled: transactionDates != null && categoriesData !== undefined,
     },
   );
   const baseGraphRef = useRef(baseGraph);

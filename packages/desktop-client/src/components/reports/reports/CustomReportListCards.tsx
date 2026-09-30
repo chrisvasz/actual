@@ -67,12 +67,12 @@ function CustomReportListCardsInner({
   const dispatch = useDispatch();
 
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
-  const { data: payees = [], isSuccess: isPayeesLoaded } = usePayees();
-  const { data: accounts = [], isSuccess: isAccountsLoaded } = useAccounts();
-  const {
-    data: categories = { list: [], grouped: [] },
-    isSuccess: isCategoriesLoaded,
-  } = useCategories();
+  const { data: payeesData } = usePayees();
+  const { data: accountsData } = useAccounts();
+  const { data: categoriesData } = useCategories();
+  const payees = payeesData ?? [];
+  const accounts = accountsData ?? [];
+  const categories = categoriesData ?? { list: [], grouped: [] };
   const transactionDates = useTransactionDates();
 
   const hasWarning = calculateHasWarning(report.conditions ?? [], {
@@ -157,9 +157,9 @@ function CustomReportListCardsInner({
           showTooltip={!isEditing}
           enabled={
             transactionDates != null &&
-            isPayeesLoaded &&
-            isAccountsLoaded &&
-            isCategoriesLoaded
+            payeesData !== undefined &&
+            accountsData !== undefined &&
+            categoriesData !== undefined
           }
         />
       </View>

@@ -160,9 +160,12 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
       }
 
       if (tables.some(table => !tablesReportsIgnore.has(table))) {
-        void queryClient.invalidateQueries({
-          queryKey: reportDataQueries.all(),
-        });
+        // Loaders can't be aborted, so let a running one finish rather than
+        // restarting it for each event in a burst.
+        void queryClient.invalidateQueries(
+          { queryKey: reportDataQueries.all() },
+          { cancelRefetch: false },
+        );
       }
     } else if (event.type === 'error') {
       let notif: Notification | null = null;

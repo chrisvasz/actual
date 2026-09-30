@@ -69,7 +69,9 @@ export const dashboardQueries = {
 // timer. That lets the dashboard draw each card from the cache when it's
 // visited again.
 export const reportDataQueries = {
-  all: () => [...reportQueries.all(), 'data'],
+  // Its own root, so invalidating `reportQueries` (saved report settings)
+  // doesn't recompute every card.
+  all: () => ['report-data'],
   earliestTransactionDate: () =>
     queryOptions<string | null>({
       queryKey: [...reportDataQueries.all(), 'earliest-transaction-date'],
@@ -109,7 +111,9 @@ export const reportDataQueries = {
       queryKey: [...reportDataQueries.all(), name, deps, environment],
       queryFn: () => runReportLoader(createLoader(), spreadsheet),
       staleTime: Infinity,
-      gcTime: Infinity,
+      // Long enough that returning to the dashboard draws from the cache, short
+      // enough that results for keys no card uses any more are dropped.
+      gcTime: 30 * 60 * 1000,
       retry: false,
     }),
 };
