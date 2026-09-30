@@ -12,94 +12,50 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+  cancel-in-progress: true
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - name: Set up environment
-        uses: ./.github/actions/setup
-        with:
-          download-translations: 'false'
-  constraints:
-    needs: setup
+  # The quick checks share one runner to stay under the fork's job concurrency
+  # limit. Each step runs even if an earlier check failed, so one failure
+  # doesn't hide the others.
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Set up environment
+        id: setup
         uses: ./.github/actions/setup
         with:
           download-translations: 'false'
       - name: Check dependency version consistency
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         run: yarn constraints
       - name: Check tsconfig project references are in sync
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         run: yarn check:tsconfig-references
-  lint:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - name: Set up environment
-        uses: ./.github/actions/setup
-        with:
-          download-translations: 'false'
       - name: Lint
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         run: yarn lint
-  knip:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - name: Set up environment
-        uses: ./.github/actions/setup
-        with:
-          download-translations: 'false'
+      - name: Typecheck
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: yarn typecheck
       - name: Build plugins service
+        id: plugins-service
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         run: yarn build:plugins-service
       - name: Check for unused files, dependencies and exports
+        if: ${{ !cancelled() && steps.plugins-service.outcome == 'success' }}
         run: yarn knip
-  typecheck:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - name: Set up environment
-        uses: ./.github/actions/setup
-        with:
-          download-translations: 'false'
-      - name: Typecheck
-        run: yarn typecheck
-  validate-cli:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - name: Set up environment
-        uses: ./.github/actions/setup
-        with:
-          download-translations: 'false'
-      - name: Build Web
+      - name: Build server
+        id: build-server
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         run: yarn build:server
       - name: Check that the built CLI works
+        if: ${{ !cancelled() && steps.build-server.outcome == 'success' }}
         run: node packages/sync-server/build/bin/actual-server.js --version
   test:
-    needs: setup
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -124,7 +80,6 @@ jobs:
       - uses: zizmorcore/zizmor-action@71321a20a9ded102f6e9ce5718a2fcec2c4f70d8 # v0.5.2
 
   migrations:
-    needs: setup
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:

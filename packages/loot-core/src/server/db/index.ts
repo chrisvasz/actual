@@ -696,13 +696,20 @@ const orphanedPayeesQuery = `
   WHERE p.tombstone = 0
     AND p.transfer_acct IS NULL
     AND t.id IS NULL
-    AND NOT EXISTS (
-      SELECT 1
-      FROM rules r,
-      json_each(r.conditions) as cond
-      WHERE r.tombstone = 0
-        AND json_extract(cond.value, '$.field') = 'description'
-        AND json_extract(cond.value, '$.value') = pm.targetId
+    -- Uncorrelated so SQLite collects the rule payees once, rather than
+    -- re-parsing every rule's conditions for each payee. json_each over the
+    -- value yields each payee of a oneOf list, or the single payee otherwise
+    AND (
+      pm.targetId IS NULL
+      OR pm.targetId NOT IN (
+        SELECT v.atom
+        FROM rules r,
+        json_each(r.conditions) as cond,
+        json_each(cond.value, '$.value') as v
+        WHERE r.tombstone = 0
+          AND json_extract(cond.value, '$.field') = 'description'
+          AND v.atom IS NOT NULL
+      )
     );
 `;
 

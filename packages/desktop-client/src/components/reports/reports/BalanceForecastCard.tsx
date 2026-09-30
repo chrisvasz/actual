@@ -308,6 +308,7 @@ export function BalanceForecastCard({
                       dot={false}
                       activeDot={{ r: 4 }}
                       opacity={isUpdatingForecast ? 0.45 : 1}
+                      isAnimationActive={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>

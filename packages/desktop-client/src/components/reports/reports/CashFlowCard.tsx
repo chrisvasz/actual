@@ -9,7 +9,6 @@ import { Bar, BarChart, LabelList } from 'recharts';
 
 import { FinancialText } from '#components/FinancialText';
 import { Change } from '#components/reports/Change';
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { DateRange } from '#components/reports/DateRange';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -105,7 +104,6 @@ export function CashFlowCard({
   onMetaChange,
 }: CashFlowCardProps) {
   const { t } = useTranslation();
-  const animationProps = useRechartsAnimation();
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
   const transactionDates = useTransactionDates();
@@ -180,7 +178,7 @@ export function CashFlowCard({
                   dataKey="income"
                   fill={theme.reportsNumberPositive}
                   barSize={14}
-                  {...animationProps}
+                  isAnimationActive={false}
                 >
                   <LabelList
                     dataKey="income"
@@ -193,7 +191,7 @@ export function CashFlowCard({
                   dataKey="expenses"
                   fill={theme.reportsNumberNegative}
                   barSize={14}
-                  {...animationProps}
+                  isAnimationActive={false}
                 >
                   <LabelList
                     dataKey="expenses"

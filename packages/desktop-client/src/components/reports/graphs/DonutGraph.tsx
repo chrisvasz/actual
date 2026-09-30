@@ -15,7 +15,6 @@ import { Pie, PieChart, Sector } from 'recharts';
 import type { PieSectorDataItem, PieSectorShapeProps } from 'recharts';
 
 import { FinancialText } from '#components/FinancialText';
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { useAccounts } from '#hooks/useAccounts';
 import { useCategories } from '#hooks/useCategories';
@@ -351,8 +350,6 @@ export function DonutGraph({
   showOffBudget,
   showTooltip = true,
 }: DonutGraphProps) {
-  const animationProps = useRechartsAnimation({ animationDuration: 500 });
-
   const yAxis = groupBy === 'Interval' ? 'date' : 'name';
   const splitData = groupBy === 'Interval' ? 'intervalData' : 'data';
 
@@ -441,8 +438,7 @@ export function DonutGraph({
                   <Pie
                     dataKey={val => getVal(val)}
                     nameKey="name"
-                    {...animationProps}
-                    animationBegin={100}
+                    isAnimationActive={false}
                     data={adjustedGroupData}
                     innerRadius={chartInnerRadius}
                     outerRadius={chartMidRadius}
@@ -518,8 +514,7 @@ export function DonutGraph({
                   <Pie
                     dataKey={val => getVal(val)}
                     nameKey="name"
-                    {...animationProps}
-                    animationBegin={100}
+                    isAnimationActive={false}
                     data={flatCategories}
                     innerRadius={chartMidRadius}
                     outerRadius={chartOuterRadius}
@@ -618,8 +613,7 @@ export function DonutGraph({
                 <Pie
                   dataKey={val => getVal(val)}
                   nameKey={yAxis}
-                  {...animationProps}
-                  animationBegin={100}
+                  isAnimationActive={false}
                   data={data[splitData]?.map(item => ({ ...item })) ?? []}
                   innerRadius={chartInnerRadius}
                   labelLine={false}

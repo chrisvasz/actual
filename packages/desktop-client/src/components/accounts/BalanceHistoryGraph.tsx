@@ -11,7 +11,6 @@ import { integerToCurrency } from '@actual-app/core/shared/util';
 import { eachMonthOfInterval, format, subMonths } from 'date-fns';
 import { Area, AreaChart, Tooltip as RechartsTooltip, YAxis } from 'recharts';
 
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
 import { AutoSizer } from '#components/util/AutoSizer';
 import { useLocale } from '#hooks/useLocale';
@@ -32,7 +31,6 @@ export function BalanceHistoryGraph({
   ref,
 }: BalanceHistoryGraphProps) {
   const locale = useLocale();
-  const animationProps = useRechartsAnimation({ isAnimationActive: false });
   const [balanceData, setBalanceData] = useState<
     Array<{ date: string; balance: number }>
   >([]);
@@ -275,7 +273,7 @@ export function BalanceHistoryGraph({
                     dataKey="balance"
                     stroke={color}
                     strokeWidth={2}
-                    {...animationProps}
+                    isAnimationActive={false}
                     fill={
                       color === theme.noticeTextLight
                         ? 'url(#fillLight)'
