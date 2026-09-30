@@ -126,14 +126,11 @@ export class Navigation {
   }
 
   async goToBankSyncPage() {
-    const bankSyncLink = this.page.getByRole('link', { name: 'Bank Sync' });
-
-    // Expand the "more" menu only if it is not already expanded
-    if (!(await bankSyncLink.isVisible())) {
-      await this.page.getByRole('button', { name: 'More' }).click();
-    }
-
-    await bankSyncLink.click();
+    // The sidebar has no Bank Sync link in this fork, so route client-side
+    await this.page.evaluate(() => {
+      window.history.pushState({}, '', '/bank-sync');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
 
     return new BankSyncPage(this.page);
   }
