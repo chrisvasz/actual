@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { View } from '@actual-app/components/view';
-import { send } from '@actual-app/core/platform/client/connection';
 import * as monthUtils from '@actual-app/core/shared/months';
 import type {
   SummaryContent,
@@ -16,7 +15,10 @@ import { ReportCardValueSkeleton } from '#components/reports/ReportCardValueSkel
 import { calculateTimeRange } from '#components/reports/reportRanges';
 import { summarySpreadsheet } from '#components/reports/spreadsheets/summary-spreadsheet';
 import { SummaryNumber } from '#components/reports/SummaryNumber';
-import { useReport } from '#components/reports/useReport';
+import {
+  useReportQuery,
+  useTransactionDates,
+} from '#components/reports/useReport';
 import { useLocale } from '#hooks/useLocale';
 
 type SummaryCardProps = {
@@ -34,18 +36,9 @@ export function SummaryCard({
 }: SummaryCardProps) {
   const locale = useLocale();
   const { t } = useTranslation();
-  const [latestTransaction, setLatestTransaction] = useState<string>('');
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchLatestTransaction() {
-      const latestTrans = await send('get-latest-transaction');
-      setLatestTransaction(
-        latestTrans ? latestTrans.date : monthUtils.currentDay(),
-      );
-    }
-    void fetchLatestTransaction();
-  }, []);
+  const transactionDates = useTransactionDates();
 
   const [start, end] = calculateTimeRange(
     meta?.timeFrame,
@@ -54,7 +47,7 @@ export function SummaryCard({
       end: monthUtils.currentDay(),
       mode: 'full',
     },
-    latestTransaction,
+    transactionDates?.latest ?? '',
   );
 
   const content = useMemo(
@@ -72,7 +65,7 @@ export function SummaryCard({
     [meta],
   );
 
-  const params = useMemo(
+  const data = useReportQuery(
     () =>
       summarySpreadsheet(
         start,
@@ -83,9 +76,8 @@ export function SummaryCard({
         locale,
       ),
     [start, end, meta?.conditions, meta?.conditionsOp, content, locale],
+    { name: 'summary', enabled: transactionDates != null },
   );
-
-  const data = useReport('summary', params);
 
   return (
     <ReportCard

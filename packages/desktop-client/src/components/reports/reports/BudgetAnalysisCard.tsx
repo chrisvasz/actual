@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
@@ -16,7 +16,7 @@ import { ReportCard } from '#components/reports/ReportCard';
 import { ReportCardName } from '#components/reports/ReportCardName';
 import { calculateTimeRange } from '#components/reports/reportRanges';
 import { createBudgetAnalysisSpreadsheet } from '#components/reports/spreadsheets/budget-analysis-spreadsheet';
-import { useReport } from '#components/reports/useReport';
+import { useReportQuery } from '#components/reports/useReport';
 import { useFormat } from '#hooks/useFormat';
 
 type BudgetAnalysisCardProps = {
@@ -48,23 +48,24 @@ export function BudgetAnalysisCard({
     monthUtils.monthFromDate(endMonth) + '-01',
   );
 
-  const getGraphData = useMemo(() => {
-    return createBudgetAnalysisSpreadsheet({
-      conditions: meta?.conditions,
-      conditionsOp: meta?.conditionsOp,
+  const data = useReportQuery(
+    () =>
+      createBudgetAnalysisSpreadsheet({
+        conditions: meta?.conditions,
+        conditionsOp: meta?.conditionsOp,
+        startDate,
+        endDate,
+        showHiddenCategories: meta?.showHiddenCategories ?? false,
+      }),
+    [
+      meta?.conditions,
+      meta?.conditionsOp,
+      meta?.showHiddenCategories,
       startDate,
       endDate,
-      showHiddenCategories: meta?.showHiddenCategories ?? false,
-    });
-  }, [
-    meta?.conditions,
-    meta?.conditionsOp,
-    meta?.showHiddenCategories,
-    startDate,
-    endDate,
-  ]);
-
-  const data = useReport('default', getGraphData);
+    ],
+    { name: 'budget_analysis' },
+  );
 
   const latestInterval =
     data && data.intervalData.length > 0

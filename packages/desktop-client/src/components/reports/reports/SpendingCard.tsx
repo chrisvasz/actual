@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
@@ -20,7 +20,7 @@ import {
   normalizeSpendingAverageRange,
 } from '#components/reports/spendingAverageRange';
 import { createSpendingSpreadsheet } from '#components/reports/spreadsheets/spending-spreadsheet';
-import { useReport } from '#components/reports/useReport';
+import { useReportQuery } from '#components/reports/useReport';
 import { useFormat } from '#hooks/useFormat';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 
@@ -52,25 +52,26 @@ export function SpendingCard({
 
   const selection =
     spendingReportMode === 'single-month' ? 'compareTo' : spendingReportMode;
-  const getGraphData = useMemo(() => {
-    return createSpendingSpreadsheet({
-      conditions: meta?.conditions,
-      conditionsOp: meta?.conditionsOp,
+  const data = useReportQuery(
+    () =>
+      createSpendingSpreadsheet({
+        conditions: meta?.conditions,
+        conditionsOp: meta?.conditionsOp,
+        compare,
+        compareTo,
+        averageRange,
+        budgetType,
+      }),
+    [
+      meta?.conditions,
+      meta?.conditionsOp,
       compare,
       compareTo,
       averageRange,
       budgetType,
-    });
-  }, [
-    meta?.conditions,
-    meta?.conditionsOp,
-    compare,
-    compareTo,
-    averageRange,
-    budgetType,
-  ]);
-
-  const data = useReport('default', getGraphData);
+    ],
+    { name: 'spending' },
+  );
   const todayDay =
     compare !== monthUtils.currentMonth()
       ? 27

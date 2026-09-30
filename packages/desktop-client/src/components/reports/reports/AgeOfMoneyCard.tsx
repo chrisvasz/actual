@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
@@ -6,8 +6,6 @@ import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import { send } from '@actual-app/core/platform/client/connection';
-import * as monthUtils from '@actual-app/core/shared/months';
 import type { AgeOfMoneyWidget } from '@actual-app/core/types/models';
 
 import { DateRange } from '#components/reports/DateRange';
@@ -17,7 +15,10 @@ import { ReportCard } from '#components/reports/ReportCard';
 import { ReportCardName } from '#components/reports/ReportCardName';
 import { calculateTimeRange } from '#components/reports/reportRanges';
 import { createAgeOfMoneySpreadsheet } from '#components/reports/spreadsheets/age-of-money-spreadsheet';
-import { useReport } from '#components/reports/useReport';
+import {
+  useReportQuery,
+  useTransactionDates,
+} from '#components/reports/useReport';
 
 // Determine status color based on age
 export function getAgeColor(age: number | null) {
@@ -55,26 +56,17 @@ export function AgeOfMoneyCard({
   const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
 
-  const [latestTransaction, setLatestTransaction] = useState<string>('');
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchLatestTransaction() {
-      const latestTrans = await send('get-latest-transaction');
-      setLatestTransaction(
-        latestTrans ? latestTrans.date : monthUtils.currentDay(),
-      );
-    }
-    void fetchLatestTransaction();
-  }, []);
+  const transactionDates = useTransactionDates();
 
   const [start, end] = calculateTimeRange(
     meta?.timeFrame,
     undefined,
-    latestTransaction,
+    transactionDates?.latest ?? '',
   );
 
-  const params = useMemo(
+  const data = useReportQuery(
     () =>
       createAgeOfMoneySpreadsheet({
         start,
@@ -84,8 +76,8 @@ export function AgeOfMoneyCard({
         granularity: meta?.granularity ?? 'monthly',
       }),
     [start, end, meta?.conditions, meta?.conditionsOp, meta?.granularity],
+    { name: 'age_of_money', enabled: transactionDates != null },
   );
-  const data = useReport('age_of_money', params);
 
   return (
     <ReportCard
