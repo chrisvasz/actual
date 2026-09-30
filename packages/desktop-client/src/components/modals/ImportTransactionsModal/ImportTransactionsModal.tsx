@@ -23,7 +23,6 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { send } from '@actual-app/core/platform/client/connection';
 import type { ParseFileOptions } from '@actual-app/core/server/transactions/import/parse-file';
-import * as monthUtils from '@actual-app/core/shared/months';
 import { amountToInteger } from '@actual-app/core/shared/util';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -34,7 +33,6 @@ import {
 import { Modal, ModalCloseButton } from '#components/common/Modal';
 import { LabeledCheckbox } from '#components/forms/LabeledCheckbox';
 import { TableHeader, TableWithNavigator } from '#components/table';
-import { useAccount } from '#hooks/useAccount';
 import { useCategories } from '#hooks/useCategories';
 import { useDateFormat } from '#hooks/useDateFormat';
 import { useSyncedPrefs } from '#hooks/useSyncedPrefs';
@@ -288,16 +286,7 @@ export function ImportTransactionsModal({
     String(prefs[`import-clear-${accountId}`]) !== 'false',
   );
   const [showFileOptions, setShowFileOptions] = useState(false);
-  // Default to the last reconciliation, since anything before it should
-  // already be in the account. Derived rather than stored so it still applies
-  // if the account loads after the modal opens.
-  const account = useAccount(accountId);
-  const [startDateOverride, setStartDate] = useState<string | null>(null);
-  const startDate =
-    startDateOverride ??
-    (account?.last_reconciled
-      ? monthUtils.dayFromDate(new Date(parseInt(account.last_reconciled, 10)))
-      : '');
+  const [startDate, setStartDate] = useState('');
   const lastParseRef = useRef<LastParse | null>(null);
 
   const getImportPreview = useCallback(

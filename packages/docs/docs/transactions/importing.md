@@ -31,7 +31,6 @@ If your bank doesn't support downloading financial files, you can import a CSV f
    - You can optionally toggle on "Flip amount" if you want to negate all of the amounts in the CSV file.
    - Use the **Amounts** dropdown if your CSV file doesn't have a single amount column. Choose "Outflow + inflow columns" if it has separate columns for outflow and inflow amounts (also known as debit and credit), or "Amount + in/out column" if a separate column says whether each amount is going in or out.
    - You can enter a number in **Multiply by** to multiply all of the amounts in the CSV file. This can be useful if you want to make an approximate currency conversion.
-   - **Only import since** defaults to the date you last reconciled the account. Clear it to import every transaction in the file.
 5. Once you're happy with the settings, press **Import**.
 
 ![CSV Import](/img/import/import-csv@2x.webp)
