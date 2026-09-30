@@ -18,14 +18,12 @@ import {
 } from 'recharts';
 
 import { FinancialText } from '#components/FinancialText';
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
 
 const MAX_BAR_SIZE = 50;
-const ANIMATION_DURATION = 1000; // in ms
 
 type PayloadItem = {
   payload: {
@@ -142,9 +140,6 @@ export function CashFlowGraph({
 }: CashFlowGraphProps) {
   const locale = useLocale();
   const format = useFormat();
-  const animationProps = useRechartsAnimation({
-    animationDuration: ANIMATION_DURATION,
-  });
 
   const data = graphData.expenses.map((row, idx) => ({
     date: row.x,
@@ -196,14 +191,14 @@ export function CashFlowGraph({
             stackId="a"
             fill={theme.reportsNumberPositive}
             maxBarSize={MAX_BAR_SIZE}
-            {...animationProps}
+            isAnimationActive={false}
           />
           <Bar
             dataKey="expenses"
             stackId="a"
             fill={theme.reportsNumberNegative}
             maxBarSize={MAX_BAR_SIZE}
-            {...animationProps}
+            isAnimationActive={false}
           />
           <Line
             type="monotone"
@@ -212,7 +207,7 @@ export function CashFlowGraph({
             hide={!showBalance}
             stroke={theme.pageTextLight}
             strokeWidth={2}
-            {...animationProps}
+            isAnimationActive={false}
           />
         </ComposedChart>
       )}

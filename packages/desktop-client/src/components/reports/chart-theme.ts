@@ -1,7 +1,3 @@
-import { useMemo } from 'react';
-
-import { useReducedMotion } from '#hooks/useReducedMotion';
-
 export function getColorScale(name: string): string[] {
   const scales: Record<string, string[]> = {
     qualitative: [
@@ -17,25 +13,4 @@ export function getColorScale(name: string): string[] {
     ],
   };
   return name ? scales[name] : scales.qualitative;
-}
-
-export function useRechartsAnimation(defaults?: {
-  animationDuration?: number;
-  isAnimationActive?: boolean;
-}) {
-  const reducedMotion = useReducedMotion();
-
-  const isAnimationActive = reducedMotion
-    ? false
-    : (defaults?.isAnimationActive ?? true);
-  const animationDuration = reducedMotion ? 0 : defaults?.animationDuration;
-
-  // The returned object must be referentially stable: recharts re-runs chart
-  // animations (hiding labels while animating) whenever element identity
-  // changes, and this file is outside the React Compiler's *.tsx include, so
-  // it isn't auto-memoized.
-  return useMemo(
-    () => ({ isAnimationActive, animationDuration }),
-    [isAnimationActive, animationDuration],
-  );
 }

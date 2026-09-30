@@ -19,10 +19,7 @@ import {
 import type { TooltipContentProps } from 'recharts';
 
 import { FinancialText } from '#components/FinancialText';
-import {
-  getColorScale,
-  useRechartsAnimation,
-} from '#components/reports/chart-theme';
+import { getColorScale } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { numberFormatterTooltip } from '#components/reports/numberFormatter';
 import { getIntervalFormat } from '#components/reports/ReportOptions';
@@ -251,7 +248,6 @@ export function NetWorthGraph({
   const id = useId();
   const format = useFormat();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
-  const animationProps = useRechartsAnimation({ animationDuration: 1000 });
   const [isTooltipActive, setIsTooltipActive] = useState(false);
   const [hoveredAccountId, setHoveredAccountId] = useState<string | null>(null);
 
@@ -436,7 +432,7 @@ export function NetWorthGraph({
                   type={interpolationType}
                   dot={false}
                   activeDot={false}
-                  {...animationProps}
+                  isAnimationActive={false}
                   dataKey="y"
                   stroke={theme.reportsChartFill}
                   strokeWidth={2}
@@ -455,7 +451,7 @@ export function NetWorthGraph({
                     fill={colors[account.id]}
                     fillOpacity={0.5}
                     strokeWidth={2}
-                    {...animationProps}
+                    isAnimationActive={false}
                     connectNulls
                     onMouseEnter={() => setHoveredAccountId(account.id)}
                     onMouseLeave={() => setHoveredAccountId(null)}

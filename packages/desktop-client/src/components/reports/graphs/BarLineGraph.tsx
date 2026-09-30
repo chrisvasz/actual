@@ -16,7 +16,6 @@ import {
   YAxis,
 } from 'recharts';
 
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { numberFormatterTooltip } from '#components/reports/numberFormatter';
 import { useFormat } from '#hooks/useFormat';
@@ -87,7 +86,6 @@ export function BarLineGraph({
   showTooltip = true,
 }: BarLineGraphProps) {
   const format = useFormat();
-  const animationProps = useRechartsAnimation();
   const tickFormatter = tick => {
     return `${format(Math.round(tick), 'financial')}`; // Formats the tick values as strings with commas
   };
@@ -124,13 +122,13 @@ export function BarLineGraph({
                 type="monotone"
                 dataKey="y"
                 fill="#8884d8"
-                {...animationProps}
+                isAnimationActive={false}
               />
               <Line
                 type="monotone"
                 dataKey="y"
                 stroke="#8884d8"
-                {...animationProps}
+                isAnimationActive={false}
               />
             </ComposedChart>
           </div>

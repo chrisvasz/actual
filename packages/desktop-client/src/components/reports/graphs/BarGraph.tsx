@@ -27,7 +27,6 @@ import {
 import type { BarShapeProps } from 'recharts';
 
 import { FinancialText } from '#components/FinancialText';
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { numberFormatterTooltip } from '#components/reports/numberFormatter';
 import { useAccounts } from '#hooks/useAccounts';
@@ -216,7 +215,6 @@ export function BarGraph({
   showOffBudget,
   showTooltip = true,
 }: BarGraphProps) {
-  const animationProps = useRechartsAnimation();
   const navigate = useNavigate();
   const { data: categories = { grouped: [], list: [] } } = useCategories();
   const { data: accounts = [] } = useAccounts();
@@ -309,7 +307,7 @@ export function BarGraph({
               <Bar
                 dataKey={val => getVal(val)}
                 stackId="a"
-                {...animationProps}
+                isAnimationActive={false}
                 onMouseLeave={() => setPointer('')}
                 onMouseEnter={() =>
                   groupBy !== 'Interval' && setPointer('pointer')

@@ -23,7 +23,6 @@ import {
 } from 'recharts';
 
 import { FinancialText } from '#components/FinancialText';
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { numberFormatterTooltip } from '#components/reports/numberFormatter';
 import { useAccounts } from '#hooks/useAccounts';
@@ -167,7 +166,6 @@ export function LineGraph({
   showTooltip = true,
   interval,
 }: LineGraphProps) {
-  const animationProps = useRechartsAnimation();
   const navigate = useNavigate();
   const { data: categories = { grouped: [], list: [] } } = useCategories();
   const { data: accounts = [] } = useAccounts();
@@ -274,7 +272,7 @@ export function LineGraph({
                     type="monotone"
                     dataKey={entry.dataKey}
                     stroke={entry.color}
-                    {...animationProps}
+                    isAnimationActive={false}
                     activeDot={{
                       r: entry.dataKey === tooltip && !compact ? 8 : 3,
                       onMouseEnter: () => {

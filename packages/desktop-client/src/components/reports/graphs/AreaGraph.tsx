@@ -21,7 +21,6 @@ import {
 import type { LabelProps } from 'recharts';
 
 import { FinancialText } from '#components/FinancialText';
-import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { Container } from '#components/reports/Container';
 import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
@@ -191,7 +190,6 @@ export function AreaGraph({
   showTooltip = true,
 }: AreaGraphProps) {
   const format = useFormat();
-  const animationProps = useRechartsAnimation({ animationDuration: 1000 });
   const dataMax = Math.max(...data.intervalData.map(i => i[balanceTypeOp]));
   const dataMin = Math.min(...data.intervalData.map(i => i[balanceTypeOp]));
 
@@ -331,7 +329,7 @@ export function AreaGraph({
                 type="linear"
                 dot={false}
                 activeDot={false}
-                {...animationProps}
+                isAnimationActive={false}
                 dataKey={balanceTypeOp}
                 stroke={`url(#stroke${balanceTypeOp})`}
                 fill={`url(#fill${balanceTypeOp})`}

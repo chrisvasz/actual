@@ -591,6 +591,7 @@ function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
                         dot={false}
                         activeDot={{ r: 6 }}
                         opacity={isUpdatingForecast ? 0.45 : 1}
+                        isAnimationActive={false}
                       />
                     </LineChart>
                   </ResponsiveContainer>
