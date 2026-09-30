@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
@@ -6,12 +6,12 @@ import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import { send } from '@actual-app/core/platform/client/connection';
 import * as monthUtils from '@actual-app/core/shared/months';
 import type {
   AccountEntity,
   CrossoverWidget,
 } from '@actual-app/core/types/models';
+import { useQuery } from '@tanstack/react-query';
 
 import { CrossoverGraph } from '#components/reports/graphs/CrossoverGraph';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
@@ -21,10 +21,10 @@ import { calculateTimeRange } from '#components/reports/reportRanges';
 import { defaultTimeFrame } from '#components/reports/reports/Crossover';
 import { createCrossoverSpreadsheet } from '#components/reports/spreadsheets/crossover-spreadsheet';
 import type { CrossoverData } from '#components/reports/spreadsheets/crossover-spreadsheet';
-import { useReport } from '#components/reports/useReport';
+import { useReportQuery } from '#components/reports/useReport';
 import { useCategories } from '#hooks/useCategories';
 import { useFormat } from '#hooks/useFormat';
-import { useLocale } from '#hooks/useLocale';
+import { reportDataQueries } from '#reports';
 
 type CrossoverCardProps = {
   widgetId: string;
@@ -41,90 +41,22 @@ export function CrossoverCard({
   meta = {},
   onMetaChange,
 }: CrossoverCardProps) {
-  const locale = useLocale();
   const { t } = useTranslation();
-  const { data: categories = { grouped: [], list: [] } } = useCategories();
+  const { data: categoriesData } = useCategories();
+  const categories = categoriesData ?? { grouped: [], list: [] };
   const { isNarrowWidth } = useResponsive();
 
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
-  // Calculate date range from meta or use default range
-  const [start, setStart] = useState<string>('');
-  const [end, setEnd] = useState<string>('');
+  const { data: earliestTransactionDate } = useQuery(
+    reportDataQueries.earliestTransactionDate(),
+  );
+  const [start, end] =
+    earliestTransactionDate === undefined
+      ? ['', '']
+      : getCardRange(meta?.timeFrame, earliestTransactionDate);
 
   const format = useFormat();
-
-  useEffect(() => {
-    let isMounted = true;
-    async function calculateDateRange() {
-      const currentMonth = monthUtils.currentMonth();
-      const previousMonth = monthUtils.subMonths(currentMonth, 1);
-
-      // Fetch earliest transaction to build the valid range
-      const earliestTransactionData = await send('get-earliest-transaction');
-      if (!isMounted) return;
-
-      // Build allMonths list similar to Crossover.tsx
-      const earliestDate = earliestTransactionData
-        ? earliestTransactionData.date
-        : monthUtils.firstDayOfMonth(previousMonth);
-      const latestDate = monthUtils.lastDayOfMonth(previousMonth);
-
-      const allMonths = monthUtils
-        .rangeInclusive(earliestDate, latestDate)
-        .map(month => ({
-          name: month,
-          pretty: monthUtils.format(month, 'MMMM yyyy', locale),
-        }))
-        .reverse();
-
-      // Use calculateTimeRange to get initial values based on timeFrame mode
-      const [initialStart, initialEnd, mode] = calculateTimeRange(
-        meta?.timeFrame,
-        defaultTimeFrame,
-        previousMonth,
-      );
-
-      const earliestMonth = allMonths[allMonths.length - 1].name;
-      const latestMonth = allMonths[0].name;
-      let start = initialStart;
-      let end = initialEnd;
-
-      const clampMonth = (m: string) => {
-        if (monthUtils.isBefore(m, earliestMonth)) return earliestMonth;
-        if (monthUtils.isAfter(m, latestMonth)) return latestMonth;
-        return m;
-      };
-
-      // Apply mode-specific logic similar to Crossover.tsx
-      if (mode === 'sliding-window') {
-        // Shift both start and end back one month for sliding-window
-        start = clampMonth(monthUtils.subMonths(start, 1));
-        end = clampMonth(monthUtils.subMonths(end, 1));
-      } else if (mode === 'full') {
-        start = earliestMonth;
-        end = latestMonth;
-      } else {
-        // static mode
-        start = clampMonth(start);
-        end = clampMonth(end);
-      }
-
-      // Ensure end doesn't go before start
-      if (monthUtils.isBefore(end, start)) {
-        end = start;
-      }
-
-      if (isMounted) {
-        setStart(start);
-        setEnd(end);
-      }
-    }
-    void calculateDateRange();
-    return () => {
-      isMounted = false;
-    };
-  }, [meta?.timeFrame, locale]);
 
   const showHiddenCategories = meta?.showHiddenCategories ?? false;
 
@@ -150,7 +82,7 @@ export function CrossoverCard({
     meta?.projectionType ?? 'hampel';
   const expenseAdjustmentFactor = meta?.expenseAdjustmentFactor ?? 1.0;
 
-  const params = useMemo(
+  const data = useReportQuery<CrossoverData>(
     () =>
       createCrossoverSpreadsheet({
         start,
@@ -174,9 +106,12 @@ export function CrossoverCard({
       projectionType,
       expenseAdjustmentFactor,
     ],
+    {
+      name: 'crossover',
+      enabled:
+        earliestTransactionDate !== undefined && categoriesData !== undefined,
+    },
   );
-
-  const data = useReport<CrossoverData>('crossover', params);
 
   // Get years to retire from spreadsheet data
   const yearsToRetire = data?.yearsToRetire ?? null;
@@ -246,4 +181,62 @@ export function CrossoverCard({
       </View>
     </ReportCard>
   );
+}
+
+// The months the card covers: the saved time frame, clamped to the months
+// from the first transaction through last month.
+function getCardRange(
+  timeFrame: NonNullable<CrossoverWidget['meta']>['timeFrame'],
+  earliestTransactionDate: string | null,
+): [string, string] {
+  const currentMonth = monthUtils.currentMonth();
+  const previousMonth = monthUtils.subMonths(currentMonth, 1);
+
+  const earliestDate =
+    earliestTransactionDate ?? monthUtils.firstDayOfMonth(previousMonth);
+  const latestDate = monthUtils.lastDayOfMonth(previousMonth);
+
+  // Newest first, like Crossover.tsx
+  const allMonths = monthUtils
+    .rangeInclusive(earliestDate, latestDate)
+    .reverse();
+
+  // Use calculateTimeRange to get initial values based on timeFrame mode
+  const [initialStart, initialEnd, mode] = calculateTimeRange(
+    timeFrame,
+    defaultTimeFrame,
+    previousMonth,
+  );
+
+  const earliestMonth = allMonths[allMonths.length - 1];
+  const latestMonth = allMonths[0];
+  let start = initialStart;
+  let end = initialEnd;
+
+  const clampMonth = (m: string) => {
+    if (monthUtils.isBefore(m, earliestMonth)) return earliestMonth;
+    if (monthUtils.isAfter(m, latestMonth)) return latestMonth;
+    return m;
+  };
+
+  // Apply mode-specific logic similar to Crossover.tsx
+  if (mode === 'sliding-window') {
+    // Shift both start and end back one month for sliding-window
+    start = clampMonth(monthUtils.subMonths(start, 1));
+    end = clampMonth(monthUtils.subMonths(end, 1));
+  } else if (mode === 'full') {
+    start = earliestMonth;
+    end = latestMonth;
+  } else {
+    // static mode
+    start = clampMonth(start);
+    end = clampMonth(end);
+  }
+
+  // Ensure end doesn't go before start
+  if (monthUtils.isBefore(end, start)) {
+    end = start;
+  }
+
+  return [start, end];
 }

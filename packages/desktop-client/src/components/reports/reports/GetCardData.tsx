@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Trans } from 'react-i18next';
 
@@ -22,7 +22,7 @@ import { LoadingIndicator } from '#components/reports/LoadingIndicator';
 import { ReportOptions } from '#components/reports/ReportOptions';
 import { createCustomSpreadsheet } from '#components/reports/spreadsheets/custom-spreadsheet';
 import { createGroupedSpreadsheet } from '#components/reports/spreadsheets/grouped-spreadsheet';
-import { useReport } from '#components/reports/useReport';
+import { useReportQuery } from '#components/reports/useReport';
 import { useDateFormat } from '#hooks/useDateFormat';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 
@@ -74,6 +74,7 @@ export function GetCardData({
   latestTransaction,
   firstDayOfWeekIdx,
   showTooltip,
+  enabled,
 }: {
   report: CustomReportEntity;
   payees: PayeeEntity[];
@@ -83,6 +84,8 @@ export function GetCardData({
   latestTransaction: string;
   firstDayOfWeekIdx?: SyncedPrefs['firstDayOfWeekIdx'];
   showTooltip?: boolean;
+  /** False until the inputs the report depends on have loaded. */
+  enabled: boolean;
 }) {
   const { isNarrowWidth } = useResponsive();
   const [budgetType = 'envelope'] = useSyncedPref('budgetType');
@@ -123,63 +126,67 @@ export function GetCardData({
     intervals = monthUtils[rangeInclusive](intervalDateStart, intervalDateEnd);
   }
 
-  const getGroupData = useMemo(() => {
-    return createGroupedSpreadsheet({
-      startDate,
-      endDate,
-      interval: report.interval,
+  const groupedData = useReportQuery(
+    () =>
+      createGroupedSpreadsheet({
+        startDate,
+        endDate,
+        interval: report.interval,
+        categories,
+        budgetType,
+        conditions: report.conditions ?? [],
+        conditionsOp: report.conditionsOp,
+        showEmpty: report.showEmpty,
+        showOffBudget: report.showOffBudget,
+        showHiddenCategories: report.showHiddenCategories,
+        showUncategorized: report.showUncategorized,
+        trimIntervals: report.trimIntervals,
+        balanceTypeOp: ReportOptions.balanceTypeMap.get(report.balanceType),
+        firstDayOfWeekIdx,
+        sortByOp: report.sortBy,
+      }),
+    [report, categories, startDate, endDate, firstDayOfWeekIdx, budgetType],
+    { name: 'custom_grouped', enabled },
+  );
+  const graphData = useReportQuery(
+    () =>
+      createCustomSpreadsheet({
+        startDate,
+        endDate,
+        interval: report.interval,
+        categories,
+        budgetType,
+        conditions: report.conditions ?? [],
+        conditionsOp: report.conditionsOp,
+        showEmpty: report.showEmpty,
+        showOffBudget: report.showOffBudget,
+        showHiddenCategories: report.showHiddenCategories,
+        showUncategorized: report.showUncategorized,
+        trimIntervals: report.trimIntervals,
+        groupBy: report.groupBy,
+        balanceTypeOp: ReportOptions.balanceTypeMap.get(report.balanceType),
+        payees,
+        accounts,
+        graphType: report.graphType,
+        firstDayOfWeekIdx,
+        sortByOp: report.sortBy,
+        dateFormat,
+      }),
+    [
+      report,
       categories,
-      budgetType,
-      conditions: report.conditions ?? [],
-      conditionsOp: report.conditionsOp,
-      showEmpty: report.showEmpty,
-      showOffBudget: report.showOffBudget,
-      showHiddenCategories: report.showHiddenCategories,
-      showUncategorized: report.showUncategorized,
-      trimIntervals: report.trimIntervals,
-      balanceTypeOp: ReportOptions.balanceTypeMap.get(report.balanceType),
-      firstDayOfWeekIdx,
-      sortByOp: report.sortBy,
-    });
-  }, [report, categories, startDate, endDate, firstDayOfWeekIdx, budgetType]);
-  const getGraphData = useMemo(() => {
-    return createCustomSpreadsheet({
-      startDate,
-      endDate,
-      interval: report.interval,
-      categories,
-      budgetType,
-      conditions: report.conditions ?? [],
-      conditionsOp: report.conditionsOp,
-      showEmpty: report.showEmpty,
-      showOffBudget: report.showOffBudget,
-      showHiddenCategories: report.showHiddenCategories,
-      showUncategorized: report.showUncategorized,
-      trimIntervals: report.trimIntervals,
-      groupBy: report.groupBy,
-      balanceTypeOp: ReportOptions.balanceTypeMap.get(report.balanceType),
       payees,
       accounts,
-      graphType: report.graphType,
+      startDate,
+      endDate,
       firstDayOfWeekIdx,
-      sortByOp: report.sortBy,
+      budgetType,
+      // Load-bearing: without this the card keeps its old interval labels after
+      // the date format preference changes, until something else invalidates it.
       dateFormat,
-    });
-  }, [
-    report,
-    categories,
-    payees,
-    accounts,
-    startDate,
-    endDate,
-    firstDayOfWeekIdx,
-    budgetType,
-    // Load-bearing: without this the card keeps its old interval labels after
-    // the date format preference changes, until something else invalidates it.
-    dateFormat,
-  ]);
-  const graphData = useReport('default' + report.name, getGraphData);
-  const groupedData = useReport('grouped' + report.name, getGroupData);
+    ],
+    { name: 'custom', enabled },
+  );
 
   const data =
     graphData && groupedData ? { ...graphData, groupedData } : graphData;

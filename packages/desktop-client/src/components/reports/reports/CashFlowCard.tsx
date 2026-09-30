@@ -1,11 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import type { SVGAttributes } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import { send } from '@actual-app/core/platform/client/connection';
-import * as monthUtils from '@actual-app/core/shared/months';
 import type { CashFlowWidget } from '@actual-app/core/types/models';
 import { Bar, BarChart, LabelList } from 'recharts';
 
@@ -18,7 +16,10 @@ import { ReportCard } from '#components/reports/ReportCard';
 import { ReportCardName } from '#components/reports/ReportCardName';
 import { calculateTimeRange } from '#components/reports/reportRanges';
 import { simpleCashFlow } from '#components/reports/spreadsheets/cash-flow-spreadsheet';
-import { useReport } from '#components/reports/useReport';
+import {
+  useReportQuery,
+  useTransactionDates,
+} from '#components/reports/useReport';
 import { useFormat } from '#hooks/useFormat';
 
 import { defaultTimeFrame } from './CashFlow';
@@ -103,30 +104,21 @@ export function CashFlowCard({
   onMetaChange,
 }: CashFlowCardProps) {
   const { t } = useTranslation();
-  const [latestTransaction, setLatestTransaction] = useState<string>('');
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchLatestTransaction() {
-      const latestTrans = await send('get-latest-transaction');
-      setLatestTransaction(
-        latestTrans ? latestTrans.date : monthUtils.currentDay(),
-      );
-    }
-    void fetchLatestTransaction();
-  }, []);
+  const transactionDates = useTransactionDates();
 
   const [start, end] = calculateTimeRange(
     meta?.timeFrame,
     defaultTimeFrame,
-    latestTransaction,
+    transactionDates?.latest ?? '',
   );
 
-  const params = useMemo(
+  const data = useReportQuery(
     () => simpleCashFlow(start, end, meta?.conditions, meta?.conditionsOp),
     [start, end, meta?.conditions, meta?.conditionsOp],
+    { name: 'cash_flow_simple', enabled: transactionDates != null },
   );
-  const data = useReport('cash_flow_simple', params);
 
   const { graphData } = data || {};
   const expenses = -(graphData?.expense || 0);

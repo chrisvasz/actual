@@ -19,7 +19,6 @@ import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
-import { send } from '@actual-app/core/platform/client/connection';
 import * as monthUtils from '@actual-app/core/shared/months';
 import type { CalendarWidget } from '@actual-app/core/types/models';
 import type { SyncedPrefs } from '@actual-app/core/types/prefs';
@@ -35,7 +34,10 @@ import { ReportCardName } from '#components/reports/ReportCardName';
 import { calculateTimeRange } from '#components/reports/reportRanges';
 import { calendarSpreadsheet } from '#components/reports/spreadsheets/calendar-spreadsheet';
 import type { CalendarDataType } from '#components/reports/spreadsheets/calendar-spreadsheet';
-import { useReport } from '#components/reports/useReport';
+import {
+  useReportQuery,
+  useTransactionDates,
+} from '#components/reports/useReport';
 import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
 import { useMergedRefs } from '#hooks/useMergedRefs';
@@ -60,17 +62,7 @@ export function CalendarCard({
   const { t } = useTranslation();
   const format = useFormat();
 
-  const [latestTransaction, setLatestTransaction] = useState<string>('');
-
-  useEffect(() => {
-    async function fetchLatestTransaction() {
-      const latestTrans = await send('get-latest-transaction');
-      setLatestTransaction(
-        latestTrans ? latestTrans.date : monthUtils.currentDay(),
-      );
-    }
-    void fetchLatestTransaction();
-  }, []);
+  const transactionDates = useTransactionDates();
 
   const [start, end] = calculateTimeRange(
     meta?.timeFrame,
@@ -79,9 +71,9 @@ export function CalendarCard({
       end: monthUtils.currentDay(),
       mode: 'full',
     },
-    latestTransaction,
+    transactionDates?.latest ?? '',
   );
-  const params = useMemo(
+  const data = useReportQuery(
     () =>
       calendarSpreadsheet(
         start,
@@ -91,6 +83,7 @@ export function CalendarCard({
         firstDayOfWeekIdx,
       ),
     [start, end, meta?.conditions, meta?.conditionsOp, firstDayOfWeekIdx],
+    { name: 'calendar', enabled: transactionDates != null },
   );
 
   const [cardOrientation, setCardOrientation] = useState<'row' | 'column'>(
@@ -105,8 +98,6 @@ export function CalendarCard({
       setCardOrientation('row');
     }
   });
-
-  const data = useReport('calendar', params);
 
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 

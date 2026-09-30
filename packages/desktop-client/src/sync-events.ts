@@ -17,8 +17,20 @@ import type { Notification } from './notifications/notificationsSlice';
 import { payeeQueries } from './payees';
 import { loadPrefs } from './prefs/prefsSlice';
 import type { AppStore } from './redux/store';
+import { reportDataQueries } from './reports';
 import { ruleQueries } from './rules';
 import { signOut } from './users/usersSlice';
+
+// Tables no report reads from, so changes to them (like rearranging the
+// dashboard) don't make every report card load again. A report's own settings
+// are part of its cache key.
+const tablesReportsIgnore = new Set([
+  'dashboard',
+  'dashboard_pages',
+  'custom_reports',
+  'preferences',
+  'prefs',
+]);
 
 // Notifications for sync events that can fire during budget load
 const syncNotifications: Partial<
@@ -145,6 +157,15 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
         void queryClient.invalidateQueries({
           queryKey: ruleQueries.lists(),
         });
+      }
+
+      if (tables.some(table => !tablesReportsIgnore.has(table))) {
+        // Loaders can't be aborted, so let a running one finish rather than
+        // restarting it for each event in a burst.
+        void queryClient.invalidateQueries(
+          { queryKey: reportDataQueries.all() },
+          { cancelRefetch: false },
+        );
       }
     } else if (event.type === 'error') {
       let notif: Notification | null = null;

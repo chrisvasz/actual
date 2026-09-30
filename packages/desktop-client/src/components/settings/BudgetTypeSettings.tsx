@@ -4,15 +4,18 @@ import { Trans } from 'react-i18next';
 import { ButtonWithLoading } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
 import { send } from '@actual-app/core/platform/client/connection';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Link } from '#components/common/Link';
 import { useSyncedPref } from '#hooks/useSyncedPref';
+import { reportDataQueries } from '#reports';
 
 import { Setting } from './UI';
 
 export function BudgetTypeSettings() {
   const [budgetType = 'envelope', setBudgetType] = useSyncedPref('budgetType');
   const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
 
   async function onSwitchType() {
     setIsLoading(true);
@@ -22,6 +25,9 @@ export function BudgetTypeSettings() {
 
       // Reset the budget cache to ensure the server-side budget system is recalculated
       await send('reset-budget-cache');
+      // Report data is computed from the budget cells, and the reset rebuilds
+      // them without a sync event.
+      void queryClient.invalidateQueries({ queryKey: reportDataQueries.all() });
     } finally {
       setIsLoading(false);
     }
