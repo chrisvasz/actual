@@ -289,13 +289,15 @@ export function ImportTransactionsModal({
   );
   const [showFileOptions, setShowFileOptions] = useState(false);
   // Default to the last reconciliation, since anything before it should
-  // already be in the account.
+  // already be in the account. Derived rather than stored so it still applies
+  // if the account loads after the modal opens.
   const account = useAccount(accountId);
-  const [startDate, setStartDate] = useState(() =>
-    account?.last_reconciled
+  const [startDateOverride, setStartDate] = useState<string | null>(null);
+  const startDate =
+    startDateOverride ??
+    (account?.last_reconciled
       ? monthUtils.dayFromDate(new Date(parseInt(account.last_reconciled, 10)))
-      : '',
-  );
+      : '');
   const lastParseRef = useRef<LastParse | null>(null);
 
   const getImportPreview = useCallback(
@@ -727,7 +729,9 @@ export function ImportTransactionsModal({
         date,
         amount: amountToInteger(amount),
         cleared: clearOnImport,
-        notes: importNotes ? finalTransaction.notes : null,
+        // CSV notes come from the column mapping, not this option
+        notes:
+          importNotes || filetype === 'csv' ? finalTransaction.notes : null,
       });
     }
 
@@ -795,9 +799,7 @@ export function ImportTransactionsModal({
       [`import-clear-${accountId}`]: String(clearOnImport),
     });
 
-    if (filetype !== 'qif') {
-      savePrefs({ [`import-merge-${accountId}`]: String(reconcile) });
-    }
+    savePrefs({ [`import-merge-${accountId}`]: String(reconcile) });
 
     importTransactions.mutate(
       {
@@ -962,7 +964,6 @@ export function ImportTransactionsModal({
   const importCount = transactions.filter(
     trans => !trans.isMatchedTransaction && trans.selected && !trans.tombstone,
   ).length;
-  const canMerge = filetype !== 'qif';
   const sinceDate = formatDate(startDate, dateFormat);
   // File format options are remembered per account, so keep them out of the
   // way unless the file didn't parse
@@ -1188,16 +1189,14 @@ export function ImportTransactionsModal({
                   </Button>
                 )}
               </InlineLabel>
-              {canMerge && (
-                <CheckboxToggle
-                  id="form_dont_reconcile"
-                  checked={reconcile}
-                  onChange={setReconcile}
-                >
-                  <Trans>Merge with existing transactions</Trans>
-                </CheckboxToggle>
-              )}
-              {canMerge && reconcile && (
+              <CheckboxToggle
+                id="form_dont_reconcile"
+                checked={reconcile}
+                onChange={setReconcile}
+              >
+                <Trans>Merge with existing transactions</Trans>
+              </CheckboxToggle>
+              {reconcile && (
                 <CheckboxToggle
                   id="form_reimport_deleted"
                   checked={reimportDeleted}
