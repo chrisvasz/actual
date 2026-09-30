@@ -21,7 +21,7 @@ type LoadComponentProps<K extends string> = {
 // already in the module registry can be rendered on the very first render
 // instead of blanking the page for a frame. Keyed by importer identity, so only
 // module-level constant importers get a hit — importers defined inline inside a
-// render (e.g. the reports pages) simply never hit the cache.
+// render simply never hit the cache.
 const moduleCache = new Map<Importer, Record<string, ProplessComponent>>();
 
 export function LoadComponent<K extends string>(props: LoadComponentProps<K>) {

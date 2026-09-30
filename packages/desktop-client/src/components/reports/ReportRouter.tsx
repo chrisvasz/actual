@@ -40,8 +40,8 @@ export function ReportRouter() {
 
   return (
     <Routes>
-      <Route path="/" element={<ReportsDashboardRouter />} />
-      <Route path="/:dashboardId" element={<ReportsDashboardRouter />} />
+      {/* One route, so redirecting to the first dashboard keeps it mounted. */}
+      <Route path="/:dashboardId?" element={<ReportsDashboardRouter />} />
       <Route
         path="/net-worth"
         element={

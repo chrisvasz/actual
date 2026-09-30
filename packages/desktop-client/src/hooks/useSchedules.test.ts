@@ -1,11 +1,22 @@
+import { createElement } from 'react';
+import type { ReactNode } from 'react';
+
 import { q } from '@actual-app/core/shared/query';
+import type { ScheduleEntity } from '@actual-app/core/types/models';
+import { QueryClientProvider } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createTestQueryClient } from '#mocks';
 import { liveQuery } from '#queries/liveQuery';
 import type { LiveQuery } from '#queries/liveQuery';
 
-import { getSchedulesQuery, useSchedules } from './useSchedules';
+import {
+  getSchedulesQuery,
+  schedulesSnapshotQuery,
+  useSchedules,
+} from './useSchedules';
 
 vi.mock('#queries/liveQuery', () => ({
   liveQuery: vi.fn(),
@@ -22,10 +33,20 @@ type LiveQueryCall = {
 
 describe('useSchedules', () => {
   let calls: LiveQueryCall[];
+  let queryClient: QueryClient;
+
+  function wrapper({ children }: { children: ReactNode }) {
+    return createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      children,
+    );
+  }
 
   beforeEach(() => {
     vi.clearAllMocks();
     calls = [];
+    queryClient = createTestQueryClient();
 
     // `vi.mocked` keeps the mock bound to the real `liveQuery` signature, so a
     // change to how the hook calls it still fails typecheck.
@@ -42,13 +63,15 @@ describe('useSchedules', () => {
   });
 
   it('does not open any live query when no query is given', () => {
-    renderHook(() => useSchedules({}));
+    renderHook(() => useSchedules({}), { wrapper });
 
     expect(liveQuery).not.toHaveBeenCalled();
   });
 
   it('unsubscribes the previous status query when schedules refresh', () => {
-    renderHook(() => useSchedules({ query: q('schedules').select('*') }));
+    renderHook(() => useSchedules({ query: q('schedules').select('*') }), {
+      wrapper,
+    });
 
     // The schedules query is opened first; its onData opens the status query.
     expect(calls).toHaveLength(1);
@@ -68,7 +91,9 @@ describe('useSchedules', () => {
 
   it('returns the same result object when nothing changed', () => {
     const query = q('schedules').select('*');
-    const { result, rerender } = renderHook(() => useSchedules({ query }));
+    const { result, rerender } = renderHook(() => useSchedules({ query }), {
+      wrapper,
+    });
 
     const first = result.current;
     rerender();
@@ -79,8 +104,9 @@ describe('useSchedules', () => {
   });
 
   it('unsubscribes both queries on unmount', () => {
-    const { unmount } = renderHook(() =>
-      useSchedules({ query: q('schedules').select('*') }),
+    const { unmount } = renderHook(
+      () => useSchedules({ query: q('schedules').select('*') }),
+      { wrapper },
     );
 
     calls[0].onData([], []);
@@ -90,6 +116,27 @@ describe('useSchedules', () => {
 
     expect(calls[0].unsubscribe).toHaveBeenCalled();
     expect(calls[1].unsubscribe).toHaveBeenCalled();
+  });
+
+  it('starts from a cached snapshot of the same query', () => {
+    const query = q('schedules').select('*');
+    const schedule = { id: 'schedule-1' } as ScheduleEntity;
+    queryClient.setQueryData(schedulesSnapshotQuery(query, '7').queryKey, {
+      schedules: [schedule],
+      statuses: new Map([[schedule.id, 'scheduled' as const]]),
+      statusLabels: new Map([[schedule.id, 'scheduled' as const]]),
+    });
+
+    const { result } = renderHook(
+      () => useSchedules({ query: q('schedules').select('*') }),
+      { wrapper },
+    );
+
+    // Drawn complete on the first render, and the live query that takes over
+    // doesn't flip it back to loading.
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.schedules).toEqual([schedule]);
+    expect(liveQuery).toHaveBeenCalledTimes(1);
   });
 });
 

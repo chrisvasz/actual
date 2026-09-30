@@ -4,6 +4,11 @@ import { View } from '@actual-app/components/view';
 
 import { LoadComponent } from '#components/util/LoadComponent';
 
+// A module-level importer, so `LoadComponent` renders the router straight away
+// on later visits instead of loading it again.
+const loadReportRouter = () =>
+  import(/* webpackChunkName: 'reports' */ './ReportRouter');
+
 export function Reports() {
   const { t } = useTranslation();
 
@@ -12,9 +17,7 @@ export function Reports() {
       <LoadComponent
         name="ReportRouter"
         message={t('Loading reports...')}
-        importer={() =>
-          import(/* webpackChunkName: 'reports' */ './ReportRouter')
-        }
+        importer={loadReportRouter}
       />
     </View>
   );
