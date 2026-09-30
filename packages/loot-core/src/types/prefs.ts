@@ -44,6 +44,8 @@ export type SyncedPrefs = Partial<
     // TODO: pull from src/components/modals/ImportTransactions.js
     | `parse-date-${string}-${'csv' | 'qif'}`
     | `import-reimport-deleted-${string}`
+    | `import-merge-${string}`
+    | `import-clear-${string}`
     | `csv-mappings-${string}`
     | `csv-delimiter-${string}`
     | `csv-skip-start-lines-${string}`
@@ -51,6 +53,8 @@ export type SyncedPrefs = Partial<
     | `csv-in-out-mode-${string}`
     | `csv-out-value-${string}`
     | `csv-has-header-${string}`
+    | `csv-encoding-${string}`
+    | `import-notes-${string}-${'ofx' | 'qfx' | 'qif' | 'xml'}`
     | `custom-sync-mappings-${string}`
     | `sync-import-pending-${string}`
     | `sync-reimport-deleted-${string}`
