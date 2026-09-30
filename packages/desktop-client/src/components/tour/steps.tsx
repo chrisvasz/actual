@@ -22,12 +22,17 @@ function findBudgetSummary(): HTMLElement | null {
   );
 }
 
-// Must resolve within joyride's 5s beforeTimeout
+// Must resolve within joyride's 5s beforeTimeout. Waits for the element to be
+// rendered, not just present: a budget page opened earlier stays mounted but
+// hidden while another page shows, and joyride skips hidden targets.
 function waitForElement(selector: string, timeoutMs = 4000): Promise<void> {
   return new Promise(resolve => {
     const start = Date.now();
     function check() {
-      if (document.querySelector(selector) || Date.now() - start > timeoutMs) {
+      if (
+        document.querySelector(selector)?.checkVisibility() ||
+        Date.now() - start > timeoutMs
+      ) {
         resolve();
         return;
       }

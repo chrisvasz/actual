@@ -86,6 +86,13 @@ function _isUnhappy(filter) {
     return filter.some(_isUnhappy);
   }
 
+  // The compiler skips empty entries in those lists (e.g. the account
+  // page's `$and` holds `undefined` for conditions without a custom
+  // filter), so they don't affect the path either
+  if (filter == null) {
+    return false;
+  }
+
   // These fields can be filtered - all split transactions will
   // still be returned regardless
   for (const key of Object.keys(filter)) {
