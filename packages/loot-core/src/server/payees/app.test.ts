@@ -49,8 +49,8 @@ describe('payees app', () => {
       await insertRule({
         stage: 'pre',
         conditionsOp: 'and',
-        // An empty payee is stored as null, which the condition type omits
         conditions: [
+          // Saved rules can hold a null payee even though the type forbids it
           { op: 'is', field: 'payee', value: null as unknown as string },
         ],
         actions: [{ op: 'set', field: 'category', value: null }],

@@ -9,6 +9,9 @@ test.describe('Onboarding', () => {
 
   test.beforeEach(async ({ electronPage }) => {
     configurationPage = new ConfigurationPage(electronPage);
+    // The CI display's cursor starts at the centre of the screen, which can
+    // land on the Start button and capture it in its hover colour.
+    await electronPage.mouse.move(0, 0);
   });
 
   test('checks the page visuals', async ({ electronPage }) => {
