@@ -6,6 +6,7 @@ import { loadBudgetState } from '#server/budget/state';
 import { createQueryCell, getQueryCellValue } from '#server/cells/query-cells';
 import * as db from '#server/db';
 import { loadMappings } from '#server/db/mappings';
+import * as prefs from '#server/prefs';
 import { loadRules, updateRule } from '#server/transactions/transaction-rules';
 import { q } from '#shared/query';
 import { getNextDate } from '#shared/schedules';
@@ -1130,6 +1131,70 @@ describe('schedule app', () => {
         MockDate.reset();
         await schedulesApp.stopServices();
       }
+    });
+  });
+
+  describe('auto-post service throttling', () => {
+    const dateCondition = {
+      op: 'is',
+      field: 'date',
+      value: '2020-12-01',
+    } as const;
+
+    beforeEach(async () => {
+      await prefs.loadPrefs();
+      await prefs.savePrefs({ lastScheduleRun: '2020-12-01' });
+    });
+
+    afterEach(() => {
+      prefs.unloadPrefs();
+    });
+
+    it('clears the marker when a schedule that posts transactions is created', async () => {
+      await createSchedule({
+        schedule: { posts_transaction: true },
+        conditions: [dateCondition],
+      });
+
+      expect(prefs.getPrefs().lastScheduleRun).toBeUndefined();
+    });
+
+    it('keeps the marker when the created schedule does not post transactions', async () => {
+      await createSchedule({
+        schedule: { posts_transaction: false },
+        conditions: [dateCondition],
+      });
+
+      expect(prefs.getPrefs().lastScheduleRun).toBe('2020-12-01');
+    });
+
+    it('clears the marker when a schedule starts posting transactions', async () => {
+      const id = await createSchedule({ conditions: [dateCondition] });
+
+      await updateSchedule({ schedule: { id, posts_transaction: true } });
+
+      expect(prefs.getPrefs().lastScheduleRun).toBeUndefined();
+    });
+
+    it('clears the marker when updating a schedule that already posts transactions', async () => {
+      const id = await createSchedule({
+        schedule: { posts_transaction: true },
+        conditions: [dateCondition],
+      });
+
+      await prefs.savePrefs({ lastScheduleRun: '2020-12-01' });
+
+      await updateSchedule({ schedule: { id, name: 'Renamed schedule' } });
+
+      expect(prefs.getPrefs().lastScheduleRun).toBeUndefined();
+    });
+
+    it('keeps the marker when updating a schedule that does not post transactions', async () => {
+      const id = await createSchedule({ conditions: [dateCondition] });
+
+      await updateSchedule({ schedule: { id, name: 'Renamed schedule' } });
+
+      expect(prefs.getPrefs().lastScheduleRun).toBe('2020-12-01');
     });
   });
 });
