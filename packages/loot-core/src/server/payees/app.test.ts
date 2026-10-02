@@ -49,7 +49,10 @@ describe('payees app', () => {
       await insertRule({
         stage: 'pre',
         conditionsOp: 'and',
-        conditions: [{ op: 'is', field: 'payee', value: null }],
+        conditions: [
+          // Saved rules can hold a null payee even though the type forbids it
+          { op: 'is', field: 'payee', value: null as unknown as string },
+        ],
         actions: [{ op: 'set', field: 'category', value: null }],
       });
       const deletedId = await insertRule({
