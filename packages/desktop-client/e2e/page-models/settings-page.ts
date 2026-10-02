@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
 export class SettingsPage {
@@ -38,6 +39,10 @@ export class SettingsPage {
     const buttonText = await this.switchBudgetTypeButton.textContent();
     if (buttonText?.includes(budgetType.toLowerCase())) {
       await this.switchBudgetTypeButton.click();
+      // The switch rebuilds the budget in the background, showing a spinner
+      // in the button until it's done. Wait for it, or the next page can
+      // re-render under the test as the rebuilt values arrive.
+      await expect(this.switchBudgetTypeButton.locator('svg')).toHaveCount(0);
     }
   }
 
