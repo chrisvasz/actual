@@ -405,6 +405,74 @@ describe('Transaction rules', () => {
     });
   });
 
+  test('"payee is nothing" matches a transaction without a payee field', () => {
+    loadRules();
+    insertRule({
+      stage: null,
+      conditionsOp: 'and',
+      conditions: [{ op: 'is', field: 'payee', value: null }],
+      actions: [{ op: 'set', field: 'notes', value: 'no payee' }],
+    });
+
+    // Bank sync leaves `payee` out entirely when the import has no payee
+    expect(
+      runRules({
+        imported_payee: 'kroger',
+        date: '2020-08-11',
+        amount: 50,
+      }),
+    ).toEqual({
+      imported_payee: 'kroger',
+      date: '2020-08-11',
+      amount: 50,
+      notes: 'no payee',
+    });
+
+    // A payee set by a rule action is kept
+    insertRule({
+      stage: null,
+      conditionsOp: 'and',
+      conditions: [{ op: 'is', field: 'payee', value: null }],
+      actions: [{ op: 'set', field: 'payee', value: 'kroger' }],
+    });
+    expect(
+      runRules({
+        imported_payee: 'kroger',
+        date: '2020-08-11',
+        amount: 50,
+      }),
+    ).toEqual({
+      imported_payee: 'kroger',
+      date: '2020-08-11',
+      amount: 50,
+      payee: 'kroger',
+      notes: 'no payee',
+    });
+  });
+
+  test('"category is nothing" matches a transaction without a category field', () => {
+    loadRules();
+    insertRule({
+      stage: null,
+      conditionsOp: 'and',
+      conditions: [{ op: 'is', field: 'category', value: null }],
+      actions: [{ op: 'set', field: 'notes', value: 'no category' }],
+    });
+
+    expect(
+      runRules({
+        payee: 'kroger',
+        date: '2020-08-11',
+        amount: 50,
+      }),
+    ).toEqual({
+      payee: 'kroger',
+      date: '2020-08-11',
+      amount: 50,
+      notes: 'no category',
+    });
+  });
+
   test('category_group condition matches categories in that group (live)', async () => {
     loadRules();
     const billsGroupId = db.insertCategoryGroup({ name: 'Bills' });
