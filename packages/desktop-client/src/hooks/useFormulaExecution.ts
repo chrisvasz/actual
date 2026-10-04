@@ -146,9 +146,10 @@ export function useFormulaExecution(
   const [language] = useGlobalPref('language');
 
   // Run through the query cache, keyed on the inputs' contents, so a card
-  // visited again draws its last result straight away, callers can pass fresh
-  // objects every render, and sync events refresh it like the other report
-  // data. The dates are keyed because query time frames slide with them.
+  // visited again draws its last result straight away (and recomputes it in
+  // the background, like the other report data), callers can pass fresh
+  // objects every render, and sync events refresh it. The dates are keyed
+  // because query time frames slide with them.
   const { data, error, isPending, isPlaceholderData } = useQuery({
     queryKey: [
       ...reportDataQueries.all(),
@@ -174,9 +175,9 @@ export function useFormulaExecution(
         locale,
         language,
       }),
-    staleTime: Infinity,
     gcTime: 30 * 60 * 1000,
     retry: false,
+    refetchOnWindowFocus: false,
     // While a changed formula runs, keep showing the last result, as the
     // editor did before this was cached.
     placeholderData: keepPreviousData,

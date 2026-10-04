@@ -355,7 +355,7 @@ describe('formula execution stability', () => {
     expect(executionCount).toBe(1);
   });
 
-  it('reuses the cached result when mounted again', async () => {
+  it('draws the cached result when mounted again, then recomputes it', async () => {
     const first = renderHook(() => useFormulaExecution('=SUM(1, 2, 3)', {}), {
       wrapper: TestProviders,
     });
@@ -366,10 +366,12 @@ describe('formula execution stability', () => {
       wrapper: TestProviders,
     });
 
-    // Drawn from the cache on the first render, without running again.
+    // Drawn from the cache on the first render, without a loading state...
     expect(second.result.current.result).toBe(6);
     expect(second.result.current.isLoading).toBe(false);
-    expect(executionCount).toBe(1);
+    // ...and recomputed in the background, since the data may have changed.
+    await waitFor(() => expect(executionCount).toBe(2));
+    expect(second.result.current.result).toBe(6);
   });
 
   it('re-executes when the queries contents actually change', async () => {
