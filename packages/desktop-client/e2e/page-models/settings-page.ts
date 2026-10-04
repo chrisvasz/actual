@@ -39,7 +39,7 @@ export class SettingsPage {
     const buttonText = await this.switchBudgetTypeButton.textContent();
     if (buttonText?.includes(budgetType.toLowerCase())) {
       await this.switchBudgetTypeButton.click();
-      // The switch rebuilds the budget cache; wait for it to finish so later
+      // The switch recalculates the budget; wait for it to finish so later
       // steps don't edit budget cells that are about to be rebuilt. The label
       // flips and the loading spinner appears in the same render, so wait for
       // the new label and then for the spinner to go away.

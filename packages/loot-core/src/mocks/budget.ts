@@ -934,7 +934,7 @@ export async function createTestBudget(handlers: Handlers) {
     });
   }
 
-  // Bust the cache and reload the spreadsheet
+  // Reload the spreadsheet so it picks up everything written above
   setSyncingMode('disabled');
   await sheet.reloadSpreadsheet(db);
   await budget.createAllBudgets();

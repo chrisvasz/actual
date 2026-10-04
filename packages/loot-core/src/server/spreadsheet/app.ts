@@ -64,8 +64,7 @@ async function createQuery({
   name: string;
   query: QueryState;
 }) {
-  // Query cells aren't cached, so a query bound for the first time since the
-  // sheet loaded always runs. Re-binding an unchanged query is a no-op because
+  // A query bound for the first time since the sheet loaded always runs. Re-binding an unchanged query is a no-op because
   // database changes already keep the cell current.
   sheet.get().createQuery(sheetName, name, query);
   return 'ok';

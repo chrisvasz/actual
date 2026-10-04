@@ -40,7 +40,7 @@ export function getBudgetRange(start: string, end: string) {
 
 // Computes the spend total for every category in every month within the
 // given day range using a single grouped query. This is used to seed the
-// `sum-amount` cells on a cold build so we avoid running one
+// `sum-amount` cells when months are created so we avoid running one
 // `SELECT SUM(amount)` query per category per month (which scales as
 // categories × months and dominates load time for budgets with many years
 // of data). The filters must match the per-cell query in `createCategory`
