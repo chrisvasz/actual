@@ -163,6 +163,11 @@ async function execTransactionsGrouped(
     rows = await db.all<db.DbViewTransactionInternal>(rowSql, params);
   } else {
     // TODO: phew, what a doozy. write docs why it works this way
+    //
+    // The join back to the view is an inner join. A LEFT JOIN stops
+    // SQLite from flattening the view, so it materializes every
+    // transaction just to look up a page of groups. A group whose own
+    // row isn't in the view has no parent to show below anyway.
     const rowSql = `
       SELECT group_id, matched FROM (
         SELECT
@@ -177,7 +182,7 @@ async function execTransactionsGrouped(
           )
         GROUP BY group_id
       )
-      LEFT JOIN ${sqlPieces.from} ON ${sqlPieces.from}.id = group_id
+      JOIN ${sqlPieces.from} ON ${sqlPieces.from}.id = group_id
       ${sqlPieces.joins}
       ${sqlPieces.orderBy}
       ${sqlPieces.limit != null ? `LIMIT ${sqlPieces.limit}` : ''}
