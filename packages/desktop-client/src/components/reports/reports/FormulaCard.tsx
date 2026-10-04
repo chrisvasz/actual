@@ -60,7 +60,6 @@ export function FormulaCard({
   const { result, isLoading, error } = useFormulaExecution(
     formula,
     meta?.queries ?? EMPTY_QUERIES,
-    meta?.queriesVersion,
     undefined,
     simpleAccounts,
   );
@@ -81,7 +80,6 @@ export function FormulaCard({
   const { result: colorResult, error: colorError } = useFormulaExecution(
     colorFormula,
     meta?.queries ?? EMPTY_QUERIES,
-    meta?.queriesVersion,
     colorVariables,
     simpleAccounts,
   );

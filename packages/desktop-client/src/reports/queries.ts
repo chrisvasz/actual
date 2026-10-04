@@ -1,4 +1,5 @@
 import { send } from '@actual-app/core/platform/client/connection';
+import * as monthUtils from '@actual-app/core/shared/months';
 import { q } from '@actual-app/core/shared/query';
 import type {
   CustomReportEntity,
@@ -64,6 +65,15 @@ export const dashboardQueries = {
     }),
 };
 
+// Shared by the cached report results: long enough that returning to the
+// dashboard draws from the cache, short enough that results for keys no card
+// uses any more are dropped, and recomputed on mount but not on every focus.
+const cachedResultOptions = {
+  gcTime: 30 * 60 * 1000,
+  retry: false,
+  refetchOnWindowFocus: false,
+} as const;
+
 // Report data is kept so the dashboard can draw each card from its last result
 // when it's visited again, but it's never trusted as current: every mount
 // recomputes it in the background and swaps in the fresh result. Sync events
@@ -110,12 +120,29 @@ export const reportDataQueries = {
     queryOptions<T>({
       queryKey: [...reportDataQueries.all(), name, deps, environment],
       queryFn: () => runReportLoader(createLoader(), spreadsheet),
-      // Long enough that returning to the dashboard draws from the cache, short
-      // enough that results for keys no card uses any more are dropped.
-      gcTime: 30 * 60 * 1000,
-      retry: false,
-      // Recomputing on mount is enough; don't redo every card on each focus.
-      refetchOnWindowFocus: false,
+      ...cachedResultOptions,
+    }),
+  /**
+   * The result of a formula card. `inputs` are everything `execute` reads, and
+   * the cache key; the dates are keyed too, since query time frames slide
+   * with them.
+   */
+  formula: <TInputs extends object>(
+    inputs: TInputs,
+    execute: (inputs: TInputs) => Promise<number | string>,
+  ) =>
+    queryOptions<number | string>({
+      queryKey: [
+        ...reportDataQueries.all(),
+        'formula',
+        inputs,
+        {
+          currentMonth: monthUtils.currentMonth(),
+          today: monthUtils.currentDay(),
+        },
+      ],
+      queryFn: () => execute(inputs),
+      ...cachedResultOptions,
     }),
 };
 
