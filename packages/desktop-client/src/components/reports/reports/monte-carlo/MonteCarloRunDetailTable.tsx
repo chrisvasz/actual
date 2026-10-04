@@ -582,6 +582,19 @@ export function MonteCarloRunDetailTable({
                   <Text
                     style={{
                       ...AMOUNT_CELL_STYLE,
+                      // A year that couldn't be fully paid for stands out
+                      ...(row.spent < row.plannedSpending && {
+                        color: theme.reportsNumberNegative,
+                      }),
+                    }}
+                  >
+                    <FinancialText as="span">
+                      {format(row.spent, 'financial')}
+                    </FinancialText>
+                  </Text>
+                  <Text
+                    style={{
+                      ...AMOUNT_CELL_STYLE,
                       color:
                         row.growth >= 0
                           ? theme.reportsNumberPositive
