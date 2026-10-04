@@ -123,14 +123,33 @@ function selectTransactionRows(
   return query.select('*');
 }
 
+// The query filters for the given filter conditions, to be combined with
+// the screen's and/or operator. Shared by the screen's filters and the
+// preload of a screen that opens filtered, which have to fetch the same rows.
+async function makeTransactionFilters(conditions: ConditionEntity[]) {
+  const customQueryFilters = conditions
+    .filter(
+      (cond): cond is Partial<RuleConditionEntity> =>
+        !isTransactionFilterEntity(cond),
+    )
+    .map(f => f.queryFilter);
+  const { filters: queryFilters } = await send('make-filters-from-conditions', {
+    conditions: conditions.filter(
+      cond => isTransactionFilterEntity(cond) || !cond.customName,
+    ),
+  });
+  return [...queryFilters, ...customQueryFilters];
+}
+
 /**
- * The first page of transactions and their running balances, loaded before
- * the account screen mounts so it can render complete on its first paint.
- * `null` when the screen opens filtered and loads the usual way instead.
+ * The first page of transactions and their running balances (or, when the
+ * screen opens filtered, the filtered total), loaded before the account
+ * screen mounts so it can render complete on its first paint.
  */
 type AccountPreload = {
   transactions: TransactionEntity[];
   balances: Record<TransactionEntity['id'], IntegerAmount> | null;
+  filteredAmount: number | null;
 } | null;
 
 function isTransactionFilterEntity(
@@ -384,6 +403,10 @@ class AccountInternal extends PureComponent<
       workingHard: false,
       reconcileAmount: null,
       transactions: props.preload?.transactions ?? [],
+      // Set up front so scheduled transactions aren't prepended to a
+      // preloaded filtered list until the paged query catches up.
+      transactionsFiltered:
+        props.preload != null && (props.filterConditions?.length ?? 0) > 0,
       showBalances: props.showBalances,
       balances: props.preload?.balances ?? null,
       showCleared: props.showCleared,
@@ -391,7 +414,7 @@ class AccountInternal extends PureComponent<
       nameError: '',
       isAdding: false,
       sort: null,
-      filteredAmount: null,
+      filteredAmount: props.preload?.filteredAmount ?? null,
     };
   }
 
@@ -1651,23 +1674,13 @@ class AccountInternal extends PureComponent<
 
   applyFilters = async (conditions: ConditionEntity[]) => {
     if (conditions.length > 0) {
-      const filteredCustomQueryFilters: Partial<RuleConditionEntity>[] =
-        conditions.filter(cond => !isTransactionFilterEntity(cond));
-      const customQueryFilters = filteredCustomQueryFilters.map(
-        f => f.queryFilter,
-      );
-      const { filters: queryFilters } = await send(
-        'make-filters-from-conditions',
-        {
-          conditions: conditions.filter(
-            cond => isTransactionFilterEntity(cond) || !cond.customName,
-          ),
-        },
-      );
+      const filters = await makeTransactionFilters(conditions);
+      // Read the operator only now: callers set it right before calling
+      // this, and the update has only committed once the await is done.
       const conditionsOpKey =
         this.state.filterConditionsOp === 'or' ? '$or' : '$and';
       this.currentQuery = this.rootQuery.filter({
-        [conditionsOpKey]: [...queryFilters, ...customQueryFilters],
+        [conditionsOpKey]: filters,
       });
 
       this.setState(
@@ -2106,7 +2119,7 @@ async function loadAccountPreload({
   spreadsheet,
   accounts,
   accountId,
-  isFiltered,
+  filterConditions,
   showBalances,
   showReconciled,
   showExtraBalances,
@@ -2114,36 +2127,45 @@ async function loadAccountPreload({
   spreadsheet: ReturnType<typeof useSpreadsheet>;
   accounts: AccountEntity[];
   accountId: AccountInternalProps['accountId'];
-  isFiltered: boolean;
+  filterConditions: ConditionEntity[];
   showBalances: boolean | undefined;
   showReconciled: boolean;
   showExtraBalances: boolean;
 }): Promise<AccountPreload> {
-  await prewarmHeaderBalances(spreadsheet, accountId, showExtraBalances);
+  const isFiltered = filterConditions.length > 0;
+  const [, filters] = await Promise.all([
+    prewarmHeaderBalances(spreadsheet, accountId, showExtraBalances),
+    isFiltered ? makeTransactionFilters(filterConditions) : null,
+  ]);
+  // A screen always opens with its conditions combined by `and`.
+  const rootQuery = filters
+    ? queries.transactions(accountId).filter({ $and: filters })
+    : queries.transactions(accountId);
 
-  // A filtered screen builds its query through `applyFilters`; let it.
-  if (isFiltered) {
-    return null;
-  }
-
-  // The query `AccountInternal` issues on mount. With no search, filter or
-  // sort applied yet, `canCalculateBalance` comes down to the account existing.
-  const canCalculateBalance = accounts.some(
-    account => account.id === accountId,
-  );
-  const query = selectTransactionRows(queries.transactions(accountId), {
+  // The query `AccountInternal` issues on mount. With no search or sort
+  // applied yet, `canCalculateBalance` comes down to the account existing
+  // and the screen opening unfiltered.
+  const canCalculateBalance =
+    !isFiltered && accounts.some(account => account.id === accountId);
+  const query = selectTransactionRows(rootQuery, {
     showReconciled,
     showBalances,
     canCalculateBalance,
   });
 
-  // Mirrors `getBalanceTotal`, so the balance column draws filled in too.
-  const [{ data }, total] = await Promise.all([
+  // Mirror `getBalanceTotal` and `getFilteredAmount`, so the balance column
+  // and the filtered total draw filled in too.
+  const [{ data }, total, filteredAmount] = await Promise.all([
     aqlQuery(query.limit(TRANSACTIONS_PAGE_COUNT)),
     showBalances && canCalculateBalance
       ? aqlQuery(
           query.options({ splits: 'none' }).calculate({ $sum: '$amount' }),
         ).then(({ data }: { data: number | null }) => data ?? 0)
+      : null,
+    isFiltered
+      ? aqlQuery(query.calculate({ $sum: '$amount' })).then(
+          ({ data }: { data: number }) => data,
+        )
       : null,
   ]);
   const transactions = ungroupTransactions(data);
@@ -2154,6 +2176,7 @@ async function loadAccountPreload({
       total == null
         ? null
         : calculateRunningBalancesFromTotal(transactions, total),
+    filteredAmount,
   };
 }
 
@@ -2266,14 +2289,15 @@ export function Account() {
   const showReconciled = String(hideReconciled) !== 'true';
   // Only the screen's first render reads this, so it never refetches while
   // mounted; it's dropped once the screen unmounts, so coming back loads fresh.
+  // Keyed by the navigation, since a path can open with different filters.
   const { data: preload } = useSuspenseQuery({
-    queryKey: ['account-screen-preload', location.pathname],
+    queryKey: ['account-screen-preload', location.key],
     queryFn: () =>
       loadAccountPreload({
         spreadsheet,
         accounts,
         accountId: params.id,
-        isFiltered: filterConditions.length > 0,
+        filterConditions,
         showBalances,
         showReconciled,
         showExtraBalances: String(showExtraBalances) === 'true',
@@ -2286,7 +2310,13 @@ export function Account() {
     <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
       <SchedulesProvider query={schedulesQuery}>
         <SplitsExpandedProvider
-          initialMode={expandSplits ? 'expand' : 'collapse'}
+          // A filtered screen collapses splits on its first load; start it
+          // that way so preloaded rows don't draw expanded first.
+          initialMode={
+            expandSplits && filterConditions.length === 0
+              ? 'expand'
+              : 'collapse'
+          }
         >
           <AccountHack
             newTransactions={newTransactions}
