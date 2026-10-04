@@ -6,12 +6,14 @@ import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import * as undo from '@actual-app/core/platform/client/undo';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { getLatestAppVersion, sync } from '#app/appSlice';
 import { useMetaThemeColor } from '#hooks/useMetaThemeColor';
 import { useNewsNotification } from '#hooks/useNewsNotification';
 import { ScrollProvider } from '#hooks/useScrollListener';
 import { addNotification } from '#notifications/notificationsSlice';
+import { payeeQueries } from '#payees/queries';
 import { useDispatch } from '#redux';
 
 import { AppShellEffects } from './AppShellEffects';
@@ -57,8 +59,14 @@ export function FinancesApp() {
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   const init = useEffectEvent(() => {
+    // The account, schedules and rules screens suspend on the payee list,
+    // which the budget page never loads, so fetch it up front rather than on
+    // the first navigation to one of them.
+    void queryClient.prefetchQuery(payeeQueries.list());
+
     // Wait a little bit to make sure the sync button will get the
     // sync start event. This can be improved later.
     setTimeout(async () => {
