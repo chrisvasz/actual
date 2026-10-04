@@ -346,7 +346,7 @@ type AccountInternalState = {
   filterConditionsOp: 'and' | 'or';
   loading: boolean;
   workingHard: boolean;
-  reconcileAmount: null | number;
+  isReconciling: boolean;
   transactions: TransactionEntity[];
   transactionsFiltered?: boolean;
   showBalances?: boolean | undefined;
@@ -401,7 +401,7 @@ class AccountInternal extends PureComponent<
       // hand; the paged query below still runs to take over live updates.
       loading: props.preload == null,
       workingHard: false,
-      reconcileAmount: null,
+      isReconciling: false,
       transactions: props.preload?.transactions ?? [],
       // Set up front so scheduled transactions aren't prepended to a
       // preloaded filtered list until the paged query catches up.
@@ -1028,10 +1028,9 @@ class AccountInternal extends PureComponent<
         if (column.id === 'cleared') {
           // During reconciliation the cleared column is temporarily forced
           // visible, so show the user's underlying preference instead
-          const showCleared =
-            this.state.reconcileAmount != null
-              ? this.state.prevShowCleared
-              : this.state.showCleared;
+          const showCleared = this.state.isReconciling
+            ? this.state.prevShowCleared
+            : this.state.showCleared;
           return { ...column, hidden: !showCleared };
         }
         // Group visibility may come from the legacy pref fallback rather
@@ -1172,15 +1171,15 @@ class AccountInternal extends PureComponent<
     await this.refetchTransactions();
   };
 
-  onReconcile = async (amount: number | null) => {
+  onReconcile = () => {
     this.setState(({ showCleared }) => ({
-      reconcileAmount: amount,
+      isReconciling: true,
       showCleared: true,
       prevShowCleared: showCleared,
     }));
   };
 
-  onDoneReconciling = async () => {
+  onDoneReconciling = async (reconcileAmount: number | null) => {
     const { accountId } = this.props;
     const account = this.props.accounts.find(
       account => account.id === accountId,
@@ -1188,8 +1187,6 @@ class AccountInternal extends PureComponent<
     if (!account) {
       throw new Error(`Account with ID ${accountId} not found.`);
     }
-
-    const { reconcileAmount } = this.state;
 
     await reconciliation.finishReconciliation(account.id, reconcileAmount, () =>
       this.lockTransactions(),
@@ -1199,7 +1196,14 @@ class AccountInternal extends PureComponent<
     this.props.onUpdateAccount({ ...account, last_reconciled: lastReconciled });
 
     this.setState(state => ({
-      reconcileAmount: null,
+      isReconciling: false,
+      showCleared: state.prevShowCleared,
+    }));
+  };
+
+  onCancelReconciling = () => {
+    this.setState(state => ({
+      isReconciling: false,
       showCleared: state.prevShowCleared,
     }));
   };
@@ -1865,7 +1869,7 @@ class AccountInternal extends PureComponent<
       loading,
       workingHard,
       filterId,
-      reconcileAmount,
+      isReconciling,
       transactionsFiltered,
       showBalances,
       balances,
@@ -1950,7 +1954,7 @@ class AccountInternal extends PureComponent<
                 filteredAmount={filteredAmount}
                 isFiltered={transactionsFiltered ?? false}
                 isSorted={this.state.sort !== null}
-                reconcileAmount={reconcileAmount}
+                isReconciling={isReconciling}
                 search={this.state.search}
                 // @ts-expect-error fix me
                 filterConditions={this.state.filterConditions}
@@ -1964,6 +1968,7 @@ class AccountInternal extends PureComponent<
                 saveNameError={this.state.nameError}
                 onReconcile={this.onReconcile}
                 onDoneReconciling={this.onDoneReconciling}
+                onCancelReconciling={this.onCancelReconciling}
                 onCreateReconciliationTransaction={
                   this.onCreateReconciliationTransaction
                 }

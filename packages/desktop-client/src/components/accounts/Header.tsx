@@ -54,7 +54,7 @@ import type { TableRef } from './Account';
 import { AccountSyncCheck } from './AccountSyncCheck';
 import { Balances } from './Balance';
 import { BalanceHistoryGraph } from './BalanceHistoryGraph';
-import { ReconcileMenu, ReconcilingMessage } from './Reconcile';
+import { PrewarmReconcileBalance, ReconcilingMessage } from './Reconcile';
 
 type AccountHeaderProps = {
   tableRef: TableRef;
@@ -72,7 +72,7 @@ type AccountHeaderProps = {
   showReconciled: boolean;
   showEmptyMessage: boolean;
   balanceQuery: ComponentProps<typeof ReconcilingMessage>['balanceQuery'];
-  reconcileAmount?: number | null;
+  isReconciling: boolean;
   isFiltered: boolean;
   filteredAmount?: number | null;
   isSorted: boolean;
@@ -85,6 +85,7 @@ type AccountHeaderProps = {
     typeof SelectedTransactionsButton
   >['onShow'];
   onDoneReconciling: ComponentProps<typeof ReconcilingMessage>['onDone'];
+  onCancelReconciling: ComponentProps<typeof ReconcilingMessage>['onCancel'];
   onCreateReconciliationTransaction: ComponentProps<
     typeof ReconcilingMessage
   >['onCreateTransaction'];
@@ -96,7 +97,7 @@ type AccountHeaderProps = {
   onSync: () => void;
   onImport: () => void;
   onMenuSelect: AccountMenuProps['onMenuSelect'];
-  onReconcile: ComponentProps<typeof ReconcileMenu>['onReconcile'];
+  onReconcile: () => void;
   onBatchEdit: ComponentProps<typeof SelectedTransactionsButton>['onEdit'];
   onRunRules: ComponentProps<typeof SelectedTransactionsButton>['onRunRules'];
   onBatchDelete: ComponentProps<typeof SelectedTransactionsButton>['onDelete'];
@@ -144,7 +145,7 @@ export function AccountHeader({
   showReconciled,
   showEmptyMessage,
   balanceQuery,
-  reconcileAmount,
+  isReconciling,
   isFiltered,
   filteredAmount,
   isSorted,
@@ -155,6 +156,7 @@ export function AccountHeader({
   onAddTransaction,
   onShowTransactions,
   onDoneReconciling,
+  onCancelReconciling,
   onCreateReconciliationTransaction,
   onToggleExtraBalances,
   onSaveName,
@@ -184,9 +186,7 @@ export function AccountHeader({
 }: AccountHeaderProps) {
   const { t } = useTranslation();
 
-  const [reconcileOpen, setReconcileOpen] = useState(false);
   const searchInput = useRef<HTMLInputElement>(null);
-  const reconcileRef = useRef(null);
   const splitsExpanded = useSplitsExpanded();
   const syncServerStatus = useSyncServerStatus();
   const isUsingServer = syncServerStatus !== 'no-server';
@@ -381,13 +381,7 @@ export function AccountHeader({
                 gap: 6,
               }}
             >
-              <Button
-                ref={reconcileRef}
-                variant="bare"
-                onPress={() => {
-                  setReconcileOpen(true);
-                }}
-              >
+              <Button variant="bare" onPress={onReconcile}>
                 <SvgLockClosed
                   width={13}
                   height={13}
@@ -395,19 +389,6 @@ export function AccountHeader({
                 />{' '}
                 <Trans>Reconcile</Trans>
               </Button>
-              <Popover
-                placement="bottom"
-                triggerRef={reconcileRef}
-                style={{ width: 275 }}
-                isOpen={reconcileOpen}
-                onOpenChange={() => setReconcileOpen(false)}
-              >
-                <ReconcileMenu
-                  account={account}
-                  onClose={() => setReconcileOpen(false)}
-                  onReconcile={onReconcile}
-                />
-              </Popover>
               {account.last_reconciled && (
                 <Text
                   style={{
@@ -559,11 +540,12 @@ export function AccountHeader({
           />
         )}
       </View>
-      {reconcileAmount != null && (
+      {account && <PrewarmReconcileBalance balanceQuery={balanceQuery} />}
+      {account && isReconciling && (
         <ReconcilingMessage
-          targetBalance={reconcileAmount}
           balanceQuery={balanceQuery}
           onDone={onDoneReconciling}
+          onCancel={onCancelReconciling}
           onCreateTransaction={onCreateReconciliationTransaction}
         />
       )}
