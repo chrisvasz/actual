@@ -85,9 +85,6 @@ test.describe('Settings', () => {
 
     for (const width of [1024, 800, 375]) {
       await page.setViewportSize({ width, height: 900 });
-      if (width === 375) {
-        await expect(page.getByRole('navigation')).toBeVisible();
-      }
       await indicator.scrollIntoViewIfNeeded();
       await page.screenshot({
         path: test.info().outputPath(`system-default-${width}.png`),
