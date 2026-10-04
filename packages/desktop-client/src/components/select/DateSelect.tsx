@@ -45,7 +45,7 @@ import {
   getShortYearRegex,
 } from '@actual-app/core/shared/months';
 import { css } from '@emotion/css';
-import { CalendarDate } from '@internationalized/date';
+import { CalendarDate, isSameMonth } from '@internationalized/date';
 import { addDays, format, isValid, parse, parseISO, subDays } from 'date-fns';
 
 import { InputField } from '#components/common/FormFields';
@@ -130,7 +130,8 @@ const pickerStyles: CSSProperties = {
       backgroundColor: theme.calendarSelectedBackground,
       borderRadius: 4,
     },
-    '&[data-disabled]': {
+    // react-aria disables outside-month days; we make them clickable ourselves
+    '&[data-disabled]:not([data-outside-month])': {
       opacity: 0.4,
       cursor: 'default',
     },
@@ -281,7 +282,18 @@ const DatePicker = forwardRef<DatePickerForwardedRef, DatePickerProps>(
                 )}
               </CalendarGridHeader>
               <CalendarGridBody>
-                {date => <CalendarCell date={date} />}
+                {date => (
+                  <CalendarCell
+                    date={date}
+                    // react-aria always disables days from the adjacent
+                    // months, so select them by hand.
+                    onClick={() => {
+                      if (!isSameMonth(date, focusedDate)) {
+                        onSelect(fromCalendarDate(date));
+                      }
+                    }}
+                  />
+                )}
               </CalendarGridBody>
             </CalendarGrid>
           </Calendar>
