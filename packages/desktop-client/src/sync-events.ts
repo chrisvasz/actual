@@ -12,6 +12,7 @@ import {
   uploadBudget,
 } from './budgetfiles/budgetfilesSlice';
 import { pushModal } from './modals/modalsSlice';
+import { noteQueries } from './notes/queries';
 import { addNotification } from './notifications/notificationsSlice';
 import type { Notification } from './notifications/notificationsSlice';
 import { payeeQueries } from './payees';
@@ -150,6 +151,15 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
       if (tables.includes('account_groups')) {
         void queryClient.invalidateQueries({
           queryKey: accountGroupQueries.lists(),
+        });
+      }
+
+      if (tables.includes('notes')) {
+        // Refetch even with no subscribers, so the next screen that suspends
+        // on notes doesn't draw once with a stale note.
+        void queryClient.invalidateQueries({
+          queryKey: noteQueries.lists(),
+          refetchType: 'all',
         });
       }
 

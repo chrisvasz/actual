@@ -111,6 +111,7 @@
     "#style/theme": "./src/style/theme.tsx",
     "#style/*": "./src/style/*.ts",
     "#notes/linkParser": "./src/notes/linkParser.ts",
+    "#notes/queries": "./src/notes/queries.ts",
     "#notes/*": "./src/notes/*.tsx",
     "#accounts/*": "./src/accounts/*.ts",
     "#app/*": "./src/app/*.ts",

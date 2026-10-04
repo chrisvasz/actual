@@ -86,6 +86,7 @@ import {
   replaceModal,
 } from '#modals/modalsSlice';
 import type { ConfirmTransactionEditReason } from '#modals/modalsSlice';
+import { noteQueries } from '#notes/queries';
 import { addNotification } from '#notifications/notificationsSlice';
 import { payeeQueries, useCreatePayeeMutation } from '#payees';
 import * as queries from '#queries';
@@ -2247,6 +2248,7 @@ export function Account() {
   // instead of drawing this one empty and filling it in. Without these lists
   // rows would draw with blank payees and categories, and with no accounts
   // the screen would mistake the account for a deleted one and redirect.
+  // Notes are needed so the header can link the account name on first draw.
   const [
     { data: accounts },
     { data: payees },
@@ -2258,6 +2260,9 @@ export function Account() {
       accountQueries.list(),
       payeeQueries.list(),
       categoryQueries.list(),
+      // Only suspend on notes; the header subscribes to the one note it
+      // needs, so this screen shouldn't re-render whenever any note changes.
+      { ...noteQueries.list(), notifyOnChangeProps: [] },
     ],
   });
   const newTransactions = useSelector(
