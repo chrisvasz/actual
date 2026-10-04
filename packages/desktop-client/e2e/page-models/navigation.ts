@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
 import { AccountPage } from './account-page';
@@ -76,7 +77,14 @@ export class Navigation {
       .getByRole('link', { name: new RegExp(`^${accountName}`) })
       .click();
 
-    return new AccountPage(this.page);
+    // Opening an account runs in a transition that keeps the previous screen
+    // up until the new one is ready. Wait for the new header, or the next
+    // step can act on the old screen just before it unmounts.
+    const accountPage = new AccountPage(this.page);
+    await expect(accountPage.accountName).toHaveText(
+      new RegExp(accountName, 'i'),
+    );
+    return accountPage;
   }
 
   async goToReportsPage() {
