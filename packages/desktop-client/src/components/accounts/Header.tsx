@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { Dialog, DialogTrigger } from 'react-aria-components';
 import { Trans, useTranslation } from 'react-i18next';
@@ -187,6 +187,21 @@ export function AccountHeader({
   const { t } = useTranslation();
 
   const searchInput = useRef<HTMLInputElement>(null);
+  const reconcileButton = useRef<HTMLButtonElement>(null);
+  const wasReconciling = useRef(isReconciling);
+  // Closing the reconcile panel unmounts whatever had focus inside it; hand
+  // focus back to the button that opened it instead of dropping it on the page
+  useEffect(() => {
+    if (
+      wasReconciling.current &&
+      !isReconciling &&
+      (document.activeElement == null ||
+        document.activeElement === document.body)
+    ) {
+      reconcileButton.current?.focus();
+    }
+    wasReconciling.current = isReconciling;
+  }, [isReconciling]);
   const splitsExpanded = useSplitsExpanded();
   const syncServerStatus = useSyncServerStatus();
   const isUsingServer = syncServerStatus !== 'no-server';
@@ -381,7 +396,11 @@ export function AccountHeader({
                 gap: 6,
               }}
             >
-              <Button variant="bare" onPress={onReconcile}>
+              <Button
+                ref={reconcileButton}
+                variant="bare"
+                onPress={onReconcile}
+              >
                 <SvgLockClosed
                   width={13}
                   height={13}

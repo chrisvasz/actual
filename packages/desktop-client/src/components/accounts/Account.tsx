@@ -1172,14 +1172,20 @@ class AccountInternal extends PureComponent<
   };
 
   onReconcile = () => {
-    this.setState(({ showCleared }) => ({
-      isReconciling: true,
-      showCleared: true,
-      prevShowCleared: showCleared,
-    }));
+    this.setState(({ isReconciling, showCleared }) =>
+      // A second press must not overwrite the saved column visibility with
+      // the one reconciling forced on
+      isReconciling
+        ? null
+        : {
+            isReconciling: true,
+            showCleared: true,
+            prevShowCleared: showCleared,
+          },
+    );
   };
 
-  onDoneReconciling = async (reconcileAmount: number | null) => {
+  onDoneReconciling = async (reconcileAmount: number) => {
     const { accountId } = this.props;
     const account = this.props.accounts.find(
       account => account.id === accountId,
@@ -1188,9 +1194,16 @@ class AccountInternal extends PureComponent<
       throw new Error(`Account with ID ${accountId} not found.`);
     }
 
-    await reconciliation.finishReconciliation(account.id, reconcileAmount, () =>
-      this.lockTransactions(),
+    const isLocked = await reconciliation.finishReconciliation(
+      account.id,
+      reconcileAmount,
+      () => this.lockTransactions(),
     );
+    // The balance moved since the panel showed a match (e.g. a sync landed);
+    // stay open so the panel's live difference shows what's off
+    if (!isLocked) {
+      return;
+    }
 
     const lastReconciled = new Date().getTime().toString();
     this.props.onUpdateAccount({ ...account, last_reconciled: lastReconciled });
@@ -2103,12 +2116,16 @@ async function prewarmHeaderBalances(
 ) {
   const name = `balance-query-${accountId}`;
   const query = queries.transactions(accountId).calculate({ $sum: '$amount' });
-  const cells = [{ name, query }];
+  // The cleared balance is always needed: the reconcile panel opens on it
+  const cells = [
+    { name, query },
+    { name: `${name}-cleared`, query: query.filter({ cleared: true }) },
+  ];
   if (showExtraBalances) {
-    cells.push(
-      { name: `${name}-cleared`, query: query.filter({ cleared: true }) },
-      { name: `${name}-uncleared`, query: query.filter({ cleared: false }) },
-    );
+    cells.push({
+      name: `${name}-uncleared`,
+      query: query.filter({ cleared: false }),
+    });
   }
 
   await Promise.all(
