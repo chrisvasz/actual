@@ -64,10 +64,10 @@ export const dashboardQueries = {
     }),
 };
 
-// Report data is computed from the budget's data, so it is cached until a sync
-// event says that data changed (see `sync-events.ts`), not refetched on a
-// timer. That lets the dashboard draw each card from the cache when it's
-// visited again.
+// Report data is kept so the dashboard can draw each card from its last result
+// when it's visited again, but it's never trusted as current: every mount
+// recomputes it in the background and swaps in the fresh result. Sync events
+// also refresh cards that are on screen (see `sync-events.ts`).
 export const reportDataQueries = {
   // Its own root, so invalidating `reportQueries` (saved report settings)
   // doesn't recompute every card.
@@ -79,7 +79,7 @@ export const reportDataQueries = {
         const transaction = await send('get-earliest-transaction');
         return transaction?.date ?? null;
       },
-      staleTime: Infinity,
+      refetchOnWindowFocus: false,
     }),
   latestTransactionDate: () =>
     queryOptions<string | null>({
@@ -88,7 +88,7 @@ export const reportDataQueries = {
         const transaction = await send('get-latest-transaction');
         return transaction?.date ?? null;
       },
-      staleTime: Infinity,
+      refetchOnWindowFocus: false,
     }),
   /**
    * The result of a report spreadsheet. `deps` and `environment` must cover
@@ -110,11 +110,12 @@ export const reportDataQueries = {
     queryOptions<T>({
       queryKey: [...reportDataQueries.all(), name, deps, environment],
       queryFn: () => runReportLoader(createLoader(), spreadsheet),
-      staleTime: Infinity,
       // Long enough that returning to the dashboard draws from the cache, short
       // enough that results for keys no card uses any more are dropped.
       gcTime: 30 * 60 * 1000,
       retry: false,
+      // Recomputing on mount is enough; don't redo every card on each focus.
+      refetchOnWindowFocus: false,
     }),
 };
 
