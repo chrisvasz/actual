@@ -45,14 +45,14 @@ async function insertTransactions() {
 
 describe('Spreadsheet', () => {
   // test('min bug', () => {
-  //   const spreadsheet = new Spreadsheet(db);
+  //   const spreadsheet = new Spreadsheet();
 
   //   spreadsheet.set('g!minTest', '=min(0, number(-20000))');
   //   expect(spreadsheet.getValue('g!minTest')).toBe(-20000);
   // });
 
   // test('cycles are detected', () => {
-  //   const spreadsheet = new Spreadsheet(db);
+  //   const spreadsheet = new Spreadsheet();
 
   //   spreadsheet.startTransaction();
   //   spreadsheet.set('g!foo', '=baz');
@@ -64,7 +64,7 @@ describe('Spreadsheet', () => {
   // });
 
   // test('querying transactions based on date works', async () => {
-  //   const spreadsheet = new Spreadsheet(db);
+  //   const spreadsheet = new Spreadsheet();
 
   //   await insertTransactions();
 
@@ -107,7 +107,7 @@ describe('Spreadsheet', () => {
   // });
 
   test('querying transactions works', async () => {
-    const spreadsheet = new Spreadsheet(db);
+    const spreadsheet = new Spreadsheet();
     await insertTransactions();
 
     spreadsheet.startTransaction();
@@ -123,7 +123,7 @@ describe('Spreadsheet', () => {
   });
 
   test('querying deep join works', async () => {
-    const spreadsheet = new Spreadsheet(db);
+    const spreadsheet = new Spreadsheet();
     await db.insertPayee({ name: '', transfer_acct: '1' });
     await db.insertPayee({ name: '', transfer_acct: '2' });
     await insertTransactions();

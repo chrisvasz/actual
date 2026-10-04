@@ -1,6 +1,4 @@
 // @ts-strict-ignore
-import * as fs from '#platform/server/fs';
-import * as sqlite from '#platform/server/sqlite';
 import * as cloudStorage from '#server/cloud-storage';
 import { handlers } from '#server/main';
 import { waitOnSpreadsheet } from '#server/sheet';
@@ -23,20 +21,6 @@ export async function importActual(_filepath: string, buffer: Buffer) {
     }
     throw e;
   }
-
-  // We never want to load cached data from imported files, so
-  // delete the cache
-  const sqliteDb = await sqlite.openDatabase(
-    fs.join(fs.getBudgetDir(id), 'db.sqlite'),
-  );
-  sqlite.execQuery(
-    sqliteDb,
-    `
-          DELETE FROM kvcache;
-          DELETE FROM kvcache_key;
-        `,
-  );
-  sqlite.closeDatabase(sqliteDb);
 
   // Load the budget, force everything to be computed, and try
   // to upload it as a cloud file

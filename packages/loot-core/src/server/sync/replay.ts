@@ -163,12 +163,6 @@ export function replayPendingMessages(): void {
       }
       failed = retried;
     }
-
-    if (appliedCount > 0) {
-      // The values were written outside the normal sync pipeline, so
-      // force the spreadsheet cache to recompute
-      db.runQuery('DELETE FROM kvcache_key');
-    }
   };
 
   try {

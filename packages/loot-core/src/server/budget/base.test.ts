@@ -338,7 +338,7 @@ describe('Base budget', () => {
     expect(sheet.getCellValue(sheetName, 'total-spent')).toBe(-3000);
   });
 
-  it('Seeds sum-amount across all months on a cold build (Envelope Budget)', async () => {
+  it('Seeds sum-amount across all months when building the budget (Envelope Budget)', async () => {
     await sheet.loadSpreadsheet(db);
     sheet.get().meta().budgetType = 'envelope';
 
@@ -360,7 +360,7 @@ describe('Base budget', () => {
     await db.insertAccount({ id: 'account1', name: 'Account 1' });
 
     // Insert transactions across multiple months *before* building the
-    // budgets, so the cold build seeds the sum-amount cells from the
+    // budgets, so building them seeds the sum-amount cells from the
     // batched query rather than per-cell queries.
     await db.insertTransaction({
       date: '2017-01-10',
@@ -415,7 +415,7 @@ describe('Base budget', () => {
     expect(sheet.getCellValue(jan, `leftover-${foodId}`)).toBe(-1500);
   });
 
-  it('Seeds sum-amount across all months on a cold build (Tracking Budget)', async () => {
+  it('Seeds sum-amount across all months when building the budget (Tracking Budget)', async () => {
     await sheet.loadSpreadsheet(db);
     sheet.get().meta().budgetType = 'tracking';
 

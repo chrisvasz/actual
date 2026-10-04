@@ -32,24 +32,19 @@ export class Spreadsheet {
     createdMonths: Set<string>;
     budgetType: BudgetType;
   };
-  cacheBarrier;
   computeQueue;
   dirtyCells;
   events;
   graph;
   nodes: Map<string, Node>;
   running;
-  saveCache;
-  setCacheStatus;
   transactionDepth;
 
-  constructor(saveCache?: unknown, setCacheStatus?: unknown) {
+  constructor() {
     // @ts-expect-error Graph should be converted to class
     this.graph = new Graph();
     this.nodes = new Map<string, Node>();
     this.transactionDepth = 0;
-    this.saveCache = saveCache;
-    this.setCacheStatus = setCacheStatus;
     this.dirtyCells = [];
     this.computeQueue = [];
     this.events = mitt();
@@ -221,46 +216,8 @@ export class Spreadsheet {
     if (idx === this.computeQueue.length) {
       this.events.emit('change', { names: this.computeQueue });
 
-      // Cache the updated cells
-      this.saveCachedCells(this.computeQueue);
-      this.markCacheSafe();
-
       this.running = false;
       this.computeQueue = [];
-    }
-  }
-
-  saveCachedCells(names: string[]): void {
-    if (typeof this.saveCache === 'function') {
-      this.saveCache(names);
-    }
-  }
-
-  markCacheSafe() {
-    if (!this.cacheBarrier) {
-      if (this.setCacheStatus) {
-        this.setCacheStatus({ clean: true });
-      }
-    }
-  }
-
-  markCacheDirty() {
-    if (this.setCacheStatus) {
-      this.setCacheStatus({ clean: false });
-    }
-  }
-
-  startCacheBarrier() {
-    this.cacheBarrier = true;
-    this.markCacheDirty();
-  }
-
-  endCacheBarrier() {
-    this.cacheBarrier = false;
-
-    const pendingChange = this.running || this.computeQueue.length > 0;
-    if (!pendingChange) {
-      this.markCacheSafe();
     }
   }
 
@@ -361,9 +318,8 @@ export class Spreadsheet {
     const node = this._getNode(name);
 
     // Every bind sends a fresh copy of the query, so compare it by value.
-    // Database changes keep a compiled cell current (`triggerDatabaseChanges`)
-    // and query cells are never cached, so re-binding the same query can skip
-    // the recompute.
+    // Database changes keep a compiled cell current (`triggerDatabaseChanges`),
+    // so re-binding the same query can skip the recompute.
     const queryKey = JSON.stringify(query);
     if (node.queryKey !== queryKey) {
       node.query = query;

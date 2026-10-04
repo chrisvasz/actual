@@ -416,10 +416,6 @@ async function _applyMessages(messages: Message[], deferUnknownSchema = false) {
     currentMerkle = clock.merkle;
   }
 
-  if (sheet.get()) {
-    sheet.get().startCacheBarrier();
-  }
-
   const prefsToSet: MetadataPrefs = {};
   let budgetTypeToSet: Message['value'] | undefined;
   const deferredMessages = new Set<Message>();
@@ -599,10 +595,6 @@ async function _applyMessages(messages: Message[], deferUnknownSchema = false) {
         s.recompute(name);
       }
     }
-
-    // Allow the cache to be used in the future. At this point it's guaranteed
-    // to be up-to-date because we are done mutating any other data
-    sheet.get().endCacheBarrier();
   }
 
   _syncListeners.forEach(func => func(oldData, newData));
