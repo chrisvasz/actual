@@ -4,6 +4,7 @@ import { Form } from 'react-aria-components';
 import { Trans } from 'react-i18next';
 
 import { Button, ButtonWithLoading } from '@actual-app/components/button';
+import { SvgDelete } from '@actual-app/components/icons/v0';
 import { SvgCheckCircle1 } from '@actual-app/components/icons/v2';
 import { InitialFocus } from '@actual-app/components/initial-focus';
 import { Input } from '@actual-app/components/input';
@@ -14,10 +15,10 @@ import { View } from '@actual-app/components/view';
 import type { Query } from '@actual-app/core/shared/query';
 import { tsToRelativeTime } from '@actual-app/core/shared/util';
 import type { AccountEntity } from '@actual-app/core/types/models';
-import type { TransObjectLiteral } from '@actual-app/core/types/util';
 import { format as formatDate } from 'date-fns';
 import { t } from 'i18next';
 
+import { FinancialText } from '#components/FinancialText';
 import { useDateFormat } from '#hooks/useDateFormat';
 import { useFormat } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
@@ -74,81 +75,119 @@ export function ReconcilingMessage({
     <View
       style={{
         flexDirection: 'row',
+        alignItems: 'center',
         alignSelf: 'center',
         backgroundColor: theme.tableBackground,
         ...styles.shadow,
         borderRadius: 4,
         marginTop: 5,
         marginBottom: 15,
-        padding: 10,
+        padding: '8px 10px',
+        gap: 15,
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        {targetDiff === 0 ? (
-          <View
+      {targetDiff === 0 ? (
+        <View
+          style={{
+            color: theme.noticeTextLight,
+            flexDirection: 'row',
+            alignItems: 'center',
+          }}
+        >
+          <SvgCheckCircle1
             style={{
-              color: theme.noticeTextLight,
-              flex: 1,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
+              width: 13,
+              height: 13,
+              color: 'inherit',
+              marginRight: 3,
             }}
-          >
-            <SvgCheckCircle1
-              style={{
-                width: 13,
-                height: 13,
-                color: 'inherit',
-                marginRight: 3,
-              }}
-            />
-            <Trans>All reconciled!</Trans>
-          </View>
-        ) : (
-          <View style={{ color: theme.tableText }}>
-            <Text style={{ fontStyle: 'italic', textAlign: 'center' }}>
-              <Trans>
-                Your cleared balance{' '}
-                <strong>{{ clearedBalance } as TransObjectLiteral}</strong>{' '}
-                needs <strong>{{ difference } as TransObjectLiteral}</strong> to
-                match
-                <br /> your bank&apos;s balance of{' '}
-                <Text style={{ fontWeight: 700 }}>
-                  {{ bankBalance } as TransObjectLiteral}
-                </Text>
-              </Trans>
-            </Text>
-          </View>
-        )}
-        <View style={{ marginLeft: 15 }}>
+          />
+          <Trans>All reconciled!</Trans>
+        </View>
+      ) : (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            gap: 10,
+            color: theme.tableText,
+          }}
+        >
+          <FormulaTerm label={t('Target')} value={bankBalance} />
+          <FormulaOperator>−</FormulaOperator>
+          <FormulaTerm label={t('Cleared')} value={clearedBalance} />
+          <FormulaOperator>=</FormulaOperator>
+          <FormulaTerm
+            label={t('Difference')}
+            value={difference}
+            isEmphasized
+          />
+        </View>
+      )}
+      {targetDiff === 0 ? (
+        <ButtonWithLoading
+          variant="primary"
+          isLoading={pendingAction === 'done'}
+          isDisabled={pendingAction !== null}
+          onPress={() => void runAction('done', onDone)}
+        >
+          <Trans>Lock transactions</Trans>
+        </ButtonWithLoading>
+      ) : (
+        <>
           <ButtonWithLoading
             variant="primary"
+            isLoading={pendingAction === 'create-transaction'}
+            isDisabled={pendingAction !== null}
+            onPress={() =>
+              void runAction('create-transaction', () =>
+                onCreateTransaction(targetDiff),
+              )
+            }
+          >
+            <Trans>Adjust</Trans>
+          </ButtonWithLoading>
+          <ButtonWithLoading
+            variant="bare"
+            aria-label={t('Exit reconciliation')}
             isLoading={pendingAction === 'done'}
             isDisabled={pendingAction !== null}
             onPress={() => void runAction('done', onDone)}
+            style={{ padding: 8, marginLeft: -6 }}
           >
-            {targetDiff === 0
-              ? t('Lock transactions')
-              : t('Exit reconciliation')}
+            <SvgDelete style={{ width: 10, height: 10 }} />
           </ButtonWithLoading>
-        </View>
-        {targetDiff !== 0 && (
-          <View style={{ marginLeft: 15 }}>
-            <ButtonWithLoading
-              isLoading={pendingAction === 'create-transaction'}
-              isDisabled={pendingAction !== null}
-              onPress={() =>
-                void runAction('create-transaction', () =>
-                  onCreateTransaction(targetDiff),
-                )
-              }
-            >
-              <Trans>Create reconciliation transaction</Trans>
-            </ButtonWithLoading>
-          </View>
-        )}
-      </View>
+        </>
+      )}
     </View>
+  );
+}
+
+type FormulaTermProps = {
+  label: string;
+  value: string;
+  isEmphasized?: boolean;
+};
+
+function FormulaTerm({ label, value, isEmphasized }: FormulaTermProps) {
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <FinancialText
+        style={{
+          fontSize: 15,
+          fontWeight: isEmphasized ? 700 : 500,
+        }}
+      >
+        {value}
+      </FinancialText>
+      <Text style={{ fontSize: 11, color: theme.pageTextLight }}>{label}</Text>
+    </View>
+  );
+}
+
+function FormulaOperator({ children }: { children: string }) {
+  return (
+    <Text style={{ fontSize: 15, color: theme.pageTextLight }}>{children}</Text>
   );
 }
 
@@ -202,11 +241,8 @@ export function ReconcileMenu({
   return (
     <Form onSubmit={onSubmit}>
       <View style={{ padding: '5px 8px' }}>
-        <Text>
-          <Trans>
-            Enter the current balance of your bank account that you want to
-            reconcile with:
-          </Trans>
+        <Text style={{ fontWeight: 700 }}>
+          <Trans>Target balance</Trans>
         </Text>
         {inputValue != null && (
           <InitialFocus>

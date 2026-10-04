@@ -51,9 +51,7 @@ describe('ReconcilingMessage math & UI', () => {
 
     expect(screen.getByText('All reconciled!')).toBeInTheDocument();
     // No reconciliation transaction button when diff is zero
-    expect(
-      screen.queryByText('Create reconciliation transaction'),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Adjust')).not.toBeInTheDocument();
 
     // Done button triggers callback
     await userEvent.click(screen.getByText('Lock transactions'));
@@ -82,9 +80,7 @@ describe('ReconcilingMessage math & UI', () => {
     // Positive diff shows plus sign
     expect(screen.getByText('+70.00')).toBeInTheDocument();
 
-    await userEvent.click(
-      screen.getByText('Create reconciliation transaction'),
-    );
+    await userEvent.click(screen.getByText('Adjust'));
     expect(onCreateTransaction).toHaveBeenCalledWith(7000);
   });
 
@@ -108,9 +104,7 @@ describe('ReconcilingMessage math & UI', () => {
     expect(screen.getByText('100.00')).toBeInTheDocument();
     expect(screen.getByText('-20.00')).toBeInTheDocument();
 
-    await userEvent.click(
-      screen.getByText('Create reconciliation transaction'),
-    );
+    await userEvent.click(screen.getByText('Adjust'));
     expect(onCreateTransaction).toHaveBeenCalledWith(-2000);
   });
 });
