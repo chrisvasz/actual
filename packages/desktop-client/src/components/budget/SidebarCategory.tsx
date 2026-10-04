@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import type { CSSProperties, Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -30,7 +30,7 @@ type SidebarCategoryProps = {
   borderColor?: string;
   isLast?: boolean;
   onEditName: (id: CategoryEntity['id']) => void;
-  onSave: (category: CategoryEntity) => void;
+  onSave: (category: CategoryEntity) => Promise<void>;
   onHideNewCategory?: () => void;
 } & (
   | {
@@ -61,6 +61,10 @@ export function SidebarCategory({
   const { t } = useTranslation();
 
   const temporary = category.id === 'new';
+  // The name just submitted, shown until the save lands in the cache so the
+  // old name doesn't flash back when the input closes.
+  const [pendingName, setPendingName] = useState<string | null>(null);
+  const name = pendingName ?? category.name;
   const triggerRef = useRef(null);
   const { handleContextMenu } = useContextMenu({
     triggerRef,
@@ -73,7 +77,7 @@ export function SidebarCategory({
       !categoryGroup?.hidden && {
         name: 'toggle-visibility',
         text: category.hidden ? t('Show') : t('Hide'),
-        onClick: () => onSave({ ...category, hidden: !category.hidden }),
+        onClick: () => void onSave({ ...category, hidden: !category.hidden }),
       },
       {
         name: 'delete',
@@ -96,7 +100,7 @@ export function SidebarCategory({
       }}
       ref={triggerRef}
     >
-      <TextOneLine data-testid="category-name">{category.name}</TextOneLine>
+      <TextOneLine data-testid="category-name">{name}</TextOneLine>
       <View style={{ flexShrink: 0, marginLeft: 5 }}>
         <Button
           variant="bare"
@@ -153,7 +157,7 @@ export function SidebarCategory({
       }}
     >
       <InputCell
-        value={category.name}
+        value={name}
         formatter={() => displayed}
         width="flex"
         exposed={editing || temporary}
@@ -162,11 +166,14 @@ export function SidebarCategory({
             if (value === '') {
               onHideNewCategory();
             } else if (value !== '') {
-              onSave({ ...category, name: value });
+              void onSave({ ...category, name: value });
             }
           } else {
-            if (value !== category.name) {
-              onSave({ ...category, name: value });
+            if (value !== name) {
+              setPendingName(value);
+              void onSave({ ...category, name: value }).finally(() =>
+                setPendingName(null),
+              );
             }
           }
         }}

@@ -52,7 +52,7 @@ describe('SidebarGroup context menu', () => {
   }
 
   it('opens after the group has been renamed', async () => {
-    const onSave = vi.fn();
+    const onSave = vi.fn().mockResolvedValue(undefined);
 
     const { rerender } = await renderRow(
       <SidebarGroup

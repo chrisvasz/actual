@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import type { CSSProperties, RefCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -32,7 +32,7 @@ type SidebarGroupProps = {
   innerRef?: RefCallback<HTMLDivElement>;
   style?: CSSProperties;
   onEdit?: (id: CategoryGroupEntity['id']) => void;
-  onSave?: (group: CategoryGroupEntity) => void;
+  onSave?: (group: CategoryGroupEntity) => Promise<void>;
   onDelete?: (id: CategoryGroupEntity['id']) => void;
   onApplyBudgetTemplatesInGroup?: (
     categories: Array<CategoryEntity['id']>,
@@ -66,6 +66,10 @@ export function SidebarGroup({
   const isGoalTemplatesEnabled = useFeatureFlag('goalTemplatesEnabled');
 
   const temporary = group.id === 'new';
+  // The name just submitted, shown until the save lands in the cache so the
+  // old name doesn't flash back when the input closes.
+  const [pendingName, setPendingName] = useState<string | null>(null);
+  const name = pendingName ?? group.name;
   const canSortCategories =
     !!onSortCategories && (group.categories?.length ?? 0) > 1;
   const triggerRef = useRef(null);
@@ -80,7 +84,7 @@ export function SidebarGroup({
       onSave && {
         name: 'toggle-visibility',
         text: group.hidden ? t('Show') : t('Hide'),
-        onClick: () => onSave({ ...group, hidden: !group.hidden }),
+        onClick: () => void onSave({ ...group, hidden: !group.hidden }),
         hidden: group.is_income,
       },
       onDelete && {
@@ -147,7 +151,7 @@ export function SidebarGroup({
         }}
       >
         {dragPreview && <Text style={{ fontWeight: 500 }}>Group: </Text>}
-        {group.name}
+        {name}
       </div>
       {!dragPreview && (
         <>
@@ -225,7 +229,7 @@ export function SidebarGroup({
       }}
     >
       <InputCell
-        value={group.name}
+        value={name}
         formatter={() => displayed}
         width="flex"
         exposed={editing}
@@ -234,10 +238,13 @@ export function SidebarGroup({
             if (value === '') {
               onHideNewGroup();
             } else if (value !== '') {
-              onSave({ id: group.id, name: value });
+              void onSave({ id: group.id, name: value });
             }
           } else {
-            onSave({ id: group.id, name: value });
+            setPendingName(value);
+            void onSave({ id: group.id, name: value }).finally(() =>
+              setPendingName(null),
+            );
           }
         }}
         onBlur={() => onEdit(null)}

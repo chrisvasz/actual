@@ -52,7 +52,7 @@ describe('SidebarCategory context menu', () => {
   }
 
   it('opens after the category has been renamed', async () => {
-    const onSave = vi.fn();
+    const onSave = vi.fn().mockResolvedValue(undefined);
 
     const { rerender } = await renderRow(
       <SidebarCategory
@@ -121,5 +121,65 @@ describe('SidebarCategory context menu', () => {
       'toggle-visibility',
       'delete',
     ]);
+  });
+
+  describe('renaming', () => {
+    function renderEditing(onSave: (c: typeof category) => Promise<void>) {
+      return renderRow(
+        <SidebarCategory
+          innerRef={null}
+          category={category}
+          editing
+          onEditName={vi.fn()}
+          onSave={onSave}
+        />,
+      );
+    }
+
+    async function closeEditor(rerender: (ui: ReactNode) => void) {
+      rerender(
+        <TestProviders store={store}>
+          <SidebarCategory
+            innerRef={null}
+            category={category}
+            editing={false}
+            onEditName={vi.fn()}
+            onSave={vi.fn()}
+            onDelete={vi.fn()}
+          />
+        </TestProviders>,
+      );
+    }
+
+    it('shows the new name while the save is in flight', async () => {
+      const onSave = vi.fn(() => new Promise<void>(() => undefined));
+      const { rerender } = await renderEditing(onSave);
+
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: 'Food' } });
+      fireEvent.blur(input);
+      await closeEditor(rerender);
+
+      expect(screen.getByTestId('category-name').textContent).toBe('Food');
+    });
+
+    it('falls back to the saved name once the save settles', async () => {
+      let settle: () => void = () => undefined;
+      const onSave = vi.fn(
+        () => new Promise<void>(resolve => (settle = resolve)),
+      );
+      const { rerender } = await renderEditing(onSave);
+
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: 'Food' } });
+      fireEvent.blur(input);
+      await closeEditor(rerender);
+
+      // The save was rejected (e.g. a duplicate name), so the category prop
+      // never changed.
+      await act(async () => settle());
+
+      expect(screen.getByTestId('category-name').textContent).toBe('Groceries');
+    });
   });
 });

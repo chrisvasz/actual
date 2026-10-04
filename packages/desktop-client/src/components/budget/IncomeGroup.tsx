@@ -1,5 +1,6 @@
 // @ts-strict-ignore
 import React from 'react';
+import type { ComponentProps } from 'react';
 
 import { theme } from '@actual-app/components/theme';
 import type { CategoryGroupEntity } from '@actual-app/core/types/models';
@@ -16,7 +17,7 @@ type IncomeGroupProps = {
   editingCell: { id: CategoryGroupEntity['id']; cell: string } | null;
   collapsed: boolean;
   onEditName: (id: CategoryGroupEntity['id']) => void;
-  onSave: (group: CategoryGroupEntity) => void;
+  onSave: ComponentProps<typeof SidebarGroup>['onSave'];
   onSortCategories?: (
     groupId: CategoryGroupEntity['id'],
     direction: 'asc' | 'desc',
