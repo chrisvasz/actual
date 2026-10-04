@@ -262,7 +262,7 @@ test.describe('Accounts', () => {
     await page.getByRole('button', { name: 'Reconcile' }).click();
     // Match the cleared balance (the one 10.00 debit) so the difference is
     // zero and the transactions can be locked.
-    await page.getByLabel('Target').fill('-10.00');
+    await page.getByLabel('Balance', { exact: true }).fill('-10.00');
     await page.getByRole('button', { name: 'Lock', exact: true }).click();
 
     // Showing the running balance keeps reconciled transactions loaded

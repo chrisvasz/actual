@@ -1,5 +1,4 @@
 import { send } from '@actual-app/core/platform/client/connection';
-import { currentDay } from '@actual-app/core/shared/months';
 import { q } from '@actual-app/core/shared/query';
 import {
   realizeTempTransactions,
@@ -15,10 +14,19 @@ import { t } from 'i18next';
 
 import { aqlQuery } from '#queries/aqlQuery';
 
-export async function lockTransactions(accountId: AccountEntity['id']) {
+// Reconciling as of a date only covers transactions on or before it
+export async function lockTransactions(
+  accountId: AccountEntity['id'],
+  date: string,
+) {
   const { data } = await aqlQuery(
     q('transactions')
-      .filter({ cleared: true, reconciled: false, account: accountId })
+      .filter({
+        cleared: true,
+        reconciled: false,
+        account: accountId,
+        date: { $lte: date },
+      })
       .select('*')
       .options({ splits: 'grouped' }),
   );
@@ -68,10 +76,13 @@ export async function unlockTransaction(
   await send('transactions-batch-update', { updated: diff.updated });
 }
 
-export async function getClearedBalance(accountId: AccountEntity['id']) {
+export async function getClearedBalance(
+  accountId: AccountEntity['id'],
+  date: string,
+) {
   const { data } = await aqlQuery(
     q('transactions')
-      .filter({ cleared: true, account: accountId })
+      .filter({ cleared: true, account: accountId, date: { $lte: date } })
       .options({ splits: 'none' })
       .calculate({ $sum: '$amount' }),
   );
@@ -79,14 +90,15 @@ export async function getClearedBalance(accountId: AccountEntity['id']) {
   return data ?? 0;
 }
 
-// Locks the cleared transactions if they still add up to `reconcileAmount`,
-// and returns whether they did
+// Locks the cleared transactions through `date` if they still add up to
+// `reconcileAmount`, and returns whether they did
 export async function finishReconciliation(
   accountId: AccountEntity['id'],
   reconcileAmount: number,
-  lock: () => Promise<void> = () => lockTransactions(accountId),
+  date: string,
+  lock: () => Promise<void> = () => lockTransactions(accountId, date),
 ) {
-  const cleared = await getClearedBalance(accountId);
+  const cleared = await getClearedBalance(accountId, date);
   if (reconcileAmount - cleared !== 0) {
     return false;
   }
@@ -98,6 +110,7 @@ export async function finishReconciliation(
 export async function createReconciliationTransaction(
   accountId: AccountEntity['id'],
   diff: number,
+  date: string,
   onRealized?: (transactions: TransactionEntity[]) => void,
 ) {
   const reconciliationTransactions = realizeTempTransactions([
@@ -107,7 +120,7 @@ export async function createReconciliationTransaction(
       cleared: true,
       reconciled: false,
       amount: diff,
-      date: currentDay(),
+      date,
       notes: t('Reconciliation balance adjustment'),
     },
   ]);
