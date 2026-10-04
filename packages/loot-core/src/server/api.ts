@@ -391,6 +391,9 @@ handlers['api/budget-months'] = async function () {
 handlers['api/budget-month'] = async function ({ month }) {
   checkFileOpen();
   await validateMonth(month);
+  // The budget cells are recalculated after a change lands, so wait for that
+  // rather than reading values from before it.
+  await sheet.waitOnSpreadsheet();
 
   const { data: groups }: { data: CategoryGroupEntity[] } = await aqlQuery(
     q('category_groups').select('*'),

@@ -6,6 +6,7 @@ import type {
   DashboardWidgetEntity,
 } from '@actual-app/core/types/models';
 import { queryOptions } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 
 import type { useSpreadsheet } from '#hooks/useSpreadsheet';
 import { aqlQuery } from '#queries/aqlQuery';
@@ -117,6 +118,19 @@ export const reportDataQueries = {
       retry: false,
     }),
 };
+
+/**
+ * Mark all report data stale after the data behind it changed, refetching what
+ * is on screen. Runs already in progress are cancelled first: they may have
+ * read data from before the change, and a run that finishes clears the stale
+ * mark, so it would otherwise be cached as fresh. Cancelling leaves the
+ * worker to finish it, but its result is discarded.
+ */
+export async function invalidateReportData(queryClient: QueryClient) {
+  const queryKey = reportDataQueries.all();
+  await queryClient.cancelQueries({ queryKey });
+  await queryClient.invalidateQueries({ queryKey });
+}
 
 function runReportLoader<T>(
   load: ReportDataLoader<T>,

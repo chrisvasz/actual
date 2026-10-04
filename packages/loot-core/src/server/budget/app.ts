@@ -207,6 +207,9 @@ async function getBudgetBounds() {
 }
 
 async function envelopeBudgetMonth({ month }: { month: string }) {
+  // The budget cells are recalculated after a change lands, so wait for that
+  // rather than reading values from before it.
+  await sheet.waitOnSpreadsheet();
   const groups = await db.getCategoriesGrouped();
   const sheetName = monthUtils.sheetForMonth(month);
 
@@ -261,6 +264,9 @@ async function envelopeBudgetMonth({ month }: { month: string }) {
 }
 
 async function trackingBudgetMonth({ month }: { month: string }) {
+  // The budget cells are recalculated after a change lands, so wait for that
+  // rather than reading values from before it.
+  await sheet.waitOnSpreadsheet();
   const groups = await db.getCategoriesGrouped();
   const sheetName = monthUtils.sheetForMonth(month);
 

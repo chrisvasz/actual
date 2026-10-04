@@ -188,4 +188,40 @@ describe('Spreadsheet', () => {
     expect(spreadsheet.getValue('foo!x')).toBe(1);
     expect(spreadsheet.getValue('foo!y')).toBe(2);
   });
+
+  test('waitForIdle waits out an open transaction and its computations', async () => {
+    const spreadsheet = new Spreadsheet();
+
+    spreadsheet.startTransaction();
+    spreadsheet.createDynamic('foo', 'x', {
+      initialValue: 1,
+      run: async () => {
+        await wait(20);
+        return 5;
+      },
+    });
+
+    // `onFinish` throws inside a transaction; `waitForIdle` must not.
+    const idle = spreadsheet.waitForIdle();
+    await wait(10);
+    spreadsheet.endTransaction();
+    await idle;
+
+    expect(spreadsheet.getValue('foo!x')).toBe(5);
+  });
+
+  test('waitForIdle resolves when a computation throws', async () => {
+    const spreadsheet = new Spreadsheet();
+
+    spreadsheet.createDynamic('foo', 'x', {
+      initialValue: 1,
+      run: () => {
+        throw new Error('boom');
+      },
+    });
+
+    await spreadsheet.waitForIdle();
+
+    expect(spreadsheet.getValue('foo!x')).toBe(1);
+  });
 });

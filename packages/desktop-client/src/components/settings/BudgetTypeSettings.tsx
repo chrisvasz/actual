@@ -8,7 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { Link } from '#components/common/Link';
 import { useSyncedPref } from '#hooks/useSyncedPref';
-import { reportDataQueries } from '#reports';
+import { invalidateReportData } from '#reports';
 
 import { Setting } from './UI';
 
@@ -27,7 +27,7 @@ export function BudgetTypeSettings() {
       await send('reset-budget-cache');
       // Report data is computed from the budget cells, and the reset rebuilds
       // them without a sync event.
-      void queryClient.invalidateQueries({ queryKey: reportDataQueries.all() });
+      void invalidateReportData(queryClient);
     } finally {
       setIsLoading(false);
     }

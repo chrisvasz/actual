@@ -269,12 +269,8 @@ export function endTransaction(): void {
   }
 }
 
-export function waitOnSpreadsheet(): Promise<void> {
-  return new Promise(resolve => {
-    if (globalSheet) {
-      globalSheet.onFinish(resolve);
-    } else {
-      resolve(undefined);
-    }
-  });
+export async function waitOnSpreadsheet(): Promise<void> {
+  if (globalSheet) {
+    await globalSheet.waitForIdle();
+  }
 }

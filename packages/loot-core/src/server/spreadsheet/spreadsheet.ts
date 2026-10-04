@@ -128,6 +128,7 @@ export class Spreadsheet {
       this.dirtyCells = [];
 
       this.queueComputation(this.graph.topologicalSort(cells));
+      this.events.emit('transaction-end');
     }
 
     return [];
@@ -190,6 +191,7 @@ export class Spreadsheet {
         // If an error happens, bail on the rest of the computations
         this.running = false;
         this.computeQueue = [];
+        this.events.emit('computations-aborted');
         return;
       }
 
@@ -288,6 +290,36 @@ export class Spreadsheet {
       return func(...args);
     });
     return remove;
+  }
+
+  /**
+   * Resolve once no transaction is open and every queued computation has run.
+   * Unlike `onFinish`, it's safe to call while a transaction is open, which
+   * happens when one spans awaits (loading the budget amounts does).
+   */
+  async waitForIdle(): Promise<void> {
+    while (this.transactionDepth !== 0) {
+      await new Promise<void>(resolve => {
+        const remove = this.addEventListener('transaction-end', () => {
+          remove();
+          resolve();
+        });
+      });
+    }
+    if (!this.running && this.computeQueue.length === 0) {
+      return;
+    }
+    // Computations end with a 'change' event, or, when one throws, with
+    // 'computations-aborted' instead.
+    await new Promise<void>(resolve => {
+      const removeChange = this.addEventListener('change', done);
+      const removeAborted = this.addEventListener('computations-aborted', done);
+      function done() {
+        removeChange();
+        removeAborted();
+        resolve();
+      }
+    });
   }
 
   unload() {

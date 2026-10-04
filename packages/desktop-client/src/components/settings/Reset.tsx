@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { resetSync } from '#app/appSlice';
 import { useMetadataPref } from '#hooks/useMetadataPref';
 import { useDispatch } from '#redux';
-import { reportDataQueries } from '#reports';
+import { invalidateReportData } from '#reports';
 
 import { Setting } from './UI';
 
@@ -22,7 +22,7 @@ export function ResetCache() {
     await send('reset-budget-cache');
     // Report data is computed from the budget cells, and the reset rebuilds
     // them without a sync event.
-    void queryClient.invalidateQueries({ queryKey: reportDataQueries.all() });
+    void invalidateReportData(queryClient);
     setResetting(false);
   }
 

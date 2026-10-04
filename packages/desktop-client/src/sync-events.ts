@@ -17,7 +17,7 @@ import type { Notification } from './notifications/notificationsSlice';
 import { payeeQueries } from './payees';
 import { loadPrefs } from './prefs/prefsSlice';
 import type { AppStore } from './redux/store';
-import { reportDataQueries } from './reports';
+import { invalidateReportData } from './reports';
 import { ruleQueries } from './rules';
 import { signOut } from './users/usersSlice';
 
@@ -160,12 +160,7 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
       }
 
       if (tables.some(table => !tablesReportsIgnore.has(table))) {
-        // Loaders can't be aborted, so let a running one finish rather than
-        // restarting it for each event in a burst.
-        void queryClient.invalidateQueries(
-          { queryKey: reportDataQueries.all() },
-          { cancelRefetch: false },
-        );
+        void invalidateReportData(queryClient);
       }
     } else if (event.type === 'error') {
       let notif: Notification | null = null;
