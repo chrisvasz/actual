@@ -13,6 +13,7 @@ import {
   SvgArrowsExpand3,
   SvgArrowsShrink3,
   SvgDownloadThickBottom,
+  SvgExternalLink,
   SvgLockClosed,
   SvgPencil1,
 } from '@actual-app/components/icons/v2';
@@ -31,11 +32,13 @@ import type {
   TransactionEntity,
   TransactionFilterEntity,
 } from '@actual-app/core/types/models';
+import { css } from '@emotion/css';
 import { differenceInCalendarDays } from 'date-fns';
 import type { TFunction } from 'i18next';
 
 import { isAccountFailedSync } from '#accounts/syncStatus';
 import { AnimatedRefresh } from '#components/AnimatedRefresh';
+import { Link } from '#components/common/Link';
 import { Search } from '#components/common/Search';
 import { FilterButton } from '#components/filters/FiltersMenu';
 import { FiltersStack } from '#components/filters/FiltersStack';
@@ -46,9 +49,11 @@ import { UncategorizedChip } from '#components/UncategorizedChip';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useHotkeys } from '#hooks/useHotkeys';
 import { useLocalPref } from '#hooks/useLocalPref';
+import { useNotes } from '#hooks/useNotes';
 import { useSplitsExpanded } from '#hooks/useSplitsExpanded';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
+import { normalizeUrl } from '#notes/linkParser';
 
 import type { TableRef } from './Account';
 import { AccountSyncCheck } from './AccountSyncCheck';
@@ -596,11 +601,18 @@ function AccountNameField({
 }: AccountNameFieldProps) {
   const { t } = useTranslation();
   const [editingName, setEditingName] = useState(false);
+  const notes = useNotes(account ? `account-${account.id}` : '');
+  const noteUrl = getNoteUrl(notes);
 
   const handleSave = (newName: string) => {
     onSaveName(newName);
     setEditingName(false);
   };
+
+  const displayName =
+    account && account.closed
+      ? t('Closed: {{ accountName }}', { accountName })
+      : accountName;
 
   return (
     <View style={{ flexShrink: 0, alignItems: 'center' }}>
@@ -653,9 +665,27 @@ function AccountNameField({
             }}
             data-testid="account-name"
           >
-            {account && account.closed
-              ? t('Closed: {{ accountName }}', { accountName })
-              : accountName}
+            {noteUrl ? (
+              <Link
+                variant="external"
+                to={noteUrl}
+                linkColor="blue"
+                className={css({
+                  textDecoration: 'underline',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                })}
+              >
+                {displayName}
+                <SvgExternalLink
+                  aria-label={t('Opens in a new tab')}
+                  style={{ width: 14, height: 14, flexShrink: 0 }}
+                />
+              </Link>
+            ) : (
+              displayName
+            )}
           </View>
 
           <View style={{ flexDirection: 'row', width: 50 }}>
@@ -686,6 +716,17 @@ function AccountNameField({
       )}
     </View>
   );
+}
+
+// A note counts as a link when it starts with a web URL; any text after the
+// first whitespace is ignored.
+function getNoteUrl(notes: string | null) {
+  const match = notes?.trim().match(/^(?:https?:\/\/|www\.)\S+/i);
+  if (!match) {
+    return null;
+  }
+  // Drop trailing punctuation, e.g. "https://example.com, my bank".
+  return normalizeUrl(match[0].replace(/[.,;:!?)\]"']+$/, ''));
 }
 
 type AccountMenuProps = {
