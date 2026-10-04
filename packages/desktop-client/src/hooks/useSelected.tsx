@@ -51,7 +51,7 @@ export function useSelected<T extends Item>(
   name: string,
   items: T[],
   initialSelectedIds: string[],
-  selectAllFilter?: (item: T) => boolean,
+  fetchAllIds?: () => Promise<string[]>,
 ) {
   const [state, dispatch] = useReducer(
     (state: SelectedState, action: Actions) => {
@@ -127,20 +127,9 @@ export function useSelected<T extends Item>(
           return { ...state, selectedItems: new Set<string>() };
 
         case 'select-all':
-          let selectedItems: string[] = [];
-          if (action.ids && items && selectAllFilter) {
-            const idsToInclude = new Set(
-              items.filter(selectAllFilter).map(item => item.id),
-            );
-            selectedItems = action.ids.filter(id => idsToInclude.has(id));
-          } else if (items && selectAllFilter) {
-            selectedItems = items.filter(selectAllFilter).map(item => item.id);
-          } else {
-            selectedItems = action.ids || items.map(item => item.id);
-          }
           return {
             ...state,
-            selectedItems: new Set(selectedItems),
+            selectedItems: new Set(action.ids || items.map(item => item.id)),
             selectedRange:
               action.ids && action.ids.length === 1
                 ? { start: action.ids[0], end: null }
@@ -162,6 +151,9 @@ export function useSelected<T extends Item>(
   );
 
   const prevItems = useRef(items);
+  const latestSelected = useRef(state.selectedItems);
+  latestSelected.current = state.selectedItems;
+  const pruneRequest = useRef(0);
   useEffect(() => {
     if (state.selectedItems.size > 0) {
       // We need to make sure there are no ids in the selection that
@@ -190,13 +182,31 @@ export function useSelected<T extends Item>(
 
         // If the selected items has changed, update the selection
         if (selected.length !== filtered.length) {
-          dispatch({ type: 'select-all', ids: filtered });
+          if (fetchAllIds) {
+            // `items` may be only the loaded part of a paged list (e.g.
+            // after selecting all), so check the selection against every
+            // id instead of only the loaded ones.
+            const request = ++pruneRequest.current;
+            void fetchAllIds().then(allIds => {
+              if (request !== pruneRequest.current) {
+                return;
+              }
+              const validIds = new Set(allIds);
+              const current = [...latestSelected.current];
+              const next = current.filter(id => validIds.has(id));
+              if (next.length !== current.length) {
+                dispatch({ type: 'select-all', ids: next });
+              }
+            });
+          } else {
+            dispatch({ type: 'select-all', ids: filtered });
+          }
         }
       }
     }
 
     prevItems.current = items;
-  }, [items, state.selectedItems]);
+  }, [items, state.selectedItems, fetchAllIds]);
 
   useEffect(() => {
     const prevState = undo.getUndoState('selectedItems');
@@ -307,7 +317,6 @@ type SelectedProviderWithItemsProps<T extends Item> = {
   initialSelectedIds?: string[];
   fetchAllIds: () => Promise<string[]>;
   registerDispatch?: (dispatch: Dispatch<Actions>) => void;
-  selectAllFilter?: (item: T) => boolean;
   children: ReactElement;
 };
 
@@ -319,15 +328,9 @@ export function SelectedProviderWithItems<T extends Item>({
   initialSelectedIds = [],
   fetchAllIds,
   registerDispatch,
-  selectAllFilter,
   children,
 }: SelectedProviderWithItemsProps<T>) {
-  const selected = useSelected<T>(
-    name,
-    items,
-    initialSelectedIds,
-    selectAllFilter,
-  );
+  const selected = useSelected<T>(name, items, initialSelectedIds, fetchAllIds);
 
   useEffect(() => {
     registerDispatch?.(selected.dispatch);

@@ -523,9 +523,6 @@ function CalendarInner({ widget, parameters }: CalendarInnerProps) {
           items={[]}
           fetchAllIds={async () => []}
           registerDispatch={() => {}}
-          selectAllFilter={(item: TransactionEntity) =>
-            !item._unmatched && !item.is_parent
-          }
         >
           <SchedulesProvider query={undefined}>
             <View

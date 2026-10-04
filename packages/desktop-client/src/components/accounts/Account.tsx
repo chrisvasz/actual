@@ -521,14 +521,27 @@ class AccountInternal extends PureComponent<
       return [];
     }
 
-    const { data } = await aqlQuery(this.paged.query.select('id'));
+    const { data } = await aqlQuery(
+      this.paged.query.select(['id', 'reconciled']),
+    );
+    // Hidden reconciled transactions and split children that don't match
+    // the filters aren't selectable, and neither is a parent with any.
+    const showReconciled = this.state.showReconciled;
+    const isSelectable = (t: TransactionEntity) =>
+      !t._unmatched && (showReconciled || !t.reconciled);
+
     // Remember, this is the `grouped` split type so we need to deal
     // with the `subtransactions` property
-    return data.reduce((arr: string[], t: TransactionEntity) => {
-      arr.push(t.id);
-      t.subtransactions?.forEach(sub => arr.push(sub.id));
-      return arr;
-    }, []);
+    return data.flatMap((t: TransactionEntity) => {
+      if (!showReconciled && t.reconciled) {
+        return [];
+      }
+      const subtransactions = t.subtransactions ?? [];
+      const childIds = subtransactions.filter(isSelectable).map(sub => sub.id);
+      return childIds.length === subtransactions.length
+        ? [t.id, ...childIds]
+        : childIds;
+    });
   };
 
   refetchTransactions = async () => {
@@ -1901,14 +1914,6 @@ class AccountInternal extends PureComponent<
 
     const balanceQuery = this.getBalanceQuery(accountId);
 
-    const selectAllFilter = (item: TransactionEntity): boolean => {
-      if (item.is_parent) {
-        const children = transactions.filter(t => t.parent_id === item.id);
-        return children.every(t => selectAllFilter(t));
-      }
-      return !item._unmatched;
-    };
-
     return (
       <AllTransactions
         account={account}
@@ -1932,7 +1937,6 @@ class AccountInternal extends PureComponent<
             }
             fetchAllIds={this.fetchAllIds}
             registerDispatch={dispatch => (this.dispatchSelected = dispatch)}
-            selectAllFilter={selectAllFilter}
           >
             <View style={styles.page}>
               <AccountHeader

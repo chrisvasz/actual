@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
 import { useSelected } from './useSelected';
 
@@ -67,5 +67,43 @@ describe('useSelected', () => {
     rerender({ items: [{ id: 'one' }, { id: 'three' }] });
 
     expect(result.current.items).toEqual(new Set(['one', 'three']));
+  });
+
+  it('select-all keeps ids that are not loaded yet', () => {
+    // A paged list only loads some items, but select-all is given every id
+    const { result } = renderUseSelected([{ id: 'one' }]);
+
+    act(() =>
+      result.current.dispatch({ type: 'select-all', ids: ['one', 'two'] }),
+    );
+
+    expect(result.current.items).toEqual(new Set(['one', 'two']));
+  });
+
+  it('prunes against every id when items are only partially loaded', async () => {
+    let allIds = ['one', 'two', 'three', 'four'];
+    const fetchAllIds = async () => allIds;
+    const { result, rerender } = renderHook(
+      ({ items }: { items: TestItem[] }) =>
+        useSelected('test', items, [], fetchAllIds),
+      { initialProps: { items: [{ id: 'one' }, { id: 'two' }] } },
+    );
+
+    act(() => result.current.dispatch({ type: 'select-all', ids: allIds }));
+
+    // Loading another page keeps the selection of not-loaded items
+    rerender({ items: [{ id: 'one' }, { id: 'two' }, { id: 'three' }] });
+    await act(() => fetchAllIds());
+    expect(result.current.items).toEqual(
+      new Set(['one', 'two', 'three', 'four']),
+    );
+
+    // Deleting a loaded and a not-loaded item removes both from the
+    // selection
+    allIds = ['one', 'three'];
+    rerender({ items: [{ id: 'one' }, { id: 'three' }] });
+    await waitFor(() =>
+      expect(result.current.items).toEqual(new Set(['one', 'three'])),
+    );
   });
 });
