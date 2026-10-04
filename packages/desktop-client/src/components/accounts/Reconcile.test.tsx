@@ -156,4 +156,53 @@ describe('ReconcilingMessage', () => {
     );
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  test('shows a dash for the cleared balance while it loads', () => {
+    vi.mocked(useSheetValue).mockReturnValue(null);
+    renderMessage();
+
+    expect(screen.getAllByText('—')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Adjust' })).toBeDisabled();
+  });
+
+  test('Enter locks once the target matches', async () => {
+    vi.mocked(useSheetValue).mockReturnValue(5000);
+    const onDone = vi.fn();
+    renderMessage({ onDone });
+
+    await enterTarget('50{Enter}');
+    expect(onDone).toHaveBeenCalledWith(5000);
+  });
+
+  test('Enter formats the target when it does not match', async () => {
+    vi.mocked(useSheetValue).mockReturnValue(5000);
+    const onDone = vi.fn();
+    renderMessage({ onDone });
+
+    await enterTarget('40000{Enter}');
+    const input = screen.getByLabelText('Target');
+    expect(input).toHaveValue('40,000.00');
+    expect(input).toHaveFocus();
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  test('a formatted target with separators still parses', async () => {
+    vi.mocked(useSheetValue).mockReturnValue(0);
+    const onCreateTransaction = vi.fn();
+    renderMessage({ onCreateTransaction });
+
+    await enterTarget('40000');
+    await userEvent.tab();
+    await userEvent.click(screen.getByText('Adjust'));
+    expect(onCreateTransaction).toHaveBeenCalledWith(4000000);
+  });
+
+  test('Escape exits', async () => {
+    vi.mocked(useSheetValue).mockReturnValue(5000);
+    const onCancel = vi.fn();
+    renderMessage({ onCancel });
+
+    await userEvent.type(screen.getByLabelText('Target'), '{Escape}');
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
 });

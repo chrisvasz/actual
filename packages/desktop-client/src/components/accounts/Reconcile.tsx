@@ -20,7 +20,7 @@ import { useSheetValue } from '#hooks/useSheetValue';
 
 type ReconcilingMessageProps = {
   balanceQuery: { name: `balance-query-${string}`; query: Query };
-  onDone: (targetBalance: number | null) => void | Promise<void>;
+  onDone: (targetBalance: number) => void | Promise<void>;
   onCancel: () => void;
   onCreateTransaction: (targetDiff: number) => void | Promise<void>;
 };
@@ -38,9 +38,9 @@ function useClearedBalance(balanceQuery: BalanceQuery) {
 }
 
 /**
- * Computes the cleared balance the reconcile panel opens with ahead of time,
- * so the panel can read it from the spreadsheet cache and draw it straight
- * away instead of flashing 0.00 while the query runs.
+ * Keeps the cleared balance the reconcile panel opens with live in the
+ * spreadsheet cache (the screen preload seeds it), so the panel draws the
+ * current value straight away instead of waiting on its query.
  */
 export function PrewarmReconcileBalance({
   balanceQuery,
@@ -84,7 +84,19 @@ export function ReconcilingMessage({
     }
   }
 
-  const clearedBalance = format(cleared ?? 0, 'financial');
+  const clearedBalance = cleared != null ? format(cleared, 'financial') : '—';
+
+  function lock() {
+    if (targetDiff === 0 && targetBalance != null && pendingAction === null) {
+      void runAction('done', () => onDone(targetBalance));
+    }
+  }
+
+  function formatTarget() {
+    if (targetBalance != null) {
+      setInputValue(format(targetBalance, 'financial'));
+    }
+  }
   const difference =
     targetDiff != null
       ? (targetDiff > 0 ? '+' : '') + format(targetDiff, 'financial')
@@ -113,11 +125,9 @@ export function ReconcilingMessage({
               value={inputValue}
               minWidthText={format(10000, 'financial')}
               onChangeValue={setInputValue}
-              onUpdate={() => {
-                if (targetBalance != null) {
-                  setInputValue(format(targetBalance, 'financial'));
-                }
-              }}
+              onUpdate={formatTarget}
+              onEnter={() => (targetDiff === 0 ? lock() : formatTarget())}
+              onEscape={onCancel}
             />
           </InitialFocus>
           <label htmlFor={targetInputId} style={formulaLabelStyle}>
@@ -139,7 +149,7 @@ export function ReconcilingMessage({
           variant="primary"
           isLoading={pendingAction === 'done'}
           isDisabled={pendingAction !== null}
-          onPress={() => void runAction('done', () => onDone(targetBalance))}
+          onPress={lock}
         >
           <Trans>Lock</Trans>
         </ButtonWithLoading>
@@ -196,6 +206,8 @@ type AmountInputProps = {
   minWidthText: string;
   onChangeValue: (value: string) => void;
   onUpdate: () => void;
+  onEnter: () => void;
+  onEscape: () => void;
   ref?: Ref<HTMLInputElement>;
 };
 
@@ -207,6 +219,8 @@ function AmountInput({
   minWidthText,
   onChangeValue,
   onUpdate,
+  onEnter,
+  onEscape,
   ref,
 }: AmountInputProps) {
   const textStyle = {
@@ -240,6 +254,8 @@ function AmountInput({
         size={1}
         onChangeValue={onChangeValue}
         onUpdate={onUpdate}
+        onEnter={onEnter}
+        onEscape={onEscape}
         // No inline border: the default input class supplies it, and its
         // focus state could not recolor an inline one
         style={{

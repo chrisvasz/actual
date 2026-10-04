@@ -79,17 +79,20 @@ export async function getClearedBalance(accountId: AccountEntity['id']) {
   return data ?? 0;
 }
 
+// Locks the cleared transactions if they still add up to `reconcileAmount`,
+// and returns whether they did
 export async function finishReconciliation(
   accountId: AccountEntity['id'],
-  reconcileAmount: number | null,
+  reconcileAmount: number,
   lock: () => Promise<void> = () => lockTransactions(accountId),
 ) {
   const cleared = await getClearedBalance(accountId);
-  const targetDiff = (reconcileAmount ?? 0) - cleared;
-
-  if (targetDiff === 0) {
-    await lock();
+  if (reconcileAmount - cleared !== 0) {
+    return false;
   }
+
+  await lock();
+  return true;
 }
 
 export async function createReconciliationTransaction(
