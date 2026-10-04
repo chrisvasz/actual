@@ -737,7 +737,7 @@ function PayeeCell({
             borderRadius: 4,
             flex: 1,
             padding: 4,
-            color: theme.pageTextSubdued,
+            color: theme.tableText,
           }}
         >
           <PayeeIcons
@@ -759,7 +759,6 @@ function PayeeCell({
           <Text
             style={{
               fontStyle: 'italic',
-              fontWeight: 300,
               userSelect: 'none',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -1805,7 +1804,7 @@ const Transaction = memo(function Transaction({
                   borderRadius: 4,
                   flex: 1,
                   padding: 4,
-                  color: theme.pageTextSubdued,
+                  color: theme.tableText,
                 }}
               >
                 {isParent && (
@@ -1823,7 +1822,6 @@ const Transaction = memo(function Transaction({
                   <Text
                     style={{
                       fontStyle: 'italic',
-                      fontWeight: 300,
                       userSelect: 'none',
                     }}
                   >
