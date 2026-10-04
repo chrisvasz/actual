@@ -47,8 +47,8 @@ type BudgetCategoriesProps = {
   onShowActivity: (id: CategoryEntity['id'], month?: string) => void;
   onEditName: (id: CategoryEntity['id']) => void;
   onEditMonth: (id: CategoryEntity['id'], month: string) => void;
-  onSaveCategory: (category: CategoryEntity) => void;
-  onSaveGroup: (group: CategoryGroupEntity) => void;
+  onSaveCategory: (category: CategoryEntity) => Promise<void>;
+  onSaveGroup: (group: CategoryGroupEntity) => Promise<void>;
   onDeleteCategory: (id: CategoryEntity['id']) => void;
   onDeleteGroup: (id: CategoryGroupEntity['id']) => void;
   onApplyBudgetTemplatesInGroup: (categoryIds: CategoryEntity['id'][]) => void;
@@ -216,10 +216,11 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
     }
 
     function _onSaveGroup(group: CategoryGroupEntity) {
-      onSaveGroup?.(group);
+      const saved = onSaveGroup(group);
       if (group.id === 'new') {
         onHideNewGroup();
       }
+      return saved;
     }
 
     function onShowNewCategory(groupId: CategoryGroupEntity['id']) {
@@ -232,10 +233,11 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
     }
 
     function _onSaveCategory(category: CategoryEntity) {
-      onSaveCategory?.(category);
+      const saved = onSaveCategory(category);
       if (category.id === 'new') {
         onHideNewCategory();
       }
+      return saved;
     }
 
     return (

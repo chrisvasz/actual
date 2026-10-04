@@ -187,7 +187,10 @@ export function useUpdateCategoryMutation() {
     mutationFn: async ({ category }: UpdateCategoryPayload) => {
       await send('category-update', category);
     },
-    onSuccess: () => invalidateQueries(queryClient),
+    // Return the refetch so the mutation only resolves once the new data is
+    // in the cache; the sidebar keeps showing the pending name until then.
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: categoryQueries.lists() }),
     onError: error => {
       console.error('Error updating category:', error);
       dispatchErrorNotification(
@@ -404,6 +407,39 @@ export function useUpdateCategoryGroupMutation() {
   const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ group }: UpdateCategoryGroupPayload) => {
+      // Strip off the categories field if it exist. It's not a real db
+      // field but groups have this extra field in the client most of the time
+      const { categories: _, ...groupNoCategories } = group;
+      await send('category-group-update', groupNoCategories);
+    },
+    // Return the refetch so the mutation only resolves once the new data is
+    // in the cache; the sidebar keeps showing the pending name until then.
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: categoryQueries.lists() }),
+    onError: error => {
+      console.error('Error updating category group:', error);
+      dispatchErrorNotification(
+        dispatch,
+        t('There was an error updating the category group. Please try again.'),
+        error,
+      );
+    },
+  });
+}
+
+type SaveCategoryGroupPayload = {
+  group: CategoryGroupEntity;
+};
+
+export function useSaveCategoryGroupMutation() {
+  const createCategoryGroup = useCreateCategoryGroupMutation();
+  const updateCategoryGroup = useUpdateCategoryGroupMutation();
+  const queryClient = useQueryClient();
+  const dispatch = useDispatch();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({ group }: SaveCategoryGroupPayload) => {
       const { grouped: categoryGroups } = await queryClient.ensureQueryData(
         categoryQueries.list(),
       );
@@ -424,33 +460,6 @@ export function useUpdateCategoryGroupMutation() {
         return;
       }
 
-      // Strip off the categories field if it exist. It's not a real db
-      // field but groups have this extra field in the client most of the time
-      const { categories: _, ...groupNoCategories } = group;
-      await send('category-group-update', groupNoCategories);
-    },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error updating category group:', error);
-      dispatchErrorNotification(
-        dispatch,
-        t('There was an error updating the category group. Please try again.'),
-        error,
-      );
-    },
-  });
-}
-
-type SaveCategoryGroupPayload = {
-  group: CategoryGroupEntity;
-};
-
-export function useSaveCategoryGroupMutation() {
-  const createCategoryGroup = useCreateCategoryGroupMutation();
-  const updateCategoryGroup = useUpdateCategoryGroupMutation();
-
-  return useMutation({
-    mutationFn: async ({ group }: SaveCategoryGroupPayload) => {
       if (group.id === 'new') {
         await createCategoryGroup.mutateAsync({ name: group.name });
       } else {

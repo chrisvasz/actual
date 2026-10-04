@@ -35,9 +35,9 @@ type BudgetTableProps = {
   startMonth: string;
   numMonths: number;
   monthBounds: MonthBounds;
-  onSaveCategory: (category: CategoryEntity) => void;
+  onSaveCategory: (category: CategoryEntity) => Promise<void>;
   onDeleteCategory: (id: CategoryEntity['id']) => void;
-  onSaveGroup: (group: CategoryGroupEntity) => void;
+  onSaveGroup: (group: CategoryGroupEntity) => Promise<void>;
   onDeleteGroup: (id: CategoryGroupEntity['id']) => void;
   onApplyBudgetTemplatesInGroup: (
     categoryIds: Array<CategoryEntity['id']>,

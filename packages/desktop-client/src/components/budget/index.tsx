@@ -160,19 +160,20 @@ export function Budget() {
   // Take only the stable `mutate` functions: the mutation result objects
   // change on every state transition, and closing over them would hand the
   // whole budget table new callbacks (and a full re-render) on every save.
-  const { mutate: saveCategory } = useSaveCategoryMutation();
-  const onSaveCategory = category => {
-    saveCategory({ category });
-  };
+  // Saves return a promise that settles once the change is in the cache, so
+  // the sidebar can show the new name until then. Failures are already
+  // reported by the mutations, so they're swallowed here.
+  const { mutateAsync: saveCategory } = useSaveCategoryMutation();
+  const onSaveCategory = category =>
+    saveCategory({ category }).catch(() => undefined);
   const { mutate: deleteCategory } = useDeleteCategoryMutation();
   const onDeleteCategory = id => {
     deleteCategory({ id });
   };
   const { mutate: reorderCategory } = useReorderCategoryMutation();
-  const { mutate: saveCategoryGroup } = useSaveCategoryGroupMutation();
-  const onSaveCategoryGroup = group => {
-    saveCategoryGroup({ group });
-  };
+  const { mutateAsync: saveCategoryGroup } = useSaveCategoryGroupMutation();
+  const onSaveCategoryGroup = group =>
+    saveCategoryGroup({ group }).catch(() => undefined);
   const { mutate: deleteCategoryGroup } = useDeleteCategoryGroupMutation();
   const onDeleteCategoryGroup = id => {
     deleteCategoryGroup({ id });
