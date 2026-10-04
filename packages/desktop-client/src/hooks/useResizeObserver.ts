@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useInsertionEffect, useRef } from 'react';
 
 type ResizeObserverOptions = {
   /**
@@ -17,29 +17,33 @@ export function useResizeObserver<T extends Element>(
   func: (contentRect: DOMRectReadOnly) => void,
   { measureOnAttach = false }: ResizeObserverOptions = {},
 ): (el: T) => void {
-  const observer = useRef<
-    | {
-        observer: ResizeObserver;
-        measure: ((rect: DOMRectReadOnly) => void) | undefined;
-      }
-    | undefined
-  >(undefined);
+  // The observer is created once, so it calls `func` through this ref to get
+  // the latest one rather than the first render's. Updated in an insertion
+  // effect, which runs before refs attach, so `measureOnAttach` sees it too.
+  const funcRef = useRef(func);
+  useInsertionEffect(() => {
+    funcRef.current = func;
+  });
+
+  const observer = useRef<ResizeObserver | undefined>(undefined);
   if (!observer.current) {
-    observer.current = {
-      observer: new ResizeObserver(entries => {
-        func(entries[0].contentRect);
-      }),
-      measure: measureOnAttach ? func : undefined,
-    };
+    observer.current = new ResizeObserver(entries => {
+      funcRef.current(entries[0].contentRect);
+    });
   }
 
-  const elementRef = useCallback((el: T) => {
-    observer.current?.observer.disconnect();
-    if (el) {
-      observer.current?.measure?.(el.getBoundingClientRect());
-      observer.current?.observer.observe(el, { box: 'border-box' });
-    }
-  }, []);
+  const elementRef = useCallback(
+    (el: T) => {
+      observer.current?.disconnect();
+      if (el) {
+        if (measureOnAttach) {
+          funcRef.current(el.getBoundingClientRect());
+        }
+        observer.current?.observe(el, { box: 'border-box' });
+      }
+    },
+    [measureOnAttach],
+  );
 
   return elementRef;
 }
