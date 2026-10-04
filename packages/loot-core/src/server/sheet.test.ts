@@ -1,4 +1,8 @@
 // @ts-strict-ignore
+import * as nativeFs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
 import { Timestamp } from '@actual-app/crdt';
 
 import { generateTransaction } from '#mocks';
@@ -56,6 +60,44 @@ describe('Spreadsheet', () => {
 
     expect(await db.all('SELECT * FROM kvcache')).toEqual([]);
     expect(await db.all('SELECT * FROM kvcache_key')).toEqual([]);
+  });
+
+  describe('with an old cache.sqlite next to the budget', () => {
+    let budgetDir: string;
+    // The test database has no path, so point the load at a budget folder
+    const dbInBudgetDir = () => ({
+      ...db,
+      getDatabasePath: () => path.join(budgetDir, 'db.sqlite'),
+    });
+
+    beforeEach(() => {
+      budgetDir = nativeFs.mkdtempSync(path.join(os.tmpdir(), 'sheet-cache-'));
+    });
+
+    afterEach(() => {
+      nativeFs.rmSync(budgetDir, { recursive: true, force: true });
+    });
+
+    test('loading deletes it', async () => {
+      const cachePath = path.join(budgetDir, 'cache.sqlite');
+      nativeFs.writeFileSync(cachePath, '');
+
+      await sheet.loadSpreadsheet(dbInBudgetDir());
+
+      expect(nativeFs.existsSync(cachePath)).toBe(false);
+    });
+
+    test('loading still works when it cannot be deleted', async () => {
+      // A folder can't be removed as a file, standing in for a cache.sqlite
+      // that another process holds open
+      const cachePath = path.join(budgetDir, 'cache.sqlite');
+      nativeFs.mkdirSync(cachePath);
+
+      const spreadsheet = await sheet.loadSpreadsheet(dbInBudgetDir());
+
+      expect(spreadsheet).toBe(sheet.get());
+      expect(nativeFs.existsSync(cachePath)).toBe(true);
+    });
   });
 
   test('transferring a category triggers an update', async () => {

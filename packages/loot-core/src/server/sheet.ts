@@ -1,6 +1,7 @@
 // @ts-strict-ignore
 import { captureBreadcrumb } from '#platform/exceptions';
 import * as fs from '#platform/server/fs';
+import { logger } from '#platform/server/log';
 import * as sqlite from '#platform/server/sqlite';
 import { sheetForMonth } from '#shared/months';
 import * as Platform from '#shared/platform';
@@ -23,20 +24,27 @@ export function get(): Spreadsheet {
 }
 
 // Older versions saved every computed cell to `kvcache` (on desktop, in a
-// separate cache.sqlite) and loaded it on open instead of recomputing. Clear
-// it so a version that still reads it never shows values from before this one
-// changed the budget, and so the file doesn't carry the dead weight.
+// separate cache.sqlite) and loaded it on open instead of recomputing. Clearing
+// `kvcache_key` in the main db is what stops a version that still reads the
+// cache from showing values from before this one changed the budget.
 async function clearLegacyCache(db: typeof DbModule): Promise<void> {
   sqlite.execQuery(
     db.getDatabase(),
     'DELETE FROM kvcache; DELETE FROM kvcache_key;',
   );
 
+  // Deleting cache.sqlite only frees disk space, so a failure (another process
+  // holding the file, or a parallel load that deleted it first) must not stop
+  // the budget from opening.
   const dbPath = db.getDatabasePath();
   if (!Platform.isBrowser && dbPath?.endsWith('db.sqlite')) {
     const cachePath = dbPath.replace(/db\.sqlite$/, 'cache.sqlite');
-    if (await fs.exists(cachePath)) {
-      await fs.removeFile(cachePath);
+    try {
+      if (await fs.exists(cachePath)) {
+        await fs.removeFile(cachePath);
+      }
+    } catch (e) {
+      logger.warn('Could not remove the old spreadsheet cache', e);
     }
   }
 }
