@@ -1,4 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, {
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import type { Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -49,7 +54,7 @@ export function SummaryNumber({
 
   displayAmount += suffix;
 
-  const handleResize = debounce(() => {
+  function measure() {
     if (!refDiv.current) return;
 
     const { clientWidth, clientHeight } = refDiv.current;
@@ -69,9 +74,18 @@ export function SummaryNumber({
     if (calculatedFontSize !== initialFontSize && fontSizeChanged) {
       fontSizeChanged(calculatedFontSize);
     }
-  }, 100);
+  }
 
+  const handleResize = debounce(measure, 100);
   const ref = useResizeObserver(handleResize);
+
+  // Size the number before the first paint rather than after the debounced
+  // resize, so a card drawn from the cache shows its value straight away. Also
+  // resize when the number itself changes.
+  const measureNow = useEffectEvent(measure);
+  useLayoutEffect(() => {
+    measureNow();
+  }, [loading, displayAmount]);
   const mergedRef = useMergedRefs(ref, refDiv);
 
   return (

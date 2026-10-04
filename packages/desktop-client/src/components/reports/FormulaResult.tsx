@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -137,12 +138,13 @@ export function FormulaResult({
   const mergedRef = useMergedRefs(ref, refDiv);
 
   // Recalculate font size when displayValue changes (non-debounced for immediate update)
-  // Only for dynamic mode
-  useEffect(() => {
+  // Only for dynamic mode. A layout effect, so a result drawn from the cache is
+  // sized before the first paint instead of showing a skeleton for a frame.
+  useLayoutEffect(() => {
     if (fontSizeMode === 'dynamic') {
       calculateFontSize();
     }
-  }, [displayValue, calculateFontSize, fontSizeMode]);
+  }, [displayValue, calculateFontSize, fontSizeMode, loading]);
 
   // Use static font size when in static mode
   useEffect(() => {
@@ -162,7 +164,10 @@ export function FormulaResult({
   const showContent = hasSized || fontSizeMode === 'static';
 
   return (
-    <View style={{ flex: 1 }}>
+    // Stretched to the container's width: the first measurement runs before
+    // the parent's `containerRef` is attached and falls back to this element,
+    // which would otherwise shrink to its content and measure 0 wide.
+    <View style={{ flex: 1, alignSelf: 'stretch' }}>
       {loading && <ReportCardValueSkeleton />}
       {!loading && (
         <View

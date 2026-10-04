@@ -152,7 +152,11 @@ export function Overview({ dashboard }: OverviewProps) {
   const handleResize = useCallback((contentRect: DOMRectReadOnly) => {
     setContainerWidth(Math.floor(contentRect.width));
   }, []);
-  const containerRef = useResizeObserver<HTMLDivElement>(handleResize);
+  // Measured as soon as the container attaches, so the grid and its cached
+  // cards draw in the first frame rather than a frame after it.
+  const containerRef = useResizeObserver<HTMLDivElement>(handleResize, {
+    measureOnAttach: true,
+  });
   const isMounted = containerWidth > 0;
 
   const mobileLayout = useMemo(() => {

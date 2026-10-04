@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import type { CSSProperties, ReactNode, RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -9,7 +9,6 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
 import { useContextMenu } from '#hooks/useContextMenu';
-import { useIsInViewport } from '#hooks/useIsInViewport';
 import { useNavigate } from '#hooks/useNavigate';
 import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
@@ -43,20 +42,11 @@ export function ReportCard({
   onRename,
   contextMenuTriggerRef,
 }: ReportCardProps) {
-  const ref = useRef(null);
-  const isInViewport = useIsInViewport(ref);
-  const [hasRendered, setHasRendered] = useState(false);
   const navigate = useNavigate();
   const { isNarrowWidth } = useResponsive();
   const containerProps = {
     flex: isNarrowWidth ? '1 1' : `0 0 calc(${size * 100}% / 3 - 20px)`,
   };
-
-  useEffect(() => {
-    if (isInViewport && !hasRendered) {
-      setHasRendered(true);
-    }
-  }, [isInViewport, hasRendered]);
 
   const layoutProps = {
     isEditing,
@@ -67,7 +57,6 @@ export function ReportCard({
 
   const content = (
     <View
-      ref={ref}
       style={{
         backgroundColor: theme.tableBackground,
         borderBottomLeftRadius: 2,
@@ -98,10 +87,7 @@ export function ReportCard({
         ...style,
       }}
     >
-      {/* we render the content only if it is in the viewport
-      this reduces the amount of concurrent server api calls and thus
-      has a better performance */}
-      {isInViewport || hasRendered ? children : null}
+      {children}
     </View>
   );
 

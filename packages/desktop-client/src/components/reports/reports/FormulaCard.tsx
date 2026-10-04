@@ -131,13 +131,10 @@ export function FormulaCard({
             // a refresh should leave the previous value in place rather than
             // blanking the card.
             loading={isLoading && result === null && !error}
+            // Dynamic sizing is measured before the first paint, so the size
+            // isn't saved back to the widget; a previously saved one is only
+            // the starting point.
             initialFontSize={fontSize}
-            fontSizeChanged={newSize => {
-              onMetaChange({
-                ...(meta ?? {}),
-                fontSize: newSize,
-              });
-            }}
             fontSizeMode={fontSizeMode}
             staticFontSize={staticFontSize}
             customColor={customColor}
