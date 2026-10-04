@@ -343,8 +343,6 @@ handlers['api/start-import'] = async function ({ budgetName }) {
 handlers['api/finish-import'] = async function () {
   checkFileOpen();
 
-  sheet.get().markCacheDirty();
-
   // We always need to fully reload the app. Importing doesn't touch
   // the spreadsheet, but we can't just recreate the spreadsheet
   // either; there is other internal state that isn't created

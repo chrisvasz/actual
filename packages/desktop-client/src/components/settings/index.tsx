@@ -37,7 +37,7 @@ import { FormatSettings } from './Format';
 import { HelpSettings } from './Help';
 import { LanguageSettings } from './LanguageSettings';
 import { RepairTransactions } from './RepairTransactions';
-import { ResetCache, ResetSync } from './Reset';
+import { ResetSync } from './Reset';
 import { ServerSettings } from './Server';
 import { ThemeSettings } from './Themes';
 import { AdvancedToggle, Setting } from './UI';
@@ -272,7 +272,6 @@ export function Settings() {
         <ExportBudget />
         <AdvancedToggle>
           <AdvancedAbout />
-          <ResetCache />
           <ResetSync />
           <RepairTransactions />
           <ExperimentalFeatures />

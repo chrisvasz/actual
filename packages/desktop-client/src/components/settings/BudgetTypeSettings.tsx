@@ -23,10 +23,10 @@ export function BudgetTypeSettings() {
       const newBudgetType = budgetType === 'envelope' ? 'tracking' : 'envelope';
       setBudgetType(newBudgetType);
 
-      // Reset the budget cache to ensure the server-side budget system is recalculated
-      await send('reset-budget-cache');
-      // Report data is computed from the budget cells, and the reset rebuilds
-      // them without a sync event.
+      // Recalculate the budget under the new type
+      await send('recompute-budget');
+      // Report data is computed from the budget cells, and the recalculation
+      // rebuilds them without a sync event.
       void queryClient.invalidateQueries({ queryKey: reportDataQueries.all() });
     } finally {
       setIsLoading(false);

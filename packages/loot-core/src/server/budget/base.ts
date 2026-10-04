@@ -286,9 +286,9 @@ export async function createBudget(months) {
 
   // Spend totals for every category in the months being created, computed
   // once via a single grouped query and used to seed the `sum-amount` cells so
-  // they don't each run their own query. Scoped to the uncached month span so
+  // they don't each run their own query. Scoped to the new month span so
   // extending the budget horizon doesn't rescan the entire transaction
-  // history, and loaded lazily so warm loads never touch the database here.
+  // history, and loaded lazily so a call with no new months never queries.
   let sumAmounts: Map<string, number> | null = null;
   const getSumAmounts = () => {
     if (!sumAmounts) {
@@ -311,7 +311,6 @@ export async function createBudget(months) {
     }
     return sumAmounts;
   };
-  const seededCells: string[] = [];
 
   monthsToCreate.forEach(month => {
     const prevMonth = monthUtils.prevMonth(month);
@@ -322,15 +321,13 @@ export async function createBudget(months) {
 
     categories.forEach(cat => {
       // Seed the spend total before creating the dynamic cell so the cell
-      // skips its per-category query. Only happens on a cold build, when
-      // the value hasn't been restored from cache.
+      // skips its per-category query.
       const sumCell = `sum-amount-${cat.id}`;
       if (sheet.get().getCellValueLoose(sheetName, sumCell) == null) {
         const name = resolveName(sheetName, sumCell);
         sheet
           .get()
           .load(name, getSumAmounts().get(`${dbMonth}-${cat.id}`) || 0);
-        seededCells.push(name);
       }
       createCategory(cat, sheetName, prevSheetName, start, end);
     });
@@ -359,17 +356,8 @@ export async function createBudget(months) {
   sheet.get().setMeta(meta);
   sheet.endTransaction();
 
-  // Persist the seeded spend totals to the cache. Because they were loaded
-  // directly (rather than recomputed) they aren't part of the computation
-  // queue that normally gets cached, so without this a warm load would have
-  // to recompute them. The cells already hold their final values here.
-  if (seededCells.length > 0) {
-    sheet.get().saveCachedCells(seededCells);
-  }
-
-  // Wait for the spreadsheet to finish computing. Normally this won't
-  // do anything (as values are cached) but on first run this need to
-  // show the loading screen while it initially sets up.
+  // Wait for the new cells to finish computing, so the loading screen stays
+  // up until the budget has values.
   await sheet.waitOnSpreadsheet();
 }
 
@@ -420,10 +408,8 @@ export async function setType(type) {
     }
   });
 
-  sheet.get().startCacheBarrier();
   void sheet.loadUserBudgets(db);
   const bounds = await createAllBudgets();
-  sheet.get().endCacheBarrier();
 
   return bounds;
 }

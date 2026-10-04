@@ -1,8 +1,6 @@
 // @ts-strict-ignore
-import type { Database } from '@jlongster/sql.js';
-
 import { captureBreadcrumb } from '#platform/exceptions';
-import { logger } from '#platform/server/log';
+import * as fs from '#platform/server/fs';
 import * as sqlite from '#platform/server/sqlite';
 import { sheetForMonth } from '#shared/months';
 import * as Platform from '#shared/platform';
@@ -19,125 +17,37 @@ import { resolveName } from './spreadsheet/util';
 
 let globalSheet: Spreadsheet;
 let globalOnChange;
-let globalCacheDb;
 
 export function get(): Spreadsheet {
   return globalSheet;
 }
 
-async function updateSpreadsheetCache(rawDb, names: string[]) {
-  sqlite.transaction(rawDb, () => {
-    names.forEach(name => {
-      const node = globalSheet._getNode(name);
-
-      // Don't cache query nodes yet
-      if (node.sql == null) {
-        sqlite.runQuery(
-          rawDb,
-          'INSERT OR REPLACE INTO kvcache (key, value) VALUES (?, ?)',
-          [name, JSON.stringify(node.value)],
-        );
-      }
-    });
-  });
-}
-
-function setCacheStatus(
-  mainDb: Database,
-  cacheDb: Database,
-  { clean }: { clean: boolean },
-) {
-  if (clean) {
-    // Generate random number and stick in both places
-    const num = Math.random() * 10000000;
-    sqlite.runQuery(
-      cacheDb,
-      'INSERT OR REPLACE INTO kvcache_key (id, key) VALUES (1, ?)',
-      [num],
-    );
-
-    if (mainDb) {
-      sqlite.runQuery(
-        mainDb,
-        'INSERT OR REPLACE INTO kvcache_key (id, key) VALUES (1, ?)',
-        [num],
-      );
-    }
-  } else {
-    sqlite.runQuery(cacheDb, 'DELETE FROM kvcache_key');
-  }
-}
-
-function isCacheDirty(mainDb: Database, cacheDb: Database): boolean {
-  let rows = sqlite.runQuery<{ key?: number }>(
-    cacheDb,
-    'SELECT key FROM kvcache_key WHERE id = 1',
-    [],
-    true,
+// Older versions saved every computed cell to `kvcache` (on desktop, in a
+// separate cache.sqlite) and loaded it on open instead of recomputing. Clear
+// it so a version that still reads it never shows values from before this one
+// changed the budget, and so the file doesn't carry the dead weight.
+async function clearLegacyCache(db: typeof DbModule): Promise<void> {
+  sqlite.execQuery(
+    db.getDatabase(),
+    'DELETE FROM kvcache; DELETE FROM kvcache_key;',
   );
-  const num = rows.length === 0 ? null : rows[0].key;
 
-  if (num == null) {
-    return true;
-  }
-
-  if (mainDb) {
-    const rows = sqlite.runQuery<{ key?: number }>(
-      mainDb,
-      'SELECT key FROM kvcache_key WHERE id = 1',
-      [],
-      true,
-    );
-    if (rows.length === 0 || rows[0].key !== num) {
-      return true;
+  const dbPath = db.getDatabasePath();
+  if (!Platform.isBrowser && dbPath?.endsWith('db.sqlite')) {
+    const cachePath = dbPath.replace(/db\.sqlite$/, 'cache.sqlite');
+    if (await fs.exists(cachePath)) {
+      await fs.removeFile(cachePath);
     }
   }
-
-  // Always also check if there is anything in `kvcache`. We ask for one item;
-  // if we didn't get back anything it's empty so there is no cache
-  rows = sqlite.runQuery(cacheDb, 'SELECT * FROM kvcache LIMIT 1', [], true);
-  return rows.length === 0;
 }
 
 export async function loadSpreadsheet(
-  db,
+  db: typeof DbModule,
   onSheetChange?,
 ): Promise<Spreadsheet> {
-  const cacheEnabled = process.env.NODE_ENV !== 'test';
-  const mainDb = db.getDatabase();
-  let cacheDb;
+  await clearLegacyCache(db);
 
-  if (!Platform.isBrowser && cacheEnabled) {
-    // Desktop apps use a separate database for the cache. This is because it is
-    // much more likely to directly work with files on desktop, and this makes
-    // it a lot clearer what the true filesize of the main db is (and avoid
-    // copying the cache data around).
-    const cachePath = db
-      .getDatabasePath()
-      .replace(/db\.sqlite$/, 'cache.sqlite');
-    globalCacheDb = cacheDb = await sqlite.openDatabase(cachePath);
-
-    sqlite.execQuery(
-      cacheDb,
-      `
-        CREATE TABLE IF NOT EXISTS kvcache (key TEXT PRIMARY KEY, value TEXT);
-        CREATE TABLE IF NOT EXISTS kvcache_key (id INTEGER PRIMARY KEY, key REAL)
-      `,
-    );
-  } else {
-    // All other platforms use the same database for cache
-    cacheDb = mainDb;
-  }
-
-  let sheet;
-  if (cacheEnabled) {
-    sheet = new Spreadsheet(
-      updateSpreadsheetCache.bind(null, cacheDb),
-      setCacheStatus.bind(null, mainDb, cacheDb),
-    );
-  } else {
-    sheet = new Spreadsheet();
-  }
+  const sheet = new Spreadsheet();
 
   captureBreadcrumb({
     message: 'loading spreadsheet',
@@ -151,23 +61,7 @@ export async function loadSpreadsheet(
     sheet.addEventListener('change', onSheetChange);
   }
 
-  if (cacheEnabled && !isCacheDirty(mainDb, cacheDb)) {
-    const cachedRows = sqlite.runQuery<{ key?: number; value: string }>(
-      cacheDb,
-      'SELECT * FROM kvcache',
-      [],
-      true,
-    );
-    logger.log(`Loaded spreadsheet from cache (${cachedRows.length} items)`);
-
-    for (const row of cachedRows) {
-      const parsed = JSON.parse(row.value);
-      sheet.load(row.key, parsed);
-    }
-  } else {
-    logger.log('Loading fresh spreadsheet');
-    await loadUserBudgets(db);
-  }
+  await loadUserBudgets(db);
 
   captureBreadcrumb({
     message: 'loaded spreadsheet',
@@ -183,11 +77,6 @@ export function unloadSpreadsheet(): void {
     globalSheet.unload();
     globalSheet = null;
   }
-
-  if (globalCacheDb) {
-    sqlite.closeDatabase(globalCacheDb);
-    globalCacheDb = null;
-  }
 }
 
 export async function reloadSpreadsheet(db): Promise<Spreadsheet> {
@@ -199,9 +88,6 @@ export async function reloadSpreadsheet(db): Promise<Spreadsheet> {
 
 export async function loadUserBudgets(db: typeof DbModule): Promise<void> {
   const sheet = globalSheet;
-
-  // TODO: Clear out the cache here so make sure future loads of the app
-  // don't load any extra values that aren't set here
 
   const { value: budgetType = 'envelope' } =
     (await db.first<Pick<DbPreference, 'value'>>(

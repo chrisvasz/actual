@@ -160,9 +160,8 @@ export async function exportBuffer() {
       'binary',
     );
 
-    // Do some post-processing of the database. We NEVER upload the cache with
-    // the database; this forces new downloads to always recompute everything
-    // which is not only safer, but reduces the filesize a lot.
+    // Never upload the legacy spreadsheet cache. Older versions still read
+    // it, and leaving it out keeps the upload small.
     const memDb = await sqlite.openDatabase(rawDbContent);
     sqlite.execQuery(
       memDb,

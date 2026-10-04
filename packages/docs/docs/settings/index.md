@@ -73,12 +73,6 @@ IDs are the names Actual uses to identify your budget internally. The Budget ID 
 
 ![Image of BudgetID setting](/img/using-actual/actual-budgetid.webp)
 
-### Reset Budget Cache
-
-**Reset budget cache** will clear all cached values for the budget and recalculate the entire budget. All values in the budget are cached for performance reasons, and if there is a bug in the cache you won't see correct values. There is no danger in resetting the cache.
-
-![Image of Reset Cache setting](/img/using-actual/actual-budget-cache.webp)
-
 ### Reset Sync
 
 Actual's sync function is quite complicated and is covered in detail [here](../getting-started/sync.md#what-does-resetting-sync-mean). Use this if there is a problem with syncing and you want to start fresh.
@@ -89,7 +83,7 @@ Actual's sync function is quite complicated and is covered in detail [here](../g
 
 ### Repair Split Transactions
 
-If you are experiencing bugs relating to split transactions or transfers and the "Reset budget cache" button above does not help, this tool may fix them.
+If you are experiencing bugs relating to split transactions or transfers, this tool may fix them.
 
 ![Image of Repair Splits setting](/img/using-actual/actual-repair.webp)
 

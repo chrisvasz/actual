@@ -107,7 +107,7 @@ describe('Spreadsheet', () => {
   // });
 
   test('querying transactions works', async () => {
-    const spreadsheet = new Spreadsheet(db);
+    const spreadsheet = new Spreadsheet();
     await insertTransactions();
 
     spreadsheet.startTransaction();
@@ -123,7 +123,7 @@ describe('Spreadsheet', () => {
   });
 
   test('querying deep join works', async () => {
-    const spreadsheet = new Spreadsheet(db);
+    const spreadsheet = new Spreadsheet();
     await db.insertPayee({ name: '', transfer_acct: '1' });
     await db.insertPayee({ name: '', transfer_acct: '2' });
     await insertTransactions();

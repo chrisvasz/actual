@@ -46,6 +46,18 @@ async function insertTransactions() {
 }
 
 describe('Spreadsheet', () => {
+  test('loading clears a cache left by an older version', async () => {
+    db.runQuery(
+      `INSERT INTO kvcache (key, value) VALUES ('budget201701!to-budget', '5')`,
+    );
+    db.runQuery('INSERT INTO kvcache_key (id, key) VALUES (1, 42)');
+
+    await sheet.loadSpreadsheet(db);
+
+    expect(await db.all('SELECT * FROM kvcache')).toEqual([]);
+    expect(await db.all('SELECT * FROM kvcache_key')).toEqual([]);
+  });
+
   test('transferring a category triggers an update', async () => {
     const spreadsheet = await sheet.loadSpreadsheet(db);
     await insertTransactions();

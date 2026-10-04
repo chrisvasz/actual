@@ -3,49 +3,12 @@ import { Trans } from 'react-i18next';
 
 import { ButtonWithLoading } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
-import { send } from '@actual-app/core/platform/client/connection';
-import { useQueryClient } from '@tanstack/react-query';
 
 import { resetSync } from '#app/appSlice';
 import { useMetadataPref } from '#hooks/useMetadataPref';
 import { useDispatch } from '#redux';
-import { reportDataQueries } from '#reports';
 
 import { Setting } from './UI';
-
-export function ResetCache() {
-  const [resetting, setResetting] = useState(false);
-  const queryClient = useQueryClient();
-
-  async function onResetCache() {
-    setResetting(true);
-    await send('reset-budget-cache');
-    // Report data is computed from the budget cells, and the reset rebuilds
-    // them without a sync event.
-    void queryClient.invalidateQueries({ queryKey: reportDataQueries.all() });
-    setResetting(false);
-  }
-
-  return (
-    <Setting
-      primaryAction={
-        <ButtonWithLoading isLoading={resetting} onPress={onResetCache}>
-          <Trans>Reset budget cache</Trans>
-        </ButtonWithLoading>
-      }
-    >
-      <Text>
-        <Trans>
-          <strong>Reset budget cache</strong> will clear all cached values for
-          the budget and recalculate the entire budget. All values in the budget
-          are cached for performance reasons, and if there is a bug in the cache
-          you won't see correct values. There is no danger in resetting the
-          cache. Hopefully you never have to do this.
-        </Trans>
-      </Text>
-    </Setting>
-  );
-}
 
 export function ResetSync() {
   const [groupId] = useMetadataPref('groupId');
