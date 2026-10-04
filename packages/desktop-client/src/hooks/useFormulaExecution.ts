@@ -28,7 +28,6 @@ import { reportDataQueries } from '#reports';
 import { bootstrapHyperFormula } from '#util/bootstrapHyperFormula';
 
 import { useGlobalPref } from './useGlobalPref';
-import { useLocale } from './useLocale';
 
 bootstrapHyperFormula();
 
@@ -138,50 +137,41 @@ function evaluateFormulaWithContext({
 export function useFormulaExecution(
   formula: string,
   queries: QueriesMap,
-  queriesVersion?: number,
   namedExpressions?: Record<string, number | string>,
   accounts?: SimpleAccount[],
 ) {
-  const locale = useLocale();
   const [language] = useGlobalPref('language');
+  const isValidFormula = Boolean(formula?.startsWith('='));
 
-  // Run through the query cache, keyed on the inputs' contents, so a card
-  // visited again draws its last result straight away (and recomputes it in
-  // the background, like the other report data), callers can pass fresh
-  // objects every render, and sync events refresh it. The dates are keyed
-  // because query time frames slide with them.
+  // Run through the report-data cache, keyed on the inputs' contents, so a
+  // card visited again draws its last result straight away (and recomputes it
+  // in the background), callers can pass fresh objects every render, and sync
+  // events refresh it.
   const { data, error, isPending, isPlaceholderData } = useQuery({
-    queryKey: [
-      ...reportDataQueries.all(),
-      'formula',
+    ...reportDataQueries.formula(
       {
         formula,
         queries: queries ?? {},
-        queriesVersion,
         namedExpressions: namedExpressions ?? null,
         accounts: accounts ?? null,
-        locale,
-        language,
-        currentMonth: monthUtils.currentMonth(),
-        today: monthUtils.currentDay(),
+        language: language ?? null,
       },
-    ],
-    queryFn: () =>
-      executeFormula({
-        formula,
-        queries,
-        namedExpressions,
-        accounts,
-        locale,
-        language,
-      }),
-    gcTime: 30 * 60 * 1000,
-    retry: false,
-    refetchOnWindowFocus: false,
+      executeFormula,
+    ),
+    // An invalid formula is reported straight away rather than cached.
+    enabled: isValidFormula,
     // While a changed formula runs, keep showing the last result, as the
     // editor did before this was cached.
     placeholderData: keepPreviousData,
   });
+
+  if (!isValidFormula) {
+    return {
+      result: null,
+      isLoading: false,
+      error: 'Formula must start with =',
+    };
+  }
 
   return {
     result: error ? null : (data ?? null),
@@ -197,29 +187,23 @@ async function executeFormula({
   queries,
   namedExpressions,
   accounts,
-  locale,
   language,
 }: {
   formula: string;
   queries: QueriesMap;
-  namedExpressions?: Record<string, number | string>;
-  accounts?: SimpleAccount[];
-  locale: ReturnType<typeof useLocale>;
-  language: string | undefined;
+  namedExpressions: Record<string, number | string> | null;
+  accounts: SimpleAccount[] | null;
+  language: string | null;
 }): Promise<number | string> {
-  if (!formula || !formula.startsWith('=')) {
-    throw new Error('Formula must start with =');
-  }
-
   try {
     const browserLocale =
       typeof navigator === 'undefined' ? undefined : navigator.language;
-    const formulaLocale = language || browserLocale || locale || 'en-US';
+    const formulaLocale = language || browserLocale || 'en-US';
 
     try {
       setCachedUserPreferences(
         await send('formula-load-user-preferences', {
-          selectedLocale: language,
+          selectedLocale: language ?? undefined,
           browserLocale,
         }),
       );
@@ -233,7 +217,7 @@ async function executeFormula({
       formula,
       formulaQueryContext,
       locale: formulaLocale,
-      namedExpressions,
+      namedExpressions: namedExpressions ?? undefined,
       throwOnCellError: false,
     });
 
@@ -245,7 +229,7 @@ async function executeFormula({
       formula,
       formulaQueryContext,
       locale: formulaLocale,
-      namedExpressions,
+      namedExpressions: namedExpressions ?? undefined,
       throwOnCellError: false,
     });
 
@@ -255,7 +239,7 @@ async function executeFormula({
       formula,
       formulaQueryContext,
       locale: formulaLocale,
-      namedExpressions,
+      namedExpressions: namedExpressions ?? undefined,
     });
 
     return cellValue as number | string;

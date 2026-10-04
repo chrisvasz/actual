@@ -10,7 +10,7 @@ import type {
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { resetTestProviders, TestProviders } from '#mocks';
+import { TestProviders } from '#mocks';
 
 import {
   buildFilteredTransactionsQuery,
@@ -189,7 +189,6 @@ describe('formula query timeframes', () => {
           useFormulaExecution(
             '=QUERY("Income") + QUERY("Expenses")',
             formulaQueries,
-            0,
           ),
         { wrapper: TestProviders },
       );
@@ -254,7 +253,7 @@ describe('BALANCE_OF in query mode', () => {
   it('resolves an account by id and queries its balance', async () => {
     const { result } = renderHook(
       () =>
-        useFormulaExecution('=BALANCE_OF("acc1")', {}, 0, undefined, [
+        useFormulaExecution('=BALANCE_OF("acc1")', {}, undefined, [
           { id: 'acc1', name: 'Checking' },
         ]),
       { wrapper: TestProviders },
@@ -273,7 +272,7 @@ describe('BALANCE_OF in query mode', () => {
   it('resolves an account by exact name', async () => {
     const { result } = renderHook(
       () =>
-        useFormulaExecution('=BALANCE_OF("Checking")', {}, 0, undefined, [
+        useFormulaExecution('=BALANCE_OF("Checking")', {}, undefined, [
           { id: 'acc1', name: 'Checking' },
         ]),
       { wrapper: TestProviders },
@@ -292,7 +291,7 @@ describe('BALANCE_OF in query mode', () => {
   it('returns 0 for an unknown account', async () => {
     const { result } = renderHook(
       () =>
-        useFormulaExecution('=BALANCE_OF("nope")', {}, 0, undefined, [
+        useFormulaExecution('=BALANCE_OF("nope")', {}, undefined, [
           { id: 'acc1', name: 'Checking' },
         ]),
       { wrapper: TestProviders },
@@ -308,8 +307,6 @@ describe('formula execution stability', () => {
 
   beforeEach(() => {
     executionCount = 0;
-    // Results are cached, so start each test from an empty cache.
-    resetTestProviders();
     initServer({
       'formula-load-user-preferences': async () => {
         executionCount += 1;
@@ -338,7 +335,7 @@ describe('formula execution stability', () => {
     // skeleton.
     const { result, rerender } = renderHook(
       () =>
-        useFormulaExecution('=SUM(1, 2, 3)', {}, undefined, { RESULT: 0 }, [
+        useFormulaExecution('=SUM(1, 2, 3)', {}, { RESULT: 0 }, [
           { id: 'acc1', name: 'Checking' },
         ]),
       { wrapper: TestProviders },
@@ -400,9 +397,9 @@ describe('formula execution stability', () => {
       { wrapper: TestProviders },
     );
 
-    await waitFor(() =>
-      expect(result.current.error).toBe('Formula must start with ='),
-    );
+    // Reported on the first render, without running or caching anything.
+    expect(result.current.error).toBe('Formula must start with =');
     expect(result.current.isLoading).toBe(false);
+    expect(executionCount).toBe(0);
   });
 });

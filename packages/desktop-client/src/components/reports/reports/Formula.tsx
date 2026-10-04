@@ -61,7 +61,8 @@ function FormulaInner({ widget }: FormulaInnerProps) {
   const themeColors = useThemeColors();
 
   const queriesRef = useRef(widget?.meta?.queries || {});
-  const [queriesVersion, setQueriesVersion] = useState(0);
+  // `queriesRef` is replaced rather than mutated; bump this to re-render with it.
+  const [, setQueriesVersion] = useState(0);
   const {
     data: { list: categories, grouped: categoryGroups } = {
       list: [],
@@ -102,7 +103,6 @@ function FormulaInner({ widget }: FormulaInnerProps) {
   } = useFormulaExecution(
     formula,
     queriesRef.current,
-    queriesVersion,
     undefined,
     simpleAccounts,
   );
@@ -140,7 +140,6 @@ function FormulaInner({ widget }: FormulaInnerProps) {
   const { result: colorResult, error: colorError } = useFormulaExecution(
     colorFormula,
     queriesRef.current,
-    queriesVersion,
     colorVariables,
     simpleAccounts,
   );
