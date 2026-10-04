@@ -334,6 +334,11 @@
             "name": "react-redux",
             "importNames": ["useStore"],
             "message": "Please import Actual's useStore() hook from `src/redux` instead."
+          },
+          {
+            "name": "react-hotkeys-hook",
+            "importNames": ["useHotkeys"],
+            "message": "Please import Actual's useHotkeys() hook from `src/hooks` instead, so shortcuts follow the keyboard layout."
           }
         ],
         "patterns": [

@@ -1,6 +1,5 @@
-import { useHotkeys } from 'react-hotkeys-hook';
-
 import { sync } from '#app/appSlice';
+import { useHotkeys } from '#hooks/useHotkeys';
 import { useSharedArrayBufferWarning } from '#hooks/useSharedArrayBufferWarning';
 import { useUserData } from '#hooks/useUserData';
 import { pushModal } from '#modals/modalsSlice';
@@ -27,7 +26,7 @@ export function AppShellEffects() {
   useHotkeys(
     '?',
     () => dispatch(pushModal({ modal: { name: 'keyboard-shortcuts' } })),
-    { useKey: true },
+    {},
     [dispatch],
   );
 
