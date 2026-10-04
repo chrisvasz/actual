@@ -11,29 +11,42 @@ import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
+import { currentDay } from '@actual-app/core/shared/months';
 import type { Query } from '@actual-app/core/shared/query';
 import { t } from 'i18next';
 
 import { FinancialText } from '#components/FinancialText';
+import { DateSelect } from '#components/select/DateSelect';
+import { useDateFormat } from '#hooks/useDateFormat';
 import { useFormat } from '#hooks/useFormat';
 import { useSheetValue } from '#hooks/useSheetValue';
 
 type ReconcilingMessageProps = {
   balanceQuery: { name: `balance-query-${string}`; query: Query };
-  onDone: (targetBalance: number) => void | Promise<void>;
+  onDone: (targetBalance: number, date: string) => void | Promise<void>;
   onCancel: () => void;
-  onCreateTransaction: (targetDiff: number) => void | Promise<void>;
+  onCreateTransaction: (
+    targetDiff: number,
+    date: string,
+  ) => void | Promise<void>;
 };
 
 type ReconcilingAction = 'done' | 'create-transaction';
 
 type BalanceQuery = ReconcilingMessageProps['balanceQuery'];
 
-function useClearedBalance(balanceQuery: BalanceQuery) {
+// The cleared balance as of `date`: only what Lock would lock counts
+export function clearedBalanceCell(balanceQuery: BalanceQuery, date: string) {
+  return {
+    name: `${balanceQuery.name}-${date}-cleared`,
+    query: balanceQuery.query.filter({ cleared: true, date: { $lte: date } }),
+  } as const;
+}
+
+function useClearedBalance(balanceQuery: BalanceQuery, date: string) {
   return useSheetValue<'balance', `balance-query-${string}-cleared`>({
-    name: `${balanceQuery.name}-cleared`,
+    ...clearedBalanceCell(balanceQuery, date),
     value: 0,
-    query: balanceQuery.query.filter({ cleared: true }),
   });
 }
 
@@ -47,7 +60,7 @@ export function PrewarmReconcileBalance({
 }: {
   balanceQuery: BalanceQuery;
 }) {
-  useClearedBalance(balanceQuery);
+  useClearedBalance(balanceQuery, currentDay());
   return null;
 }
 
@@ -58,11 +71,13 @@ export function ReconcilingMessage({
   onCreateTransaction,
 }: ReconcilingMessageProps) {
   const format = useFormat();
+  const dateFormat = useDateFormat() || 'MM/dd/yyyy';
+  const dateInputId = useId();
   const targetInputId = useId();
 
-  const cleared = useClearedBalance(balanceQuery);
-
-  const [inputValue, setInputValue] = useState(() => format(0, 'financial'));
+  const [date, setDate] = useState(currentDay);
+  const cleared = useClearedBalance(balanceQuery, date);
+  const [inputValue, setInputValue] = useState('');
   const targetBalance =
     inputValue.trim() !== '' ? format.fromEdit(inputValue) : null;
   const targetDiff =
@@ -88,7 +103,7 @@ export function ReconcilingMessage({
 
   function lock() {
     if (targetDiff === 0 && targetBalance != null && pendingAction === null) {
-      void runAction('done', () => onDone(targetBalance));
+      void runAction('done', () => onDone(targetBalance, date));
     }
   }
 
@@ -120,18 +135,30 @@ export function ReconcilingMessage({
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
         <View style={{ alignItems: 'center' }}>
           <InitialFocus>
-            <AmountInput
-              id={targetInputId}
-              value={inputValue}
-              minWidthText={format(10000, 'financial')}
-              onChangeValue={setInputValue}
-              onUpdate={formatTarget}
-              onEnter={() => (targetDiff === 0 ? lock() : formatTarget())}
-              onEscape={onCancel}
+            <DateSelect
+              id={dateInputId}
+              value={date}
+              dateFormat={dateFormat}
+              onSelect={setDate}
+              inputProps={{ style: dateInputStyle }}
             />
           </InitialFocus>
+          <label htmlFor={dateInputId} style={formulaLabelStyle}>
+            <Trans>Date</Trans>
+          </label>
+        </View>
+        <View style={{ alignItems: 'center' }}>
+          <AmountInput
+            id={targetInputId}
+            value={inputValue}
+            minWidthText={format(10000, 'financial')}
+            onChangeValue={setInputValue}
+            onUpdate={formatTarget}
+            onEnter={() => (targetDiff === 0 ? lock() : formatTarget())}
+            onEscape={onCancel}
+          />
           <label htmlFor={targetInputId} style={formulaLabelStyle}>
-            <Trans>Target</Trans>
+            <Trans>Balance</Trans>
           </label>
         </View>
         <FormulaOperator>−</FormulaOperator>
@@ -161,7 +188,7 @@ export function ReconcilingMessage({
           onPress={() => {
             if (targetDiff != null) {
               void runAction('create-transaction', () =>
-                onCreateTransaction(targetDiff),
+                onCreateTransaction(targetDiff, date),
               );
             }
           }}
@@ -195,6 +222,24 @@ const formulaValueBoxStyle = {
   border: '1px solid transparent',
 };
 
+// The input text the date and amount inputs share
+const formulaInputTextStyle = {
+  ...formulaValueTextStyle,
+  fontWeight: 500,
+};
+
+// Just wide enough for the widest date format, yyyy-MM-dd (97px of text plus
+// padding and border), so picking a date never shifts the formula
+const dateInputStyle = {
+  ...formulaInputTextStyle,
+  fontFamily: 'inherit',
+  boxSizing: 'border-box',
+  padding: '1px 2px',
+  color: 'inherit',
+  width: 104,
+  textAlign: 'center',
+} as const;
+
 const formulaLabelStyle = {
   fontSize: 11,
   color: theme.pageTextLight,
@@ -224,8 +269,7 @@ function AmountInput({
   ref,
 }: AmountInputProps) {
   const textStyle = {
-    ...formulaValueTextStyle,
-    fontWeight: 500,
+    ...formulaInputTextStyle,
     gridArea: '1 / 1',
   };
   // Same box as the input's (its border sits right against the digits)

@@ -33,7 +33,8 @@ import type {
   TransactionFilterEntity,
 } from '@actual-app/core/types/models';
 import { css } from '@emotion/css';
-import { differenceInCalendarDays } from 'date-fns';
+import { format as formatDate, isSameYear } from 'date-fns';
+import type { Locale } from 'date-fns';
 import type { TFunction } from 'i18next';
 
 import { isAccountFailedSync } from '#accounts/syncStatus';
@@ -48,6 +49,7 @@ import { SelectedTransactionsButton } from '#components/transactions/SelectedTra
 import { UncategorizedChip } from '#components/UncategorizedChip';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useHotkeys } from '#hooks/useHotkeys';
+import { useLocale } from '#hooks/useLocale';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { useNotes } from '#hooks/useNotes';
 import { useSplitsExpanded } from '#hooks/useSplitsExpanded';
@@ -190,6 +192,7 @@ export function AccountHeader({
   onMergeTransactions,
 }: AccountHeaderProps) {
   const { t } = useTranslation();
+  const locale = useLocale();
 
   const searchInput = useRef<HTMLInputElement>(null);
   const reconcileButton = useRef<HTMLButtonElement>(null);
@@ -421,7 +424,7 @@ export function AccountHeader({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {formatDaysSinceReconciled(account.last_reconciled, t)}
+                  {formatLastReconciled(account.last_reconciled, locale, t)}
                 </Text>
               )}
             </View>
@@ -847,20 +850,12 @@ function AccountMenu({
   );
 }
 
-function formatDaysSinceReconciled(lastReconciled: string, t: TFunction) {
-  const days = Math.max(
-    0,
-    differenceInCalendarDays(
-      new Date(),
-      new Date(parseInt(lastReconciled, 10)),
-    ),
-  );
-  if (days === 0) {
-    return t('Today');
-  }
-  return t('{{count}} days ago', {
-    count: days,
-    defaultValue_one: '{{count}} day ago',
-    defaultValue_other: '{{count}} days ago',
-  });
+function formatLastReconciled(
+  lastReconciled: string,
+  locale: Locale | undefined,
+  t: TFunction,
+) {
+  const date = new Date(parseInt(lastReconciled, 10));
+  const pattern = isSameYear(date, new Date()) ? 'MMM d' : 'MMM d, yyyy';
+  return t('thru {{date}}', { date: formatDate(date, pattern, { locale }) });
 }

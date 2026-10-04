@@ -16,6 +16,7 @@ import { View } from '@actual-app/components/view';
 import { listen, send } from '@actual-app/core/platform/client/connection';
 import * as undo from '@actual-app/core/platform/client/undo';
 import type { UndoState } from '@actual-app/core/server/undo';
+import { currentDay } from '@actual-app/core/shared/months';
 import { q } from '@actual-app/core/shared/query';
 import type { Query } from '@actual-app/core/shared/query';
 import {
@@ -36,6 +37,7 @@ import type {
   TransactionFilterEntity,
 } from '@actual-app/core/types/models';
 import { useSuspenseQueries, useSuspenseQuery } from '@tanstack/react-query';
+import { parseISO } from 'date-fns';
 import { debounce, isEqual } from 'es-toolkit/compat';
 import { t } from 'i18next';
 import { v4 as uuidv4 } from 'uuid';
@@ -96,6 +98,7 @@ import { updateNewTransactions } from '#transactions/transactionsSlice';
 
 import { AccountEmptyMessage } from './AccountEmptyMessage';
 import { AccountHeader } from './Header';
+import { clearedBalanceCell } from './Reconcile';
 
 type ConditionEntity = Partial<RuleConditionEntity> | TransactionFilterEntity;
 
@@ -1172,7 +1175,7 @@ class AccountInternal extends PureComponent<
     return null;
   };
 
-  lockTransactions = async () => {
+  lockTransactions = async (date: string) => {
     const { accountId } = this.props;
     if (!accountId) {
       return;
@@ -1180,7 +1183,7 @@ class AccountInternal extends PureComponent<
 
     // No `workingHard` here: the reconciliation banner's own button shows the
     // loading state for this action.
-    await reconciliation.lockTransactions(accountId);
+    await reconciliation.lockTransactions(accountId, date);
     await this.refetchTransactions();
   };
 
@@ -1198,7 +1201,7 @@ class AccountInternal extends PureComponent<
     );
   };
 
-  onDoneReconciling = async (reconcileAmount: number) => {
+  onDoneReconciling = async (reconcileAmount: number, date: string) => {
     const { accountId } = this.props;
     const account = this.props.accounts.find(
       account => account.id === accountId,
@@ -1210,7 +1213,8 @@ class AccountInternal extends PureComponent<
     const isLocked = await reconciliation.finishReconciliation(
       account.id,
       reconcileAmount,
-      () => this.lockTransactions(),
+      date,
+      () => this.lockTransactions(date),
     );
     // The balance moved since the panel showed a match (e.g. a sync landed);
     // stay open so the panel's live difference shows what's off
@@ -1218,7 +1222,7 @@ class AccountInternal extends PureComponent<
       return;
     }
 
-    const lastReconciled = new Date().getTime().toString();
+    const lastReconciled = parseISO(date).getTime().toString();
     this.props.onUpdateAccount({ ...account, last_reconciled: lastReconciled });
 
     this.setState(state => ({
@@ -1234,7 +1238,7 @@ class AccountInternal extends PureComponent<
     }));
   };
 
-  onCreateReconciliationTransaction = async (diff: number) => {
+  onCreateReconciliationTransaction = async (diff: number, date: string) => {
     const { accountId } = this.props;
     if (!accountId) {
       return;
@@ -1243,6 +1247,7 @@ class AccountInternal extends PureComponent<
     await reconciliation.createReconciliationTransaction(
       accountId,
       diff,
+      date,
       // Optimistic UI: update the transaction list before sending the data to the database
       reconciliationTransactions =>
         this.setState(state => ({
@@ -2118,18 +2123,18 @@ async function prewarmHeaderBalances(
   accountId: AccountInternalProps['accountId'],
   showExtraBalances: boolean,
 ) {
-  const name = `balance-query-${accountId}`;
+  const name = `balance-query-${accountId}` as const;
   const query = queries.transactions(accountId).calculate({ $sum: '$amount' });
-  // The cleared balance is always needed: the reconcile panel opens on it
-  const cells = [
+  // Today's cleared balance is always needed: the reconcile panel opens on it
+  const cells: Array<{ name: string; query: Query }> = [
     { name, query },
-    { name: `${name}-cleared`, query: query.filter({ cleared: true }) },
+    clearedBalanceCell({ name, query }, currentDay()),
   ];
   if (showExtraBalances) {
-    cells.push({
-      name: `${name}-uncleared`,
-      query: query.filter({ cleared: false }),
-    });
+    cells.push(
+      { name: `${name}-cleared`, query: query.filter({ cleared: true }) },
+      { name: `${name}-uncleared`, query: query.filter({ cleared: false }) },
+    );
   }
 
   await Promise.all(

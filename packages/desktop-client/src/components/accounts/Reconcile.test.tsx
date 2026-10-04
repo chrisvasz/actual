@@ -1,5 +1,6 @@
 import React from 'react';
 
+import * as monthUtils from '@actual-app/core/shared/months';
 import { q } from '@actual-app/core/shared/query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -45,22 +46,63 @@ describe('ReconcilingMessage', () => {
     );
   }
 
-  async function enterTarget(value: string) {
-    const input = screen.getByLabelText('Target');
+  async function enterDate(value: string) {
+    const input = screen.getByLabelText('Date');
     await userEvent.clear(input);
     await userEvent.type(input, value);
   }
 
-  test('starts the target at zero, focused and selected', async () => {
+  async function enterTarget(value: string) {
+    const input = screen.getByLabelText('Balance');
+    await userEvent.clear(input);
+    await userEvent.type(input, value);
+  }
+
+  test('starts on today with an empty balance', async () => {
     vi.mocked(useSheetValue).mockReturnValue(5000);
     renderMessage();
 
-    const input = screen.getByLabelText<HTMLInputElement>('Target');
-    expect(input).toHaveValue('0.00');
-    await waitFor(() => expect(input).toHaveFocus());
-    expect(input.selectionStart).toBe(0);
-    expect(input.selectionEnd).toBe('0.00'.length);
-    expect(screen.getByText('-50.00')).toBeInTheDocument();
+    const dateInput = screen.getByLabelText<HTMLInputElement>('Date');
+    expect(dateInput).toHaveValue(
+      monthUtils.format(monthUtils.currentDay(), 'MM/dd/yyyy'),
+    );
+    await waitFor(() => expect(dateInput).toHaveFocus());
+    expect(screen.getByLabelText('Balance')).toHaveValue('');
+    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Adjust' })).toBeDisabled();
+  });
+
+  test('reconciles as of the chosen date', async () => {
+    vi.mocked(useSheetValue).mockReturnValue(5000);
+    const onDone = vi.fn();
+    const onCreateTransaction = vi.fn();
+    renderMessage({ onDone, onCreateTransaction });
+
+    await enterDate('09/15/2026');
+    await enterTarget('60');
+
+    await userEvent.click(screen.getByText('Adjust'));
+    expect(onCreateTransaction).toHaveBeenCalledWith(1000, '2026-09-15');
+
+    await enterTarget('50');
+    await userEvent.click(screen.getByText('Lock'));
+    expect(onDone).toHaveBeenCalledWith(5000, '2026-09-15');
+  });
+
+  test('counts only cleared transactions on or before the date', async () => {
+    vi.mocked(useSheetValue).mockReturnValue(5000);
+    renderMessage();
+
+    await enterDate('09/15/2026');
+    await userEvent.tab();
+
+    const binding = vi.mocked(useSheetValue).mock.lastCall?.[0];
+    expect(binding).toMatchObject({
+      name: 'balance-query-test-2026-09-15-cleared',
+    });
+    expect(
+      typeof binding === 'object' && binding.query?.serializeAsString(),
+    ).toContain('"$lte":"2026-09-15"');
   });
 
   test('locks once the target matches the cleared balance', async () => {
@@ -73,7 +115,7 @@ describe('ReconcilingMessage', () => {
     expect(screen.queryByText('Adjust')).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByText('Lock'));
-    expect(onDone).toHaveBeenCalledWith(5000);
+    expect(onDone).toHaveBeenCalledWith(5000, monthUtils.currentDay());
   });
 
   test('closing exits without locking', async () => {
@@ -102,7 +144,10 @@ describe('ReconcilingMessage', () => {
     expect(screen.getByText('+70.00')).toBeInTheDocument();
 
     await userEvent.click(screen.getByText('Adjust'));
-    expect(onCreateTransaction).toHaveBeenCalledWith(7000);
+    expect(onCreateTransaction).toHaveBeenCalledWith(
+      7000,
+      monthUtils.currentDay(),
+    );
   });
 
   test('computes negative difference and passes correct amount', async () => {
@@ -117,7 +162,10 @@ describe('ReconcilingMessage', () => {
     expect(screen.getByText('-20.00')).toBeInTheDocument();
 
     await userEvent.click(screen.getByText('Adjust'));
-    expect(onCreateTransaction).toHaveBeenCalledWith(-2000);
+    expect(onCreateTransaction).toHaveBeenCalledWith(
+      -2000,
+      monthUtils.currentDay(),
+    );
   });
 
   test('formats the target when it loses focus', async () => {
@@ -127,7 +175,7 @@ describe('ReconcilingMessage', () => {
     await enterTarget('40000');
     await userEvent.tab();
 
-    expect(screen.getByLabelText('Target')).toHaveValue('40,000.00');
+    expect(screen.getByLabelText('Balance')).toHaveValue('40,000.00');
   });
 
   test('evaluates arithmetic in the bank balance', async () => {
@@ -139,15 +187,19 @@ describe('ReconcilingMessage', () => {
     await userEvent.click(screen.getByText('Adjust'));
 
     // 100 + 25.50 - 10 = 115.50, minus the 123.45 cleared
-    expect(onCreateTransaction).toHaveBeenCalledWith(-795);
+    expect(onCreateTransaction).toHaveBeenCalledWith(
+      -795,
+      monthUtils.currentDay(),
+    );
   });
 
-  test('an empty target offers only exiting', async () => {
+  test('an empty balance offers only exiting', async () => {
     vi.mocked(useSheetValue).mockReturnValue(2222);
     const onCancel = vi.fn();
     renderMessage({ onCancel });
 
-    await userEvent.clear(screen.getByLabelText('Target'));
+    await enterTarget('5');
+    await userEvent.clear(screen.getByLabelText('Balance'));
 
     expect(screen.getByRole('button', { name: 'Adjust' })).toBeDisabled();
 
@@ -171,7 +223,7 @@ describe('ReconcilingMessage', () => {
     renderMessage({ onDone });
 
     await enterTarget('50{Enter}');
-    expect(onDone).toHaveBeenCalledWith(5000);
+    expect(onDone).toHaveBeenCalledWith(5000, monthUtils.currentDay());
   });
 
   test('Enter formats the target when it does not match', async () => {
@@ -180,7 +232,7 @@ describe('ReconcilingMessage', () => {
     renderMessage({ onDone });
 
     await enterTarget('40000{Enter}');
-    const input = screen.getByLabelText('Target');
+    const input = screen.getByLabelText('Balance');
     expect(input).toHaveValue('40,000.00');
     expect(input).toHaveFocus();
     expect(onDone).not.toHaveBeenCalled();
@@ -194,7 +246,10 @@ describe('ReconcilingMessage', () => {
     await enterTarget('40000');
     await userEvent.tab();
     await userEvent.click(screen.getByText('Adjust'));
-    expect(onCreateTransaction).toHaveBeenCalledWith(4000000);
+    expect(onCreateTransaction).toHaveBeenCalledWith(
+      4000000,
+      monthUtils.currentDay(),
+    );
   });
 
   test('Escape exits', async () => {
@@ -202,7 +257,7 @@ describe('ReconcilingMessage', () => {
     const onCancel = vi.fn();
     renderMessage({ onCancel });
 
-    await userEvent.type(screen.getByLabelText('Target'), '{Escape}');
+    await userEvent.type(screen.getByLabelText('Balance'), '{Escape}');
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });
