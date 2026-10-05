@@ -247,6 +247,10 @@
   --color-budgetCurrentMonth: var(--color-tableBackground);
   --color-budgetHeaderOtherMonth: var(--color-budgetHeaderCurrentMonth);
   --color-budgetHeaderCurrentMonth: var(--color-tableHeaderBackground);
+  --color-budgetGoalProgress: var(--palette-purple400);
+  --color-budgetGoalChipBackground: var(--palette-purple800);
+  --color-budgetGoalChipText: var(--palette-purple150);
+  --color-budgetGoalTrack: var(--palette-purple800);
   --color-budgetSummaryAmountBackground: var(--color-tableHeaderBackground);
 
   --color-floatingActionBarBackground: var(--palette-purple800);

@@ -61,6 +61,9 @@ export type DbCategory = {
   hidden: 1 | 0;
   goal_def?: JsonString | null;
   cleanup_def?: JsonString | null;
+  goal_amount?: number | null;
+  goal_type?: 'budgeted' | 'balance' | null;
+  goal_target_month?: string | null;
   template_settings?: { source: 'notes' | 'ui' };
   tombstone: 1 | 0;
 };

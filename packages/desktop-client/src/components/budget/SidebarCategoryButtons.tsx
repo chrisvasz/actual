@@ -6,6 +6,7 @@ import { NotesButton } from '#components/NotesButton';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useNotes } from '#hooks/useNotes';
 
+import { CategoryGoalChip } from './CategoryGoalChip';
 import { CategoryAutomationButton } from './goals/CategoryAutomationButton';
 
 type SidebarCategoryButtonsProps = {
@@ -35,6 +36,7 @@ export const SidebarCategoryButtons = ({
           />
         </View>
       )}
+      {!category.is_income && <CategoryGoalChip category={category} />}
       <View style={{ flexShrink: 0 }}>
         <NotesButton
           id={category.id}

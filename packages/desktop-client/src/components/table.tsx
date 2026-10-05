@@ -303,6 +303,7 @@ function InputValue({
   value: defaultValue,
   onUpdate,
   onBlur,
+  onKeyDown: onKeyDownProp,
   ...props
 }: InputValueProps) {
   const [value, setValue] = useState(defaultValue);
@@ -320,6 +321,8 @@ function InputValue({
   }
 
   function onKeyDown(e) {
+    onKeyDownProp?.(e);
+
     // Only enter and tab to escape (which allows the user to move
     // around)
     if (e.key !== 'Enter' && e.key !== 'Tab') {
