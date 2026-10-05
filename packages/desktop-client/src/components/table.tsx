@@ -38,6 +38,7 @@ import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
 import { useMergedRefs } from '#hooks/useMergedRefs';
 import { useModalState } from '#hooks/useModalState';
+import { usePendingValue } from '#hooks/usePendingValue';
 import {
   AvoidRefocusScrollProvider,
   useProperFocus,
@@ -681,7 +682,9 @@ export type SheetCellProps<
   > & {
     onBlur?: () => void;
   };
-  onSave?: (value) => void;
+  // May return the save's promise; if it rejects, the cell drops the value
+  // it was showing and goes back to the spreadsheet's.
+  onSave?: (value) => void | Promise<unknown>;
   textAlign?: CSSProperties['textAlign'];
 };
 export function SheetCell<
@@ -697,22 +700,20 @@ export function SheetCell<
 }: SheetCellProps<SheetName, FieldName>) {
   const { binding, type, getValueStyle, formatExpr, unformatExpr } = valueProps;
 
-  // The value just saved from the input, shown until the spreadsheet
-  // reports the new value so the cell doesn't flash the old one while
-  // the save round-trips to the server.
-  const [pendingValue, setPendingValue] = useState<{
-    value: Spreadsheets[SheetName][FieldName];
-  } | null>(null);
-
+  // The value just saved from the input is shown until the spreadsheet
+  // reports the new value, so the cell doesn't flash the old one while the
+  // save round-trips to the server. The save resolves before the
+  // spreadsheet recomputes, so only a failed save drops it early.
   const latestSheetValue = useSheetValue(binding, () => {
-    setPendingValue(null);
+    pending.reset();
 
     // "close" the cell if it's editing
     if (props.exposed && inputProps && inputProps.onBlur) {
       inputProps.onBlur();
     }
   });
-  const sheetValue = pendingValue ? pendingValue.value : latestSheetValue;
+  const pending = usePendingValue(latestSheetValue);
+  const sheetValue = pending.value;
   const format = useFormat();
 
   return (
@@ -736,12 +737,14 @@ export function SheetCell<
             value={formatExpr ? formatExpr(sheetValue) : sheetValue.toString()}
             onUpdate={value => {
               const newValue = unformatExpr ? unformatExpr(value) : value;
-              if (typeof newValue === 'number' && newValue !== sheetValue) {
-                setPendingValue({
-                  value: newValue as Spreadsheets[SheetName][FieldName],
-                });
+              const dismiss =
+                typeof newValue === 'number' && newValue !== sheetValue
+                  ? pending.show(newValue as Spreadsheets[SheetName][FieldName])
+                  : null;
+              const saved = onSave(newValue);
+              if (saved && dismiss) {
+                saved.then(undefined, dismiss);
               }
-              onSave(newValue);
             }}
             {...inputProps}
             style={{ textAlign, ...(inputProps?.style || {}) }}

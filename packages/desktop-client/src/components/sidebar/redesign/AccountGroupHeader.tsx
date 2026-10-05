@@ -25,6 +25,7 @@ import {
   useUpdateAccountGroupMutation,
 } from '#account-groups';
 import { useContextMenu } from '#hooks/useContextMenu';
+import { usePendingValue } from '#hooks/usePendingValue';
 import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 import * as bindings from '#spreadsheet/bindings';
@@ -59,6 +60,7 @@ export function AccountGroupHeader({
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const updateGroup = useUpdateAccountGroupMutation();
+  const { value: name, showUntil: showNameUntil } = usePendingValue(group.name);
   const deleteGroup = useDeleteAccountGroupMutation();
 
   const [rowElement, setRowElement] = useState<HTMLDivElement | null>(null);
@@ -99,7 +101,7 @@ export function AccountGroupHeader({
     <TreeItem
       ref={setRowElement}
       id={key}
-      textValue={group.name}
+      textValue={name}
       onAction={() => treeState?.toggleKey(key)}
       className={css({
         outline: 'none',
@@ -130,8 +132,8 @@ export function AccountGroupHeader({
               slot="chevron"
               aria-label={
                 isExpanded
-                  ? t('Collapse {{group}}', { group: group.name })
-                  : t('Expand {{group}}', { group: group.name })
+                  ? t('Collapse {{group}}', { group: name })
+                  : t('Expand {{group}}', { group: name })
               }
               className={css({
                 display: 'flex',
@@ -151,11 +153,17 @@ export function AccountGroupHeader({
                 <Input
                   aria-label={t('Group name')}
                   style={{ flex: 1, padding: 0, fontSize: 12 }}
-                  defaultValue={group.name}
+                  defaultValue={name}
                   onKeyDown={e => e.stopPropagation()}
                   onEnter={newGroupName => {
                     if (newGroupName.trim() !== '') {
-                      updateGroup.mutate({ id: group.id, name: newGroupName });
+                      showNameUntil(
+                        newGroupName,
+                        updateGroup.mutateAsync({
+                          id: group.id,
+                          name: newGroupName,
+                        }),
+                      );
                     }
                     setIsEditing(false);
                   }}
@@ -166,7 +174,7 @@ export function AccountGroupHeader({
             ) : (
               <>
                 <Text style={{ ...groupLabelStyle, ...styles.ellipsisText }}>
-                  {group.name}
+                  {name}
                 </Text>
                 {!isExpanded && <CountPill count={accounts.length} />}
                 <SyncErrorRollup count={failedCount} />

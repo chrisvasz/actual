@@ -12,6 +12,7 @@ import { View } from '@actual-app/components/view';
 import * as monthUtils from '@actual-app/core/shared/months';
 import { css } from '@emotion/css';
 
+import { useBudgetActions } from '#budget';
 import { BalanceWithCarryover } from '#components/budget/BalanceWithCarryover';
 import { ScheduleIndicatorButton } from '#components/budget/ScheduleIndicatorButton';
 import { makeAmountGrey } from '#components/budget/util';
@@ -198,6 +199,10 @@ export const CategoryMonth = memo(function CategoryMonth({
   onShowActivity,
 }: CategoryMonthProps) {
   const format = useFormat();
+  // The amount cell uses the mutation directly (rather than onBudgetAction)
+  // so it gets the save's promise and can drop the amount it's showing if
+  // the save fails.
+  const { mutateAsync: applyBudgetAction } = useBudgetActions();
 
   const [balanceMenuOpen, setBalanceMenuOpen] = useState(false);
   const triggerBalanceMenuRef = useRef(null);
@@ -264,12 +269,16 @@ export const CategoryMonth = memo(function CategoryMonth({
               backgroundColor: theme.budgetCurrentMonth,
             },
           }}
-          onSave={(parsedIntegerAmount: number | null) => {
-            onBudgetAction(month, 'budget-amount', {
-              category: category.id,
-              amount: parsedIntegerAmount ?? 0,
-            });
-          }}
+          onSave={(parsedIntegerAmount: number | null) =>
+            applyBudgetAction({
+              month,
+              type: 'budget-amount',
+              args: {
+                category: category.id,
+                amount: parsedIntegerAmount ?? 0,
+              },
+            })
+          }
         />
       </View>
       <Field name="spent" width="flex" style={{ textAlign: 'right' }}>

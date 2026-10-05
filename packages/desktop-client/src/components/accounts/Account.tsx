@@ -336,7 +336,7 @@ type AccountInternalProps = {
   dispatch: AppDispatch;
   onSetTransfer: ReturnType<typeof useTransactionBatchActions>['onSetTransfer'];
   onReopenAccount: (id: AccountEntity['id']) => void;
-  onUpdateAccount: (account: AccountEntity) => void;
+  onUpdateAccount: (account: AccountEntity) => Promise<unknown>;
   onUnlinkAccount: (id: AccountEntity['id']) => void;
   onSyncAndDownload: (accountId?: AccountEntity['id']) => void;
   onCreatePayee: (name: PayeeEntity['name']) => Promise<PayeeEntity['id']>;
@@ -904,8 +904,8 @@ class AccountInternal extends PureComponent<
       if (!account) {
         throw new Error(`Account with ID ${this.props.accountId} not found.`);
       }
-      this.props.onUpdateAccount({ ...account, name });
       this.setState({ nameError: '' });
+      return this.props.onUpdateAccount({ ...account, name });
     }
   };
 
@@ -1224,7 +1224,10 @@ class AccountInternal extends PureComponent<
     }
 
     const lastReconciled = parseISO(date).getTime().toString();
-    this.props.onUpdateAccount({ ...account, last_reconciled: lastReconciled });
+    void this.props.onUpdateAccount({
+      ...account,
+      last_reconciled: lastReconciled,
+    });
 
     this.setState(state => ({
       isReconciling: false,
@@ -2306,9 +2309,11 @@ export function Account() {
   const { mutate: reopenAccount } = useReopenAccountMutation();
   const onReopenAccount = (id: AccountEntity['id']) => reopenAccount({ id });
 
-  const { mutate: updateAccount } = useUpdateAccountMutation();
+  // Settles once the change is in the cache, so the header can show the new
+  // name until then. Failures are already reported by the mutation.
+  const { mutateAsync: updateAccount } = useUpdateAccountMutation();
   const onUpdateAccount = (account: AccountEntity) =>
-    updateAccount({ account });
+    updateAccount({ account }).catch(() => undefined);
 
   const { mutate: unlinkAccount } = useUnlinkAccountMutation();
   const onUnlinkAccount = (id: AccountEntity['id']) => unlinkAccount({ id });

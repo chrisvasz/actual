@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import type { CSSProperties, RefCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -21,6 +21,7 @@ import { NotesButton } from '#components/NotesButton';
 import { InputCell } from '#components/table';
 import { useContextMenu } from '#hooks/useContextMenu';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
+import { usePendingValue } from '#hooks/usePendingValue';
 
 import { CATEGORY_COLUMN_WIDTH } from './util';
 
@@ -66,10 +67,7 @@ export function SidebarGroup({
   const isGoalTemplatesEnabled = useFeatureFlag('goalTemplatesEnabled');
 
   const temporary = group.id === 'new';
-  // The name just submitted, shown until the save lands in the cache so the
-  // old name doesn't flash back when the input closes.
-  const [pendingName, setPendingName] = useState<string | null>(null);
-  const name = pendingName ?? group.name;
+  const { value: name, showUntil: showNameUntil } = usePendingValue(group.name);
   const canSortCategories =
     !!onSortCategories && (group.categories?.length ?? 0) > 1;
   const triggerRef = useRef(null);
@@ -241,10 +239,7 @@ export function SidebarGroup({
               void onSave({ id: group.id, name: value });
             }
           } else {
-            setPendingName(value);
-            void onSave({ id: group.id, name: value }).finally(() =>
-              setPendingName(null),
-            );
+            showNameUntil(value, onSave({ id: group.id, name: value }));
           }
         }}
         onBlur={() => onEdit(null)}

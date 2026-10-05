@@ -21,6 +21,7 @@ import { sync } from '#app/appSlice';
 import { useAccounts } from '#hooks/useAccounts';
 import { addNotification } from '#notifications/notificationsSlice';
 import { payeeQueries } from '#payees';
+import { invalidateAndDeliver } from '#queries/invalidateAndDeliver';
 import { useDispatch, useStore } from '#redux';
 import type { AppDispatch } from '#redux/store';
 import { setNewTransactions } from '#transactions/transactionsSlice';
@@ -165,7 +166,9 @@ export function useUpdateAccountMutation() {
       await send('account-update', account);
       return account;
     },
-    onSuccess: () => invalidateQueries(queryClient),
+    // Resolve only once components have the new data; rename fields keep
+    // showing the pending name until then.
+    onSuccess: () => invalidateAndDeliver(queryClient, accountQueries.lists()),
     onError: error => {
       console.error('Error updating account:', error);
       dispatchErrorNotification(

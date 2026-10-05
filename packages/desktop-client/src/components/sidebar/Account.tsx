@@ -19,6 +19,7 @@ import type { OnDragChangeCallback, OnDropCallback } from '#components/sort';
 import { CellValue } from '#components/spreadsheet/CellValue';
 import { useContextMenu } from '#hooks/useContextMenu';
 import { useDragRef } from '#hooks/useDragRef';
+import { usePendingValue } from '#hooks/usePendingValue';
 import { openAccountCloseModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 import type { Binding, SheetFields } from '#spreadsheet';
@@ -102,6 +103,8 @@ export function Account<FieldName extends SheetFields<'account'>>({
   const supportsHover = !!account?.id && !isTouchDevice();
   const reopenAccount = useReopenAccountMutation();
   const updateAccount = useUpdateAccountMutation();
+  const { value: displayName, showUntil: showNameUntil } =
+    usePendingValue(name);
 
   const balanceCell = <CellValue binding={query} type="financial" />;
 
@@ -207,21 +210,24 @@ export function Account<FieldName extends SheetFields<'account'>>({
                       onBlur={() => setIsEditing(false)}
                       onEnter={newAccountName => {
                         if (newAccountName.trim() !== '') {
-                          updateAccount.mutate({
-                            account: {
-                              ...account,
-                              name: newAccountName,
-                            },
-                          });
+                          showNameUntil(
+                            newAccountName,
+                            updateAccount.mutateAsync({
+                              account: {
+                                ...account,
+                                name: newAccountName,
+                              },
+                            }),
+                          );
                         }
                         setIsEditing(false);
                       }}
                       onEscape={() => setIsEditing(false)}
-                      defaultValue={name}
+                      defaultValue={displayName}
                     />
                   </InitialFocus>
                 ) : (
-                  name
+                  displayName
                 )
               }
               right={

@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import type { CSSProperties, Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -15,6 +15,7 @@ import type {
 
 import { InputCell } from '#components/table';
 import { useContextMenu } from '#hooks/useContextMenu';
+import { usePendingValue } from '#hooks/usePendingValue';
 
 import { SidebarCategoryButtons } from './SidebarCategoryButtons';
 import { CATEGORY_COLUMN_WIDTH } from './util';
@@ -61,10 +62,9 @@ export function SidebarCategory({
   const { t } = useTranslation();
 
   const temporary = category.id === 'new';
-  // The name just submitted, shown until the save lands in the cache so the
-  // old name doesn't flash back when the input closes.
-  const [pendingName, setPendingName] = useState<string | null>(null);
-  const name = pendingName ?? category.name;
+  const { value: name, showUntil: showNameUntil } = usePendingValue(
+    category.name,
+  );
   const triggerRef = useRef(null);
   const { handleContextMenu } = useContextMenu({
     triggerRef,
@@ -170,10 +170,7 @@ export function SidebarCategory({
             }
           } else {
             if (value !== name) {
-              setPendingName(value);
-              void onSave({ ...category, name: value }).finally(() =>
-                setPendingName(null),
-              );
+              showNameUntil(value, onSave({ ...category, name: value }));
             }
           }
         }}
