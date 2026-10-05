@@ -29,19 +29,12 @@ packages/desktop-client/public/kcab
 packages/desktop-client/locale
 packages/desktop-client/playwright-report
 packages/desktop-client/test-results
-packages/desktop-electron/client-build
-packages/desktop-electron/build
-packages/desktop-electron/.electron-symbols
-packages/desktop-electron/dist
-packages/desktop-electron/loot-core
 packages/desktop-client/service-worker
 packages/plugins-service/dist
 packages/component-library/dist
 packages/loot-core/lib-dist
 **/.tsbuildinfo
 packages/sync-server/coverage
-bundle.desktop.js
-bundle.desktop.js.map
 bundle.mobile.js
 bundle.mobile.js.map
 
@@ -107,8 +100,6 @@ build/
 # Test results (JUnit XML reports, Playwright artifacts)
 **/test-results/
 
-*storybook.log
-storybook-static
 
 # cli config when testing locally
 .actualrc.json

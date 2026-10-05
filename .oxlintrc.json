@@ -376,12 +376,6 @@
   },
   "overrides": [
     {
-      "files": ["packages/desktop-electron/**/*"],
-      "rules": {
-        "react/rules-of-hooks": "off"
-      }
-    },
-    {
       // Grandfathered pre-existing enums; new enums are disallowed everywhere else.
       "files": [
         "packages/component-library/src/tokens.ts",
@@ -392,7 +386,7 @@
       }
     },
     {
-      "files": ["**/*.test.{js,ts,jsx,tsx}", "packages/docs/**/*"],
+      "files": ["**/*.test.{js,ts,jsx,tsx}"],
       "rules": {
         "actual/no-untranslated-strings": "off",
         "actual/prefer-logger-over-console": "off",
@@ -417,12 +411,6 @@
       }
     },
     {
-      "files": ["packages/docs/**/*"],
-      "rules": {
-        "actual/no-anchor-tag": "off"
-      }
-    },
-    {
       "files": ["packages/desktop-client/**/*.{js,ts,jsx,tsx}"],
       "rules": {
         "typescript-paths/absolute-parent-import": [
@@ -442,7 +430,6 @@
     {
       "files": [
         "packages/desktop-client/src/components/ManageRules.tsx",
-        "packages/desktop-client/src/components/mobile/budget/ExpenseGroupList.tsx",
         "packages/desktop-client/src/components/reports/reports/Calendar.tsx",
         "packages/desktop-client/src/components/table.tsx"
       ],
@@ -455,7 +442,6 @@
       "files": [
         "packages/api/**/*",
         "packages/desktop-client/**/*",
-        "packages/desktop-electron/**/*",
         "packages/loot-core/**/*",
         "packages/plugins-service/**/*",
         "packages/sync-server/**/*"

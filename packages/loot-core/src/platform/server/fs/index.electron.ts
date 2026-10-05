@@ -9,15 +9,7 @@ import type * as T from './index';
 
 export { getDocumentDir, getBudgetDir, _setDocumentDir } from './shared';
 
-let rootPath = path.join(__dirname, '..', '..', '..', '..');
-
-switch (path.basename(__filename)) {
-  case 'bundle.desktop.js': // electron app
-    rootPath = path.join(__dirname, '..', '..');
-    break;
-  default:
-    break;
-}
+const rootPath = path.join(__dirname, '..', '..', '..', '..');
 
 export const init: typeof T.init = async () => {
   // Nothing to do

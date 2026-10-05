@@ -61,10 +61,7 @@
       "api": "./src/platform/server/sqlite/index.api.ts",
       "default": "./src/platform/server/sqlite/index.ts"
     },
-    "#platform/client/connection": {
-      "electron-renderer": "./src/platform/client/connection/index.electron.ts",
-      "default": "./src/platform/client/connection/index.ts"
-    },
+    "#platform/client/connection": "./src/platform/client/connection/index.ts",
     "#server/encryption/encryption-internals": {
       "electron": "./src/server/encryption/encryption-internals.electron.ts",
       "api": "./src/server/encryption/encryption-internals.api.ts",
@@ -130,7 +127,6 @@
     "./platform/client/browser-preload": "./src/platform/client/browser-preload/index.ts",
     "./platform/client/browser-server/coordinator": "./src/platform/client/browser-server/coordinator.ts",
     "./platform/client/connection": {
-      "electron-renderer": "./src/platform/client/connection/index.electron.ts",
       "api": "./src/platform/client/connection/index.api.ts",
       "default": "./src/platform/client/connection/index.ts"
     },
@@ -178,15 +174,12 @@
     "./types/models": "./src/types/models/index.ts",
     "./types/*": "./src/types/*.ts",
     "./typings/*": "./typings/*.ts",
-    "./lib-dist/electron/bundle.desktop.js": "./lib-dist/electron/bundle.desktop.js",
     "./default-filesystem": {
       "types": "./default-filesystem.d.ts",
       "default": "./default-filesystem.mjs"
     }
   },
   "scripts": {
-    "build:node": "cross-env NODE_ENV=production vite build --config ./vite.desktop.config.mts",
-    "watch:node": "cross-env NODE_ENV=development vite build --config ./vite.desktop.config.mts --watch",
     "test": "npm-run-all -cp 'test:*'",
     "test:node": "ENV=node vitest --run",
     "test:web": "ENV=web vitest --run -c vitest.web.config.ts",
@@ -223,7 +216,6 @@
     "assert": "^2.1.0",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
-    "cross-env": "^10.1.0",
     "crypto-browserify": "^3.12.1",
     "fake-indexeddb": "^6.2.5",
     "fast-check": "^4.9.0",

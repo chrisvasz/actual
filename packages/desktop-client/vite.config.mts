@@ -35,10 +35,7 @@ const addWatchers = (): Plugin => ({
   name: 'add-watchers',
   configureServer(server) {
     server.watcher
-      .add([
-        path.resolve('../loot-core/lib-dist/electron/*.js'),
-        path.resolve('../loot-core/lib-dist/browser/*.js'),
-      ])
+      .add([path.resolve('../loot-core/lib-dist/browser/*.js')])
       .on('all', function () {
         for (const wsc of server.ws.clients) {
           wsc.send(JSON.stringify({ type: 'static-changed' }));
@@ -272,30 +269,26 @@ export default defineConfig(async ({ mode, command }) => {
     process.env.REACT_APP_BRANCH = process.env.BRANCH;
   }
 
-  // Electron packaging (--mode=desktop) bundles loot-core directly, so skip
-  // all browser-only staging there.
-  if (mode !== 'desktop') {
-    if (command === 'build') {
-      const stageKcab = build({
-        configFile: lootCoreConfig,
-        mode: 'production',
-        root: lootCoreRoot,
-      }).then(async () => {
-        const hash = await extractWorkerHash();
-        await rm(publicKcabDir, { recursive: true, force: true });
-        await cp(lootCoreOutDir, publicKcabDir, { recursive: true });
-        return hash;
-      });
-      const [, , hash] = await Promise.all([
-        stagePublicData(),
-        stagePluginsService(),
-        stageKcab,
-      ]);
-      process.env.REACT_APP_BACKEND_WORKER_HASH = hash;
-    } else {
-      await stagePublicData();
-      process.env.REACT_APP_BACKEND_WORKER_HASH = 'dev';
-    }
+  if (command === 'build') {
+    const stageKcab = build({
+      configFile: lootCoreConfig,
+      mode: 'production',
+      root: lootCoreRoot,
+    }).then(async () => {
+      const hash = await extractWorkerHash();
+      await rm(publicKcabDir, { recursive: true, force: true });
+      await cp(lootCoreOutDir, publicKcabDir, { recursive: true });
+      return hash;
+    });
+    const [, , hash] = await Promise.all([
+      stagePublicData(),
+      stagePluginsService(),
+      stageKcab,
+    ]);
+    process.env.REACT_APP_BACKEND_WORKER_HASH = hash;
+  } else {
+    await stagePublicData();
+    process.env.REACT_APP_BACKEND_WORKER_HASH = 'dev';
   }
 
   return {
@@ -305,7 +298,7 @@ export default defineConfig(async ({ mode, command }) => {
       minify: 'oxc',
       target: 'es2022',
       sourcemap: true,
-      outDir: mode === 'desktop' ? 'build-electron' : 'build',
+      outDir: 'build',
       assetsDir: 'static',
       manifest: true,
       assetsInlineLimit: 0,
@@ -356,63 +349,57 @@ export default defineConfig(async ({ mode, command }) => {
       },
     },
     resolve: {
-      ...(mode !== 'browser' && {
-        conditions: ['electron-renderer', 'module', 'browser', 'default'],
-      }),
       tsconfigPaths: true,
     },
     plugins: [
-      // electron (desktop) builds do not support PWA
-      mode === 'desktop'
-        ? undefined
-        : VitePWA({
-            registerType: 'prompt',
-            // TODO:  The plugin worker build is currently disabled due to issues with offline support. Fix this
-            // strategies: 'injectManifest',
-            // srcDir: 'service-worker',
-            // filename: 'plugin-sw.js',
-            // manifest: {
-            //   name: 'Actual',
-            //   short_name: 'Actual',
-            //   description: 'A local-first personal finance tool',
-            //   theme_color: '#5c3dbb',
-            //   background_color: '#5c3dbb',
-            //   display: 'standalone',
-            //   start_url: './',
-            // },
-            // injectManifest: {
-            //   maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
-            //   swSrc: `service-worker/plugin-sw.js`,
-            // },
-            devOptions: {
-              // Disabled: caches stale assets across reloads in dev. Plugin
-              // code that explicitly needs a SW can register one itself.
-              enabled: false,
-              type: 'module',
-            },
-            workbox: {
-              globPatterns: [
-                '**/*.{js,css,html,txt,wasm,sql,sqlite,ico,png,woff2,webmanifest}',
-              ],
-              ignoreURLParametersMatching: [/^v$/],
-              navigateFallback: '/index.html',
-              maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
-              navigateFallbackDenylist: [
-                /^\/account\/.*$/,
-                /^\/admin\/.*$/,
-                /^\/secret\/.*$/,
-                /^\/openid\/.*$/,
-                /^\/plugins\/.*$/,
-                /^\/kcab\/.*$/,
-                /^\/plugin-data\/.*$/,
-                /^\/enablebanking\/.*$/,
-              ],
-            },
-          }),
+      VitePWA({
+        registerType: 'prompt',
+        // TODO:  The plugin worker build is currently disabled due to issues with offline support. Fix this
+        // strategies: 'injectManifest',
+        // srcDir: 'service-worker',
+        // filename: 'plugin-sw.js',
+        // manifest: {
+        //   name: 'Actual',
+        //   short_name: 'Actual',
+        //   description: 'A local-first personal finance tool',
+        //   theme_color: '#5c3dbb',
+        //   background_color: '#5c3dbb',
+        //   display: 'standalone',
+        //   start_url: './',
+        // },
+        // injectManifest: {
+        //   maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
+        //   swSrc: `service-worker/plugin-sw.js`,
+        // },
+        devOptions: {
+          // Disabled: caches stale assets across reloads in dev. Plugin
+          // code that explicitly needs a SW can register one itself.
+          enabled: false,
+          type: 'module',
+        },
+        workbox: {
+          globPatterns: [
+            '**/*.{js,css,html,txt,wasm,sql,sqlite,ico,png,woff2,webmanifest}',
+          ],
+          ignoreURLParametersMatching: [/^v$/],
+          navigateFallback: '/index.html',
+          maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
+          navigateFallbackDenylist: [
+            /^\/account\/.*$/,
+            /^\/admin\/.*$/,
+            /^\/secret\/.*$/,
+            /^\/openid\/.*$/,
+            /^\/plugins\/.*$/,
+            /^\/kcab\/.*$/,
+            /^\/plugin-data\/.*$/,
+            /^\/enablebanking\/.*$/,
+          ],
+        },
+      }),
       injectShims(),
       addWatchers(),
-      mode === 'desktop' || isVitest ? undefined : lootCoreBackend(),
-      mode === 'desktop' ? undefined : pluginsServiceAssets(),
+      isVitest ? undefined : lootCoreBackend(),
+      pluginsServiceAssets(),
       react(),
       babel({
         include: [reactCompilerInclude],
