@@ -286,4 +286,29 @@ describe('compileAndRunQuery', () => {
         .sort((a, b) => String(a).localeCompare(String(b))),
     ).toEqual(ids);
   });
+
+  it('depends on the tables behind the views it reads', async () => {
+    const { dependencies } = await compileAndRunAqlQuery(
+      q('transactions').filter({ payee: 'p1' }).select('id').serialize(),
+    );
+    // Payees are resolved through `payee_mapping`, which the
+    // `v_transactions_internal` view reads
+    expect(dependencies).toEqual(
+      expect.arrayContaining(['transactions', 'payee_mapping']),
+    );
+
+    const { dependencies: payeeDependencies } = await compileAndRunAqlQuery(
+      q('payees').select('name').serialize(),
+    );
+    // A transfer payee is named after its account
+    expect(payeeDependencies).toEqual(
+      expect.arrayContaining(['payees', 'accounts']),
+    );
+
+    const { dependencies: scheduleDependencies } = await compileAndRunAqlQuery(
+      q('schedules').select(['id', 'next_date']).serialize(),
+    );
+    // Skipping a date only writes `schedules_next_date`
+    expect(scheduleDependencies).toContain('schedules_next_date');
+  });
 });

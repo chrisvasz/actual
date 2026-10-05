@@ -832,6 +832,15 @@ const compileWhere = saveStack('filter', (state, conds) => {
   return '(' + res.join('\n  AND ') + ')';
 });
 
+function addDependency(state: CompilerState, tableName: string) {
+  const viewDependencies = state.viewDependencies[tableName] ?? [];
+  for (const name of [tableName, ...viewDependencies]) {
+    if (state.dependencies.indexOf(name) === -1) {
+      state.dependencies.push(name);
+    }
+  }
+}
+
 function compileJoins(state, tableRef, internalTableFilters) {
   const joins = [];
   state.paths.forEach((desc, path) => {
@@ -856,9 +865,7 @@ function compileJoins(state, tableRef, internalTableFilters) {
       )} ${tableId} ON ${addTombstone(state.schema, tableName, tableId, on)}`,
     );
 
-    if (state.dependencies.indexOf(tableName) === -1) {
-      state.dependencies.push(tableName);
-    }
+    addDependency(state, tableName);
   });
   return joins.join('\n');
 }
@@ -1027,6 +1034,9 @@ export type SchemaConfig = {
     | Record<string, string>
     | ((name: string, config: { withDead; isJoin; tableOptions }) => string);
   tableFilters?: (name: string) => unknown[];
+  // Tables a table's views read besides the table itself. A query depends
+  // on these too, since a change to any of them can change its rows.
+  viewDependencies?: Record<string, string[]>;
   customizeQuery?: (queryState: QueryState) => QueryState;
   views?: Record<
     string,
@@ -1056,6 +1066,7 @@ export type CompilerState = {
   implicitTableId: string;
   paths: Map<string, unknown>;
   dependencies: string[];
+  viewDependencies: Record<string, string[]>;
   compileStack: CompileStack;
   outputTypes: OutputTypes;
   validateRefs: boolean;
@@ -1133,12 +1144,14 @@ export function compileQuery(
     implicitTableName: tableName,
     implicitTableId: tableRef(tableName),
     paths: new Map(),
-    dependencies: [tableName],
+    dependencies: [],
+    viewDependencies: schemaConfig.viewDependencies ?? {},
     compileStack: [],
     outputTypes: new Map(),
     validateRefs,
     namedParameters: [],
   };
+  addDependency(state, tableName);
 
   resetUid();
 
