@@ -21,8 +21,6 @@ reviews:
   labeling_instructions:
     - label: 'API'
       instructions: 'This issue or PR updates the API in `packages/api`.'
-    - label: 'documentation'
-      instructions: 'This issue updates the documentation in `packages/docs`.'
     - label: 'contains DB migrations'
       instructions: 'This issue or PR contains DB migrations in `packages/loot-core/migrations`.'
     - label: 'size small'

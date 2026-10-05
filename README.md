@@ -52,8 +52,8 @@ Actual is a community driven product. Learn more about [contributing to Actual](
 The Actual app is split up into a few packages:
 
 - loot-core - The core application that runs on any platform
-- desktop-client - The desktop UI
-- desktop-electron - The desktop app
+- desktop-client - The browser UI
+- sync-server - The sync server
 
 More information on the project structure is available in our [community documentation](https://actualbudget.org/docs/contributing/project-details).
 

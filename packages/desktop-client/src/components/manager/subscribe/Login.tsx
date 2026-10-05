@@ -15,7 +15,6 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { send } from '@actual-app/core/platform/client/connection';
-import { isElectron } from '@actual-app/core/shared/environment';
 import type { OpenIdConfig } from '@actual-app/core/types/models';
 
 import { Link } from '#components/common/Link';
@@ -125,9 +124,7 @@ function OpenIdLogin({ setError }) {
 
   async function onSubmitOpenId() {
     const { error, redirectUrl } = await send('subscribe-sign-in', {
-      returnUrl: isElectron()
-        ? await window.Actual.startOAuthServer()
-        : window.location.origin,
+      returnUrl: window.location.origin,
       loginMethod: 'openid',
       password: firstLoginPassword,
     });
@@ -135,11 +132,7 @@ function OpenIdLogin({ setError }) {
     if (error) {
       setError(error);
     } else {
-      if (isElectron()) {
-        window.Actual?.openURLInBrowser(redirectUrl);
-      } else {
-        window.location.href = redirectUrl;
-      }
+      window.location.href = redirectUrl;
     }
   }
 

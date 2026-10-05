@@ -28,7 +28,7 @@ body:
     attributes:
       label: 'Documentation URL'
       description: If this relates to existing documentation, please provide the URL
-      placeholder: ex. https://actualbudget.org/docs/budgeting/categories or https://github.com/actualbudget/actual/blob/master/packages/docs/...
+      placeholder: ex. https://actualbudget.org/docs/budgeting/categories
     validations:
       required: false
   - type: dropdown

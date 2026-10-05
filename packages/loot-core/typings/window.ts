@@ -1,9 +1,4 @@
-import type EventEmitter from 'events';
-
-export type IpcClient = {
-  on: EventEmitter['on'];
-  emit: (name: string, data: unknown) => void;
-};
+export {};
 
 type FileDialogOptions = {
   properties?: Array<'openFile' | 'openDirectory'>;
@@ -17,7 +12,6 @@ type Actual = {
   IS_DEV: boolean;
   ACTUAL_VERSION: string;
   openURLInBrowser: (url: string) => void;
-  openInFileManager: (filepath: string) => void;
   saveFile: (
     contents: string | Buffer,
     filename: string,
@@ -26,33 +20,11 @@ type Actual = {
   openFileDialog: (options: FileDialogOptions) => Promise<string[]>;
   relaunch: () => void;
   reload: (() => Promise<void>) | undefined;
-  restartElectronServer: () => void;
-  moveBudgetDirectory: (
-    currentBudgetDirectory: string,
-    newDirectory: string,
-  ) => Promise<void>;
-  /**
-   * Persists the budget data folder directly from the desktop app's main
-   * process, so it works even when the backend failed to start. Validates
-   * that the folder exists and is writable. The app must be relaunched
-   * afterwards for the change to take effect.
-   */
-  setDocumentDir: (directory: string) => Promise<void>;
   applyAppUpdate: () => Promise<void>;
-  ipcConnect: (callback: (client: IpcClient) => void) => void;
   getServerSocket: () => Promise<Worker | null>;
   setTheme: (theme: string) => void;
-  logToTerminal: (...args: unknown[]) => void;
-  onEventFromMain: (
-    event: string,
-    listener: (...args: unknown[]) => void,
-  ) => void;
   isUpdateReadyForDownload: () => boolean;
   waitForUpdateReadyForDownload: () => Promise<void>;
-  startSyncServer: () => Promise<void>;
-  stopSyncServer: () => Promise<void>;
-  isSyncServerRunning: () => Promise<boolean>;
-  startOAuthServer: () => Promise<string>;
 };
 
 declare global {

@@ -1,3 +1,5 @@
 {
-  "jsPlugins": ["eslint-plugin-storybook"]
+  // Nested oxlint configs don't inherit the root config. This file used to
+  // exist only to load the Storybook plugin; keeping it preserves the existing
+  // (root-rules-free) lint behavior for this package.
 }

@@ -9,13 +9,3 @@ export function isDevelopmentEnvironment() {
 export function isNonProductionEnvironment() {
   return isPreviewEnvironment() || isDevelopmentEnvironment();
 }
-
-export function isElectron() {
-  if (
-    typeof navigator !== 'undefined' &&
-    navigator.userAgent.indexOf('Electron') >= 0
-  ) {
-    return true;
-  }
-  return false;
-}

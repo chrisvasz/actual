@@ -29,10 +29,10 @@ export default defineConfig({
       : ['default'],
   },
   ssr: {
-    resolve: { conditions: ['electron', 'module', 'node', 'development'] },
+    resolve: { conditions: ['node-test', 'module', 'node', 'development'] },
   },
   resolve: {
-    conditions: ['electron', 'module', 'browser', 'development'],
+    conditions: ['node-test', 'module', 'browser', 'development'],
   },
   plugins: [peggyLoader()],
 });

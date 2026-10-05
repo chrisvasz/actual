@@ -52,7 +52,7 @@ These come from `CODE_REVIEW_GUIDELINES.md` and are non-negotiable unless the PR
 
 ## Platform-specific code
 
-- No direct `.api` or `.electron` imports from non-platform code. Use the conditional exports in `loot-core`.
+- No direct `.api` or `.node` imports from non-platform code. Use the conditional exports in `loot-core`.
 
 ## Commit / PR rules (from `.github/agents/pr-and-commit-rules.md`)
 

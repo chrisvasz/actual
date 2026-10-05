@@ -7,7 +7,7 @@ This guide provides comprehensive information for AI agents (like Cursor) workin
 **Actual Budget** is a local-first personal finance tool written in TypeScript/JavaScript. It's 100% free and open-source with synchronization capabilities across devices.
 
 - **Repository**: https://github.com/actualbudget/actual
-- **Community Docs**: Documentation is part of the monorepo at `packages/docs/`. Published at https://actualbudget.org/docs
+- **Community Docs**: https://actualbudget.org/docs (the docs site is not part of this fork)
 - **License**: MIT
 - **Primary Language**: TypeScript (with React)
 - **Build System**: Yarn 4 workspaces (monorepo)
@@ -32,8 +32,6 @@ yarn start
 # Start with sync server
 yarn start:server-dev
 
-# Start desktop app development
-yarn start:desktop
 ```
 
 ### Important Rules
@@ -91,7 +89,7 @@ The core application logic that runs on any platform.
 
 #### 2. **desktop-client** (`packages/desktop-client/` - aliased as `@actual-app/web`)
 
-The React-based UI for web and desktop.
+The React-based browser UI.
 
 - React components using functional programming patterns
 - E2E tests using Playwright
@@ -112,14 +110,7 @@ The React-based UI for web and desktop.
   yarn workspace @actual-app/web vrt
   ```
 
-#### 3. **desktop-electron** (`packages/desktop-electron/`)
-
-Electron wrapper for the desktop application.
-
-- Window management and native OS integration
-- E2E tests for Electron-specific features
-
-#### 4. **api** (`packages/api/` - aliased as `@actual-app/api`)
+#### 3. **api** (`packages/api/` - aliased as `@actual-app/api`)
 
 Public API for programmatic access to Actual.
 
@@ -138,7 +129,7 @@ Public API for programmatic access to Actual.
   yarn test
   ```
 
-#### 5. **sync-server** (`packages/sync-server/` - aliased as `@actual-app/sync-server`)
+#### 4. **sync-server** (`packages/sync-server/` - aliased as `@actual-app/sync-server`)
 
 Synchronization server for multi-device support.
 
@@ -149,7 +140,7 @@ Synchronization server for multi-device support.
   yarn workspace @actual-app/sync-server start
   ```
 
-#### 6. **component-library** (`packages/component-library/` - aliased as `@actual-app/components`)
+#### 5. **component-library** (`packages/component-library/` - aliased as `@actual-app/components`)
 
 Reusable React UI components.
 
@@ -157,18 +148,18 @@ Reusable React UI components.
 - Theme system and design tokens
 - Icons (375+ icons in SVG/TSX format)
 
-#### 7. **crdt** (`packages/crdt/` - aliased as `@actual-app/crdt`)
+#### 6. **crdt** (`packages/crdt/` - aliased as `@actual-app/crdt`)
 
 CRDT (Conflict-free Replicated Data Type) implementation for data synchronization.
 
 - Protocol buffers for serialization
 - Core sync logic
 
-#### 8. **plugins-service** (`packages/plugins-service/`)
+#### 7. **plugins-service** (`packages/plugins-service/`)
 
 Service for handling plugins/extensions.
 
-#### 9. **eslint-plugin-actual** (`packages/eslint-plugin-actual/`)
+#### 8. **eslint-plugin-actual** (`packages/eslint-plugin-actual/`)
 
 Custom ESLint rules specific to Actual.
 
@@ -177,19 +168,6 @@ Custom ESLint rules specific to Actual.
 - `prefer-logger-over-console`: Enforces using logger instead of console in `packages/loot-core/`
 - `typography`: Typography rules
 - `prefer-if-statement`: Prefers explicit if statements
-
-#### 10. **docs** (`packages/docs/`)
-
-Documentation website built with Docusaurus.
-
-- Documentation is part of the monorepo
-- Built with Docusaurus 3
-- Commands:
-  ```bash
-  yarn workspace docs start
-  yarn workspace docs build
-  yarn start:docs  # From root
-  ```
 
 ## Development Workflow
 
@@ -222,9 +200,6 @@ yarn workspace @actual-app/core run test
 ```bash
 # Run E2E tests for web
 yarn e2e
-
-# Desktop Electron E2E (includes full build)
-yarn e2e:desktop
 
 # Visual regression tests
 yarn vrt
@@ -310,7 +285,7 @@ directory (e.g. `.claude/skills/impeccable/`) is missing, install it with
 
 - Use conditional exports in `loot-core` for platform-specific code; platform
   resolution happens at build time via package.json exports. Don't directly
-  import another platform's modules (`.api`, `.electron`).
+  import another platform's modules (`.api`, `.node`).
 
 For commit and PR rules, see
 [PR and Commit Rules](.github/agents/pr-and-commit-rules.md).
@@ -376,9 +351,8 @@ describe('ComponentName', () => {
   with a short, descriptive slug (e.g. `add-payee-autocomplete.md`) — the PR link
   is resolved automatically at release time, so you don't need the PR number.
   Numeric filenames like `1234.md` also remain valid. See the release-note
-  template and rules in `packages/docs/docs/contributing/index.md`.
+  template and rules in `.claude/skills/writing-release-notes/SKILL.md`.
 - `/CODEOWNERS` - Code ownership definitions
-- `/packages/docs/` - Documentation website (Docusaurus)
 
 ### Build Artifacts (Don't Edit)
 
@@ -400,8 +374,6 @@ describe('ComponentName', () => {
 - `packages/desktop-client/e2e/` - End-to-end tests
 - `packages/component-library/src/` - Reusable components
 - `packages/component-library/src/icons/` - Icon components (auto-generated, don't edit)
-- `packages/docs/docs/` - Documentation source files (Markdown)
-- `packages/docs/docs/contributing/` - Developer documentation
 
 ## Common Development Tasks
 
@@ -420,9 +392,6 @@ yarn workspace @actual-app/web run playwright test accounts.test.ts --browser=ch
 ```bash
 # Browser build
 yarn build:browser
-
-# Desktop build
-yarn build:desktop
 
 # API build
 yarn build:api
@@ -477,7 +446,7 @@ Run `yarn lint` to check. All rules — including the custom `actual/*` rules
 
 1. Check `tsconfig.json` for path mappings
 2. Check package.json `exports` field (especially for loot-core)
-3. Verify platform-specific imports (`.electron`, `.api`)
+3. Verify platform-specific imports (`.node`, `.api`)
 4. Use absolute imports in `desktop-client`
 
 ### Build Failures
@@ -558,7 +527,7 @@ yarn install:server
 
 - **Node.js**: >=22
 - **Yarn**: ^4.9.1 (managed by packageManager field)
-- **Browser Targets**: Electron >= 35.0, modern browsers (see browserslist)
+- **Browser Targets**: modern browsers (see browserslist)
 
 ## Migration Notes
 

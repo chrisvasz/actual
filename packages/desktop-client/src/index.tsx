@@ -1,5 +1,4 @@
-// This file will initialize the app if we are in a real browser
-// environment (not electron)
+// Initializes the app in the browser
 import '#browser-preload';
 import './fonts.scss';
 import './i18n';

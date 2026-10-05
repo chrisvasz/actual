@@ -237,16 +237,6 @@ export type Modal =
       name: 'out-of-sync-migrations';
     }
   | {
-      name: 'files-settings';
-    }
-  | {
-      name: 'confirm-change-document-dir';
-      options: {
-        currentBudgetDirectory: string;
-        newDirectory: string;
-      };
-    }
-  | {
       name: 'create-encryption-key';
       options: { recreate?: boolean };
     }

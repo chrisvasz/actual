@@ -27,52 +27,47 @@
   ],
   "imports": {
     "#platform/server/asyncStorage": {
-      "electron": "./src/platform/server/asyncStorage/index.electron.ts",
       "api": "./src/platform/server/asyncStorage/index.api.ts",
+      "node-test": "./src/platform/server/asyncStorage/index.api.ts",
       "default": "./src/platform/server/asyncStorage/index.ts"
     },
     "#platform/server/connection": {
-      "electron": "./src/platform/server/connection/index.electron.ts",
       "api": "./src/platform/server/connection/index.api.ts",
       "default": "./src/platform/server/connection/index.ts"
     },
     "#platform/server/fetch": {
-      "electron": "./src/platform/server/fetch/index.electron.ts",
       "api": "./src/platform/server/fetch/index.api.ts",
       "default": "./src/platform/server/fetch/index.ts"
     },
     "#platform/server/fs": {
-      "electron": "./src/platform/server/fs/index.electron.ts",
       "api": "./src/platform/server/fs/index.api.ts",
+      "node-test": "./src/platform/server/fs/index.node.ts",
       "default": "./src/platform/server/fs/index.ts"
     },
     "#platform/server/fs/path-join": {
-      "electron": "./src/platform/server/fs/path-join.electron.ts",
       "api": "./src/platform/server/fs/path-join.api.ts",
+      "node-test": "./src/platform/server/fs/path-join.api.ts",
       "default": "./src/platform/server/fs/path-join.ts"
     },
     "#platform/server/memory": {
-      "electron": "./src/platform/server/memory/index.electron.ts",
       "api": "./src/platform/server/memory/index.api.ts",
+      "node-test": "./src/platform/server/memory/index.api.ts",
       "default": "./src/platform/server/memory/index.ts"
     },
     "#platform/server/sqlite": {
-      "electron": "./src/platform/server/sqlite/index.electron.ts",
       "api": "./src/platform/server/sqlite/index.api.ts",
+      "node-test": "./src/platform/server/sqlite/index.api.ts",
       "default": "./src/platform/server/sqlite/index.ts"
     },
-    "#platform/client/connection": {
-      "electron-renderer": "./src/platform/client/connection/index.electron.ts",
-      "default": "./src/platform/client/connection/index.ts"
-    },
+    "#platform/client/connection": "./src/platform/client/connection/index.ts",
     "#server/encryption/encryption-internals": {
-      "electron": "./src/server/encryption/encryption-internals.electron.ts",
       "api": "./src/server/encryption/encryption-internals.api.ts",
+      "node-test": "./src/server/encryption/encryption-internals.api.ts",
       "default": "./src/server/encryption/encryption-internals.ts"
     },
     "#shared/platform": {
-      "electron": "./src/shared/platform.electron.ts",
       "api": "./src/shared/platform.api.ts",
+      "node-test": "./src/shared/platform.api.ts",
       "default": "./src/shared/platform.ts"
     },
     "#mocks": "./src/mocks/index.ts",
@@ -93,8 +88,8 @@
     "#platform/*": "./src/platform/*.ts",
     "#server/*": "./src/server/*.ts",
     "#shared/environment": {
-      "electron": "./src/shared/environment.ts",
       "api": "./src/shared/environment.ts",
+      "node-test": "./src/shared/environment.ts",
       "default": "./src/shared/environment.browser.ts"
     },
     "#shared/*": "./src/shared/*.ts",
@@ -130,63 +125,57 @@
     "./platform/client/browser-preload": "./src/platform/client/browser-preload/index.ts",
     "./platform/client/browser-server/coordinator": "./src/platform/client/browser-server/coordinator.ts",
     "./platform/client/connection": {
-      "electron-renderer": "./src/platform/client/connection/index.electron.ts",
       "api": "./src/platform/client/connection/index.api.ts",
       "default": "./src/platform/client/connection/index.ts"
     },
     "./platform/client/undo": "./src/platform/client/undo/index.ts",
     "./platform/exceptions": "./src/platform/exceptions/index.ts",
     "./platform/server/asyncStorage": {
-      "electron": "./src/platform/server/asyncStorage/index.electron.ts",
       "api": "./src/platform/server/asyncStorage/index.api.ts",
+      "node-test": "./src/platform/server/asyncStorage/index.api.ts",
       "default": "./src/platform/server/asyncStorage/index.ts"
     },
     "./platform/server/connection": {
-      "electron": "./src/platform/server/connection/index.electron.ts",
       "api": "./src/platform/server/connection/index.api.ts",
       "default": "./src/platform/server/connection/index.ts"
     },
     "./platform/server/fetch": {
-      "electron": "./src/platform/server/fetch/index.electron.ts",
       "api": "./src/platform/server/fetch/index.api.ts",
       "default": "./src/platform/server/fetch/index.ts"
     },
     "./platform/server/fs": {
-      "electron": "./src/platform/server/fs/index.electron.ts",
       "api": "./src/platform/server/fs/index.api.ts",
+      "node-test": "./src/platform/server/fs/index.node.ts",
       "default": "./src/platform/server/fs/index.ts"
     },
     "./platform/server/log": "./src/platform/server/log/index.ts",
     "./platform/server/sqlite": {
-      "electron": "./src/platform/server/sqlite/index.electron.ts",
       "api": "./src/platform/server/sqlite/index.api.ts",
+      "node-test": "./src/platform/server/sqlite/index.api.ts",
       "default": "./src/platform/server/sqlite/index.ts"
     },
     "./server/budget/types/*": "./src/server/budget/types/*.d.ts",
     "./server/*": "./src/server/*.ts",
     "./shared/platform": {
-      "electron": "./src/shared/platform.electron.ts",
       "api": "./src/shared/platform.api.ts",
+      "node-test": "./src/shared/platform.api.ts",
       "default": "./src/shared/platform.ts"
     },
     "./shared/environment": {
-      "electron": "./src/shared/environment.ts",
       "api": "./src/shared/environment.ts",
+      "node-test": "./src/shared/environment.ts",
       "default": "./src/shared/environment.browser.ts"
     },
     "./shared/*": "./src/shared/*.ts",
     "./types/models": "./src/types/models/index.ts",
     "./types/*": "./src/types/*.ts",
     "./typings/*": "./typings/*.ts",
-    "./lib-dist/electron/bundle.desktop.js": "./lib-dist/electron/bundle.desktop.js",
     "./default-filesystem": {
       "types": "./default-filesystem.d.ts",
       "default": "./default-filesystem.mjs"
     }
   },
   "scripts": {
-    "build:node": "cross-env NODE_ENV=production vite build --config ./vite.desktop.config.mts",
-    "watch:node": "cross-env NODE_ENV=development vite build --config ./vite.desktop.config.mts --watch",
     "test": "npm-run-all -cp 'test:*'",
     "test:node": "ENV=node vitest --run",
     "test:web": "ENV=web vitest --run -c vitest.web.config.ts",
@@ -223,7 +212,6 @@
     "assert": "^2.1.0",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
-    "cross-env": "^10.1.0",
     "crypto-browserify": "^3.12.1",
     "fake-indexeddb": "^6.2.5",
     "fast-check": "^4.9.0",

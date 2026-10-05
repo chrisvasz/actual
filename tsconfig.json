@@ -7,7 +7,6 @@
     { "path": "./packages/api" },
     { "path": "./packages/desktop-client" },
     { "path": "./packages/sync-server" },
-    { "path": "./packages/desktop-electron" },
     { "path": "./packages/cli" }
   ],
   "compilerOptions": {
@@ -40,16 +39,11 @@
     "node_modules",
     "**/node_modules/*",
     "**/build/*",
-    "**/build-electron/*",
-    "**/client-build/*",
     "**/dist/*",
     "**/lib-dist/*",
     "packages/*/@types",
     "**/test-results/*",
     "**/playwright-report/*",
-    "**/service-worker/*",
-    "packages/docs/**/*",
-    "packages/mobile-client/android/*",
-    "packages/mobile-client/ios/*"
+    "**/service-worker/*"
   ]
 }

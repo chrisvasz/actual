@@ -11,10 +11,7 @@
     "build"
   ],
   "imports": {
-    "#browser-preload": {
-      "electron-renderer": "./src/browser-preload.electron.ts",
-      "default": "./src/browser-preload.js"
-    },
+    "#browser-preload": "./src/browser-preload.js",
     "#account-groups": "./src/account-groups/index.ts",
     "#accounts": "./src/accounts/index.ts",
     "#budget": "./src/budget/index.ts",

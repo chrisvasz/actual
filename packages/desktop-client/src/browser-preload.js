@@ -9,10 +9,8 @@ import SharedBrowserServerWorker from './shared-browser-server.ts?sharedworker';
 
 const backendWorkerUrl = new URL('./browser-server.js', import.meta.url);
 
-// This file installs global variables that the app expects.
-// Normally these are already provided by electron, but in a real
-// browser environment this is where we initialize the backend and
-// everything else.
+// This file installs global variables that the app expects, initializes the
+// backend, and sets up everything else the browser environment needs.
 
 const IS_DEV = import.meta.env.DEV;
 const ACTUAL_VERSION = Platform.isPlaywright
@@ -101,10 +99,6 @@ global.Actual = {
   IS_DEV,
   ACTUAL_VERSION,
 
-  logToTerminal: (...args) => {
-    console.log(...args);
-  },
-
   relaunch: () => {
     window.location.reload();
   },
@@ -123,24 +117,6 @@ global.Actual = {
       .then(() => {
         window.location.reload();
       });
-  },
-
-  startSyncServer: () => {
-    // Only for electron app
-  },
-
-  stopSyncServer: () => {
-    // Only for electron app
-  },
-
-  isSyncServerRunning: () => false,
-
-  startOAuthServer: () => {
-    return '';
-  },
-
-  restartElectronServer: () => {
-    // Only for electron app
   },
 
   openFileDialog: async ({ filters = [] }) => {
@@ -234,12 +210,6 @@ global.Actual = {
   openURLInBrowser: url => {
     window.open(url, '_blank');
   },
-  openInFileManager: () => {
-    // File manager not available in browser
-  },
-  onEventFromMain: () => {
-    // Only for electron app
-  },
   isUpdateReadyForDownload: () => isUpdateReadyForDownload,
   waitForUpdateReadyForDownload: () => isUpdateReadyForDownloadPromise,
   applyAppUpdate: async () => {
@@ -253,24 +223,11 @@ global.Actual = {
     });
   },
 
-  ipcConnect: () => {
-    // Only for electron app
-  },
   getServerSocket: async () => {
     return worker;
   },
 
   setTheme: theme => {
     window.__actionsForMenu.saveGlobalPrefs({ prefs: { theme } });
-  },
-
-  moveBudgetDirectory: () => {
-    // Only for electron app
-  },
-
-  setDocumentDir: async () => {
-    throw new Error(
-      'Changing the data folder is only available in the desktop app',
-    );
   },
 };

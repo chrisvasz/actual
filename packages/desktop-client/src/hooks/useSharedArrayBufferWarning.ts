@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { isElectron } from '@actual-app/core/shared/environment';
-
 import { addNotification } from '#notifications/notificationsSlice';
 import { useDispatch } from '#redux';
 
@@ -16,7 +14,7 @@ export function useSharedArrayBufferWarning() {
 
   useEffect(() => {
     // Only warn if SharedArrayBuffer is required and not supported
-    if (isElectron() || typeof SharedArrayBuffer !== 'undefined') {
+    if (typeof SharedArrayBuffer !== 'undefined') {
       return;
     }
 

@@ -154,7 +154,7 @@ app.combine(
   tagsApp,
 );
 
-export function getDefaultDocumentDir() {
+function getDefaultDocumentDir() {
   return fs.join(process.env.ACTUAL_DOCUMENT_DIR, 'Actual');
 }
 
@@ -166,29 +166,15 @@ async function setupDocumentsDir() {
     }
   }
 
-  let documentDir = await asyncStorage.getItem('document-dir');
-
-  // Test the existing documents directory to make sure it's a valid
-  // path that exists, and if it errors fallback to the default one
-  if (documentDir) {
-    try {
-      await ensureExists(documentDir);
-    } catch {
-      documentDir = null;
-    }
-  }
-
-  if (!documentDir) {
-    documentDir = getDefaultDocumentDir();
-  }
+  const documentDir = getDefaultDocumentDir();
 
   try {
     await ensureExists(documentDir);
     await ensureUsable(documentDir);
   } catch (error) {
-    // Surface the exact folder and the filesystem error so the desktop app
-    // can show the user what is blocking startup (e.g. Windows Controlled
-    // Folder Access) instead of hanging on the loading screen.
+    // Surface the exact folder and the filesystem error so the app can show
+    // the user what is blocking startup instead of hanging on the loading
+    // screen.
     throw new DocumentDirError(documentDir, error);
   }
   fs._setDocumentDir(documentDir);

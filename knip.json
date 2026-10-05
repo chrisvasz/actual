@@ -7,7 +7,6 @@
     "nsTypes": "off",
     "duplicates": "off"
   },
-  "ignoreBinaries": ["electron-rebuild"],
   "workspaces": {
     ".": {
       "entry": ["bin/*.mts"],
@@ -31,7 +30,11 @@
     "packages/component-library": {
       "entry": ["src/icons/index-template.ts", "src/icons/template.ts"],
       "ignore": ["src/icons/.svgrrc.js", "src/icons/add-attribute.ts"],
-      "ignoreDependencies": ["@svgr/babel-plugin-add-jsx-attribute"]
+      "ignoreDependencies": [
+        "@svgr/babel-plugin-add-jsx-attribute",
+        "@types/babel__template",
+        "@types/babel__traverse"
+      ]
     },
     "packages/crdt": {
       "ignore": ["src/proto/**"],
@@ -47,24 +50,6 @@
       "ignore": ["playwright.config.d.ts"],
       "ignoreDependencies": ["plugins-service"]
     },
-    "packages/desktop-electron": {
-      "entry": [
-        "preload.ts",
-        "server.ts",
-        "afterSignHook.ts",
-        "beforePackHook.ts"
-      ],
-      "ignoreBinaries": ["bin/update-client"],
-      "ignoreDependencies": ["better-sqlite3"]
-    },
-    "packages/docs": {
-      "entry": [
-        "src/theme/**/*.{ts,tsx,js,jsx}",
-        "src/components/**/*.{ts,tsx,js,jsx}",
-        "docs/**/*.{js,jsx}"
-      ],
-      "ignore": ["docusaurus.netlify-config.js"]
-    },
     "packages/loot-core": {
       "entry": ["src/**/index-types.ts", "src/mocks/**"],
       "ignoreDependencies": [
@@ -77,15 +62,6 @@
         "timers-browserify",
         "util"
       ]
-    },
-    "packages/mobile-client": {
-      "entry": ["bin/*"],
-      "ignore": [
-        "android/app/src/main/assets/**",
-        "ios/App/App/public/**",
-        "ios/DerivedData/**"
-      ],
-      "ignoreDependencies": ["@capacitor/splash-screen"]
     },
     "packages/plugins-service": {
       "entry": ["src/plugin-service-worker.ts"]
