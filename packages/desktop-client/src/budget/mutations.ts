@@ -14,6 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { pushModal } from '#modals/modalsSlice';
 import { addNotification } from '#notifications/notificationsSlice';
 import type { Notification } from '#notifications/notificationsSlice';
+import { invalidateAndDeliver } from '#queries/invalidateAndDeliver';
 import { useDispatch } from '#redux';
 import type { AppDispatch } from '#redux/store';
 
@@ -187,10 +188,9 @@ export function useUpdateCategoryMutation() {
     mutationFn: async ({ category }: UpdateCategoryPayload) => {
       await send('category-update', category);
     },
-    // Return the refetch so the mutation only resolves once the new data is
-    // in the cache; the sidebar keeps showing the pending name until then.
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: categoryQueries.lists() }),
+    // Resolve only once components have the new data; rename fields keep
+    // showing the pending name until then.
+    onSuccess: () => invalidateAndDeliver(queryClient, categoryQueries.lists()),
     onError: error => {
       console.error('Error updating category:', error);
       dispatchErrorNotification(
@@ -412,10 +412,9 @@ export function useUpdateCategoryGroupMutation() {
       const { categories: _, ...groupNoCategories } = group;
       await send('category-group-update', groupNoCategories);
     },
-    // Return the refetch so the mutation only resolves once the new data is
-    // in the cache; the sidebar keeps showing the pending name until then.
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: categoryQueries.lists() }),
+    // Resolve only once components have the new data; rename fields keep
+    // showing the pending name until then.
+    onSuccess: () => invalidateAndDeliver(queryClient, categoryQueries.lists()),
     onError: error => {
       console.error('Error updating category group:', error);
       dispatchErrorNotification(

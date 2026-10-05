@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { accountQueries } from '#accounts';
 import { addNotification } from '#notifications/notificationsSlice';
+import { invalidateAndDeliver } from '#queries/invalidateAndDeliver';
 import { useDispatch } from '#redux';
 import type { AppDispatch } from '#redux/store';
 
@@ -75,7 +76,10 @@ export function useUpdateAccountGroupMutation() {
     mutationFn: async ({ id, name }: UpdateAccountGroupPayload) => {
       return await send('account-group-update', { id, name });
     },
-    onSuccess: () => invalidateQueries(queryClient),
+    // Resolve only once components have the new data; rename fields keep
+    // showing the pending name until then.
+    onSuccess: () =>
+      invalidateAndDeliver(queryClient, accountGroupQueries.lists()),
     onError: error => {
       console.error('Error updating account group:', error);
       dispatchErrorNotification(

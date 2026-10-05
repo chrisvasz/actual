@@ -16,6 +16,7 @@ import { css } from '@emotion/css';
 import { useReopenAccountMutation, useUpdateAccountMutation } from '#accounts';
 import { isAccountFailedSync } from '#accounts/syncStatus';
 import { useContextMenu } from '#hooks/useContextMenu';
+import { usePendingValue } from '#hooks/usePendingValue';
 import { useUpdatedAccounts } from '#hooks/useUpdatedAccounts';
 import { openAccountCloseModal, pushModal } from '#modals/modalsSlice';
 import { useDispatch, useSelector } from '#redux';
@@ -51,6 +52,9 @@ export function AccountRow({
 
   const reopenAccount = useReopenAccountMutation();
   const updateAccount = useUpdateAccountMutation();
+  const { valueOr: pendingNameOr, showUntil: showNameUntil } =
+    usePendingValue<string>();
+  const name = pendingNameOr(account.name);
 
   const [rowElement, setRowElement] = useState<HTMLDivElement | null>(null);
   useContextMenu({
@@ -106,7 +110,7 @@ export function AccountRow({
     <TreeItem
       ref={setRowElement}
       id={treeKeys.account(account.id)}
-      textValue={account.name}
+      textValue={name}
       href={isEditing ? undefined : href}
       onAuxClick={e => {
         if (e.button === 1 && !isEditing) {
@@ -163,13 +167,16 @@ export function AccountRow({
                 <Input
                   aria-label={t('Account name')}
                   style={{ flex: 1, padding: 0, fontSize: 13 }}
-                  defaultValue={account.name}
+                  defaultValue={name}
                   onKeyDown={e => e.stopPropagation()}
                   onEnter={newAccountName => {
                     if (newAccountName.trim() !== '') {
-                      updateAccount.mutate({
-                        account: { id: account.id, name: newAccountName },
-                      });
+                      showNameUntil(
+                        newAccountName,
+                        updateAccount.mutateAsync({
+                          account: { id: account.id, name: newAccountName },
+                        }),
+                      );
                     }
                     setIsEditing(false);
                   }}
@@ -178,9 +185,7 @@ export function AccountRow({
                 />
               </InitialFocus>
             ) : (
-              <Text style={{ flex: 1, ...styles.ellipsisText }}>
-                {account.name}
-              </Text>
+              <Text style={{ flex: 1, ...styles.ellipsisText }}>{name}</Text>
             )}
             <Text style={styles.visuallyHidden}>{statusLabel}</Text>
             <SidebarBalance

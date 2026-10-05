@@ -52,6 +52,7 @@ import { useHotkeys } from '#hooks/useHotkeys';
 import { useLocale } from '#hooks/useLocale';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { useNotes } from '#hooks/useNotes';
+import { usePendingValue } from '#hooks/usePendingValue';
 import { useSplitsExpanded } from '#hooks/useSplitsExpanded';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
@@ -611,7 +612,7 @@ type AccountNameFieldProps = {
   accountName: string;
   isNameEditable: boolean;
   saveNameError?: ReactNode;
-  onSaveName: (newName: string) => void;
+  onSaveName: (newName: string) => Promise<unknown> | void;
 };
 
 function AccountNameField({
@@ -625,16 +626,22 @@ function AccountNameField({
   const [editingName, setEditingName] = useState(false);
   const notes = useNotes(account ? `account-${account.id}` : '');
   const noteUrl = getNoteUrl(notes);
+  const { valueOr: pendingNameOr, showUntil: showNameUntil } =
+    usePendingValue<string>();
+  const name = pendingNameOr(accountName);
 
   const handleSave = (newName: string) => {
-    onSaveName(newName);
+    const saved = onSaveName(newName);
+    if (saved) {
+      showNameUntil(newName, saved);
+    }
     setEditingName(false);
   };
 
   const displayName =
     account && account.closed
-      ? t('Closed: {{ accountName }}', { accountName })
-      : accountName;
+      ? t('Closed: {{ accountName }}', { accountName: name })
+      : name;
 
   return (
     <View style={{ flexShrink: 0, alignItems: 'center' }}>
@@ -642,7 +649,7 @@ function AccountNameField({
         <>
           <InitialFocus>
             <Input
-              defaultValue={accountName}
+              defaultValue={name}
               onEnter={handleSave}
               onUpdate={handleSave}
               onEscape={() => setEditingName(false)}
@@ -654,7 +661,7 @@ function AccountNameField({
                 marginLeft: -6,
                 paddingTop: 2,
                 paddingBottom: 2,
-                width: Math.max(20, accountName.length) + 'ch',
+                width: Math.max(20, name.length) + 'ch',
               }}
             />
           </InitialFocus>
