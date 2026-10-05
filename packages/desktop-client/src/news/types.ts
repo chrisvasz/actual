@@ -22,8 +22,9 @@ export type NewsFeed = {
 };
 
 /**
- * Must match `NEWS_FEED_SCHEMA_VERSION` in
- * packages/ci-actions/src/news-feed/parse.ts. Feeds with any other version
+ * Must match `NEWS_FEED_SCHEMA_VERSION` in upstream actualbudget/actual's
+ * packages/ci-actions/src/news-feed/parse.ts, which generates the feed this
+ * fork fetches. Feeds with any other version
  * are rejected, so the two must be bumped together and only for incompatible
  * changes (older clients would stop showing news until updated).
  */
