@@ -53,20 +53,6 @@ describe('/create-web-token', () => {
     });
   });
 
-  it('redirects the electron app origin to the server itself', async () => {
-    const res = await request(app)
-      .post('/create-web-token')
-      .set('Origin', 'app://actual')
-      .send({ institutionId: 'SANDBOXFINANCE_SFIN0000' });
-
-    expect(res.body.status).toBe('ok');
-    expect(res.body.data.link).toBe('https://gocardless.example/start');
-    expect(createRequisition).toHaveBeenCalledWith({
-      institutionId: 'SANDBOXFINANCE_SFIN0000',
-      host: expect.stringMatching(/^http:\/\/127\.0\.0\.1:\d+$/),
-    });
-  });
-
   it('rejects a missing Origin header', async () => {
     const res = await request(app)
       .post('/create-web-token')

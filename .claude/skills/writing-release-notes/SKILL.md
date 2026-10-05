@@ -5,7 +5,7 @@ description: Use whenever adding, writing, drafting, or fixing a release note in
 
 # Writing Release Notes for actualbudget/actual
 
-Release notes are the user-facing changelog. Each code change adds one Markdown file to `upcoming-release-notes/`, and these get collected into the published changelog at the next release. The authoritative source is the **Writing Good Release Notes** section of `packages/docs/docs/contributing/index.md`. Read it if anything below is unclear.
+Release notes are the user-facing changelog. Each code change adds one Markdown file to `upcoming-release-notes/`, and these get collected into the published changelog at the next release.
 
 ## The file
 

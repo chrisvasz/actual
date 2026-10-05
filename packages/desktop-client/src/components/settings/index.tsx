@@ -10,7 +10,6 @@ import { theme } from '@actual-app/components/theme';
 import { tokens } from '@actual-app/components/tokens';
 import { View } from '@actual-app/components/view';
 import { listen } from '@actual-app/core/platform/client/connection';
-import { isElectron } from '@actual-app/core/shared/environment';
 import { css } from '@emotion/css';
 
 import { getLatestAppVersion } from '#app/appSlice';
@@ -26,7 +25,6 @@ import { loadPrefs, saveSyncedPrefs } from '#prefs/prefsSlice';
 import { useDispatch, useSelector } from '#redux';
 
 import { AuthSettings } from './AuthSettings';
-import { Backups } from './Backups';
 import { BudgetTypeSettings } from './BudgetTypeSettings';
 import { CurrencySettings } from './Currency';
 import { DeployedCommit } from './DeployedCommit';
@@ -268,7 +266,6 @@ export function Settings() {
         <AuthSettings />
         <EncryptionSettings />
         <BudgetTypeSettings />
-        {isElectron() && <Backups />}
         <ExportBudget />
         <AdvancedToggle>
           <AdvancedAbout />

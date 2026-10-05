@@ -10,6 +10,10 @@ export const send: T.Send = function (type, args) {
   events.push([type, args]);
 };
 
+export const getNumClients: T.GetNumClients = function () {
+  return 1;
+};
+
 export const resetEvents: T.ResetEvents = function () {
   events = [];
 };

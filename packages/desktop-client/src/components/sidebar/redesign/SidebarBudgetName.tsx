@@ -9,13 +9,11 @@ import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { spacing } from '@actual-app/components/tokens';
-import { isElectron } from '@actual-app/core/shared/environment';
 
 import { closeBudget } from '#budgetfiles/budgetfilesSlice';
 import { useContextMenu } from '#hooks/useContextMenu';
 import { useMetadataPref } from '#hooks/useMetadataPref';
 import { useNavigate } from '#hooks/useNavigate';
-import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 
 export function SidebarBudgetName() {
@@ -37,12 +35,6 @@ export function SidebarBudgetName() {
         name: 'settings',
         text: t('Settings'),
         onClick: () => void navigate('/settings'),
-      },
-      isElectron() && {
-        name: 'loadBackup',
-        text: t('Load Backup…'),
-        onClick: () =>
-          dispatch(pushModal({ modal: { name: 'load-backup', options: {} } })),
       },
       {
         name: 'close',

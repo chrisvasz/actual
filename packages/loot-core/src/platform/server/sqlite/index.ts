@@ -184,7 +184,7 @@ export function transaction(
   }
 }
 
-// See the comment about this function in index.electron.js. You
+// See the comment about this function in index.api.ts. You
 // shouldn't normally use this. I'd like to get rid of it.
 export async function asyncTransaction(db: Database, fn: () => Promise<void>) {
   // Support nested transactions by "coalescing" them into the parent

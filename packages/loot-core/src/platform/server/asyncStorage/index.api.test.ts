@@ -5,7 +5,7 @@ import * as path from 'path';
 import * as asyncStorage from '#platform/server/asyncStorage';
 
 // Under the test config `#platform/server/asyncStorage` resolves to the
-// electron implementation, but it is globally mocked with an in-memory store in
+// node implementation, but it is globally mocked with an in-memory store in
 // the test setup. Undo that so we exercise the real on-disk persistence logic.
 vi.unmock('#platform/server/asyncStorage');
 
@@ -22,7 +22,7 @@ afterEach(() => {
   delete process.env.ACTUAL_DATA_DIR;
 });
 
-describe('electron asyncStorage', () => {
+describe('node asyncStorage', () => {
   it('persists values as valid JSON and reads them back', async () => {
     asyncStorage.init();
     await asyncStorage.setItem('language', 'en');

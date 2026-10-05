@@ -54,10 +54,8 @@ import { HoldBufferModal } from './modals/HoldBufferModal';
 import { ImportTransactionsModal } from './modals/ImportTransactionsModal';
 import { KeyboardShortcutModal } from './modals/KeyboardShortcutModal';
 import { LoadBackupModal } from './modals/LoadBackupModal';
-import { ConfirmChangeDocumentDirModal } from './modals/manager/ConfirmChangeDocumentDir';
 import { DeleteFileModal } from './modals/manager/DeleteFileModal';
 import { DuplicateFileModal } from './modals/manager/DuplicateFileModal';
-import { FilesSettingsModal } from './modals/manager/FilesSettingsModal';
 import { ImportActualModal } from './modals/manager/ImportActualModal';
 import { ImportModal } from './modals/manager/ImportModal';
 import { ImportYNAB4Modal } from './modals/manager/ImportYNAB4Modal';
@@ -402,10 +400,6 @@ export function Modals() {
           return <DuplicateFileModal key={key} {...modal.options} />;
         case 'import':
           return <ImportModal key={key} />;
-        case 'files-settings':
-          return <FilesSettingsModal key={key} />;
-        case 'confirm-change-document-dir':
-          return <ConfirmChangeDocumentDirModal key={key} {...modal.options} />;
         case 'import-ynab4':
           return <ImportYNAB4Modal key={key} />;
         case 'import-ynab5':

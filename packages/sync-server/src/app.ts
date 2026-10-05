@@ -131,8 +131,8 @@ app.get('/metrics', (_req, res) => {
 // The web frontend.
 // Dev mode proxies to Vite, which injects inline preamble scripts and uses
 // a websocket for HMR. Loosen script-src and connect-src accordingly.
-// `'unsafe-eval'` is required at runtime for the Electron app, so it is
-// kept in both branches.
+// `'unsafe-eval'` was added for the old Electron app; it stays in both
+// branches until the browser build is confirmed not to need it.
 const isDev = process.env.NODE_ENV === 'development';
 const scriptSrc = isDev
   ? "'self' 'unsafe-inline' 'unsafe-eval' blob:"
@@ -185,10 +185,6 @@ function parseHTTPSConfig(value: string) {
 }
 
 function sendServerStartedMessage() {
-  // Signify to any parent process that the server has started. Used in electron desktop app
-  // oxlint-disable-next-line typescript/ban-ts-comment
-  // @ts-ignore-error electron types
-  process.parentPort?.postMessage({ type: 'server-started' });
   console.log(
     'Listening on ' + config.get('hostname') + ':' + config.get('port') + '...',
   );

@@ -1,10 +1,8 @@
 import * as asyncStorage from '#platform/server/asyncStorage';
-import * as fs from '#platform/server/fs';
 import { createApp } from '#server/app';
 import * as db from '#server/db';
 import { PostError } from '#server/errors';
 import { resetFormulaPreferencesCache } from '#server/formulas/bootstrap';
-import { getDefaultDocumentDir } from '#server/main';
 import { mutator } from '#server/mutators';
 import { post } from '#server/post';
 import {
@@ -84,9 +82,6 @@ async function saveGlobalPrefs(prefs: GlobalPrefs) {
   if (prefs.maxMonths !== undefined) {
     await asyncStorage.setItem('max-months', '' + prefs.maxMonths);
   }
-  if (prefs.documentDir !== undefined && (await fs.exists(prefs.documentDir))) {
-    await asyncStorage.setItem('document-dir', prefs.documentDir);
-  }
   if (prefs.floatingSidebar !== undefined) {
     await asyncStorage.setItem('floating-sidebar', '' + prefs.floatingSidebar);
   }
@@ -118,15 +113,6 @@ async function saveGlobalPrefs(prefs: GlobalPrefs) {
   if (prefs.customCssOverride !== undefined) {
     await asyncStorage.setItem('custom-css-override', prefs.customCssOverride);
   }
-  if (prefs.serverSelfSignedCert !== undefined) {
-    await asyncStorage.setItem(
-      'server-self-signed-cert',
-      prefs.serverSelfSignedCert,
-    );
-  }
-  if (prefs.syncServerConfig !== undefined) {
-    await asyncStorage.setItem('syncServerConfig', prefs.syncServerConfig);
-  }
   if (prefs.notifyWhenUpdateIsAvailable !== undefined) {
     await asyncStorage.setItem(
       'notifyWhenUpdateIsAvailable',
@@ -146,7 +132,6 @@ async function loadGlobalPrefs(): Promise<GlobalPrefs> {
   const {
     'floating-sidebar': floatingSidebar,
     'max-months': maxMonths,
-    'document-dir': documentDir,
     'encrypt-key': encryptKey,
     language,
     theme,
@@ -154,15 +139,12 @@ async function loadGlobalPrefs(): Promise<GlobalPrefs> {
     'installed-custom-theme': installedCustomLightTheme,
     'installed-custom-dark-theme': installedCustomDarkTheme,
     'custom-css-override': customCssOverride,
-    'server-self-signed-cert': serverSelfSignedCert,
-    syncServerConfig,
     notifyWhenUpdateIsAvailable,
     lastSeenNewsDate,
     showNewsFeed,
   } = await asyncStorage.multiGet([
     'floating-sidebar',
     'max-months',
-    'document-dir',
     'encrypt-key',
     'language',
     'theme',
@@ -170,8 +152,6 @@ async function loadGlobalPrefs(): Promise<GlobalPrefs> {
     'installed-custom-theme',
     'installed-custom-dark-theme',
     'custom-css-override',
-    'server-self-signed-cert',
-    'syncServerConfig',
     'notifyWhenUpdateIsAvailable',
     'lastSeenNewsDate',
     'showNewsFeed',
@@ -179,7 +159,6 @@ async function loadGlobalPrefs(): Promise<GlobalPrefs> {
   return {
     floatingSidebar: floatingSidebar === 'true',
     maxMonths: stringToInteger(maxMonths || '') || 1,
-    documentDir: documentDir || getDefaultDocumentDir(),
     keyId: encryptKey && JSON.parse(encryptKey).id,
     language,
     theme:
@@ -196,8 +175,6 @@ async function loadGlobalPrefs(): Promise<GlobalPrefs> {
     installedCustomLightTheme: installedCustomLightTheme || undefined,
     installedCustomDarkTheme: installedCustomDarkTheme || undefined,
     customCssOverride: customCssOverride || undefined,
-    serverSelfSignedCert: serverSelfSignedCert || undefined,
-    syncServerConfig: syncServerConfig || undefined,
     notifyWhenUpdateIsAvailable:
       notifyWhenUpdateIsAvailable === undefined
         ? true

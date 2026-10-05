@@ -9,7 +9,6 @@ import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
 import {
   SvgCloudCheck,
   SvgCloudDownload,
-  SvgCog,
   SvgDotsHorizontalTriple,
   SvgFileDouble,
   SvgUser,
@@ -28,10 +27,7 @@ import { theme } from '@actual-app/components/theme';
 import { tokens } from '@actual-app/components/tokens';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
-import {
-  isElectron,
-  isNonProductionEnvironment,
-} from '@actual-app/core/shared/environment';
+import { isNonProductionEnvironment } from '@actual-app/core/shared/environment';
 import type {
   File,
   LocalFile,
@@ -463,39 +459,14 @@ function RefreshButton({ style, onRefresh }: RefreshButtonProps) {
   );
 }
 
-type SettingsButtonProps = {
-  onOpenSettings: () => void;
-};
-
-function SettingsButton({ onOpenSettings }: SettingsButtonProps) {
-  const { t } = useTranslation();
-
-  return (
-    <View>
-      <Button
-        variant="bare"
-        aria-label={t('Settings')}
-        onPress={() => {
-          onOpenSettings();
-        }}
-        style={{ padding: 10 }}
-      >
-        <SvgCog style={{ width: 18, height: 18 }} />
-      </Button>
-    </View>
-  );
-}
-
 type BudgetFileSelectionHeaderProps = {
   quickSwitchMode: boolean;
   onRefresh?: () => void;
-  onOpenSettings: () => void;
 };
 
 function BudgetFileSelectionHeader({
   quickSwitchMode,
   onRefresh,
-  onOpenSettings,
 }: BudgetFileSelectionHeaderProps) {
   return (
     <View
@@ -520,7 +491,6 @@ function BudgetFileSelectionHeader({
           }}
         >
           {onRefresh && <RefreshButton onRefresh={onRefresh} />}
-          {isElectron() && <SettingsButton onOpenSettings={onOpenSettings} />}
         </View>
       )}
     </View>
@@ -633,9 +603,6 @@ export function BudgetFileSelection({
         <BudgetFileSelectionHeader
           quickSwitchMode={quickSwitchMode}
           onRefresh={serverStatus === 'online' ? refresh : undefined}
-          onOpenSettings={() =>
-            dispatch(pushModal({ modal: { name: 'files-settings' } }))
-          }
         />
       )}
       <BudgetFileList

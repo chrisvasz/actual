@@ -3,13 +3,11 @@ import type { ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
-import { Button, ButtonWithLoading } from '@actual-app/components/button';
+import { Button } from '@actual-app/components/button';
 import { Paragraph } from '@actual-app/components/paragraph';
 import { SpaceBetween } from '@actual-app/components/space-between';
 import { Text } from '@actual-app/components/text';
-import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import { isElectron } from '@actual-app/core/shared/environment';
 import { LazyLoadFailedError } from '@actual-app/core/shared/errors';
 
 import { useModalState } from '#hooks/useModalState';
@@ -83,18 +81,7 @@ function RenderSimple({ error }: RenderSimpleProps) {
       </Text>
     );
   } else if ('BackendInitFailure' in error && error.BackendInitFailure) {
-    msg = isElectron() ? (
-      <Text>
-        <Trans>
-          Actual's backend process failed to start or stopped unexpectedly.
-          Restart the app to try again; if the problem persists, please get{' '}
-          <Link variant="external" to="https://actualbudget.org/contact">
-            in touch
-          </Link>{' '}
-          so it can be investigated.
-        </Trans>
-      </Text>
-    ) : (
+    msg = (
       <Text>
         <Trans>
           Actual couldn't load a critical backend worker. Reload the page to try
@@ -180,62 +167,6 @@ function RenderDocumentDirError({ path, code }: RenderDocumentDirErrorProps) {
         </Trans>
       </Text>
     </SpaceBetween>
-  );
-}
-
-/**
- * Lets the user pick a different budget data folder straight from the error
- * screen. The backend isn't running at this point, so the choice is saved by
- * the desktop app's main process and the app is relaunched.
- */
-function ChooseDocumentDirButton() {
-  const { t } = useTranslation();
-  const [isChanging, setIsChanging] = useState(false);
-  const [chooseError, setChooseError] = useState('');
-
-  async function chooseDirectory() {
-    setChooseError('');
-
-    const chosenDirectories = await window.Actual.openFileDialog({
-      properties: ['openDirectory'],
-    });
-    const chosenDirectory = chosenDirectories?.[0];
-    if (!chosenDirectory) {
-      return;
-    }
-
-    setIsChanging(true);
-    try {
-      await window.Actual.setDocumentDir(chosenDirectory);
-      window.Actual.relaunch();
-    } catch (error) {
-      // The raw failure (path, IPC wrapping, OS error text) goes to the
-      // console for diagnosis; the user gets a plain explanation.
-      console.error('Could not change the data folder', error);
-      setChooseError(
-        t(
-          "That folder can't be used. Make sure it exists and that Actual is allowed to create files in it.",
-        ),
-      );
-      setIsChanging(false);
-    }
-  }
-
-  return (
-    <>
-      <ButtonWithLoading
-        variant="primary"
-        isLoading={isChanging}
-        onPress={chooseDirectory}
-      >
-        <Trans>Choose a different folder</Trans>
-      </ButtonWithLoading>
-      {chooseError && (
-        <Text style={{ color: theme.errorText, flexBasis: '100%' }}>
-          {chooseError}
-        </Text>
-      )}
-    </>
   );
 }
 
@@ -385,7 +316,6 @@ export function FatalError({ error: rawError }: FatalErrorProps) {
 
         <Paragraph>
           <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-            {isDocumentDirError && isElectron() && <ChooseDocumentDirButton />}
             <Button onPress={() => window.Actual.relaunch()}>
               <Trans>Restart app</Trans>
             </Button>
