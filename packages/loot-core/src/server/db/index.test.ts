@@ -346,36 +346,3 @@ describe('Database', () => {
     expect(rows[0].id).toBe('trans1');
   });
 });
-
-describe('getTablesRead', () => {
-  test('lists the table a query reads', () => {
-    expect(db.getTablesRead('SELECT name FROM payees')).toEqual(['payees']);
-  });
-
-  test('lists the tables behind a view', () => {
-    expect(
-      db
-        .getTablesRead('SELECT payee, category FROM v_transactions_internal')
-        .sort(),
-    ).toEqual(['category_mapping', 'payee_mapping', 'transactions']);
-  });
-
-  test('leaves out joins that cannot change the result', () => {
-    // The mappings only supply payee and category, which aren't selected
-    expect(
-      db.getTablesRead('SELECT amount FROM v_transactions_internal'),
-    ).toEqual(['transactions']);
-  });
-
-  test('counts a table read only through one of its indexes', () => {
-    expect(
-      db.getTablesRead('SELECT COUNT(*) FROM transactions WHERE date > 0'),
-    ).toEqual(['transactions']);
-  });
-
-  test('plans a query with placeholders without their values', () => {
-    expect(
-      db.getTablesRead('SELECT name FROM payees WHERE id = ? AND name = ?', 2),
-    ).toEqual(['payees']);
-  });
-});

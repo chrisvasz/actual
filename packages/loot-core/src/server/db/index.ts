@@ -160,42 +160,6 @@ export function cache(sql: string) {
 
 function resetQueryCache() {
   _queryCache = new LRUCache<string, Statement>({ max: 100 });
-  _tablesReadCache = new LRUCache<string, string[]>({ max: 500 });
-}
-
-// The tables a query reads, as SQLite plans it: every table the plan opens,
-// directly or through an index, including the tables behind views. A join
-// SQLite leaves out because it can't change the result isn't counted. The
-// plan only changes with the schema, so this is cached per SQL text.
-let _tablesReadCache = new LRUCache<string, string[]>({ max: 500 });
-export function getTablesRead(sql: string, paramCount = 0): string[] {
-  const cached = _tablesReadCache.get(sql);
-  if (cached) {
-    return cached;
-  }
-
-  const plan = runQuery<{ opcode: string; p2: number; p3: number }>(
-    'EXPLAIN ' + sql,
-    new Array(paramCount).fill(null),
-    true,
-  );
-  // P2 is the b-tree's root page and P3 the database, where 0 is `main`
-  const rootPages = new Set(
-    plan.filter(op => op.opcode === 'OpenRead' && op.p3 === 0).map(op => op.p2),
-  );
-  const tables =
-    rootPages.size === 0
-      ? []
-      : runQuery<{ tbl_name: string }>(
-          `SELECT DISTINCT tbl_name FROM sqlite_master
-           WHERE rootpage IN (${[...rootPages].join(', ')})
-           AND tbl_name NOT LIKE 'sqlite\\_%' ESCAPE '\\'`,
-          [],
-          true,
-        ).map(row => row.tbl_name);
-
-  _tablesReadCache.set(sql, tables);
-  return tables;
 }
 
 export function transaction(

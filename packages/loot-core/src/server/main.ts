@@ -70,8 +70,7 @@ handlers['query'] = async function (query) {
     throw new Error('query has no table, did you forgot to call `.serialize`?');
   }
 
-  // The client refetches a query when a table it reads changes
-  return aqlQuery(query, undefined, { completeDependencies: true });
+  return aqlQuery(query);
 };
 
 handlers['get-server-version'] = async function () {

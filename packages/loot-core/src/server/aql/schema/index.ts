@@ -264,6 +264,18 @@ export const schemaConfig: SchemaConfig = {
     return name;
   },
 
+  // Kept in step with the views below by a test in `index.test.ts`
+  viewDependencies: {
+    transactions: ['category_mapping', 'payee_mapping'],
+    schedules: [
+      'schedules_next_date',
+      'schedules_json_paths',
+      'rules',
+      'payee_mapping',
+    ],
+    payees: ['accounts'],
+  },
+
   customizeQuery(queryState) {
     const { table: tableName } = queryState;
 

@@ -290,7 +290,6 @@ describe('compileAndRunQuery', () => {
   it('depends on the tables behind the views it reads', async () => {
     const { dependencies } = await compileAndRunAqlQuery(
       q('transactions').filter({ payee: 'p1' }).select('id').serialize(),
-      { completeDependencies: true },
     );
     // Payees are resolved through `payee_mapping`, which the
     // `v_transactions_internal` view reads
@@ -300,7 +299,6 @@ describe('compileAndRunQuery', () => {
 
     const { dependencies: payeeDependencies } = await compileAndRunAqlQuery(
       q('payees').select('name').serialize(),
-      { completeDependencies: true },
     );
     // A transfer payee is named after its account
     expect(payeeDependencies).toEqual(
@@ -309,20 +307,8 @@ describe('compileAndRunQuery', () => {
 
     const { dependencies: scheduleDependencies } = await compileAndRunAqlQuery(
       q('schedules').select(['id', 'next_date']).serialize(),
-      { completeDependencies: true },
     );
     // Skipping a date only writes `schedules_next_date`
     expect(scheduleDependencies).toContain('schedules_next_date');
-  });
-
-  it('plans queries with named parameters for their dependencies', async () => {
-    const { dependencies } = await compileAndRunAqlQuery(
-      q('transactions')
-        .filter({ account: ':account' })
-        .select('id')
-        .serialize(),
-      { params: { account: 'acct1' }, completeDependencies: true },
-    );
-    expect(dependencies).toContain('transactions');
   });
 });

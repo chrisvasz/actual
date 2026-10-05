@@ -110,37 +110,11 @@ export async function runCompiledAqlQuery(
   return data;
 }
 
-/**
- * The tables a query's result depends on: the tables its plan reads,
- * including those behind views like the payee and category mappings, plus
- * the tables it names. A change to any of them can change the result.
- */
-export function getQueryDependencies(
-  queryState: QueryState,
-  compilerState: CompilerState,
-  sqlPieces: SqlPieces,
-): string[] {
-  const sql = defaultConstructQuery(queryState, compilerState, sqlPieces);
-  const tablesRead = db.getTablesRead(
-    sql,
-    compilerState.namedParameters.length,
-  );
-  return [...new Set([...compilerState.dependencies, ...tablesRead])];
-}
-
 export async function compileAndRunAqlQuery(
   schema,
   schemaConfig: SchemaConfig,
   queryState: QueryState,
-  {
-    completeDependencies = false,
-    ...options
-  }: RunCompiledAqlQueryOptions & {
-    // Whether to plan the query for every table it reads. That costs a
-    // statement prepare, so only callers that watch for changes ask for it;
-    // otherwise only the tables the query names are listed.
-    completeDependencies?: boolean;
-  } = {},
+  options: RunCompiledAqlQueryOptions,
 ) {
   const { sqlPieces, state } = compileQuery(queryState, schema, schemaConfig);
   // oxlint-disable-next-line typescript/no-explicit-any
@@ -150,10 +124,5 @@ export async function compileAndRunAqlQuery(
     state,
     options,
   );
-  return {
-    data,
-    dependencies: completeDependencies
-      ? getQueryDependencies(queryState, state, sqlPieces)
-      : state.dependencies,
-  };
+  return { data, dependencies: state.dependencies };
 }
