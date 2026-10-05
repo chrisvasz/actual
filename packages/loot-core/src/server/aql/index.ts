@@ -14,6 +14,7 @@ export {
   convertInputType,
 } from './schema-helpers';
 export { compileQuery } from './compiler';
+export { getQueryDependencies } from './exec';
 export { makeViews } from './views';
 export { schema, schemaConfig } from './schema';
 
@@ -29,7 +30,11 @@ export function aqlCompiledQuery(
   });
 }
 
-export function aqlQuery(query: Query | QueryState, params?: AqlQueryParams) {
+export function aqlQuery(
+  query: Query | QueryState,
+  params?: AqlQueryParams,
+  { completeDependencies = false }: { completeDependencies?: boolean } = {},
+) {
   if (query instanceof Query) {
     query = query.serialize();
   }
@@ -37,5 +42,6 @@ export function aqlQuery(query: Query | QueryState, params?: AqlQueryParams) {
   return compileAndRunAqlQuery(schema, schemaConfig, query, {
     params,
     executors: schemaExecutors,
+    completeDependencies,
   });
 }

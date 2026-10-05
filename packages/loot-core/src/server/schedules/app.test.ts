@@ -4,6 +4,7 @@ import MockDate from 'mockdate';
 import { aqlQuery } from '#server/aql';
 import * as db from '#server/db';
 import { loadMappings } from '#server/db/mappings';
+import * as sheet from '#server/sheet';
 import { loadRules, updateRule } from '#server/transactions/transaction-rules';
 import { q } from '#shared/query';
 import { getNextDate } from '#shared/schedules';
@@ -1139,5 +1140,39 @@ describe('schedule app', () => {
         await schedulesApp.stopServices();
       }
     });
+  });
+});
+
+describe('schedule queries in the spreadsheet', () => {
+  it('a query on next_date follows a skipped date', async () => {
+    const id = await createSchedule({
+      conditions: [
+        {
+          op: 'is',
+          field: 'date',
+          value: { start: '2020-12-05', frequency: 'weekly', patterns: [] },
+        },
+      ],
+    });
+
+    const spreadsheet = await sheet.loadSpreadsheet(db);
+    spreadsheet.createQuery(
+      'schedule',
+      'next-date',
+      q('schedules').filter({ id }).calculate('next_date').serialize(),
+    );
+    await sheet.waitOnSpreadsheet();
+    const before = spreadsheet.getValue('schedule!next-date');
+
+    // Skipping only writes `schedules_next_date`, which the `schedules` view
+    // reads
+    await skipNextDate({ id });
+    await sheet.waitOnSpreadsheet();
+
+    const { data: after } = await aqlQuery(
+      q('schedules').filter({ id }).calculate('next_date'),
+    );
+    expect(after).not.toBe(before);
+    expect(spreadsheet.getValue('schedule!next-date')).toBe(after);
   });
 });

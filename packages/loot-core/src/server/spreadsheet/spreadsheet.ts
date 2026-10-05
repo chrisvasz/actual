@@ -5,6 +5,7 @@ import { logger } from '#platform/server/log';
 import {
   aqlCompiledQuery,
   compileQuery,
+  getQueryDependencies,
   schema,
   schemaConfig,
 } from '#server/aql';
@@ -21,7 +22,7 @@ export type Node = {
   sheet: unknown;
   query?: QueryState;
   queryKey?: string;
-  sql?: { sqlPieces: unknown; state: { dependencies: unknown[] } };
+  sql?: { sqlPieces: unknown; state: unknown; dependencies: string[] };
   dynamic?: boolean;
   _run?: unknown;
   _dependencies?: string[];
@@ -328,7 +329,11 @@ export class Spreadsheet {
         schema,
         schemaConfig,
       );
-      node.sql = { sqlPieces, state };
+      node.sql = {
+        sqlPieces,
+        state,
+        dependencies: getQueryDependencies(node.query, state, sqlPieces),
+      };
       node.queryKey = queryKey;
 
       this.transaction(() => {
@@ -483,10 +488,7 @@ export class Spreadsheet {
     // TODO: Create an index of deps so we don't have to iterate
     // across all nodes
     this.nodes.forEach(node => {
-      if (
-        node.sql &&
-        node.sql.state.dependencies.some(dep => tables.has(dep))
-      ) {
+      if (node.sql && node.sql.dependencies.some(dep => tables.has(dep))) {
         this._markDirty(node.name);
       }
     });
