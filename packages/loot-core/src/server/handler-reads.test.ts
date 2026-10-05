@@ -75,10 +75,21 @@ const calls: Record<
   'tags-get': [() => handlers['tags-get']()],
 };
 
+// The tables loading the in-memory rules cache reads. The cache keeps itself
+// current from sync listeners, which run before the sync event goes out, and
+// rewrites the ids in each rule when a mapping table changes.
+let rulesCacheReads: Set<string>;
+
 beforeEach(async () => {
   await global.emptyDatabase()();
-  await loadMappings();
-  await loadRules();
+  rulesCacheReads = new Set();
+  const loads = await recordStatements(async () => {
+    await loadMappings();
+    await loadRules();
+  });
+  for (const { sql, params } of loads) {
+    tablesRead(sql, params).forEach(table => rulesCacheReads.add(table));
+  }
 
   // Something in each table, so no handler skips a query for want of rows
   await db.insertAccount({ id: 'acct', name: 'Checking' });
@@ -95,18 +106,18 @@ beforeEach(async () => {
   });
 });
 
-// Tables a handler reads from an in-memory cache rather than through SQL
-const cachedReads: Partial<Record<keyof typeof handlerReads, string[]>> = {
-  'payees-get-rule-counts': ['rules'],
-  'payees-get-rules': ['rules'],
-  'rules-get': ['rules'],
-};
+// Handlers that read the in-memory rules cache rather than (only) SQL
+const readsRulesCache = new Set<keyof typeof handlerReads>([
+  'payees-get-rule-counts',
+  'payees-get-rules',
+  'rules-get',
+]);
 
 describe('handlerReads', () => {
   test.each(Object.keys(calls) as Array<keyof typeof calls>)(
     'lists exactly the tables %s reads',
     async name => {
-      const read = new Set(cachedReads[name]);
+      const read = new Set(readsRulesCache.has(name) ? rulesCacheReads : []);
       for (const call of calls[name]) {
         for (const { sql, params } of await recordStatements(call)) {
           tablesRead(sql, params).forEach(table => read.add(table));

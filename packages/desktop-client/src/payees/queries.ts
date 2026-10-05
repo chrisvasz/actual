@@ -40,6 +40,9 @@ export const payeeQueries = {
       placeholderData: [],
       // Refetched when a sync event changes a table it reads
       staleTime: Infinity,
+      // It reads every transaction, so it isn't kept once nothing shows it:
+      // otherwise each transaction change would refetch it in the background.
+      gcTime: 0,
       meta: { dependencies: handlerReads['payees-get-orphaned'] },
     }),
   ruleCounts: () =>

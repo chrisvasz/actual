@@ -13,6 +13,11 @@ export type TransactionsSnapshot = AqlSnapshot<TransactionEntity[]>;
 type TransactionsQueryArgs = {
   query?: Query;
   limit: number;
+  /**
+   * Keeps one screen's cache entry apart from other readers of the same
+   * query, for a screen whose query options (like its `meta`) differ.
+   */
+  scope?: string;
   initialData?: () => TransactionsSnapshot | undefined;
 };
 
@@ -26,9 +31,9 @@ export const transactionQueries = {
    * Kept only while something shows it, and fresh until a sync event changes
    * a table it read.
    */
-  aql: ({ query, limit, initialData }: TransactionsQueryArgs) =>
+  aql: ({ query, limit, scope, initialData }: TransactionsQueryArgs) =>
     queryOptions<TransactionsSnapshot>({
-      queryKey: [...transactionQueries.all(), 'aql', query, limit],
+      queryKey: [...transactionQueries.all(), 'aql', query, limit, scope],
       queryFn: async () => {
         if (!query) {
           // Shouldn't happen because of the enabled flag, but needed to satisfy TS
@@ -63,13 +68,18 @@ export function hasMoreTransactions(
  */
 export async function loadMoreTransactions(
   queryClient: QueryClient,
-  { query, limit, pageSize }: { query: Query; limit: number; pageSize: number },
+  {
+    query,
+    limit,
+    pageSize,
+    scope,
+  }: { query: Query; limit: number; pageSize: number; scope?: string },
 ): Promise<TransactionsQueryArgs> {
   const nextLimit = limit + pageSize;
-  const { queryKey } = transactionQueries.aql({ query, limit });
+  const { queryKey } = transactionQueries.aql({ query, limit, scope });
   const current = queryClient.getQueryData(queryKey);
   if (current == null) {
-    return { query, limit: nextLimit };
+    return { query, limit: nextLimit, scope };
   }
 
   const page = await aqlQuery(
@@ -83,6 +93,7 @@ export async function loadMoreTransactions(
   return {
     query,
     limit: nextLimit,
+    scope,
     initialData: () =>
       queryClient.getQueryData(queryKey) === current &&
       queryClient.getQueryState(queryKey)?.fetchStatus === 'idle'

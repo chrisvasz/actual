@@ -171,9 +171,15 @@ type AccountPreload = {
 // refetch always recomputes the totals that an optimistic edit skips.
 //
 // Local changes reach this screen through optimistic updates and its own
-// refetches, so it only refetches for changes synced from other devices.
-function rowsQueryOptions(args: Parameters<typeof transactionQueries.aql>[0]) {
-  const options = transactionQueries.aql(args);
+// refetches, so it only refetches for changes synced from other devices. Its
+// own cache entry keeps that from applying to (or being undone by) anything
+// else reading the same rows.
+const ROWS_SCOPE = 'account-rows';
+
+function rowsQueryOptions(
+  args: Omit<Parameters<typeof transactionQueries.aql>[0], 'scope'>,
+) {
+  const options = transactionQueries.aql({ ...args, scope: ROWS_SCOPE });
   return {
     ...options,
     structuralSharing: false,
@@ -771,6 +777,7 @@ class AccountInternal extends PureComponent<
         query,
         limit: this.rowsLimit,
         pageSize: TRANSACTIONS_PAGE_COUNT,
+        scope: ROWS_SCOPE,
       });
       // The query may have changed while the page loaded
       if (this.rows === rows) {

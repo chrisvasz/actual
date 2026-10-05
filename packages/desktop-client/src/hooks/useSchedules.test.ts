@@ -122,12 +122,9 @@ describe('useSchedules', () => {
     const query = q('schedules').select('*');
     const schedule = { id: 'schedule-1' } as ScheduleEntity;
     queryClient.setQueryData(schedulesSnapshotQuery(query, '7').queryKey, {
-      data: {
-        schedules: [schedule],
-        statuses: new Map([[schedule.id, 'scheduled' as const]]),
-        statusLabels: new Map([[schedule.id, 'scheduled' as const]]),
-      },
-      dependencies: ['schedules'],
+      schedules: [schedule],
+      statuses: new Map([[schedule.id, 'scheduled' as const]]),
+      statusLabels: new Map([[schedule.id, 'scheduled' as const]]),
     });
 
     const { result } = renderHook(
