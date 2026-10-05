@@ -1,17 +1,21 @@
-import { useEffect, useEffectEvent, useMemo, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 
 import { listen } from '@actual-app/core/platform/client/connection';
 import type { Query } from '@actual-app/core/shared/query';
 import type { IntegerAmount } from '@actual-app/core/shared/util';
 import type { TransactionEntity } from '@actual-app/core/types/models';
 import type { ServerEvents } from '@actual-app/core/types/server-events';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import type {
-  InfiniteData,
-  UseInfiniteQueryResult,
-} from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { UseQueryResult } from '@tanstack/react-query';
 
-import { transactionQueries } from '#transactions';
+import {
+  hasMoreTransactions,
+  loadMoreTransactions,
+  transactionQueries,
+} from '#transactions';
+import type { TransactionsSnapshot } from '#transactions';
+
+const NO_TRANSACTIONS: TransactionEntity[] = [];
 
 // Mirrors the `splits` AQL option from the server
 type TransactionSplitsOption = 'all' | 'inline' | 'grouped' | 'none';
@@ -72,10 +76,7 @@ type UseTransactionsProps = {
   };
 };
 
-type UseTransactionsResult = UseInfiniteQueryResult<
-  InfiniteData<TransactionEntity[]>,
-  Error
-> & {
+type UseTransactionsResult = UseQueryResult<TransactionsSnapshot, Error> & {
   /**
    * The transactions returned by the query.
    */
@@ -86,6 +87,14 @@ type UseTransactionsResult = UseInfiniteQueryResult<
    * or a function that implements the calculation in the options.
    */
   runningBalances: Map<TransactionEntity['id'], IntegerAmount>;
+  /**
+   * Whether the query has more rows than the ones loaded so far.
+   */
+  hasNextPage: boolean;
+  /**
+   * Load one more page of rows.
+   */
+  fetchNextPage: () => Promise<void>;
 };
 
 export function useTransactions({
@@ -103,9 +112,43 @@ export function useTransactions({
     Map<TransactionEntity['id'], IntegerAmount>
   >(new Map());
 
-  const queryResult = useInfiniteQuery(
-    transactionQueries.aql({ query, pageSize }),
-  );
+  const queryClient = useQueryClient();
+  // The rows loaded so far, starting over from one page when the query
+  // changes. Loading more raises the limit of a single query rather than
+  // adding a page, so a refetch reads every loaded row in one snapshot.
+  const [loaded, setLoaded] = useState<{
+    query: Query;
+    pageSize: number;
+    limit: number;
+    initialData?: () => TransactionsSnapshot | undefined;
+  } | null>(null);
+  const args =
+    loaded != null && loaded.query === query && loaded.pageSize === pageSize
+      ? loaded
+      : { query, limit: pageSize };
+
+  const queryResult = useQuery(transactionQueries.aql(args));
+  const hasNextPage =
+    !queryResult.isPlaceholderData &&
+    hasMoreTransactions(queryResult.data, args.limit);
+
+  const isLoadingMoreRef = useRef(false);
+  const fetchNextPage = async () => {
+    if (!query || !hasNextPage || isLoadingMoreRef.current) {
+      return;
+    }
+    isLoadingMoreRef.current = true;
+    try {
+      const next = await loadMoreTransactions(queryClient, {
+        query,
+        limit: args.limit,
+        pageSize,
+      });
+      setLoaded({ ...next, query, pageSize });
+    } finally {
+      isLoadingMoreRef.current = false;
+    }
+  };
 
   const onSyncEvent = useEffectEvent((event: ServerEvents['sync-event']) => {
     if (event.type === 'applied') {
@@ -141,7 +184,7 @@ export function useTransactions({
   useEffect(() => {
     if (calculateRunningBalancesOptionFn) {
       if (queryResult.isSuccess) {
-        const transactions = flattenPages(queryResult.data);
+        const transactions = queryResult.data.data;
         setRunningBalances(
           calculateRunningBalancesOptionFn(
             transactions,
@@ -161,15 +204,14 @@ export function useTransactions({
     splitsOption,
   ]);
 
-  const transactions = useMemo(
-    () => flattenPages(queryResult.data),
-    [queryResult.data],
-  );
+  const transactions = queryResult.data?.data ?? NO_TRANSACTIONS;
 
   return {
     ...queryResult,
     transactions,
     runningBalances,
+    hasNextPage,
+    fetchNextPage,
   };
 }
 
@@ -261,10 +303,4 @@ export function calculateRunningBalancesTopDown(
       acc.set(transaction.id, currentRunningBalance);
       return acc;
     }, new Map<TransactionEntity['id'], IntegerAmount>());
-}
-
-function flattenPages(
-  data?: InfiniteData<TransactionEntity[]>,
-): TransactionEntity[] {
-  return data ? data.pages.flat() : [];
 }
