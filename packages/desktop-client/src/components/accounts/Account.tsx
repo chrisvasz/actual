@@ -36,7 +36,13 @@ import type {
   TransactionEntity,
   TransactionFilterEntity,
 } from '@actual-app/core/types/models';
-import { useSuspenseQueries, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  QueryObserver,
+  useQueryClient,
+  useSuspenseQueries,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 import { parseISO } from 'date-fns';
 import { debounce, isEqual } from 'es-toolkit/compat';
 import { t } from 'i18next';
@@ -91,10 +97,14 @@ import { addNotification } from '#notifications/notificationsSlice';
 import { payeeQueries, useCreatePayeeMutation } from '#payees';
 import * as queries from '#queries';
 import { aqlQuery } from '#queries/aqlQuery';
-import { pagedQuery } from '#queries/pagedQuery';
-import type { PagedQuery } from '#queries/pagedQuery';
 import { useDispatch, useSelector } from '#redux';
 import type { AppDispatch } from '#redux/store';
+import {
+  hasMoreTransactions,
+  loadMoreTransactions,
+  transactionQueries,
+} from '#transactions';
+import type { TransactionsSnapshot } from '#transactions';
 import { updateNewTransactions } from '#transactions/transactionsSlice';
 
 import { AccountEmptyMessage } from './AccountEmptyMessage';
@@ -107,7 +117,7 @@ const TRANSACTIONS_PAGE_COUNT = 150;
 
 // The rows query for a transactions query. Hidden reconciled transactions
 // are only filtered out when running balances aren't shown, since those are
-// derived from every row. Shared by the screen's paged query and the preload
+// derived from every row. Shared by the screen's rows query and the preload
 // of its first page, which have to fetch the same rows.
 function selectTransactionRows(
   query: Query,
@@ -155,6 +165,12 @@ type AccountPreload = {
   balances: Record<TransactionEntity['id'], IntegerAmount> | null;
   filteredAmount: number | null;
 } | null;
+
+// Every fetch counts as new rows, even when they come back unchanged, so a
+// refetch always recomputes the totals that an optimistic edit skips.
+function rowsQueryOptions(args: Parameters<typeof transactionQueries.aql>[0]) {
+  return { ...transactionQueries.aql(args), structuralSharing: false };
+}
 
 function isTransactionFilterEntity(
   filter: ConditionEntity,
@@ -341,6 +357,7 @@ type AccountInternalProps = {
   onSyncAndDownload: (accountId?: AccountEntity['id']) => void;
   onCreatePayee: (name: PayeeEntity['name']) => Promise<PayeeEntity['id']>;
   preload: AccountPreload;
+  queryClient: QueryClient;
 };
 
 type AccountInternalState = {
@@ -382,18 +399,27 @@ class AccountInternal extends PureComponent<
   AccountInternalProps,
   AccountInternalState
 > {
-  paged: PagedQuery<TransactionEntity> | null;
+  // The rows on screen: the first `rowsLimit` rows of `rowsQuery`, read as
+  // one snapshot. Loading more raises the limit.
+  rows: QueryObserver<TransactionsSnapshot> | null = null;
+  rowsQuery: Query | null = null;
+  rowsLimit = TRANSACTIONS_PAGE_COUNT;
+  stopRows?: () => void;
+  _isLoadingMoreRows = false;
+  // Whether the last fetched rows filled the limit. Kept apart from the rows
+  // on screen, which an optimistic delete can shorten.
+  _hasMoreRows = false;
+  // Rows set by an optimistic update, which skip the aggregate queries
+  _optimisticRows: TransactionsSnapshot | null = null;
   rootQuery!: Query;
   currentQuery!: Query;
   table: TableRef;
   unlisten?: () => void;
   dispatchSelected?: (action: Actions) => void;
-  _isOptimisticUpdate: boolean = false;
   _pendingBalanceTotal: Promise<number | null> | null = null;
 
   constructor(props: AccountInternalProps) {
     super(props);
-    this.paged = null;
     this.table = createRef();
 
     this.state = {
@@ -402,13 +428,13 @@ class AccountInternal extends PureComponent<
       filterId: undefined,
       filterConditionsOp: 'and',
       // With a preload the screen mounts with its first page already in
-      // hand; the paged query below still runs to take over live updates.
+      // hand; the rows query below still runs to take over live updates.
       loading: props.preload == null,
       workingHard: false,
       isReconciling: false,
       transactions: props.preload?.transactions ?? [],
       // Set up front so scheduled transactions aren't prepended to a
-      // preloaded filtered list until the paged query catches up.
+      // preloaded filtered list until the rows query catches up.
       transactionsFiltered:
         props.preload != null && (props.filterConditions?.length ?? 0) > 0,
       showBalances: props.showBalances,
@@ -515,18 +541,16 @@ class AccountInternal extends PureComponent<
     if (this.unlisten) {
       this.unlisten();
     }
-    if (this.paged) {
-      this.paged.unsubscribe();
-    }
+    this.stopRows?.();
   }
 
   fetchAllIds = async () => {
-    if (!this.paged) {
+    if (!this.rowsQuery) {
       return [];
     }
 
     const { data } = await aqlQuery(
-      this.paged.query.select(['id', 'reconciled']),
+      this.rowsQuery.select(['id', 'reconciled']),
     );
     // Hidden reconciled transactions and split children that don't match
     // the filters aren't selectable, and neither is a parent with any.
@@ -549,7 +573,21 @@ class AccountInternal extends PureComponent<
   };
 
   refetchTransactions = async () => {
-    void this.paged?.run();
+    const rows = this.rows;
+    if (rows == null) {
+      return;
+    }
+    // A refetch joins a fetch that's already running unless there are rows
+    // to keep showing meanwhile, and that fetch may predate the change being
+    // refetched for. Cancel it so this one reads the latest rows.
+    const { data, isPlaceholderData } = rows.getCurrentResult();
+    if (data == null || isPlaceholderData) {
+      await this.props.queryClient.cancelQueries({
+        queryKey: rows.options.queryKey,
+        exact: true,
+      });
+    }
+    void rows.refetch();
   };
 
   fetchTransactions = (filterConditions?: ConditionEntity[]) => {
@@ -570,100 +608,69 @@ class AccountInternal extends PureComponent<
   };
 
   updateQuery(query: Query, isFiltered: boolean = false) {
-    if (this.paged) {
-      this.paged.unsubscribe();
-    }
+    this.stopRows?.();
 
     const rowsQuery = selectTransactionRows(query, {
       showReconciled: this.state.showReconciled,
       showBalances: this.state.showBalances,
       canCalculateBalance: this.canCalculateBalance(),
     });
+    this.rowsQuery = rowsQuery;
+    this.rowsLimit = TRANSACTIONS_PAGE_COUNT;
+    this._hasMoreRows = false;
 
-    this.paged = pagedQuery(rowsQuery, {
-      onData: async (groupedData, prevData) => {
-        const data = ungroupTransactions([...groupedData]);
-        const firstLoad = prevData == null;
+    const rows = new QueryObserver(
+      this.props.queryClient,
+      rowsQueryOptions({ query: rowsQuery, limit: this.rowsLimit }),
+    );
+    this.rows = rows;
 
-        // Fast path for optimistic updates (e.g. field edits): skip the
-        // expensive aggregate DB queries (calculateBalances, getFilteredAmount)
-        // and just update the transaction list in state directly. Balances and
-        // filteredAmount will be refreshed on the next full DB-driven onData.
-        if (this._isOptimisticUpdate) {
-          this._isOptimisticUpdate = false;
-          const transactionsSnapshot = data;
-          const balances = this.state.showBalances
-            ? await this.calculateBalances(data)
-            : null;
-          // Wrap in startTransition so React treats this as a low-priority
-          // update. Without this, setState blocks the main thread for the
-          // full duration of the re-render (~40–220ms with large transaction
-          // lists), preventing input events from being processed and making
-          // the UI feel frozen. startTransition lets React break the render
-          // into chunks and yield to the browser between them, keeping the
-          // UI responsive while the row update happens in the background.
-          startTransition(() => {
-            this.setState({
-              transactions: transactionsSnapshot,
-              balances,
-            });
-          });
-          return;
-        }
-
-        if (firstLoad) {
-          this.table.current?.setRowAnimation(false);
-
-          if (isFiltered) {
-            this.props.splitsExpandedDispatch({
-              type: 'set-mode',
-              mode: 'collapse',
-            });
-          } else {
-            this.props.splitsExpandedDispatch({
-              type: 'set-mode',
-              mode: this.props.expandSplits ? 'expand' : 'collapse',
-            });
-          }
-        }
-
-        // Both aggregates are independent of each other and of `data`, so
-        // run them together rather than serially. `filteredAmount` is only
-        // rendered behind `isFiltered`, so skip that round trip entirely
-        // when nothing will read it.
-        const pendingBalanceTotal = this._pendingBalanceTotal;
-        this._pendingBalanceTotal = null;
-        const [balances, filteredAmount] = await Promise.all([
-          this.state.showBalances
-            ? this.calculateBalances(data, pendingBalanceTotal ?? undefined)
-            : null,
-          isFiltered ? this.getFilteredAmount() : null,
-        ]);
-        this.setState(
-          {
-            transactions: data,
-            transactionsFiltered: isFiltered,
-            loading: false,
-            workingHard: false,
-            balances,
-            filteredAmount,
-          },
-          () => {
-            if (firstLoad) {
-              this.table.current?.scrollToTop();
-            }
-
-            setTimeout(() => {
-              this.table.current?.setRowAnimation(true);
-            }, 0);
-          },
-        );
-      },
-      options: {
-        pageCount: TRANSACTIONS_PAGE_COUNT,
-        onlySync: true,
-      },
+    let shownRows: TransactionsSnapshot | null = null;
+    const unsubscribeRows = rows.subscribe(result => {
+      // Placeholder rows are the smaller snapshot, still shown while the
+      // larger one loads
+      if (
+        result.data == null ||
+        result.isPlaceholderData ||
+        result.data === shownRows
+      ) {
+        return;
+      }
+      const prevRows = shownRows;
+      shownRows = result.data;
+      if (result.data !== this._optimisticRows) {
+        this._hasMoreRows = hasMoreTransactions(result.data, this.rowsLimit);
+      }
+      void this.onRows(result.data, prevRows, isFiltered);
     });
+
+    // As before, local changes reach this screen through optimistic updates
+    // and its own refetches, so only refetch for changes synced from other
+    // devices.
+    const unlistenSync = listen('sync-event', event => {
+      if (event.type !== 'success') {
+        return;
+      }
+      const dependencies = rows.getCurrentResult().data?.dependencies;
+      if (
+        dependencies == null ||
+        event.tables.some(table => dependencies.includes(table))
+      ) {
+        void rows.refetch();
+      }
+    });
+
+    this.stopRows = () => {
+      unsubscribeRows();
+      unlistenSync();
+      // Drop the rows now rather than on the next tick, so running the same
+      // query again reads it fresh instead of finding these still cached.
+      this.props.queryClient.removeQueries({
+        queryKey: rows.options.queryKey,
+        exact: true,
+      });
+      this.rows = null;
+    };
 
     // The balance total depends on the query, not on the rows that come
     // back, so start it alongside the first page instead of waiting for it.
@@ -671,14 +678,126 @@ class AccountInternal extends PureComponent<
       ? this.getBalanceTotal()
       : null;
     // Keep an unconsumed result (the column can be switched off before the
-    // rows land) from surfacing as an unhandled rejection. `onData` still
+    // rows land) from surfacing as an unhandled rejection. `onRows` still
     // sees the rejection if it does await this promise.
     pendingBalanceTotal?.catch(() => null);
     this._pendingBalanceTotal = pendingBalanceTotal;
   }
 
+  // Shows a new snapshot of the rows. `prevRows` is null on a query's first
+  // load.
+  onRows = async (
+    snapshot: TransactionsSnapshot,
+    prevRows: TransactionsSnapshot | null,
+    isFiltered: boolean,
+  ) => {
+    const data = ungroupTransactions([...snapshot.data]);
+    const firstLoad = prevRows == null;
+
+    // Fast path for optimistic updates (e.g. field edits): skip the
+    // expensive aggregate DB queries (calculateBalances, getFilteredAmount)
+    // and just update the transaction list in state directly. Balances and
+    // filteredAmount will be refreshed on the next full DB-driven onRows.
+    if (snapshot === this._optimisticRows) {
+      this._optimisticRows = null;
+      const transactionsSnapshot = data;
+      const balances = this.state.showBalances
+        ? await this.calculateBalances(data)
+        : null;
+      // Wrap in startTransition so React treats this as a low-priority
+      // update. Without this, setState blocks the main thread for the
+      // full duration of the re-render (~40–220ms with large transaction
+      // lists), preventing input events from being processed and making
+      // the UI feel frozen. startTransition lets React break the render
+      // into chunks and yield to the browser between them, keeping the
+      // UI responsive while the row update happens in the background.
+      startTransition(() => {
+        this.setState({
+          transactions: transactionsSnapshot,
+          balances,
+        });
+      });
+      return;
+    }
+
+    if (firstLoad) {
+      this.table.current?.setRowAnimation(false);
+
+      if (isFiltered) {
+        this.props.splitsExpandedDispatch({
+          type: 'set-mode',
+          mode: 'collapse',
+        });
+      } else {
+        this.props.splitsExpandedDispatch({
+          type: 'set-mode',
+          mode: this.props.expandSplits ? 'expand' : 'collapse',
+        });
+      }
+    }
+
+    // Both aggregates are independent of each other and of `data`, so
+    // run them together rather than serially. `filteredAmount` is only
+    // rendered behind `isFiltered`, so skip that round trip entirely
+    // when nothing will read it.
+    const pendingBalanceTotal = this._pendingBalanceTotal;
+    this._pendingBalanceTotal = null;
+    const [balances, filteredAmount] = await Promise.all([
+      this.state.showBalances
+        ? this.calculateBalances(data, pendingBalanceTotal ?? undefined)
+        : null,
+      isFiltered ? this.getFilteredAmount() : null,
+    ]);
+    this.setState(
+      {
+        transactions: data,
+        transactionsFiltered: isFiltered,
+        loading: false,
+        workingHard: false,
+        balances,
+        filteredAmount,
+      },
+      () => {
+        if (firstLoad) {
+          this.table.current?.scrollToTop();
+        }
+
+        setTimeout(() => {
+          this.table.current?.setRowAnimation(true);
+        }, 0);
+      },
+    );
+  };
+
+  loadMoreRows = async () => {
+    const rows = this.rows;
+    const query = this.rowsQuery;
+    if (rows == null || query == null || this._isLoadingMoreRows) {
+      return;
+    }
+    if (rows.getCurrentResult().isPlaceholderData || !this._hasMoreRows) {
+      return;
+    }
+
+    this._isLoadingMoreRows = true;
+    try {
+      const next = await loadMoreTransactions(this.props.queryClient, {
+        query,
+        limit: this.rowsLimit,
+        pageSize: TRANSACTIONS_PAGE_COUNT,
+      });
+      // The query may have changed while the page loaded
+      if (this.rows === rows) {
+        this.rowsLimit = next.limit;
+        rows.setOptions(rowsQueryOptions(next));
+      }
+    } finally {
+      this._isLoadingMoreRows = false;
+    }
+  };
+
   onSearch = (value: string) => {
-    this.paged?.unsubscribe();
+    this.stopRows?.();
     this.setState({ search: value }, this.onSearchDone);
   };
 
@@ -760,18 +879,23 @@ class AccountInternal extends PureComponent<
   };
 
   onTransactionsChange = (updatedTransaction: TransactionEntity) => {
-    // Apply changes to pagedQuery data optimistically. Set the flag so that
-    // onData skips the expensive aggregate DB queries for this update.
-    this._isOptimisticUpdate = true;
-    this.paged?.optimisticUpdate(data => {
-      if (updatedTransaction._deleted) {
-        return data.filter(t => t.id !== updatedTransaction.id);
-      } else {
-        return data.map(t => {
-          return t.id === updatedTransaction.id ? updatedTransaction : t;
-        });
-      }
-    });
+    // Apply changes to the rows optimistically. `onRows` recognizes these
+    // rows and skips the expensive aggregate DB queries for them.
+    const rows = this.rows;
+    const current = rows?.getCurrentResult().data;
+    if (rows && current) {
+      const data = updatedTransaction._deleted
+        ? current.data.filter(t => t.id !== updatedTransaction.id)
+        : current.data.map(t =>
+            t.id === updatedTransaction.id ? updatedTransaction : t,
+          );
+      // Set before `setQueryData`, which notifies `onRows` synchronously
+      this._optimisticRows = { ...current, data };
+      this.props.queryClient.setQueryData(
+        rows.options.queryKey,
+        this._optimisticRows,
+      );
+    }
 
     this.props.dispatch(updateNewTransactions({ id: updatedTransaction.id }));
   };
@@ -795,14 +919,12 @@ class AccountInternal extends PureComponent<
   };
 
   getBalanceTotal = async (): Promise<number | null> => {
-    if (!this.canCalculateBalance() || !this.paged) {
+    if (!this.canCalculateBalance() || !this.rowsQuery) {
       return null;
     }
 
     const { data }: { data: number | null } = await aqlQuery(
-      this.paged.query
-        .options({ splits: 'none' })
-        .calculate({ $sum: '$amount' }),
+      this.rowsQuery.options({ splits: 'none' }).calculate({ $sum: '$amount' }),
     );
     return data ?? 0;
   };
@@ -1150,12 +1272,12 @@ class AccountInternal extends PureComponent<
   }
 
   getFilteredAmount = async () => {
-    if (!this.paged) {
+    if (!this.rowsQuery) {
       return 0;
     }
 
     const { data: amount } = await aqlQuery(
-      this.paged.query.calculate({ $sum: '$amount' }),
+      this.rowsQuery.calculate({ $sum: '$amount' }),
     );
     return amount;
   };
@@ -2025,9 +2147,7 @@ class AccountInternal extends PureComponent<
                   account={account}
                   transactions={transactions}
                   allTransactions={allTransactions}
-                  loadMoreTransactions={() =>
-                    this.paged && this.paged.fetchNext()
-                  }
+                  loadMoreTransactions={this.loadMoreRows}
                   accounts={accounts}
                   category={category}
                   categoryGroups={categoryGroups}
@@ -2114,6 +2234,7 @@ type AccountHackProps = Omit<
   | 'onBatchUnlinkSchedule'
   | 'onBatchDelete'
   | 'onSetTransfer'
+  | 'queryClient'
 >;
 
 // Computes the header's balance cells and seeds the spreadsheet cache with
@@ -2215,6 +2336,7 @@ async function loadAccountPreload({
 function AccountHack(props: AccountHackProps) {
   const { dispatch: splitsExpandedDispatch } = useSplitsExpanded();
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const {
     onBatchEdit,
     onBatchDuplicate,
@@ -2234,6 +2356,7 @@ function AccountHack(props: AccountHackProps) {
       onBatchUnlinkSchedule={onBatchUnlinkSchedule}
       onBatchDelete={onBatchDelete}
       onSetTransfer={onSetTransfer}
+      queryClient={queryClient}
       {...props}
     />
   );
