@@ -67,7 +67,9 @@ export function SidebarGroup({
   const isGoalTemplatesEnabled = useFeatureFlag('goalTemplatesEnabled');
 
   const temporary = group.id === 'new';
-  const { value: name, showUntil: showNameUntil } = usePendingValue(group.name);
+  const { valueOr: pendingNameOr, showUntil: showNameUntil } =
+    usePendingValue<string>();
+  const name = pendingNameOr(group.name);
   const canSortCategories =
     !!onSortCategories && (group.categories?.length ?? 0) > 1;
   const triggerRef = useRef(null);
@@ -82,7 +84,8 @@ export function SidebarGroup({
       onSave && {
         name: 'toggle-visibility',
         text: group.hidden ? t('Show') : t('Hide'),
-        onClick: () => void onSave({ ...group, hidden: !group.hidden }),
+        // Send the displayed name so a rename still saving isn't reverted
+        onClick: () => void onSave({ ...group, name, hidden: !group.hidden }),
         hidden: group.is_income,
       },
       onDelete && {

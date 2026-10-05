@@ -704,6 +704,7 @@ export function SheetCell<
   // reports the new value, so the cell doesn't flash the old one while the
   // save round-trips to the server. The save resolves before the
   // spreadsheet recomputes, so only a failed save drops it early.
+  const pending = usePendingValue<Spreadsheets[SheetName][FieldName]>();
   const latestSheetValue = useSheetValue(binding, () => {
     pending.reset();
 
@@ -712,8 +713,7 @@ export function SheetCell<
       inputProps.onBlur();
     }
   });
-  const pending = usePendingValue(latestSheetValue);
-  const sheetValue = pending.value;
+  const sheetValue = pending.valueOr(latestSheetValue);
   const format = useFormat();
 
   return (
@@ -741,9 +741,11 @@ export function SheetCell<
                 typeof newValue === 'number' && newValue !== sheetValue
                   ? pending.show(newValue as Spreadsheets[SheetName][FieldName])
                   : null;
+              // Always handle a rejection: the mutation already reports it,
+              // and the cell only needs to drop the amount it was showing.
               const saved = onSave(newValue);
-              if (saved && dismiss) {
-                saved.then(undefined, dismiss);
+              if (saved) {
+                saved.then(undefined, () => dismiss?.());
               }
             }}
             {...inputProps}

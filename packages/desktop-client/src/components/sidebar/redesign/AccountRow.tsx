@@ -52,9 +52,9 @@ export function AccountRow({
 
   const reopenAccount = useReopenAccountMutation();
   const updateAccount = useUpdateAccountMutation();
-  const { value: name, showUntil: showNameUntil } = usePendingValue(
-    account.name,
-  );
+  const { valueOr: pendingNameOr, showUntil: showNameUntil } =
+    usePendingValue<string>();
+  const name = pendingNameOr(account.name);
 
   const [rowElement, setRowElement] = useState<HTMLDivElement | null>(null);
   useContextMenu({

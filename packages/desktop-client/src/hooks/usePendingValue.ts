@@ -1,18 +1,21 @@
 import { useRef, useState } from 'react';
 
 /**
- * Shows a just-submitted value in place of `value` while it saves, so the
- * old value doesn't flash back when an input closes before the new data
- * arrives.
+ * Holds a just-submitted value to show in place of the stored one while it
+ * saves, so the old value doesn't flash back when an input closes before the
+ * new data arrives. Render `valueOr(stored)`.
  *
  * Call `show(next)` in the same handler that closes the input; React then
  * renders the new value in that same commit. It returns a function that
  * drops the pending value again, which only takes effect if no newer value
  * has been shown since. `showUntil(next, save)` drops it once `save`
  * settles, success or failure, so `save` should resolve only after the new
- * data has reached `value`.
+ * data has reached the stored value.
+ *
+ * It takes no arguments so it can be declared before the hook that provides
+ * the stored value (e.g. when that hook's change callback calls `reset`).
  */
-export function usePendingValue<T>(value: T) {
+export function usePendingValue<T>() {
   const [pending, setPending] = useState<{ value: T } | null>(null);
   const latest = useRef<object | null>(null);
 
@@ -39,7 +42,7 @@ export function usePendingValue<T>(value: T) {
   }
 
   return {
-    value: pending ? pending.value : value,
+    valueOr: (stored: T) => (pending ? pending.value : stored),
     show,
     showUntil,
     reset,

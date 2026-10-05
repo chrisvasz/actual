@@ -626,8 +626,9 @@ function AccountNameField({
   const [editingName, setEditingName] = useState(false);
   const notes = useNotes(account ? `account-${account.id}` : '');
   const noteUrl = getNoteUrl(notes);
-  const { value: name, showUntil: showNameUntil } =
-    usePendingValue(accountName);
+  const { valueOr: pendingNameOr, showUntil: showNameUntil } =
+    usePendingValue<string>();
+  const name = pendingNameOr(accountName);
 
   const handleSave = (newName: string) => {
     const saved = onSaveName(newName);

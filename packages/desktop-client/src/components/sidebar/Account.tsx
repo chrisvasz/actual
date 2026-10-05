@@ -103,8 +103,9 @@ export function Account<FieldName extends SheetFields<'account'>>({
   const supportsHover = !!account?.id && !isTouchDevice();
   const reopenAccount = useReopenAccountMutation();
   const updateAccount = useUpdateAccountMutation();
-  const { value: displayName, showUntil: showNameUntil } =
-    usePendingValue(name);
+  const { valueOr: pendingNameOr, showUntil: showNameUntil } =
+    usePendingValue<string>();
+  const displayName = pendingNameOr(name);
 
   const balanceCell = <CellValue binding={query} type="financial" />;
 

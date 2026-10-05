@@ -62,9 +62,9 @@ export function SidebarCategory({
   const { t } = useTranslation();
 
   const temporary = category.id === 'new';
-  const { value: name, showUntil: showNameUntil } = usePendingValue(
-    category.name,
-  );
+  const { valueOr: pendingNameOr, showUntil: showNameUntil } =
+    usePendingValue<string>();
+  const name = pendingNameOr(category.name);
   const triggerRef = useRef(null);
   const { handleContextMenu } = useContextMenu({
     triggerRef,
@@ -77,7 +77,9 @@ export function SidebarCategory({
       !categoryGroup?.hidden && {
         name: 'toggle-visibility',
         text: category.hidden ? t('Show') : t('Hide'),
-        onClick: () => void onSave({ ...category, hidden: !category.hidden }),
+        // Send the displayed name so a rename still saving isn't reverted
+        onClick: () =>
+          void onSave({ ...category, name, hidden: !category.hidden }),
       },
       {
         name: 'delete',

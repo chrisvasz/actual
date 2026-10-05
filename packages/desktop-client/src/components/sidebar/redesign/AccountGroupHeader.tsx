@@ -60,7 +60,9 @@ export function AccountGroupHeader({
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const updateGroup = useUpdateAccountGroupMutation();
-  const { value: name, showUntil: showNameUntil } = usePendingValue(group.name);
+  const { valueOr: pendingNameOr, showUntil: showNameUntil } =
+    usePendingValue<string>();
+  const name = pendingNameOr(group.name);
   const deleteGroup = useDeleteAccountGroupMutation();
 
   const [rowElement, setRowElement] = useState<HTMLDivElement | null>(null);
