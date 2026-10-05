@@ -97,6 +97,7 @@ import { addNotification } from '#notifications/notificationsSlice';
 import { payeeQueries, useCreatePayeeMutation } from '#payees';
 import * as queries from '#queries';
 import { aqlQuery } from '#queries/aqlQuery';
+import { readsAnyTable } from '#queries/dependencies';
 import { useDispatch, useSelector } from '#redux';
 import type { AppDispatch } from '#redux/store';
 import {
@@ -168,8 +169,16 @@ type AccountPreload = {
 
 // Every fetch counts as new rows, even when they come back unchanged, so a
 // refetch always recomputes the totals that an optimistic edit skips.
+//
+// Local changes reach this screen through optimistic updates and its own
+// refetches, so it only refetches for changes synced from other devices.
 function rowsQueryOptions(args: Parameters<typeof transactionQueries.aql>[0]) {
-  return { ...transactionQueries.aql(args), structuralSharing: false };
+  const options = transactionQueries.aql(args);
+  return {
+    ...options,
+    structuralSharing: false,
+    meta: { ...options.meta, ignoreAppliedEvents: true },
+  };
 }
 
 function isTransactionFilterEntity(
@@ -449,18 +458,12 @@ class AccountInternal extends PureComponent<
   }
 
   async componentDidMount() {
-    const maybeRefetch = (tables: string[]) => {
-      if (
-        tables.includes('transactions') ||
-        tables.includes('category_mapping') ||
-        tables.includes('payee_mapping')
-      ) {
-        return this.refetchTransactions();
-      }
-    };
-
     const onUndo = async ({ tables, messages }: UndoState) => {
-      await maybeRefetch(tables);
+      // An undo is a local change, so the rows ignore its sync event
+      const rowsQuery = this.rows?.getCurrentQuery();
+      if (rowsQuery && readsAnyTable(rowsQuery, tables)) {
+        await this.refetchTransactions();
+      }
 
       // If all the messages are dealing with transactions, find the
       // first message referencing a non-deleted row so that we can
@@ -644,25 +647,8 @@ class AccountInternal extends PureComponent<
       void this.onRows(result.data, prevRows, isFiltered);
     });
 
-    // As before, local changes reach this screen through optimistic updates
-    // and its own refetches, so only refetch for changes synced from other
-    // devices.
-    const unlistenSync = listen('sync-event', event => {
-      if (event.type !== 'success') {
-        return;
-      }
-      const dependencies = rows.getCurrentResult().data?.dependencies;
-      if (
-        dependencies == null ||
-        event.tables.some(table => dependencies.includes(table))
-      ) {
-        void rows.refetch();
-      }
-    });
-
     this.stopRows = () => {
       unsubscribeRows();
-      unlistenSync();
       // Drop the rows now rather than on the next tick, so running the same
       // query again reads it fresh instead of finding these still cached.
       this.props.queryClient.removeQueries({

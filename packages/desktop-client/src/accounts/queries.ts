@@ -1,4 +1,5 @@
 import { send } from '@actual-app/core/platform/client/connection';
+import { handlerReads } from '@actual-app/core/shared/handler-reads';
 import type { AccountEntity } from '@actual-app/core/types/models';
 import { queryOptions } from '@tanstack/react-query';
 
@@ -17,8 +18,9 @@ export const accountQueries = {
         return accounts;
       },
       placeholderData: [],
-      // Manually invalidated when accounts change
+      // Refetched when a sync event changes a table it reads
       staleTime: Infinity,
+      meta: { dependencies: handlerReads['accounts-get'] },
     }),
   listActive: () =>
     queryOptions<AccountEntity[]>({

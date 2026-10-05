@@ -1,4 +1,5 @@
 import { send } from '@actual-app/core/platform/client/connection';
+import { handlerReads } from '@actual-app/core/shared/handler-reads';
 import type {
   CategoryEntity,
   CategoryGroupEntity,
@@ -25,8 +26,9 @@ export const categoryQueries = {
         grouped: [],
         list: [],
       },
-      // Manually invalidated when categories change
+      // Refetched when a sync event changes a table it reads
       staleTime: Infinity,
+      meta: { dependencies: handlerReads['get-categories'] },
     }),
 };
 

@@ -4,9 +4,7 @@ import * as undo from '@actual-app/core/platform/client/undo';
 import type { QueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
 
-import { accountQueries } from './accounts';
 import { setAppState } from './app/appSlice';
-import { categoryQueries } from './budget';
 import { closeBudgetUI } from './budgetfiles/budgetfilesSlice';
 import { closeModal, pushModal, replaceModal } from './modals/modalsSlice';
 import type { Modal } from './modals/modalsSlice';
@@ -14,8 +12,8 @@ import {
   addGenericErrorNotification,
   addNotification,
 } from './notifications/notificationsSlice';
-import { payeeQueries } from './payees';
 import { loadPrefs } from './prefs/prefsSlice';
+import { isAffectedBy } from './queries/dependencies';
 import type { AppStore } from './redux/store';
 import * as syncEvents from './sync-events';
 
@@ -52,42 +50,21 @@ export function handleGlobalEvents(store: AppStore, queryClient: QueryClient) {
 
   const unlistenUndo = listen('undo-event', undoState => {
     const { tables, undoTag } = undoState;
-    const promises: Promise<unknown>[] = [];
-
-    if (
-      tables.includes('categories') ||
-      tables.includes('category_groups') ||
-      tables.includes('category_mapping')
-    ) {
-      promises.push(
-        queryClient.invalidateQueries({
-          queryKey: categoryQueries.lists(),
-        }),
-      );
-    }
-
-    if (
-      tables.includes('accounts') ||
-      tables.includes('payees') ||
-      tables.includes('payee_mapping')
-    ) {
-      void queryClient.invalidateQueries({
-        queryKey: payeeQueries.lists(),
-      });
-    }
-
-    if (tables.includes('accounts')) {
-      promises.push(
-        queryClient.invalidateQueries({
-          queryKey: accountQueries.lists(),
-        }),
-      );
-    }
+    // The undo's sync event has already started refetching the queries that
+    // read what it changed. Join those refetches, so the screen the undo
+    // returns to draws with the result.
+    const refetched = queryClient.refetchQueries(
+      {
+        predicate: query => isAffectedBy(query, { type: 'applied', tables }),
+        type: 'all',
+      },
+      { cancelRefetch: false },
+    );
 
     const tagged = undo.getTaggedState(undoTag);
 
     if (tagged) {
-      void Promise.all(promises).then(() => {
+      void refetched.then(() => {
         undo.setUndoState('undoEvent', undoState);
 
         // If a modal has been tagged, open it instead of navigating

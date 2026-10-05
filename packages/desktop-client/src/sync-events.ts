@@ -3,23 +3,18 @@ import type { ServerEvents } from '@actual-app/core/types/server-events';
 import type { QueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
 
-import { accountGroupQueries } from './account-groups';
-import { accountQueries } from './accounts';
 import { resetSync, sync } from './app/appSlice';
-import { categoryQueries } from './budget';
 import {
   closeAndDownloadBudget,
   uploadBudget,
 } from './budgetfiles/budgetfilesSlice';
 import { pushModal } from './modals/modalsSlice';
-import { noteQueries } from './notes/queries';
 import { addNotification } from './notifications/notificationsSlice';
 import type { Notification } from './notifications/notificationsSlice';
-import { payeeQueries } from './payees';
 import { loadPrefs } from './prefs/prefsSlice';
+import { invalidateQueriesReading } from './queries/dependencies';
 import type { AppStore } from './redux/store';
 import { reportDataQueries } from './reports';
-import { ruleQueries } from './rules';
 import { signOut } from './users/usersSlice';
 
 // Tables no report reads from, so changes to them (like rearranging the
@@ -121,54 +116,10 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
         void store.dispatch(loadPrefs());
       }
 
-      if (
-        tables.includes('categories') ||
-        tables.includes('category_groups') ||
-        tables.includes('category_mapping')
-      ) {
-        void queryClient.invalidateQueries({
-          queryKey: categoryQueries.lists(),
-        });
-      }
+      void invalidateQueriesReading(queryClient, event);
 
-      if (
-        // Sync on accounts change because so that transfer payees are updated
-        tables.includes('accounts') ||
-        tables.includes('payees') ||
-        tables.includes('payee_mapping')
-      ) {
-        void queryClient.invalidateQueries({
-          queryKey: payeeQueries.lists(),
-        });
-      }
-
-      if (tables.includes('accounts')) {
-        void queryClient.invalidateQueries({
-          queryKey: accountQueries.lists(),
-        });
-      }
-
-      if (tables.includes('account_groups')) {
-        void queryClient.invalidateQueries({
-          queryKey: accountGroupQueries.lists(),
-        });
-      }
-
-      if (tables.includes('notes')) {
-        // Refetch even with no subscribers, so the next screen that suspends
-        // on notes doesn't draw once with a stale note.
-        void queryClient.invalidateQueries({
-          queryKey: noteQueries.lists(),
-          refetchType: 'all',
-        });
-      }
-
-      if (tables.includes('rules')) {
-        void queryClient.invalidateQueries({
-          queryKey: ruleQueries.lists(),
-        });
-      }
-
+      // Report data is computed by spreadsheet modules, which don't say what
+      // they read, so any table a report might read refreshes every card.
       if (tables.some(table => !tablesReportsIgnore.has(table))) {
         void queryClient.invalidateQueries({
           queryKey: reportDataQueries.all(),

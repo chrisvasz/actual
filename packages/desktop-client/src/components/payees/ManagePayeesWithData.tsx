@@ -25,57 +25,27 @@ export function ManagePayeesWithData({
   initialSelectedIds,
 }: ManagePayeesWithDataProps) {
   const queryClient = useQueryClient();
-  const { data: payees = [], refetch: refetchPayees } = usePayees();
-  const { data: orphanedPayees = [], refetch: refetchOrphanedPayees } =
-    useOrphanedPayees();
+  const { data: payees = [] } = usePayees();
+  const { data: orphanedPayees = [] } = useOrphanedPayees();
   const dispatch = useDispatch();
-  const { data: ruleCounts = new Map(), refetch: refetchRuleCounts } =
-    usePayeeRuleCounts();
+  const { data: ruleCounts = new Map() } = usePayeeRuleCounts();
 
   useEffect(() => {
-    const unlisten = listen('sync-event', async event => {
-      if (event.type === 'applied') {
-        if (
-          event.tables.includes('rules') ||
-          event.tables.includes('schedules')
-        ) {
-          await refetchRuleCounts();
-        }
+    // An undo's sync event refreshes the payee lists, so there's only the
+    // pending undo to clear.
+    function onUndo({ tables }: UndoState) {
+      if (tables.includes('payees') || tables.includes('payee_mapping')) {
+        undo.setUndoState('undoEvent', null);
       }
-    });
-
-    return () => {
-      unlisten();
-    };
-  }, [dispatch, refetchRuleCounts]);
-
-  useEffect(() => {
-    async function onUndo({ tables, messages, meta }: UndoState) {
-      if (!tables.includes('payees') && !tables.includes('payee_mapping')) {
-        return;
-      }
-
-      await refetchOrphanedPayees();
-
-      const targetId =
-        meta && typeof meta === 'object' && 'targetId' in meta
-          ? meta.targetId
-          : null;
-
-      if (targetId || messages.find(msg => msg.dataset === 'rules')) {
-        await refetchRuleCounts();
-      }
-
-      undo.setUndoState('undoEvent', null);
     }
 
     const lastUndoEvent = undo.getUndoState('undoEvent');
     if (lastUndoEvent) {
-      void onUndo(lastUndoEvent);
+      onUndo(lastUndoEvent);
     }
 
     return listen('undo-event', onUndo);
-  }, [dispatch, refetchRuleCounts, refetchOrphanedPayees]);
+  }, []);
 
   function onViewRules(id: PayeeEntity['id']) {
     dispatch(
@@ -137,10 +107,6 @@ export function ManagePayeesWithData({
         }
         filteredOrphans = filteredOrphans.filter(o => !mergeIds.includes(o.id));
 
-        // Refetch rule counts after merging
-        await refetchRuleCounts();
-
-        void refetchPayees();
         queryClient.setQueryData(
           payeeQueries.listOrphaned().queryKey,
           filteredOrphans,

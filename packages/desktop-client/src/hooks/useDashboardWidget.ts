@@ -13,7 +13,8 @@ export function useDashboardWidget<W extends DashboardWidgetEntity>({
 }: UseDashboardWidgetProps<W>) {
   return useQuery({
     ...dashboardQueries.listDashboardWidgets<W>(),
-    select: widgets => widgets.find(w => w.id === id && w.type === type),
+    select: ({ data: widgets }) =>
+      widgets.find(w => w.id === id && w.type === type),
     enabled: !!id && !!type,
   });
 }

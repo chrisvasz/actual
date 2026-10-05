@@ -4,12 +4,11 @@ import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 
 import { aqlQuery } from '#queries/aqlQuery';
+import { snapshotDependencies } from '#queries/dependencies';
+import type { AqlSnapshot } from '#queries/dependencies';
 
 /** Rows read by a transactions query, and the tables they were read from. */
-export type TransactionsSnapshot = {
-  data: TransactionEntity[];
-  dependencies: string[];
-};
+export type TransactionsSnapshot = AqlSnapshot<TransactionEntity[]>;
 
 type TransactionsQueryArgs = {
   query?: Query;
@@ -24,8 +23,8 @@ export const transactionQueries = {
    * raises the limit (see `loadMoreTransactions`), so a refetch re-reads every
    * shown row in one query and can't repeat or drop rows where pages meet.
    *
-   * Kept only while something shows it, and fresh until refetched: whoever
-   * shows it refetches it when the data changes.
+   * Kept only while something shows it, and fresh until a sync event changes
+   * a table it read.
    */
   aql: ({ query, limit, initialData }: TransactionsQueryArgs) =>
     queryOptions<TransactionsSnapshot>({
@@ -42,6 +41,7 @@ export const transactionQueries = {
       staleTime: Infinity,
       gcTime: 0,
       enabled: !!query,
+      meta: { dependencies: snapshotDependencies },
     }),
 };
 

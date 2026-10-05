@@ -16,6 +16,8 @@ import { queryOptions, useQueryClient } from '@tanstack/react-query';
 
 import { accountFilter } from '#queries';
 import { aqlQuery } from '#queries/aqlQuery';
+import { snapshotDependencies } from '#queries/dependencies';
+import type { AqlSnapshot } from '#queries/dependencies';
 import { liveQuery } from '#queries/liveQuery';
 import type { LiveQuery } from '#queries/liveQuery';
 import { getStatusLabel } from '#util/schedule';
@@ -89,21 +91,31 @@ export function schedulesSnapshotQuery(
   query: Query,
   upcomingLength: string | undefined,
 ) {
-  return queryOptions<ScheduleData>({
+  return queryOptions<AqlSnapshot<ScheduleData>>({
     queryKey: ['schedules', 'snapshot', query.serialize(), upcomingLength],
     queryFn: async () => {
-      const { data: schedules }: { data: ScheduleEntity[] } =
+      const schedulesReply: AqlSnapshot<ScheduleEntity[]> =
         await aqlQuery(query);
-      const { data: scheduleTransactions }: { data: TransactionEntity[] } =
+      const schedules = schedulesReply.data;
+      const transactionsReply: AqlSnapshot<TransactionEntity[]> =
         await aqlQuery(getHasTransactionsQuery(schedules));
-      return toScheduleData(
-        schedules,
-        getStatuses(schedules, scheduleTransactions, upcomingLength),
-      );
+      return {
+        data: toScheduleData(
+          schedules,
+          getStatuses(schedules, transactionsReply.data, upcomingLength),
+        ),
+        dependencies: [
+          ...new Set([
+            ...schedulesReply.dependencies,
+            ...transactionsReply.dependencies,
+          ]),
+        ],
+      };
     },
     staleTime: Infinity,
     // Only kept while a screen holds it; the next visit loads fresh.
     gcTime: 0,
+    meta: { dependencies: snapshotDependencies },
   });
 }
 
@@ -126,12 +138,12 @@ export function useSchedules({
   const [upcomingLength] = useSyncedPref('upcomingScheduledTransactionLength');
   const queryClient = useQueryClient();
   // Start from a snapshot a screen suspended on, if there is one.
-  const [snapshot] = useState(() =>
-    query
-      ? queryClient.getQueryData(
-          schedulesSnapshotQuery(query, upcomingLength).queryKey,
-        )
-      : undefined,
+  const [snapshot] = useState(
+    () =>
+      query &&
+      queryClient.getQueryData(
+        schedulesSnapshotQuery(query, upcomingLength).queryKey,
+      )?.data,
   );
   const [isLoading, setIsLoading] = useState(snapshot == null);
   const [error, setError] = useState<Error | undefined>(undefined);
