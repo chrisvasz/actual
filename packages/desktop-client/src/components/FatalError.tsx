@@ -29,6 +29,7 @@ type AppError = Error & {
   IDBFailure?: boolean;
   SharedArrayBufferMissing?: boolean;
   BackendInitFailure?: boolean;
+  AlreadyOpenInAnotherTab?: boolean;
   DocumentDirFailure?: boolean;
   path?: string;
   code?: string;
@@ -77,6 +78,18 @@ function RenderSimple({ error }: RenderSimpleProps) {
             our troubleshooting documentation
           </Link>{' '}
           to learn more. <SharedArrayBufferOverride />
+        </Trans>
+      </Text>
+    );
+  } else if (
+    'AlreadyOpenInAnotherTab' in error &&
+    error.AlreadyOpenInAnotherTab
+  ) {
+    msg = (
+      <Text>
+        <Trans>
+          Actual is already open in another tab. Close it and reload this page
+          to use Actual here.
         </Trans>
       </Text>
     );
@@ -291,6 +304,11 @@ export function FatalError({ error: rawError }: FatalErrorProps) {
     title = t('Loading Error');
   } else if (isDocumentDirError) {
     title = t('Data folder unavailable');
+  } else if (
+    'AlreadyOpenInAnotherTab' in error &&
+    error.AlreadyOpenInAnotherTab
+  ) {
+    title = t('Already open in another tab');
   }
 
   return (

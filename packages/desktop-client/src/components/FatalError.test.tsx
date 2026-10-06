@@ -44,6 +44,20 @@ describe('FatalError', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders an already-open message when another tab has the backend', () => {
+    const error = {
+      type: 'app-init-failure',
+      AlreadyOpenInAnotherTab: true,
+    };
+
+    render(<FatalError error={error} />, { wrapper: TestProviders });
+
+    expect(screen.getByText('Already open in another tab')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Close it and reload this page/),
+    ).toBeInTheDocument();
+  });
+
   it('renders the data folder path and an access-denied hint for a DocumentDirFailure', () => {
     const error = {
       type: 'app-init-failure',

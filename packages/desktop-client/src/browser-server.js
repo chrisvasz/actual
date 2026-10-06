@@ -77,11 +77,9 @@ self.addEventListener('message', async event => {
           return;
         }
 
-        // A single failed importScripts bricks the SharedWorker until
-        // it's evicted, so retry in production too.
         await importScriptsWithRetry(
           `${msg.publicUrl}/kcab/kcab.worker.${hash}.js`,
-          { maxRetries: isDev ? 5 : 3 },
+          { maxRetries: isDev ? 5 : 0 },
         );
 
         backend.initApp(isDev, self).catch(err => {
