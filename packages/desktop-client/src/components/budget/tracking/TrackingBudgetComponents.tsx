@@ -14,6 +14,12 @@ import { css } from '@emotion/css';
 
 import { useBudgetActions } from '#budget';
 import { BalanceWithCarryover } from '#components/budget/BalanceWithCarryover';
+import { BudgetedGoalPopover } from '#components/budget/BudgetedGoalPopover';
+import {
+  useBudgetCellInput,
+  useGoalTargets,
+} from '#components/budget/goalProgress';
+import { GoalProgressFill } from '#components/budget/GoalProgressFill';
 import { ScheduleIndicatorButton } from '#components/budget/ScheduleIndicatorButton';
 import { makeAmountGrey } from '#components/budget/util';
 import { CellValue, CellValueText } from '#components/spreadsheet/CellValue';
@@ -207,6 +213,20 @@ export const CategoryMonth = memo(function CategoryMonth({
   const [balanceMenuOpen, setBalanceMenuOpen] = useState(false);
   const triggerBalanceMenuRef = useRef(null);
 
+  const goalTargets = useGoalTargets({
+    category,
+    month,
+    balance: trackingBudget.catBalance(category.id),
+    budgeted: trackingBudget.catBudgeted(category.id),
+  });
+
+  const budgetCellRef = useRef<HTMLDivElement>(null);
+  const budgetInput = useBudgetCellInput({
+    editing,
+    target: goalTargets.budgeted,
+    format,
+  });
+
   const onMenuAction = (...args: Parameters<typeof onBudgetAction>) => {
     onBudgetAction(...args);
     setBalanceMenuOpen(false);
@@ -231,18 +251,25 @@ export const CategoryMonth = memo(function CategoryMonth({
       }}
     >
       <View
+        ref={budgetCellRef}
         style={{
+          position: 'relative',
           flex: 1,
           flexDirection: 'row',
         }}
       >
+        <GoalProgressFill target={goalTargets.budgeted} column="budgeted" />
         <TrackingSheetCell
           name="budget"
           exposed={editing}
           focused={editing}
           width="flex"
           onExpose={() => onEdit(category.id, month)}
-          style={{ ...(editing && { zIndex: 100 }), ...styles.tnum }}
+          style={{
+            position: 'relative',
+            ...(editing && { zIndex: 100 }),
+            ...styles.tnum,
+          }}
           textAlign="right"
           valueStyle={{
             cursor: 'default',
@@ -258,13 +285,14 @@ export const CategoryMonth = memo(function CategoryMonth({
             binding: trackingBudget.catBudgeted(category.id),
             type: 'financial',
             getValueStyle: makeAmountGrey,
-            formatExpr: format.forEdit,
+            formatExpr: budgetInput.formatExpr,
             unformatExpr: format.fromEdit,
           }}
           inputProps={{
             onBlur: () => {
               onEdit(null);
             },
+            ...budgetInput.inputProps,
             style: {
               backgroundColor: theme.budgetCurrentMonth,
             },
@@ -279,6 +307,12 @@ export const CategoryMonth = memo(function CategoryMonth({
               },
             })
           }
+        />
+        <BudgetedGoalPopover
+          triggerRef={budgetCellRef}
+          isOpen={editing}
+          target={goalTargets.budgeted}
+          draft={budgetInput.draft}
         />
       </View>
       <Field name="spent" width="flex" style={{ textAlign: 'right' }}>
@@ -326,13 +360,18 @@ export const CategoryMonth = memo(function CategoryMonth({
         <Field
           name="balance"
           width="flex"
-          style={{ paddingRight: styles.monthRightPadding, textAlign: 'right' }}
+          style={{ position: 'relative', textAlign: 'right' }}
+          // The month's right padding lives inside the cell so the goal track
+          // can reach the cell's right edge
+          contentStyle={{ paddingRight: 5 + styles.monthRightPadding }}
         >
+          <GoalProgressFill target={goalTargets.balance} column="balance" />
           <Button
             variant="bare"
             ref={triggerBalanceMenuRef}
             onPress={() => !category.is_income && setBalanceMenuOpen(true)}
             style={{
+              position: 'relative',
               justifyContent: 'flex-end',
               background: 'transparent',
               width: '100%',
@@ -357,6 +396,7 @@ export const CategoryMonth = memo(function CategoryMonth({
           >
             <BalanceMenu
               categoryId={category.id}
+              goalTarget={goalTargets.balance}
               onCarryover={carryover => {
                 onMenuAction(month, 'carryover', {
                   category: category.id,

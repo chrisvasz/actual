@@ -1,5 +1,9 @@
 import React, { useCallback, useRef, useState } from 'react';
 
+import { theme } from '@actual-app/components/theme';
+
+import type { GoalTarget } from '#components/budget/goalProgress';
+import { GoalProgressSummary } from '#components/budget/GoalProgressSummary';
 import { envelopeBudget } from '#spreadsheet/bindings';
 
 import { BalanceMenu } from './BalanceMenu';
@@ -9,6 +13,7 @@ import { TransferMenu } from './TransferMenu';
 
 type BalanceMovementMenuProps = {
   categoryId: string;
+  goalTarget?: GoalTarget | null;
   month: string;
   onBudgetAction: (month: string, action: string, arg?: unknown) => void;
   onClose: () => void;
@@ -16,6 +21,7 @@ type BalanceMovementMenuProps = {
 
 export function BalanceMovementMenu({
   categoryId,
+  goalTarget,
   month,
   onBudgetAction,
   onClose,
@@ -38,18 +44,24 @@ export function BalanceMovementMenu({
   return (
     <span tabIndex={-1} ref={ref}>
       {menu === 'menu' && (
-        <BalanceMenu
-          categoryId={categoryId}
-          onCarryover={carryover => {
-            onBudgetAction(month, 'carryover', {
-              category: categoryId,
-              flag: carryover,
-            });
-            onClose();
-          }}
-          onTransfer={() => setMenu('transfer')}
-          onCover={() => setMenu('cover')}
-        />
+        <>
+          <GoalProgressSummary
+            target={goalTarget ?? null}
+            style={{ borderBottom: `1px solid ${theme.menuBorder}` }}
+          />
+          <BalanceMenu
+            categoryId={categoryId}
+            onCarryover={carryover => {
+              onBudgetAction(month, 'carryover', {
+                category: categoryId,
+                flag: carryover,
+              });
+              onClose();
+            }}
+            onTransfer={() => setMenu('transfer')}
+            onCover={() => setMenu('cover')}
+          />
+        </>
       )}
 
       {menu === 'transfer' && (

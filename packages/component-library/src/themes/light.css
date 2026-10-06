@@ -43,7 +43,7 @@
   --color-numberNegative: var(--palette-red500);
   --color-numberNeutral: var(--palette-navy100);
   --color-budgetNumberNegative: var(--color-numberNegative);
-  --color-budgetNumberZero: var(--color-tableTextSubdued);
+  --color-budgetNumberZero: var(--palette-navy150);
   --color-budgetNumberNeutral: var(--color-tableText);
   --color-budgetNumberPositive: var(--color-budgetNumberNeutral);
   --color-templateNumberFunded: var(--color-numberPositive);
@@ -246,6 +246,10 @@
   --color-budgetCurrentMonth: var(--color-tableBackground);
   --color-budgetOtherMonth: var(--color-budgetCurrentMonth);
   --color-budgetHeaderCurrentMonth: var(--palette-gray50);
+  --color-budgetGoalProgress: var(--palette-purple400);
+  --color-budgetGoalChipBackground: var(--palette-purple100);
+  --color-budgetGoalChipText: var(--palette-purple700);
+  --color-budgetGoalTrack: var(--palette-purple125);
   --color-budgetHeaderOtherMonth: var(--color-budgetHeaderCurrentMonth);
   --color-budgetSummaryAmountBackground: var(--palette-navy50);
 
