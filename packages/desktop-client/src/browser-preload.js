@@ -5,8 +5,6 @@ import { registerSW } from 'virtual:pwa-register';
 // oxlint-disable-next-line typescript-paths/absolute-parent-import
 import packageJson from '../package.json';
 
-import SharedBrowserServerWorker from './shared-browser-server.ts?sharedworker';
-
 const backendWorkerUrl = new URL('./browser-server.js', import.meta.url);
 
 // This file installs global variables that the app expects, initializes the
@@ -19,27 +17,11 @@ const ACTUAL_VERSION = Platform.isPlaywright
     ? '.preview'
     : packageJson.version;
 
-// The OIDC callback (/openid-cb) is reached via a full-page navigation back
-// from the OpenID provider. Routing it through the SharedWorker coordinator is
-// unreliable: the returning tab can be left UNASSIGNED (no leader/backend), so
-// the token write hangs and login silently fails (worst on iOS/iPad, where the
-// pre-redirect tab never reports closing). It's a transient pre-login page with
-// no budget open, so it doesn't need multi-tab coordination — give it a direct
-// Worker so the token write resolves and login can complete. Once the user
-// opens a budget the app navigates and the next page load rejoins the
-// coordinator normally.
-const isOpenIdCallback = window.location.pathname
-  .replace(/\/+$/, '')
-  .endsWith('/openid-cb');
-
 // *** Start the backend ***
 //
-// The multi-tab coordinator (leader/follower over SharedWorker), the direct
-// Worker fallback, and the absurd-sql worker bridge now all live in loot-core
-// (packages/loot-core/src/platform/client/browser-preload). We only hand it
-// the desktop-specific inputs: the worker asset URL, a SharedWorker factory,
-// and the init payload.
-const worker = startBrowserBackend({
+// Each tab runs the backend in its own Worker, but only one tab at a time may
+// do so. This resolves to null when another tab already has Actual open.
+const workerPromise = startBrowserBackend({
   backendWorkerUrl,
   initPayload: {
     version: ACTUAL_VERSION,
@@ -47,13 +29,6 @@ const worker = startBrowserBackend({
     publicUrl: import.meta.env.BASE_URL.slice(0, -1),
     hash: import.meta.env.REACT_APP_BACKEND_WORKER_HASH,
   },
-  createSharedWorker: () =>
-    new SharedBrowserServerWorker({ name: 'actual-backend' }),
-  forceDirectWorker:
-    Platform.isPlaywright ||
-    Platform.isIOS ||
-    Platform.isAndroid ||
-    isOpenIdCallback,
 });
 
 // Ask the browser to exclude this origin's storage (the local budget database
@@ -224,6 +199,13 @@ global.Actual = {
   },
 
   getServerSocket: async () => {
+    const worker = await workerPromise;
+    if (!worker) {
+      throw Object.assign(new Error('Actual is already open in another tab'), {
+        type: 'app-init-failure',
+        AlreadyOpenInAnotherTab: true,
+      });
+    }
     return worker;
   },
 

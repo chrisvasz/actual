@@ -393,6 +393,7 @@ export default defineConfig(async ({ mode, command }) => {
             /^\/kcab\/.*$/,
             /^\/plugin-data\/.*$/,
             /^\/enablebanking\/.*$/,
+            /^\/gocardless\/.*$/,
           ],
         },
       }),
