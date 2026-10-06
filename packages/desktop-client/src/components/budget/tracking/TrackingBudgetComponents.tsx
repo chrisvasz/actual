@@ -20,12 +20,10 @@ import {
   useGoalTargets,
 } from '#components/budget/goalProgress';
 import { GoalProgressFill } from '#components/budget/GoalProgressFill';
-import { ScheduleIndicatorButton } from '#components/budget/ScheduleIndicatorButton';
 import { makeAmountGrey } from '#components/budget/util';
 import { CellValue, CellValueText } from '#components/spreadsheet/CellValue';
 import { Field, SheetCell } from '#components/table';
 import type { SheetCellProps } from '#components/table';
-import { useCategoryScheduleGoalTemplateIndicator } from '#hooks/useCategoryScheduleGoalTemplateIndicator';
 import { useFormat } from '#hooks/useFormat';
 import { useSheetValue } from '#hooks/useSheetValue';
 import type { Binding, SheetFields } from '#spreadsheet';
@@ -234,14 +232,6 @@ export const CategoryMonth = memo(function CategoryMonth({
     setBalanceMenuOpen(false);
   };
 
-  const { schedule, scheduleStatus, isScheduleRecurring, description } =
-    useCategoryScheduleGoalTemplateIndicator({
-      category,
-      month,
-    });
-
-  const showScheduleIndicator = schedule && scheduleStatus;
-
   return (
     <View
       style={{
@@ -324,20 +314,10 @@ export const CategoryMonth = memo(function CategoryMonth({
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: showScheduleIndicator
-              ? 'space-between'
-              : 'flex-end',
+            justifyContent: 'flex-end',
             gap: 2,
           }}
         >
-          {showScheduleIndicator && (
-            <ScheduleIndicatorButton
-              schedule={schedule}
-              scheduleStatus={scheduleStatus}
-              isScheduleRecurring={isScheduleRecurring}
-              description={description}
-            />
-          )}
           <TrackingCellValue
             binding={trackingBudget.catSumAmount(category.id)}
             type="financial"
@@ -384,9 +364,6 @@ export const CategoryMonth = memo(function CategoryMonth({
               isDisabled={category.is_income}
               carryover={trackingBudget.catCarryover(category.id)}
               balance={trackingBudget.catBalance(category.id)}
-              goal={trackingBudget.catGoal(category.id)}
-              budgeted={trackingBudget.catBudgeted(category.id)}
-              longGoal={trackingBudget.catLongGoal(category.id)}
             />
           </Button>
 

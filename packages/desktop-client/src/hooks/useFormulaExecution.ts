@@ -639,7 +639,6 @@ async function fetchBudgetDimensionValueDirect(
     'spent',
     'balance_start',
     'balance_end',
-    'goal',
   ]);
   const dim = dimension.toLowerCase();
   if (!allowed.has(dim)) {
@@ -666,10 +665,6 @@ async function fetchBudgetDimensionValueDirect(
 
   if (dim === 'spent') {
     return integerToAmount(await sumDimension('sum-amount-{catId}'), 2);
-  }
-
-  if (dim === 'goal') {
-    return integerToAmount(await sumDimension('goal-{catId}'), 2);
   }
 
   // Handle balance dimensions: chain month-by-month with carryover logic

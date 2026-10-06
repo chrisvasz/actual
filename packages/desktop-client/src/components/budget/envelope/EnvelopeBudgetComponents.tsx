@@ -19,12 +19,10 @@ import {
   useGoalTargets,
 } from '#components/budget/goalProgress';
 import { GoalProgressFill } from '#components/budget/GoalProgressFill';
-import { ScheduleIndicatorButton } from '#components/budget/ScheduleIndicatorButton';
 import { makeAmountGrey } from '#components/budget/util';
 import { CellValue, CellValueText } from '#components/spreadsheet/CellValue';
 import { Field, Row, SheetCell } from '#components/table';
 import type { SheetCellProps } from '#components/table';
-import { useCategoryScheduleGoalTemplateIndicator } from '#hooks/useCategoryScheduleGoalTemplateIndicator';
 import { useFormat } from '#hooks/useFormat';
 import { useSheetName } from '#hooks/useSheetName';
 import { useSheetValue } from '#hooks/useSheetValue';
@@ -248,14 +246,6 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
     setBalanceMenuOpen(true);
   };
 
-  const { schedule, scheduleStatus, isScheduleRecurring, description } =
-    useCategoryScheduleGoalTemplateIndicator({
-      category,
-      month,
-    });
-
-  const showScheduleIndicator = schedule && scheduleStatus;
-
   return (
     <View
       style={{
@@ -338,20 +328,10 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: showScheduleIndicator
-              ? 'space-between'
-              : 'flex-end',
+            justifyContent: 'flex-end',
             gap: 2,
           }}
         >
-          {showScheduleIndicator && (
-            <ScheduleIndicatorButton
-              schedule={schedule}
-              scheduleStatus={scheduleStatus}
-              isScheduleRecurring={isScheduleRecurring}
-              description={description}
-            />
-          )}
           <EnvelopeCellValue
             binding={envelopeBudget.catSumAmount(category.id)}
             type="financial"
@@ -405,10 +385,6 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
           <BalanceWithCarryover
             carryover={envelopeBudget.catCarryover(category.id)}
             balance={envelopeBudget.catBalance(category.id)}
-            goal={envelopeBudget.catGoal(category.id)}
-            budgeted={envelopeBudget.catBudgeted(category.id)}
-            longGoal={envelopeBudget.catLongGoal(category.id)}
-            tooltipDisabled={balanceMenuOpen}
           />
         </Button>
 
@@ -539,9 +515,6 @@ export function IncomeCategoryMonth({
             <BalanceWithCarryover
               carryover={envelopeBudget.catCarryover(category.id)}
               balance={envelopeBudget.catSumAmount(category.id)}
-              goal={envelopeBudget.catGoal(category.id)}
-              budgeted={envelopeBudget.catBudgeted(category.id)}
-              longGoal={envelopeBudget.catLongGoal(category.id)}
             />
           </Button>
           <Popover

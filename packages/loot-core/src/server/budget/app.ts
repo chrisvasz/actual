@@ -14,12 +14,7 @@ import type { CategoryEntity, CategoryGroupEntity } from '#types/models';
 
 import * as actions from './actions';
 import * as budget from './base';
-import * as cleanupGroupActions from './cleanup-groups';
-import * as cleanupActions from './cleanup-template';
-import { storeNoteCleanups } from './cleanup-template-notes';
-import * as goalActions from './goal-template';
 import { sortCategories } from './sort-categories';
-import * as goalNoteActions from './template-notes';
 
 export type BudgetHandlers = {
   'budget/budget-amount': typeof actions.setBudget;
@@ -30,12 +25,6 @@ export type BudgetHandlers = {
   'budget/set-6month-avg': typeof actions.set6MonthAvg;
   'budget/set-12month-avg': typeof actions.set12MonthAvg;
   'budget/set-n-month-avg': typeof actions.setNMonthAvg;
-  'budget/check-templates': typeof goalActions.runCheckTemplates;
-  'budget/apply-goal-template': typeof goalActions.applyTemplate;
-  'budget/apply-multiple-templates': typeof goalActions.applyMultipleCategoryTemplates;
-  'budget/overwrite-goal-template': typeof goalActions.overwriteTemplate;
-  'budget/apply-single-template': typeof goalActions.applySingleCategoryTemplate;
-  'budget/cleanup-goal-template': typeof cleanupActions.cleanupTemplate;
   'budget/hold-for-next-month': typeof actions.holdForNextMonth;
   'budget/reset-hold': typeof actions.resetHold;
   'budget/cover-overspending': typeof actions.coverOverspending;
@@ -60,13 +49,6 @@ export type BudgetHandlers = {
   'category-group-move': typeof moveCategoryGroup;
   'category-group-delete': typeof deleteCategoryGroup;
   'must-category-transfer': typeof isCategoryTransferRequired;
-  'budget/get-category-automations': typeof goalActions.getTemplatesForCategory;
-  'budget/set-category-automations': typeof goalActions.storeTemplates;
-  'budget/dry-run-category-template': typeof goalActions.dryRunCategoryTemplate;
-  'budget/store-note-templates': typeof goalNoteActions.storeNoteTemplates;
-  'budget/store-note-cleanups': typeof storeNoteCleanups;
-  'budget/render-note-templates': typeof goalNoteActions.unparse;
-  'budget/create-cleanup-group': typeof cleanupGroupActions.createCleanupGroup;
 };
 
 export const app = createApp<BudgetHandlers>();
@@ -85,30 +67,6 @@ app.method('budget/set-3month-avg', mutator(undoable(actions.set3MonthAvg)));
 app.method('budget/set-6month-avg', mutator(undoable(actions.set6MonthAvg)));
 app.method('budget/set-12month-avg', mutator(undoable(actions.set12MonthAvg)));
 app.method('budget/set-n-month-avg', mutator(undoable(actions.setNMonthAvg)));
-app.method(
-  'budget/check-templates',
-  mutator(undoable(goalActions.runCheckTemplates)),
-);
-app.method(
-  'budget/apply-goal-template',
-  mutator(undoable(goalActions.applyTemplate)),
-);
-app.method(
-  'budget/apply-multiple-templates',
-  mutator(undoable(goalActions.applyMultipleCategoryTemplates)),
-);
-app.method(
-  'budget/overwrite-goal-template',
-  mutator(undoable(goalActions.overwriteTemplate)),
-);
-app.method(
-  'budget/apply-single-template',
-  mutator(undoable(goalActions.applySingleCategoryTemplate)),
-);
-app.method(
-  'budget/cleanup-goal-template',
-  mutator(undoable(cleanupActions.cleanupTemplate)),
-);
 app.method(
   'budget/hold-for-next-month',
   mutator(undoable(actions.holdForNextMonth)),
@@ -157,29 +115,6 @@ app.method('category-group-update', mutator(undoable(updateCategoryGroup)));
 app.method('category-group-move', mutator(undoable(moveCategoryGroup)));
 app.method('category-group-delete', mutator(undoable(deleteCategoryGroup)));
 app.method('must-category-transfer', isCategoryTransferRequired);
-
-app.method(
-  'budget/get-category-automations',
-  goalActions.getTemplatesForCategory,
-);
-app.method(
-  'budget/set-category-automations',
-  mutator(undoable(goalActions.storeTemplates)),
-);
-app.method(
-  'budget/dry-run-category-template',
-  goalActions.dryRunCategoryTemplate,
-);
-app.method(
-  'budget/store-note-templates',
-  mutator(goalNoteActions.storeNoteTemplates),
-);
-app.method('budget/store-note-cleanups', mutator(storeNoteCleanups));
-app.method('budget/render-note-templates', goalNoteActions.unparse);
-app.method(
-  'budget/create-cleanup-group',
-  mutator(undoable(cleanupGroupActions.createCleanupGroup)),
-);
 
 // Server must return AQL entities not the raw DB data
 async function getCategories({ hidden }: { hidden?: boolean } = {}) {
@@ -250,8 +185,6 @@ async function envelopeBudgetMonth({ month }: { month: string }) {
           value(`sum-amount-${cat.id}`),
           value(`leftover-${cat.id}`),
           value(`carryover-${cat.id}`),
-          value(`goal-${cat.id}`),
-          value(`long-goal-${cat.id}`),
         ]);
       }
     }
@@ -293,8 +226,6 @@ async function trackingBudgetMonth({ month }: { month: string }) {
         value(`budget-${cat.id}`),
         value(`sum-amount-${cat.id}`),
         value(`leftover-${cat.id}`),
-        value(`goal-${cat.id}`),
-        value(`long-goal-${cat.id}`),
       ]);
 
       if (!group.is_income) {

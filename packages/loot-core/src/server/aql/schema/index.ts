@@ -92,12 +92,9 @@ export const schema = {
     is_income: f('boolean'),
     hidden: f('boolean'),
     group: f('id', { ref: 'category_groups' }),
-    goal_def: f('string'),
-    cleanup_def: f('string'),
     goal_amount: f('integer'),
     goal_type: f('string'),
     goal_target_month: f('string'),
-    template_settings: f('json', { default: { source: 'notes' } }),
     sort_order: f('float'),
     tombstone: f('boolean'),
   },
@@ -107,11 +104,6 @@ export const schema = {
     is_income: f('boolean'),
     hidden: f('boolean'),
     sort_order: f('float'),
-    tombstone: f('boolean'),
-  },
-  cleanup_groups: {
-    id: f('id'),
-    name: f('string'),
     tombstone: f('boolean'),
   },
   schedules: {
@@ -191,8 +183,6 @@ export const schema = {
     category: f('string'),
     amount: f('integer'),
     carryover: f('integer'),
-    goal: f('integer'),
-    long_goal: f('integer'),
   },
   zero_budgets: {
     id: f('id'),
@@ -200,8 +190,6 @@ export const schema = {
     category: f('string', { ref: 'categories' }),
     amount: f('integer'),
     carryover: f('integer'),
-    goal: f('integer'),
-    long_goal: f('integer'),
   },
   dashboard_pages: {
     id: f('id'),

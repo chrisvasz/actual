@@ -77,12 +77,8 @@ export function EnvelopeIncomeBalanceMenuModal({
             </Text>
             <BalanceWithCarryover
               isDisabled
-              shouldInlineGoalStatus
               carryover={envelopeBudget.catCarryover(categoryId)}
               balance={envelopeBudget.catSumAmount(categoryId)}
-              goal={envelopeBudget.catGoal(categoryId)}
-              budgeted={envelopeBudget.catBudgeted(categoryId)}
-              longGoal={envelopeBudget.catLongGoal(categoryId)}
               CarryoverIndicator={({ style }) => (
                 <CarryoverIndicator
                   style={{

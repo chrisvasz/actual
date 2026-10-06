@@ -1,4 +1,3 @@
-import { peggyLoader } from '@actual-app/vite-plugin-peggy';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -23,5 +22,4 @@ export default defineConfig({
         ]
       : ['default'],
   },
-  plugins: [peggyLoader()],
 });

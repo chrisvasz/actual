@@ -149,30 +149,6 @@ export function setBudget({
   });
 }
 
-export function setGoal({ month, category, goal, long_goal }): Promise<void> {
-  const table = getBudgetTable();
-  const existing = db.firstSync<
-    Pick<db.DbZeroBudget | db.DbReflectBudget, 'id'>
-  >(`SELECT id FROM ${table} WHERE month = ? AND category = ?`, [
-    dbMonth(month),
-    category,
-  ]);
-  if (existing) {
-    return db.update(table, {
-      id: existing.id,
-      goal,
-      long_goal,
-    });
-  }
-  return db.insert(table, {
-    id: `${dbMonth(month)}-${category}`,
-    month: dbMonth(month),
-    category,
-    goal,
-    long_goal,
-  });
-}
-
 export function setBuffer(month: string, amount: unknown): Promise<void> {
   const existing = db.firstSync<Pick<db.DbZeroBudget, 'id'>>(
     `SELECT id FROM zero_budget_months WHERE id = ?`,

@@ -72,9 +72,6 @@ export function TrackingBalanceMenuModal({
               isDisabled
               carryover={trackingBudget.catCarryover(categoryId)}
               balance={trackingBudget.catBalance(categoryId)}
-              goal={trackingBudget.catGoal(categoryId)}
-              budgeted={trackingBudget.catBudgeted(categoryId)}
-              longGoal={trackingBudget.catLongGoal(categoryId)}
               CarryoverIndicator={({ style }) => (
                 <CarryoverIndicator
                   style={{

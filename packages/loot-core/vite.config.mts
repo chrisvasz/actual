@@ -1,6 +1,5 @@
 import path from 'path';
 
-import { peggyLoader } from '@actual-app/vite-plugin-peggy';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
@@ -25,18 +24,6 @@ export default defineConfig(({ mode }) => {
           isDev ? 'kcab.worker.dev.js' : `kcab.worker.[hash].js`,
       },
       rolldownOptions: {
-        onwarn(warning, warn) {
-          // Suppress sourcemap warnings from peggy-loader
-          if (
-            warning.plugin === 'peggy-loader' &&
-            warning.message?.includes('Sourcemap')
-          ) {
-            return;
-          }
-
-          // Use default warning handler for other warnings
-          warn(warning);
-        },
         output: {
           // Users debug from raw stack traces, so compress and strip
           // whitespace but never mangle identifiers (overrides the
@@ -71,7 +58,6 @@ export default defineConfig(({ mode }) => {
       'process.env.ACTUAL_DOCUMENT_DIR': JSON.stringify('/documents'),
     },
     plugins: [
-      peggyLoader(),
       nodePolyfills({
         include: [
           'process',

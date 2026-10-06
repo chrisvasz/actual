@@ -24,7 +24,6 @@ export const budgetQueryDimensions = [
   'spent',
   'balance_start',
   'balance_end',
-  'goal',
 ] as const;
 
 type FormulaFunctionCategoryConfig = {
@@ -196,7 +195,7 @@ export function getFormulaFunctionCatalog(): Record<
         {
           name: 'dimension',
           description: t(
-            'One of: budgeted, spent, balance_start, balance_end, goal (string)',
+            'One of: budgeted, spent, balance_start, balance_end (string)',
           ),
         },
         {

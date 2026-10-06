@@ -17,8 +17,6 @@ import type {
   UserAccessEntity,
   UserEntity,
 } from '@actual-app/core/types/models';
-import type { CleanupTemplate } from '@actual-app/core/types/models/cleanup-templates';
-import type { Template } from '@actual-app/core/types/models/templates';
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
@@ -366,7 +364,6 @@ export type Modal =
         onEditNotes: (id: NoteEntity['id']) => void;
         onDelete: (categoryId: CategoryEntity['id']) => void;
         onToggleVisibility: (categoryId: CategoryEntity['id']) => void;
-        onEditAutomations?: (categoryId: CategoryEntity['id']) => void;
         onClose?: () => void;
       };
     }
@@ -378,7 +375,6 @@ export type Modal =
         onUpdateBudget: (amount: number) => void;
         onCopyLastMonthAverage: () => void;
         onSetMonthsAverage: (numberOfMonths: number) => void;
-        onApplyBudgetTemplate: () => void;
       };
     }
   | {
@@ -389,7 +385,6 @@ export type Modal =
         onUpdateBudget: (amount: number) => void;
         onCopyLastMonthAverage: () => void;
         onSetMonthsAverage: (numberOfMonths: number) => void;
-        onApplyBudgetTemplate: () => void;
         onCopyUntilYearEnd: () => void;
       };
     }
@@ -406,9 +401,6 @@ export type Modal =
         onDelete: (groupId: CategoryGroupEntity['id']) => void;
         onToggleVisibility: (groupId: CategoryGroupEntity['id']) => void;
         onClose?: () => void;
-        onApplyBudgetTemplatesInGroup?: (
-          categories: Array<CategoryEntity['id']>,
-        ) => void;
         onSortCategories?: (
           groupId: CategoryGroupEntity['id'],
           direction: 'asc' | 'desc',
@@ -645,28 +637,10 @@ export type Modal =
       name: 'keyboard-shortcuts';
     }
   | {
-      name: 'goal-templates';
-    }
-  | {
       name: 'schedules-upcoming-length';
     }
   | {
       name: 'payee-category-learning';
-    }
-  | {
-      name: 'category-automations-edit';
-      options: {
-        categoryId: CategoryEntity['id'];
-        month?: string;
-      };
-    }
-  | {
-      name: 'category-automations-unmigrate';
-      options: {
-        categoryId: CategoryEntity['id'];
-        templates: Template[];
-        cleanup: CleanupTemplate[];
-      };
     };
 
 type OpenAccountCloseModalPayload = {

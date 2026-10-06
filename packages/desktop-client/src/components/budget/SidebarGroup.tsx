@@ -11,16 +11,12 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
-import type {
-  CategoryEntity,
-  CategoryGroupEntity,
-} from '@actual-app/core/types/models';
+import type { CategoryGroupEntity } from '@actual-app/core/types/models';
 import { css, cx } from '@emotion/css';
 
 import { NotesButton } from '#components/NotesButton';
 import { InputCell } from '#components/table';
 import { useContextMenu } from '#hooks/useContextMenu';
-import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { usePendingValue } from '#hooks/usePendingValue';
 
 import { CATEGORY_COLUMN_WIDTH } from './util';
@@ -35,9 +31,6 @@ type SidebarGroupProps = {
   onEdit?: (id: CategoryGroupEntity['id']) => void;
   onSave?: (group: CategoryGroupEntity) => Promise<void>;
   onDelete?: (id: CategoryGroupEntity['id']) => void;
-  onApplyBudgetTemplatesInGroup?: (
-    categories: Array<CategoryEntity['id']>,
-  ) => void;
   onSortCategories?: (
     groupId: CategoryGroupEntity['id'],
     direction: 'asc' | 'desc',
@@ -57,14 +50,12 @@ export function SidebarGroup({
   onEdit,
   onSave,
   onDelete,
-  onApplyBudgetTemplatesInGroup,
   onSortCategories,
   onShowNewCategory,
   onHideNewGroup,
   onToggleCollapse,
 }: SidebarGroupProps) {
   const { t } = useTranslation();
-  const isGoalTemplatesEnabled = useFeatureFlag('goalTemplatesEnabled');
 
   const temporary = group.id === 'new';
   const { valueOr: pendingNameOr, showUntil: showNameUntil } =
@@ -104,15 +95,6 @@ export function SidebarGroup({
         text: t('Sort Z to A'),
         onClick: () => onSortCategories(group.id, 'desc'),
       },
-      isGoalTemplatesEnabled &&
-        onApplyBudgetTemplatesInGroup && {
-          name: 'apply-multiple-category-template',
-          text: t('Overwrite with templates'),
-          onClick: () =>
-            onApplyBudgetTemplatesInGroup(
-              group.categories.filter(c => !c.hidden).map(c => c.id),
-            ),
-        },
     ],
   });
 

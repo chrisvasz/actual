@@ -8,7 +8,6 @@ import * as monthUtils from '@actual-app/core/shared/months';
 
 import { FeatureErrorFallback } from '#components/FeatureErrorFallback';
 import { AutoSizer } from '#components/util/AutoSizer';
-import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useHotkeys } from '#hooks/useHotkeys';
 
 import { useBudgetMonthCount } from './BudgetMonthCountContext';
@@ -52,7 +51,6 @@ const DynamicBudgetTable = ({
   ...props
 }: DynamicBudgetTableProps) => {
   const { setDisplayMax } = useBudgetMonthCount();
-  const isGoalTemplatesEnabled = useFeatureFlag('goalTemplatesEnabled');
 
   const numPossible = getNumPossibleMonths(width, CATEGORY_COLUMN_WIDTH);
   const numMonths = Math.min(numPossible, maxMonths);
@@ -119,18 +117,6 @@ const DynamicBudgetTable = ({
       scopes: ['app'],
     },
     [_onMonthSelect, startMonth, numMonths],
-  );
-  useHotkeys(
-    'shift+t',
-    () => {
-      onBudgetAction(startMonth, 'overwrite-goal-template', null);
-    },
-    {
-      preventDefault: true,
-      scopes: ['app'],
-      enabled: isGoalTemplatesEnabled,
-    },
-    [onBudgetAction, startMonth, isGoalTemplatesEnabled],
   );
 
   return (

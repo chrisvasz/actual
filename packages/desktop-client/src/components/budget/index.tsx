@@ -128,16 +128,6 @@ export function Budget() {
     setSummaryCollapsedPref(!summaryCollapsed);
   };
 
-  const onApplyBudgetTemplatesInGroup = async categories => {
-    applyBudgetAction({
-      month: startMonth,
-      type: 'apply-multiple-templates',
-      args: {
-        categories,
-      },
-    });
-  };
-
   const onShowActivity = (categoryId, month) => {
     const filterConditions = [
       { field: 'category', op: 'is', value: categoryId, type: 'id' },
@@ -213,7 +203,6 @@ export function Budget() {
           onShowActivity={onShowActivity}
           onReorderCategory={reorderCategory}
           onReorderGroup={reorderCategoryGroup}
-          onApplyBudgetTemplatesInGroup={onApplyBudgetTemplatesInGroup}
           onSortCategories={(groupId, direction) =>
             sortCategories({ groupId, direction })
           }
@@ -242,7 +231,6 @@ export function Budget() {
           onShowActivity={onShowActivity}
           onReorderCategory={reorderCategory}
           onReorderGroup={reorderCategoryGroup}
-          onApplyBudgetTemplatesInGroup={onApplyBudgetTemplatesInGroup}
           onSortCategories={(groupId, direction) =>
             sortCategories({ groupId, direction })
           }
