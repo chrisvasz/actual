@@ -464,10 +464,19 @@ class AccountInternal extends PureComponent<
   }
 
   async componentDidMount() {
-    const onUndo = async ({ tables, messages }: UndoState) => {
-      // An undo is a local change, so the rows ignore its sync event
+    const onUndo = async (
+      { tables, messages }: UndoState,
+      { isPending = false } = {},
+    ) => {
+      // An undo is a local change, so the rows ignore its sync event. An undo
+      // left pending for this screen was applied before it mounted, so the
+      // rows' first fetch already reads the result.
       const rowsQuery = this.rows?.getCurrentQuery();
-      if (rowsQuery && readsAnyTable(rowsQuery, tables)) {
+      if (
+        rowsQuery &&
+        !(isPending && rowsQuery.state.data === undefined) &&
+        readsAnyTable(rowsQuery, tables)
+      ) {
         await this.refetchTransactions();
       }
 
@@ -506,7 +515,7 @@ class AccountInternal extends PureComponent<
       undo.setUndoState('undoEvent', null);
     };
 
-    const unlistens = [listen('undo-event', onUndo)];
+    const unlistens = [listen('undo-event', state => onUndo(state))];
 
     this.unlisten = () => {
       unlistens.forEach(unlisten => unlisten());
@@ -528,7 +537,7 @@ class AccountInternal extends PureComponent<
     // when an undo changes the location to this page)
     const lastUndoEvent = undo.getUndoState('undoEvent');
     if (lastUndoEvent) {
-      void onUndo(lastUndoEvent);
+      void onUndo(lastUndoEvent, { isPending: true });
     }
   }
 

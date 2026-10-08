@@ -82,6 +82,30 @@ describe('invalidateQueriesReading', () => {
     unsubscribe();
   });
 
+  it('ignores events that list no tables', async () => {
+    const queryFn = vi.fn(() => new Promise<never>(vi.fn()));
+    const observer = new QueryObserver(queryClient, {
+      queryKey: ['loading'],
+      queryFn,
+      meta: { dependencies: snapshotDependencies },
+    });
+    const unsubscribe = observer.subscribe(vi.fn());
+    const accounts = await cache('accounts', [], {
+      dependencies: ['accounts'],
+    });
+
+    // Every full sync reports what it received, often nothing
+    await invalidateQueriesReading(queryClient, {
+      type: 'success',
+      tables: [],
+    });
+
+    expect(queryFn).toHaveBeenCalledTimes(1);
+    expect(observer.getCurrentResult().fetchStatus).toBe('fetching');
+    expect(accounts()).toBe(1);
+    unsubscribe();
+  });
+
   it('skips applied events for queries that ignore them', async () => {
     const rows = await cache(
       'rows',

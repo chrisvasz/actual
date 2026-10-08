@@ -51,14 +51,15 @@ export function snapshotDependencies(data: unknown): string[] | undefined {
 /**
  * Whether `query` reads any of `tables`. A query whose dependencies come with
  * its data but that has none yet counts as reading every table: the fetch
- * that's running may have started before the change.
+ * that's running may have started before the change. No tables means nothing
+ * changed (every full sync reports one), so it never counts.
  */
 export function readsAnyTable(
   query: { meta: QueryMeta | undefined; state: { data: unknown } },
   tables: readonly string[],
 ) {
   const declared = query.meta?.dependencies;
-  if (declared == null) {
+  if (declared == null || tables.length === 0) {
     return false;
   }
   const dependencies =
