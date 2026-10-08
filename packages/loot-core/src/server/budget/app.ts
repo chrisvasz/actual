@@ -332,10 +332,10 @@ async function createCategory({
 async function updateCategory(category: CategoryEntity): Promise<void> {
   try {
     await db.updateCategory(
-      categoryModel.toDb({
-        ...category,
-        name: category.name.trim(),
-      }),
+      categoryModel.toDb(
+        { ...category, name: category.name.trim() },
+        { update: true },
+      ),
     );
   } catch (e) {
     if (
