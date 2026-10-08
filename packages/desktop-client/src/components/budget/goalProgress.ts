@@ -135,18 +135,30 @@ export function formatTargetMonth(targetMonth: string, locale?: Locale) {
 /**
  * Input behavior for a budget cell. A zero budget starts as an empty input
  * with a "0.00" hint. With a goal, the hint is the goal amount instead
- * ("← $500"), and the left arrow fills it in whenever the input is empty.
- * Also tracks what's typed so the goal popup can update live.
+ * ("← 500.00"), and the left arrow fills it in whenever the input is empty.
+ * Without one, it offers the previous month's budget the same way. Also
+ * tracks what's typed so the goal popup can update live.
  */
 export function useBudgetCellInput({
   editing,
   target,
+  month,
+  budgeted,
   format,
 }: {
   editing: boolean;
   target: GoalTarget | null;
+  month: string;
+  budgeted: Binding<'envelope-budget' | 'tracking-budget', 'budget'>;
   format: Format;
 }) {
+  // The same cell in the previous month's sheet. Before the budget's first
+  // month there's no such sheet, and the value stays null.
+  const budgetedName = typeof budgeted === 'string' ? budgeted : budgeted.name;
+  const previousBudgeted = useSheetValue(
+    `${monthUtils.sheetForMonth(monthUtils.prevMonth(month))}!${budgetedName}` as typeof budgeted,
+  );
+
   const [draft, setDraft] = useState<string | null>(null);
   // Start fresh each time editing starts or stops so a stale draft never shows
   const [wasEditing, setWasEditing] = useState(editing);
@@ -155,7 +167,10 @@ export function useBudgetCellInput({
     setDraft(null);
   }
 
-  const suggestion = target && target.goal > 0 ? target.goal : null;
+  const goalSuggestion = target && target.goal > 0 ? target.goal : null;
+  const previousSuggestion =
+    previousBudgeted != null && previousBudgeted > 0 ? previousBudgeted : null;
+  const suggestion = goalSuggestion ?? previousSuggestion;
 
   return {
     draft,
@@ -164,7 +179,7 @@ export function useBudgetCellInput({
     inputProps: {
       placeholder:
         suggestion != null
-          ? `← ${formatGoalAmount(format, suggestion)}`
+          ? `← ${format.forEdit(suggestion)}`
           : format.forEdit(0),
       onInput: (e: FormEvent<HTMLInputElement>) =>
         setDraft(e.currentTarget.value),
