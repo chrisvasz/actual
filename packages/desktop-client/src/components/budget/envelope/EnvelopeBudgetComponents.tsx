@@ -225,6 +225,8 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
   const budgetInput = useBudgetCellInput({
     editing,
     target: goalTargets.budgeted,
+    month,
+    budgeted: envelopeBudget.catBudgeted(category.id),
     format,
   });
 
