@@ -182,7 +182,7 @@ export function AccountGroupHeader({
                 <SyncErrorRollup count={failedCount} />
                 <View style={{ flex: 1 }} />
                 <SidebarBalance
-                  binding={bindings.accountGroupBalance(
+                  binding={bindings.accountGroupBalanceCleared(
                     group.id,
                     side === 'off',
                   )}
