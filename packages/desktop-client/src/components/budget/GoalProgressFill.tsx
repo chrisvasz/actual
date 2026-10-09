@@ -47,7 +47,6 @@ export function GoalProgressFill({ target, column }: GoalProgressFillProps) {
           height: '100%',
           width: `${progress * 100}%`,
           backgroundColor: theme.budgetGoalProgress,
-          transition: 'width 200ms ease-out',
         }}
       />
     </View>
