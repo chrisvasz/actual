@@ -83,7 +83,7 @@ export function Accounts() {
         <Account
           name={t('All accounts')}
           to="/accounts"
-          query={bindings.allAccountBalance()}
+          query={bindings.allAccountBalanceCleared()}
           style={{ fontWeight, marginTop: 31 }}
           isExactPathMatch
           balanceTestId="sidebar-all-accounts-balance"
@@ -93,7 +93,7 @@ export function Accounts() {
           <Account
             name={t('On budget')}
             to="/accounts/onbudget"
-            query={bindings.onBudgetAccountBalance()}
+            query={bindings.onBudgetAccountBalanceCleared()}
             style={{
               fontWeight,
               marginTop: 13,
@@ -112,7 +112,7 @@ export function Accounts() {
             failed={isAccountFailedSync(account)}
             updated={updatedAccounts.includes(account.id)}
             to={getAccountPath(account)}
-            query={bindings.accountBalance(account.id)}
+            query={bindings.accountBalanceCleared(account.id)}
             onDragChange={onDragChange}
             onDrop={onReorder}
             outerStyle={makeDropPadding(i)}
@@ -123,7 +123,7 @@ export function Accounts() {
           <Account
             name={t('Off budget')}
             to="/accounts/offbudget"
-            query={bindings.offBudgetAccountBalance()}
+            query={bindings.offBudgetAccountBalanceCleared()}
             style={{
               fontWeight,
               marginTop: 13,
@@ -142,7 +142,7 @@ export function Accounts() {
             failed={isAccountFailedSync(account)}
             updated={updatedAccounts.includes(account.id)}
             to={getAccountPath(account)}
-            query={bindings.accountBalance(account.id)}
+            query={bindings.accountBalanceCleared(account.id)}
             onDragChange={onDragChange}
             onDrop={onReorder}
             outerStyle={makeDropPadding(i)}
@@ -169,7 +169,7 @@ export function Accounts() {
               name={account.name}
               account={account}
               to={getAccountPath(account)}
-              query={bindings.accountBalance(account.id)}
+              query={bindings.accountBalanceCleared(account.id)}
               onDragChange={onDragChange}
               onDrop={onReorder}
             />
