@@ -189,7 +189,7 @@ export function AccountRow({
             )}
             <Text style={styles.visuallyHidden}>{statusLabel}</Text>
             <SidebarBalance
-              binding={bindings.accountBalance(account.id)}
+              binding={bindings.accountBalanceCleared(account.id)}
               style={{
                 fontSize: 12,
                 color: 'inherit',

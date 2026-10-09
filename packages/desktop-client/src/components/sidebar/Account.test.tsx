@@ -78,7 +78,7 @@ describe('sidebar Account context menu', () => {
       <Account
         name="All accounts"
         to="/accounts"
-        query={bindings.allAccountBalance()}
+        query={bindings.allAccountBalanceCleared()}
       />,
     );
 
@@ -93,7 +93,7 @@ describe('sidebar Account context menu', () => {
       <Account
         name="On budget"
         to="/accounts/onbudget"
-        query={bindings.onBudgetAccountBalance()}
+        query={bindings.onBudgetAccountBalanceCleared()}
       />,
     );
 
@@ -111,7 +111,7 @@ describe('sidebar Account context menu', () => {
         name={account.name}
         account={account}
         to={`/accounts/${account.id}`}
-        query={bindings.accountBalance(account.id)}
+        query={bindings.accountBalanceCleared(account.id)}
       />,
     );
 

@@ -70,7 +70,7 @@ describe('SelectedBalance – normal transactions', () => {
       </TestProviders>,
     );
 
-    expect(screen.getByText('Selected balance:')).toBeInTheDocument();
+    expect(screen.getByText('Selected')).toBeInTheDocument();
     expect(screen.getByText('-50.00')).toBeInTheDocument();
   });
 
@@ -83,7 +83,7 @@ describe('SelectedBalance – normal transactions', () => {
       </TestProviders>,
     );
 
-    expect(screen.getByText('Selected balance:')).toBeInTheDocument();
+    expect(screen.getByText('Selected')).toBeInTheDocument();
   });
 });
 
@@ -111,7 +111,7 @@ describe('SelectedBalance – preview (scheduled) transactions', () => {
       </TestProviders>,
     );
 
-    expect(screen.getByText('Selected balance:')).toBeInTheDocument();
+    expect(screen.getByText('Selected')).toBeInTheDocument();
   });
 
   test('counts each selected occurrence of the same schedule independently', () => {

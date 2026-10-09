@@ -69,7 +69,7 @@ export function AccountsSection() {
             isDragDisabled={isSearching}
             showSyncDot={showSyncDot}
             sideData={visibleTree.onBudget}
-            totalBinding={bindings.onBudgetAccountBalance()}
+            totalBinding={bindings.onBudgetAccountBalanceCleared()}
             balanceTestId="sidebar-on-budget-balance"
             isOpen={collapse.isOpen('onbudget')}
             onToggle={() => collapse.toggle('onbudget')}
@@ -84,7 +84,7 @@ export function AccountsSection() {
             isDragDisabled={isSearching}
             showSyncDot={showSyncDot}
             sideData={visibleTree.offBudget}
-            totalBinding={bindings.offBudgetAccountBalance()}
+            totalBinding={bindings.offBudgetAccountBalanceCleared()}
             balanceTestId="sidebar-off-budget-balance"
             isOpen={collapse.isOpen('offbudget')}
             onToggle={() => collapse.toggle('offbudget')}

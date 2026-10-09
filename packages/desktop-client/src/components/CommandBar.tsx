@@ -31,10 +31,10 @@ import { useNavigate } from '#hooks/useNavigate';
 import { useReports } from '#hooks/useReports';
 import type { Binding, SheetFields, SheetNames } from '#spreadsheet';
 import {
-  accountBalance,
-  allAccountBalance,
-  offBudgetAccountBalance,
-  onBudgetAccountBalance,
+  accountBalanceCleared,
+  allAccountBalanceCleared,
+  offBudgetAccountBalanceCleared,
+  onBudgetAccountBalanceCleared,
 } from '#spreadsheet/bindings';
 
 import { CellValue, CellValueText } from './spreadsheet/CellValue';
@@ -125,9 +125,9 @@ export function CommandBar() {
         name: t('All Accounts'),
         path: '/accounts',
         content: (
-          <BalanceRow<'account', 'accounts-balance'>
+          <BalanceRow<'account', 'accounts-balance-cleared'>
             label={t('All Accounts')}
-            binding={allAccountBalance()}
+            binding={allAccountBalanceCleared()}
           />
         ),
         Icon: SvgLibrary,
@@ -190,9 +190,9 @@ export function CommandBar() {
           id: 'onbudget',
           name: t('On Budget'),
           content: (
-            <BalanceRow<'account', 'onbudget-accounts-balance'>
+            <BalanceRow<'account', 'onbudget-accounts-balance-cleared'>
               label={t('On Budget')}
-              binding={onBudgetAccountBalance()}
+              binding={onBudgetAccountBalanceCleared()}
             />
           ),
           Icon: SvgLibrary,
@@ -201,9 +201,9 @@ export function CommandBar() {
           id: 'offbudget',
           name: t('Off Budget'),
           content: (
-            <BalanceRow<'account', 'offbudget-accounts-balance'>
+            <BalanceRow<'account', 'offbudget-accounts-balance-cleared'>
               label={t('Off Budget')}
-              binding={offBudgetAccountBalance()}
+              binding={offBudgetAccountBalanceCleared()}
             />
           ),
           Icon: SvgLibrary,
@@ -211,9 +211,9 @@ export function CommandBar() {
         ...accounts.map(account => ({
           ...account,
           content: (
-            <BalanceRow<'account', 'balance'>
+            <BalanceRow<'account', 'balanceCleared'>
               label={account.name}
-              binding={accountBalance(account.id)}
+              binding={accountBalanceCleared(account.id)}
             />
           ),
           Icon: SvgPiggyBank,

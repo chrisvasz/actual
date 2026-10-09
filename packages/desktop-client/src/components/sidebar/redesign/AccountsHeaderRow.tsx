@@ -90,7 +90,7 @@ export function AccountsHeaderRow({
         activeStyle={{ color: theme.sidebarItemTextSelected }}
       >
         <SidebarBalance
-          binding={bindings.allAccountBalance()}
+          binding={bindings.allAccountBalanceCleared()}
           testId="sidebar-all-accounts-balance"
           style={{ fontSize: 12, fontWeight: 600 }}
         />

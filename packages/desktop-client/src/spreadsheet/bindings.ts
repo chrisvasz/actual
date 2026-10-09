@@ -59,44 +59,56 @@ export function allAccountBalance() {
   } satisfies Binding<'account', 'accounts-balance'>;
 }
 
-export function onBudgetAccountBalance() {
+export function allAccountBalanceCleared() {
   return {
-    name: `onbudget-accounts-balance`,
+    name: 'accounts-balance-cleared',
     query: q('transactions')
-      .filter({ 'account.offbudget': false, 'account.closed': false })
+      .filter({ 'account.closed': false, cleared: true })
+      .options({ splits: 'none' })
       .calculate({ $sum: '$amount' }),
-  } satisfies Binding<'account', 'onbudget-accounts-balance'>;
+  } satisfies Binding<'account', 'accounts-balance-cleared'>;
 }
 
-export function offBudgetAccountBalance() {
+export function onBudgetAccountBalanceCleared() {
   return {
-    name: `offbudget-accounts-balance`,
+    name: 'onbudget-accounts-balance-cleared',
     query: q('transactions')
-      .filter({ 'account.offbudget': true, 'account.closed': false })
+      .filter({
+        'account.offbudget': false,
+        'account.closed': false,
+        cleared: true,
+      })
+      .options({ splits: 'none' })
       .calculate({ $sum: '$amount' }),
-  } satisfies Binding<'account', 'offbudget-accounts-balance'>;
+  } satisfies Binding<'account', 'onbudget-accounts-balance-cleared'>;
 }
 
-export function closedAccountBalance() {
+export function offBudgetAccountBalanceCleared() {
   return {
-    name: `closed-accounts-balance`,
+    name: 'offbudget-accounts-balance-cleared',
     query: q('transactions')
-      .filter({ 'account.closed': true })
+      .filter({
+        'account.offbudget': true,
+        'account.closed': false,
+        cleared: true,
+      })
+      .options({ splits: 'none' })
       .calculate({ $sum: '$amount' }),
-  } satisfies Binding<'account', 'closed-accounts-balance'>;
+  } satisfies Binding<'account', 'offbudget-accounts-balance-cleared'>;
 }
 
-export function accountGroupBalance(
+export function accountGroupBalanceCleared(
   groupId: AccountGroupEntity['id'],
   offbudget: boolean,
 ) {
   return {
-    name: `account-group-balance-${groupId}-${offbudget ? 'off' : 'on'}`,
+    name: `account-group-balance-${groupId}-${offbudget ? 'off' : 'on'}-cleared`,
     query: q('transactions')
       .filter({
         'account.account_group_id': groupId,
         'account.offbudget': offbudget,
         'account.closed': false,
+        cleared: true,
       })
       .options({ splits: 'none' })
       .calculate({ $sum: '$amount' }),
