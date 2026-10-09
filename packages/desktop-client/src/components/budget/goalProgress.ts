@@ -100,9 +100,13 @@ export function useGoalTargets({
       })
     : null;
 
+  // Nothing left to budget means the goal was met in an earlier month, so the
+  // budget cell has nothing to measure against
   return {
     budgeted:
-      required == null ? null : { value: budgetedValue, goal: required },
+      required == null || required === 0
+        ? null
+        : { value: budgetedValue, goal: required },
     balance: { value: balanceValue, goal },
   };
 }
