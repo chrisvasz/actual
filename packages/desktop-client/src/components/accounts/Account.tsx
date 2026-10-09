@@ -97,6 +97,7 @@ import { addNotification } from '#notifications/notificationsSlice';
 import { payeeQueries, useCreatePayeeMutation } from '#payees';
 import * as queries from '#queries';
 import { aqlQuery } from '#queries/aqlQuery';
+import { readsAnyTable } from '#queries/dependencies';
 import { useDispatch, useSelector } from '#redux';
 import type { AppDispatch } from '#redux/store';
 import {
@@ -168,8 +169,22 @@ type AccountPreload = {
 
 // Every fetch counts as new rows, even when they come back unchanged, so a
 // refetch always recomputes the totals that an optimistic edit skips.
-function rowsQueryOptions(args: Parameters<typeof transactionQueries.aql>[0]) {
-  return { ...transactionQueries.aql(args), structuralSharing: false };
+//
+// Local changes reach this screen through optimistic updates and its own
+// refetches, so it only refetches for changes synced from other devices. Its
+// own cache entry keeps that from applying to (or being undone by) anything
+// else reading the same rows.
+const ROWS_SCOPE = 'account-rows';
+
+function rowsQueryOptions(
+  args: Omit<Parameters<typeof transactionQueries.aql>[0], 'scope'>,
+) {
+  const options = transactionQueries.aql({ ...args, scope: ROWS_SCOPE });
+  return {
+    ...options,
+    structuralSharing: false,
+    meta: { ...options.meta, ignoreAppliedEvents: true },
+  };
 }
 
 function isTransactionFilterEntity(
@@ -449,18 +464,21 @@ class AccountInternal extends PureComponent<
   }
 
   async componentDidMount() {
-    const maybeRefetch = (tables: string[]) => {
+    const onUndo = async (
+      { tables, messages }: UndoState,
+      { isPending = false } = {},
+    ) => {
+      // An undo is a local change, so the rows ignore its sync event. An undo
+      // left pending for this screen was applied before it mounted, so the
+      // rows' first fetch already reads the result.
+      const rowsQuery = this.rows?.getCurrentQuery();
       if (
-        tables.includes('transactions') ||
-        tables.includes('category_mapping') ||
-        tables.includes('payee_mapping')
+        rowsQuery &&
+        !(isPending && rowsQuery.state.data === undefined) &&
+        readsAnyTable(rowsQuery, tables)
       ) {
-        return this.refetchTransactions();
+        await this.refetchTransactions();
       }
-    };
-
-    const onUndo = async ({ tables, messages }: UndoState) => {
-      await maybeRefetch(tables);
 
       // If all the messages are dealing with transactions, find the
       // first message referencing a non-deleted row so that we can
@@ -497,7 +515,7 @@ class AccountInternal extends PureComponent<
       undo.setUndoState('undoEvent', null);
     };
 
-    const unlistens = [listen('undo-event', onUndo)];
+    const unlistens = [listen('undo-event', state => onUndo(state))];
 
     this.unlisten = () => {
       unlistens.forEach(unlisten => unlisten());
@@ -519,7 +537,7 @@ class AccountInternal extends PureComponent<
     // when an undo changes the location to this page)
     const lastUndoEvent = undo.getUndoState('undoEvent');
     if (lastUndoEvent) {
-      void onUndo(lastUndoEvent);
+      void onUndo(lastUndoEvent, { isPending: true });
     }
   }
 
@@ -644,25 +662,8 @@ class AccountInternal extends PureComponent<
       void this.onRows(result.data, prevRows, isFiltered);
     });
 
-    // As before, local changes reach this screen through optimistic updates
-    // and its own refetches, so only refetch for changes synced from other
-    // devices.
-    const unlistenSync = listen('sync-event', event => {
-      if (event.type !== 'success') {
-        return;
-      }
-      const dependencies = rows.getCurrentResult().data?.dependencies;
-      if (
-        dependencies == null ||
-        event.tables.some(table => dependencies.includes(table))
-      ) {
-        void rows.refetch();
-      }
-    });
-
     this.stopRows = () => {
       unsubscribeRows();
-      unlistenSync();
       // Drop the rows now rather than on the next tick, so running the same
       // query again reads it fresh instead of finding these still cached.
       this.props.queryClient.removeQueries({
@@ -785,6 +786,7 @@ class AccountInternal extends PureComponent<
         query,
         limit: this.rowsLimit,
         pageSize: TRANSACTIONS_PAGE_COUNT,
+        scope: ROWS_SCOPE,
       });
       // The query may have changed while the page loaded
       if (this.rows === rows) {

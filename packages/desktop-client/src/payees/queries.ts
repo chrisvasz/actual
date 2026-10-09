@@ -1,4 +1,5 @@
 import { send } from '@actual-app/core/platform/client/connection';
+import { handlerReads } from '@actual-app/core/shared/handler-reads';
 import { memoizeOne } from '@actual-app/core/shared/memoize';
 import { groupById } from '@actual-app/core/shared/util';
 import type {
@@ -24,8 +25,9 @@ export const payeeQueries = {
         return translatePayees(payees);
       },
       placeholderData: [],
-      // Manually invalidated when payees change via sync events
+      // Refetched when a sync event changes a table it reads
       staleTime: Infinity,
+      meta: { dependencies: handlerReads['payees-get'] },
     }),
   listOrphaned: () =>
     queryOptions<Pick<PayeeEntity, 'id'>[]>({
@@ -36,8 +38,12 @@ export const payeeQueries = {
         return payees;
       },
       placeholderData: [],
-      // Manually invalidated when payees change via sync events
+      // Refetched when a sync event changes a table it reads
       staleTime: Infinity,
+      // It reads every transaction, so it isn't kept once nothing shows it:
+      // otherwise each transaction change would refetch it in the background.
+      gcTime: 0,
+      meta: { dependencies: handlerReads['payees-get-orphaned'] },
     }),
   ruleCounts: () =>
     queryOptions<Map<PayeeEntity['id'], number>>({
@@ -47,6 +53,7 @@ export const payeeQueries = {
         return new Map(Object.entries(counts ?? {}));
       },
       placeholderData: new Map(),
+      meta: { dependencies: handlerReads['payees-get-rule-counts'] },
     }),
   listNearby: () =>
     queryOptions<NearbyPayeeEntity[]>({

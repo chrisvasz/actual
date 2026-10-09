@@ -101,6 +101,8 @@ export function schedulesSnapshotQuery(
         getStatuses(schedules, scheduleTransactions, upcomingLength),
       );
     },
+    // Never refetched: it's only read when a `useSchedules` mounts, and from
+    // then on that hook's live query keeps the schedules current.
     staleTime: Infinity,
     // Only kept while a screen holds it; the next visit loads fresh.
     gcTime: 0,

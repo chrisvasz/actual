@@ -59,11 +59,11 @@ function makeGate() {
   return { promise, open: () => open?.() };
 }
 
-async function loadFirstPage(limit: number) {
+async function loadFirstPage(limit: number, scope?: string) {
   const queryClient = createTestQueryClient();
   const observer = new QueryObserver(
     queryClient,
-    transactionQueries.aql({ query, limit }),
+    transactionQueries.aql({ query, limit, scope }),
   );
   const unsubscribe = observer.subscribe(vi.fn());
   await vi.waitFor(() =>
@@ -117,6 +117,30 @@ describe('loadMoreTransactions', () => {
 
     expect(sent).toEqual([{ limit: 4, offset: 4 }]);
     expect(shownIds(observer)).toEqual(rows.slice(0, 8).map(t => t.id));
+    unsubscribe();
+  });
+
+  it('stitches the next page onto a scoped snapshot', async () => {
+    const { queryClient, observer, unsubscribe } = await loadFirstPage(
+      4,
+      'screen',
+    );
+
+    const next = await loadMoreTransactions(queryClient, {
+      query,
+      limit: 4,
+      pageSize: 4,
+      scope: 'screen',
+    });
+    observer.setOptions(transactionQueries.aql(next));
+
+    expect(sent).toEqual([{ limit: 4, offset: 4 }]);
+    expect(shownIds(observer)).toEqual(rows.slice(0, 8).map(t => t.id));
+    expect(
+      queryClient.getQueryData(
+        transactionQueries.aql({ query, limit: 8 }).queryKey,
+      ),
+    ).toBeUndefined();
     unsubscribe();
   });
 

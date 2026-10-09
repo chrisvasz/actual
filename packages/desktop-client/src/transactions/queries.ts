@@ -4,16 +4,20 @@ import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 
 import { aqlQuery } from '#queries/aqlQuery';
+import { snapshotDependencies } from '#queries/dependencies';
+import type { AqlSnapshot } from '#queries/dependencies';
 
 /** Rows read by a transactions query, and the tables they were read from. */
-export type TransactionsSnapshot = {
-  data: TransactionEntity[];
-  dependencies: string[];
-};
+export type TransactionsSnapshot = AqlSnapshot<TransactionEntity[]>;
 
 type TransactionsQueryArgs = {
   query?: Query;
   limit: number;
+  /**
+   * Keeps one screen's cache entry apart from other readers of the same
+   * query, for a screen whose query options (like its `meta`) differ.
+   */
+  scope?: string;
   initialData?: () => TransactionsSnapshot | undefined;
 };
 
@@ -24,12 +28,12 @@ export const transactionQueries = {
    * raises the limit (see `loadMoreTransactions`), so a refetch re-reads every
    * shown row in one query and can't repeat or drop rows where pages meet.
    *
-   * Kept only while something shows it, and fresh until refetched: whoever
-   * shows it refetches it when the data changes.
+   * Kept only while something shows it, and fresh until a sync event changes
+   * a table it read.
    */
-  aql: ({ query, limit, initialData }: TransactionsQueryArgs) =>
+  aql: ({ query, limit, scope, initialData }: TransactionsQueryArgs) =>
     queryOptions<TransactionsSnapshot>({
-      queryKey: [...transactionQueries.all(), 'aql', query, limit],
+      queryKey: [...transactionQueries.all(), 'aql', query, limit, scope],
       queryFn: async () => {
         if (!query) {
           // Shouldn't happen because of the enabled flag, but needed to satisfy TS
@@ -42,6 +46,7 @@ export const transactionQueries = {
       staleTime: Infinity,
       gcTime: 0,
       enabled: !!query,
+      meta: { dependencies: snapshotDependencies },
     }),
 };
 
@@ -63,13 +68,18 @@ export function hasMoreTransactions(
  */
 export async function loadMoreTransactions(
   queryClient: QueryClient,
-  { query, limit, pageSize }: { query: Query; limit: number; pageSize: number },
+  {
+    query,
+    limit,
+    pageSize,
+    scope,
+  }: { query: Query; limit: number; pageSize: number; scope?: string },
 ): Promise<TransactionsQueryArgs> {
   const nextLimit = limit + pageSize;
-  const { queryKey } = transactionQueries.aql({ query, limit });
+  const { queryKey } = transactionQueries.aql({ query, limit, scope });
   const current = queryClient.getQueryData(queryKey);
   if (current == null) {
-    return { query, limit: nextLimit };
+    return { query, limit: nextLimit, scope };
   }
 
   const page = await aqlQuery(
@@ -83,6 +93,7 @@ export async function loadMoreTransactions(
   return {
     query,
     limit: nextLimit,
+    scope,
     initialData: () =>
       queryClient.getQueryData(queryKey) === current &&
       queryClient.getQueryState(queryKey)?.fetchStatus === 'idle'

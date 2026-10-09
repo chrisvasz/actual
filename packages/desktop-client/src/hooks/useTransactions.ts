@@ -1,10 +1,8 @@
-import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import { listen } from '@actual-app/core/platform/client/connection';
 import type { Query } from '@actual-app/core/shared/query';
 import type { IntegerAmount } from '@actual-app/core/shared/util';
 import type { TransactionEntity } from '@actual-app/core/types/models';
-import type { ServerEvents } from '@actual-app/core/types/server-events';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryResult } from '@tanstack/react-query';
 
@@ -67,12 +65,6 @@ type UseTransactionsProps = {
      * @default 0
      */
     startingBalance?: IntegerAmount;
-
-    /**
-     * Whether to refetch transactions when a sync event is emitted.
-     * @default true
-     */
-    refetchOnSync?: boolean;
   };
 };
 
@@ -105,7 +97,6 @@ export function useTransactions({
     pageSize = 50,
     calculateRunningBalances = false,
     startingBalance,
-    refetchOnSync = true,
   } = options ?? {};
 
   const [runningBalances, setRunningBalances] = useState<
@@ -149,26 +140,6 @@ export function useTransactions({
       isLoadingMoreRef.current = false;
     }
   };
-
-  const onSyncEvent = useEffectEvent((event: ServerEvents['sync-event']) => {
-    if (event.type === 'applied') {
-      const tables = event.tables;
-      if (
-        tables.includes('transactions') ||
-        tables.includes('category_mapping') ||
-        tables.includes('payee_mapping')
-      ) {
-        void queryResult.refetch();
-      }
-    }
-  });
-
-  useEffect(() => {
-    if (!refetchOnSync) {
-      return;
-    }
-    return listen('sync-event', onSyncEvent);
-  }, [refetchOnSync]);
 
   const calculateRunningBalancesOptionFn = getCalculateRunningBalancesFn(
     calculateRunningBalances,
