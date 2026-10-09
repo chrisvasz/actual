@@ -667,31 +667,31 @@ export function useBudgetActions() {
             category: args.category,
             amount: args.amount,
           });
-          return null;
+          break;
         case 'copy-last':
           await send('budget/copy-previous-month', { month });
-          return null;
+          break;
         case 'set-zero':
           await send('budget/set-zero', { month });
-          return null;
+          break;
         case 'set-3-avg':
           await send('budget/set-3month-avg', { month });
-          return null;
+          break;
         case 'set-6-avg':
           await send('budget/set-6month-avg', { month });
-          return null;
+          break;
         case 'set-12-avg':
           await send('budget/set-12month-avg', { month });
-          return null;
+          break;
         case 'hold':
           await send('budget/hold-for-next-month', {
             month,
             amount: args.amount,
           });
-          return null;
+          break;
         case 'reset-hold':
           await send('budget/reset-hold', { month });
-          return null;
+          break;
         case 'cover-overspending':
           await send('budget/cover-overspending', {
             month,
@@ -699,21 +699,21 @@ export function useBudgetActions() {
             from: args.from,
             amount: args.amount,
           });
-          return null;
+          break;
         case 'transfer-available':
           await send('budget/transfer-available', {
             month,
             amount: args.amount,
             category: args.category,
           });
-          return null;
+          break;
         case 'cover-overbudgeted':
           await send('budget/cover-overbudgeted', {
             month,
             category: args.category,
             amount: args.amount,
           });
-          return null;
+          break;
         case 'transfer-category':
           await send('budget/transfer-category', {
             month,
@@ -721,51 +721,51 @@ export function useBudgetActions() {
             from: args.from,
             to: args.to,
           });
-          return null;
+          break;
         case 'carryover': {
           await send('budget/set-carryover', {
             startMonth: month,
             category: args.category,
             flag: args.flag,
           });
-          return null;
+          break;
         }
         case 'reset-income-carryover':
           await send('budget/reset-income-carryover', { month });
-          return null;
+          break;
         case 'set-single-3-avg':
           await send('budget/set-n-month-avg', {
             month,
             N: 3,
             category: args.category,
           });
-          return null;
+          break;
         case 'set-single-6-avg':
           await send('budget/set-n-month-avg', {
             month,
             N: 6,
             category: args.category,
           });
-          return null;
+          break;
         case 'set-single-12-avg':
           await send('budget/set-n-month-avg', {
             month,
             N: 12,
             category: args.category,
           });
-          return null;
+          break;
         case 'copy-single-last':
           await send('budget/copy-single-month', {
             month,
             category: args.category,
           });
-          return null;
+          break;
         case 'copy-until-year-end':
           await send('budget/copy-until-year-end', {
             month,
             category: args.category,
           });
-          return null;
+          break;
         default:
           throw new Error(`Unknown budget action type: ${String(type)}`);
       }
