@@ -1,9 +1,6 @@
-import React, { useRef } from 'react';
-import type { RefObject } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '@actual-app/components/button';
-import { SvgArrowButtonRight1 } from '@actual-app/components/icons/v2';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -12,7 +9,6 @@ import type { Query } from '@actual-app/core/shared/query';
 import { getScheduledAmount } from '@actual-app/core/shared/schedules';
 import { isPreviewId } from '@actual-app/core/shared/transactions';
 import type { AccountEntity } from '@actual-app/core/types/models';
-import { useHover } from 'usehooks-ts';
 
 import { FinancialText } from '#components/FinancialText';
 import { CellValue, CellValueText } from '#components/spreadsheet/CellValue';
@@ -21,36 +17,6 @@ import { useFormat } from '#hooks/useFormat';
 import { useSelectedItems } from '#hooks/useSelected';
 import { useSheetValue } from '#hooks/useSheetValue';
 import type { Binding } from '#spreadsheet';
-
-type DetailedBalanceProps = {
-  name: string;
-  balance: number;
-  isExactBalance?: boolean;
-};
-
-function DetailedBalance({
-  name,
-  balance,
-  isExactBalance = true,
-}: DetailedBalanceProps) {
-  const format = useFormat();
-  return (
-    <Text
-      style={{
-        borderRadius: 4,
-        padding: '4px 6px',
-        color: theme.pillText,
-        backgroundColor: theme.pillBackground,
-      }}
-    >
-      {name}{' '}
-      <FinancialText style={{ fontWeight: 600 }}>
-        {!isExactBalance && '~ '}
-        {format(balance, 'financial')}
-      </FinancialText>
-    </Text>
-  );
-}
 
 type SelectedBalanceProps = {
   selectedItems: Set<string>;
@@ -120,10 +86,11 @@ export function SelectedBalance({
   }
 
   return (
-    <DetailedBalance
-      name={t('Selected balance:')}
-      balance={balance}
-      isExactBalance={isExactBalance}
+    <BalanceStat
+      label={t('Selected')}
+      value={balance}
+      isExact={isExactBalance}
+      testId="account-selected-balance"
     />
   );
 }
@@ -136,46 +103,103 @@ function FilteredBalance({ filteredAmount }: FilteredBalanceProps) {
   const { t } = useTranslation();
 
   return (
-    <DetailedBalance
-      name={t('Filtered balance:')}
-      balance={filteredAmount ?? 0}
-      isExactBalance
+    <BalanceStat
+      label={t('Filtered')}
+      value={filteredAmount ?? 0}
+      testId="account-filtered-balance"
     />
   );
 }
 
-type MoreBalancesProps = {
-  balanceQuery: { name: `balance-query-${string}`; query: Query };
+function balanceColor(value: number) {
+  return value < 0
+    ? theme.numberNegative
+    : value > 0
+      ? theme.numberPositive
+      : theme.pageTextSubdued;
+}
+
+type BalanceStatProps = {
+  label: string;
+  value: number;
+  isExact?: boolean;
+  testId: string;
 };
 
-function MoreBalances({ balanceQuery }: MoreBalancesProps) {
-  const { t } = useTranslation();
-
-  const cleared = useSheetValue<'balance', `balance-query-${string}-cleared`>({
-    name: (balanceQuery.name + '-cleared') as `balance-query-${string}-cleared`,
-    query: balanceQuery.query.filter({ cleared: true }),
-  });
-  const uncleared = useSheetValue<
-    'balance',
-    `balance-query-${string}-uncleared`
-  >({
-    name: (balanceQuery.name +
-      '-uncleared') as `balance-query-${string}-uncleared`,
-    query: balanceQuery.query.filter({ cleared: false }),
-  });
-
+function BalanceStat({
+  label,
+  value,
+  isExact = true,
+  testId,
+}: BalanceStatProps) {
+  const format = useFormat();
   return (
-    <>
-      <DetailedBalance name={t('Cleared total:')} balance={cleared ?? 0} />
-      <DetailedBalance name={t('Uncleared total:')} balance={uncleared ?? 0} />
-    </>
+    <BalanceStatLayout label={label} color={balanceColor(value)}>
+      <FinancialText
+        data-testid={testId}
+        style={{ fontSize: 22, fontWeight: 400, color: balanceColor(value) }}
+      >
+        {!isExact && '~ '}
+        {format(value, 'financial')}
+      </FinancialText>
+    </BalanceStatLayout>
+  );
+}
+
+type BalanceStatLayoutProps = {
+  label: string;
+  color: string;
+  children: ReactNode;
+};
+
+function BalanceStatLayout({ label, color, children }: BalanceStatLayoutProps) {
+  return (
+    <View>
+      <Text
+        style={{
+          fontSize: 16,
+          fontWeight: 500,
+          fontVariantCaps: 'all-small-caps',
+          letterSpacing: '0.06em',
+          lineHeight: 1,
+          color,
+        }}
+      >
+        {label}
+      </Text>
+      {children}
+    </View>
+  );
+}
+
+type HeaderBalanceProps = {
+  label: string;
+  binding: Binding<'balance', `balance-query-${string}`>;
+  testId: string;
+};
+
+function HeaderBalance({ label, binding, testId }: HeaderBalanceProps) {
+  return (
+    <CellValue binding={binding} type="financial">
+      {props => (
+        <BalanceStatLayout label={label} color={balanceColor(props.value)}>
+          <CellValueText
+            {...props}
+            data-testid={testId}
+            style={{
+              fontSize: 22,
+              fontWeight: 400,
+              color: balanceColor(props.value),
+            }}
+          />
+        </BalanceStatLayout>
+      )}
+    </CellValue>
   );
 }
 
 type BalancesProps = {
   balanceQuery: { name: `balance-query-${string}`; query: Query };
-  showExtraBalances: boolean;
-  onToggleExtraBalances: () => void;
   account?: AccountEntity;
   isFiltered: boolean;
   filteredAmount?: number | null;
@@ -183,79 +207,37 @@ type BalancesProps = {
 
 export function Balances({
   balanceQuery,
-  showExtraBalances,
-  onToggleExtraBalances,
   account,
   isFiltered,
   filteredAmount,
 }: BalancesProps) {
+  const { t } = useTranslation();
   const selectedItems = useSelectedItems();
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const isButtonHovered = useHover(buttonRef as RefObject<HTMLButtonElement>);
 
   return (
     <View
       style={{
         flexDirection: 'row',
         flexWrap: 'wrap',
-        alignItems: 'center',
-        marginTop: -5,
-        marginLeft: -5,
-        gap: 10,
+        alignItems: 'flex-end',
+        columnGap: 32,
+        rowGap: 10,
       }}
     >
-      <Button
-        ref={buttonRef}
-        data-testid="account-balance"
-        variant="bare"
-        onPress={onToggleExtraBalances}
-        style={{
-          paddingTop: 1,
-          paddingBottom: 1,
+      <HeaderBalance
+        label={t('Cleared')}
+        binding={{
+          name: `${balanceQuery.name}-cleared`,
+          query: balanceQuery.query.filter({ cleared: true }),
+          value: 0,
         }}
-      >
-        <CellValue
-          binding={
-            { ...balanceQuery, value: 0 } as Binding<
-              'balance',
-              `balance-query-${string}`
-            >
-          }
-          type="financial"
-        >
-          {props => (
-            <CellValueText
-              {...props}
-              style={{
-                fontSize: 22,
-                fontWeight: 400,
-                color:
-                  props.value < 0
-                    ? theme.numberNegative
-                    : props.value > 0
-                      ? theme.numberPositive
-                      : theme.pageTextSubdued,
-              }}
-            />
-          )}
-        </CellValue>
-
-        <SvgArrowButtonRight1
-          style={{
-            width: 10,
-            height: 10,
-            marginLeft: 10,
-            color: theme.pillText,
-            transform: showExtraBalances ? 'rotateZ(180deg)' : 'rotateZ(0)',
-            opacity:
-              isButtonHovered || selectedItems.size > 0 || showExtraBalances
-                ? 1
-                : 0,
-          }}
-        />
-      </Button>
-
-      {showExtraBalances && <MoreBalances balanceQuery={balanceQuery} />}
+        testId="account-cleared-balance"
+      />
+      <HeaderBalance
+        label={t('All')}
+        binding={{ ...balanceQuery, value: 0 }}
+        testId="account-balance"
+      />
 
       {selectedItems.size > 0 && (
         <SelectedBalance selectedItems={selectedItems} account={account} />

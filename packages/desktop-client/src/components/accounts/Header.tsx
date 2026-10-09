@@ -76,7 +76,6 @@ type AccountHeaderProps = {
   accountsSyncing: string[];
   accounts: AccountEntity[];
   transactions: TransactionEntity[];
-  showExtraBalances: boolean;
   showReconciled: boolean;
   showEmptyMessage: boolean;
   balanceQuery: ComponentProps<typeof ReconcilingMessage>['balanceQuery'];
@@ -97,9 +96,6 @@ type AccountHeaderProps = {
   onCreateReconciliationTransaction: ComponentProps<
     typeof ReconcilingMessage
   >['onCreateTransaction'];
-  onToggleExtraBalances: ComponentProps<
-    typeof Balances
-  >['onToggleExtraBalances'];
   onSaveName: AccountNameFieldProps['onSaveName'];
   saveNameError: AccountNameFieldProps['saveNameError'];
   onSync: () => void;
@@ -149,7 +145,6 @@ export function AccountHeader({
   accountsSyncing,
   accounts,
   transactions,
-  showExtraBalances,
   showReconciled,
   showEmptyMessage,
   balanceQuery,
@@ -166,7 +161,6 @@ export function AccountHeader({
   onDoneReconciling,
   onCancelReconciling,
   onCreateReconciliationTransaction,
-  onToggleExtraBalances,
   onSaveName,
   saveNameError,
   onSync,
@@ -337,8 +331,6 @@ export function AccountHeader({
 
             <Balances
               balanceQuery={balanceQuery}
-              showExtraBalances={showExtraBalances}
-              onToggleExtraBalances={onToggleExtraBalances}
               account={account}
               isFiltered={isFiltered}
               filteredAmount={filteredAmount}

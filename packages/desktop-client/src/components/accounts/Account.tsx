@@ -319,8 +319,6 @@ type AccountInternalProps = {
   showReconciled: boolean;
   setShowReconciled: (newValue: boolean) => void;
   showGroup: boolean;
-  showExtraBalances?: boolean;
-  setShowExtraBalances: (newValue: boolean) => void;
   transactionColumns: TransactionTableColumn[];
   columnOrder: TransactionTableColumnId[];
   saveColumns: (columns: TransactionTableColumn[], applyToAll: boolean) => void;
@@ -1029,10 +1027,6 @@ class AccountInternal extends PureComponent<
       this.setState({ nameError: '' });
       return this.props.onUpdateAccount({ ...account, name });
     }
-  };
-
-  onToggleExtraBalances = () => {
-    this.props.setShowExtraBalances(!this.props.showExtraBalances);
   };
 
   onMenuSelect = async (
@@ -2017,7 +2011,6 @@ class AccountInternal extends PureComponent<
       dateFormat,
       hideFraction,
       accountsSyncing,
-      showExtraBalances,
       accountId,
       categoryId,
     } = this.props;
@@ -2095,7 +2088,6 @@ class AccountInternal extends PureComponent<
                 accountsSyncing={accountsSyncing}
                 accounts={accounts}
                 transactions={transactions}
-                showExtraBalances={showExtraBalances ?? false}
                 showReconciled={showReconciled ?? false}
                 showEmptyMessage={showEmptyMessage ?? false}
                 balanceQuery={balanceQuery}
@@ -2111,7 +2103,6 @@ class AccountInternal extends PureComponent<
                 onShowTransactions={this.onShowTransactions}
                 onMenuSelect={this.onMenuSelect}
                 onAddTransaction={this.onAddTransaction}
-                onToggleExtraBalances={this.onToggleExtraBalances}
                 onSaveName={this.onSaveName}
                 saveNameError={this.state.nameError}
                 onReconcile={this.onReconcile}
@@ -2246,7 +2237,6 @@ type AccountHackProps = Omit<
 async function prewarmHeaderBalances(
   spreadsheet: ReturnType<typeof useSpreadsheet>,
   accountId: AccountInternalProps['accountId'],
-  showExtraBalances: boolean,
 ) {
   const name = `balance-query-${accountId}` as const;
   const query = queries.transactions(accountId).calculate({ $sum: '$amount' });
@@ -2254,13 +2244,8 @@ async function prewarmHeaderBalances(
   const cells: Array<{ name: string; query: Query }> = [
     { name, query },
     clearedBalanceCell({ name, query }, currentDay()),
+    { name: `${name}-cleared`, query: query.filter({ cleared: true }) },
   ];
-  if (showExtraBalances) {
-    cells.push(
-      { name: `${name}-cleared`, query: query.filter({ cleared: true }) },
-      { name: `${name}-uncleared`, query: query.filter({ cleared: false }) },
-    );
-  }
 
   await Promise.all(
     cells.map(async cell => {
@@ -2278,7 +2263,6 @@ async function loadAccountPreload({
   filterConditions,
   showBalances,
   showReconciled,
-  showExtraBalances,
 }: {
   spreadsheet: ReturnType<typeof useSpreadsheet>;
   accounts: AccountEntity[];
@@ -2286,11 +2270,10 @@ async function loadAccountPreload({
   filterConditions: ConditionEntity[];
   showBalances: boolean | undefined;
   showReconciled: boolean;
-  showExtraBalances: boolean;
 }): Promise<AccountPreload> {
   const isFiltered = filterConditions.length > 0;
   const [, filters] = await Promise.all([
-    prewarmHeaderBalances(spreadsheet, accountId, showExtraBalances),
+    prewarmHeaderBalances(spreadsheet, accountId),
     isFiltered ? makeTransactionFilters(filterConditions) : null,
   ]);
   // A screen always opens with its conditions combined by `and`.
@@ -2406,9 +2389,6 @@ export function Account() {
   const [hideReconciled, setHideReconciled] = useSyncedPref(
     `hide-reconciled-${params.id}`,
   );
-  const [showExtraBalances, setShowExtraBalances] = useSyncedPref(
-    `show-extra-balances-${params.id || 'all-accounts'}`,
-  );
   const {
     transactionColumns,
     columnOrder,
@@ -2464,7 +2444,6 @@ export function Account() {
         filterConditions,
         showBalances,
         showReconciled,
-        showExtraBalances: String(showExtraBalances) === 'true',
       }),
     staleTime: Infinity,
     gcTime: 0,
@@ -2496,10 +2475,6 @@ export function Account() {
             showReconciled={showReconciled}
             setShowReconciled={val => setHideReconciled(String(!val))}
             showGroup={showGroup}
-            showExtraBalances={String(showExtraBalances) === 'true'}
-            setShowExtraBalances={extraBalances =>
-              setShowExtraBalances(String(extraBalances))
-            }
             transactionColumns={transactionColumns}
             columnOrder={columnOrder}
             saveColumns={saveColumns}
