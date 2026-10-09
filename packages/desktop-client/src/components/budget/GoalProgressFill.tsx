@@ -37,7 +37,7 @@ export function GoalProgressFill({ target, column }: GoalProgressFillProps) {
         left: 0,
         right: 0,
         bottom: column === 'budgeted' ? BOTTOM_BORDER_WIDTH : 0,
-        height: 3,
+        height: 2,
         backgroundColor: theme.budgetGoalTrack,
         pointerEvents: 'none',
       }}
