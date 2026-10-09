@@ -422,13 +422,32 @@ describe('Sync account balance cells', () => {
     }
     spreadsheet.createQuery(
       '__global',
-      'onbudget-accounts-balance',
-      sumOf({ 'account.offbudget': false }),
+      'accounts-balance',
+      sumOf({ 'account.closed': false }),
     );
     spreadsheet.createQuery(
       '__global',
-      'account-group-balance-g1-on',
-      sumOf({ 'account.account_group_id': 'g1', 'account.offbudget': false }),
+      'accounts-balance-cleared',
+      sumOf({ 'account.closed': false, cleared: true }),
+    );
+    spreadsheet.createQuery(
+      '__global',
+      'onbudget-accounts-balance-cleared',
+      sumOf({ 'account.offbudget': false, cleared: true }),
+    );
+    spreadsheet.createQuery(
+      '__global',
+      'offbudget-accounts-balance-cleared',
+      sumOf({ 'account.offbudget': true, cleared: true }),
+    );
+    spreadsheet.createQuery(
+      '__global',
+      'account-group-balance-g1-on-cleared',
+      sumOf({
+        'account.account_group_id': 'g1',
+        'account.offbudget': false,
+        cleared: true,
+      }),
     );
     spreadsheet.createQuery(
       '__global',
@@ -449,8 +468,15 @@ describe('Sync account balance cells', () => {
     ]);
 
     const recomputed = recompute.mock.calls.map(([name]) => name);
-    expect(recomputed).toContain('__global!onbudget-accounts-balance');
-    expect(recomputed).toContain('__global!account-group-balance-g1-on');
+    expect(recomputed).toEqual(
+      expect.arrayContaining([
+        '__global!accounts-balance',
+        '__global!accounts-balance-cleared',
+        '__global!onbudget-accounts-balance-cleared',
+        '__global!offbudget-accounts-balance-cleared',
+        '__global!account-group-balance-g1-on-cleared',
+      ]),
+    );
     expect(recomputed).not.toContain('__global!balance-acct1');
   });
 });

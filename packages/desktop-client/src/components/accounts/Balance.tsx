@@ -11,12 +11,10 @@ import { isPreviewId } from '@actual-app/core/shared/transactions';
 import type { AccountEntity } from '@actual-app/core/types/models';
 
 import { FinancialText } from '#components/FinancialText';
-import { CellValue, CellValueText } from '#components/spreadsheet/CellValue';
 import { useCachedSchedules } from '#hooks/useCachedSchedules';
 import { useFormat } from '#hooks/useFormat';
 import { useSelectedItems } from '#hooks/useSelected';
 import { useSheetValue } from '#hooks/useSheetValue';
-import type { Binding } from '#spreadsheet';
 
 type SelectedBalanceProps = {
   selectedItems: Set<string>;
@@ -172,32 +170,6 @@ function BalanceStatLayout({ label, color, children }: BalanceStatLayoutProps) {
   );
 }
 
-type HeaderBalanceProps = {
-  label: string;
-  binding: Binding<'balance', `balance-query-${string}`>;
-  testId: string;
-};
-
-function HeaderBalance({ label, binding, testId }: HeaderBalanceProps) {
-  return (
-    <CellValue binding={binding} type="financial">
-      {props => (
-        <BalanceStatLayout label={label} color={balanceColor(props.value)}>
-          <CellValueText
-            {...props}
-            data-testid={testId}
-            style={{
-              fontSize: 22,
-              fontWeight: 400,
-              color: balanceColor(props.value),
-            }}
-          />
-        </BalanceStatLayout>
-      )}
-    </CellValue>
-  );
-}
-
 type BalancesProps = {
   balanceQuery: { name: `balance-query-${string}`; query: Query };
   account?: AccountEntity;
@@ -213,6 +185,13 @@ export function Balances({
 }: BalancesProps) {
   const { t } = useTranslation();
   const selectedItems = useSelectedItems();
+  const balance = useSheetValue<'balance', `balance-query-${string}`>(
+    balanceQuery,
+  );
+  const clearedBalance = useSheetValue<'balance', `balance-query-${string}`>({
+    name: `${balanceQuery.name}-cleared`,
+    query: balanceQuery.query.filter({ cleared: true }),
+  });
 
   return (
     <View
@@ -224,18 +203,16 @@ export function Balances({
         rowGap: 10,
       }}
     >
-      <HeaderBalance
-        label={t('Cleared')}
-        binding={{
-          name: `${balanceQuery.name}-cleared`,
-          query: balanceQuery.query.filter({ cleared: true }),
-          value: 0,
-        }}
-        testId="account-cleared-balance"
-      />
-      <HeaderBalance
-        label={t('All')}
-        binding={{ ...balanceQuery, value: 0 }}
+      {clearedBalance !== balance && (
+        <BalanceStat
+          label={t('Cleared')}
+          value={clearedBalance ?? 0}
+          testId="account-cleared-balance"
+        />
+      )}
+      <BalanceStat
+        label={t('Total')}
+        value={balance ?? 0}
         testId="account-balance"
       />
 

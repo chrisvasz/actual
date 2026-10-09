@@ -278,16 +278,30 @@ test.describe('Transactions', () => {
       expect(balanceAfterTransaction).not.toBe(balanceBeforeTransaction);
     }).toPass();
 
-    // For an on-budget transfer, net totals should be unchanged
+    await expect(page).toMatchThemeScreenshots();
+
+    // The sidebar totals only count cleared transactions, so clear both
+    // sides of the transfer. For an on-budget transfer, net totals should
+    // then be unchanged.
+    await accountPage.transactionTableRow
+      .filter({ hasText: 'Notes field' })
+      .getByTestId('cleared')
+      .click();
+    const transferAccountPage =
+      await navigation.goToAccountPage('Bank of America');
+    await transferAccountPage.transactionTableRow
+      .filter({ hasText: 'Notes field' })
+      .getByTestId('cleared')
+      .click();
+
     await expect(async () => {
       const allAccounts =
-        await accountPage.sidebarAllAccountsBalance.textContent();
-      const onBudget = await accountPage.sidebarOnBudgetBalance.textContent();
+        await transferAccountPage.sidebarAllAccountsBalance.textContent();
+      const onBudget =
+        await transferAccountPage.sidebarOnBudgetBalance.textContent();
       expect(allAccounts).toBe(allAccountsBefore);
       expect(onBudget).toBe(onBudgetBefore);
     }).toPass();
-
-    await expect(page).toMatchThemeScreenshots();
   });
 
   test.describe('notes tooltip', () => {
