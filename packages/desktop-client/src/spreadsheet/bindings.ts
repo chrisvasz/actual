@@ -203,8 +203,6 @@ export const envelopeBudget = {
   catSumAmount: envelopeParametrizedField('sum-amount'),
   catBalance: envelopeParametrizedField('leftover'),
   catCarryover: envelopeParametrizedField('carryover'),
-  catGoal: envelopeParametrizedField('goal'),
-  catLongGoal: envelopeParametrizedField('long-goal'),
 } satisfies BudgetType<'envelope-budget'>;
 
 export const trackingBudget = {
@@ -227,6 +225,4 @@ export const trackingBudget = {
   catSumAmount: trackingParametrizedField('sum-amount'),
   catBalance: trackingParametrizedField('leftover'),
   catCarryover: trackingParametrizedField('carryover'),
-  catGoal: trackingParametrizedField('goal'),
-  catLongGoal: trackingParametrizedField('long-goal'),
 } satisfies BudgetType<'tracking-budget'>;

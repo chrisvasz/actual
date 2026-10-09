@@ -1,10 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import type { KeyboardEvent } from 'react';
 
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import { q } from '@actual-app/core/shared/query';
 import type {
   CategoryEntity,
   CategoryGroupEntity,
@@ -12,7 +11,6 @@ import type {
 
 import type { DropPosition } from '#components/sort';
 import { UncategorizedChip } from '#components/UncategorizedChip';
-import { SchedulesProvider } from '#hooks/useCachedSchedules';
 import { useCategories } from '#hooks/useCategories';
 import { useLocalPref } from '#hooks/useLocalPref';
 
@@ -39,9 +37,6 @@ type BudgetTableProps = {
   onDeleteCategory: (id: CategoryEntity['id']) => void;
   onSaveGroup: (group: CategoryGroupEntity) => Promise<void>;
   onDeleteGroup: (id: CategoryGroupEntity['id']) => void;
-  onApplyBudgetTemplatesInGroup: (
-    categoryIds: Array<CategoryEntity['id']>,
-  ) => void;
   onSortCategories?: (
     groupId: CategoryGroupEntity['id'],
     direction: 'asc' | 'desc',
@@ -70,7 +65,6 @@ export function BudgetTable(props: BudgetTableProps) {
     onDeleteCategory,
     onSaveGroup,
     onDeleteGroup,
-    onApplyBudgetTemplatesInGroup,
     onSortCategories,
     onReorderCategory,
     onReorderGroup,
@@ -222,8 +216,6 @@ export function BudgetTable(props: BudgetTableProps) {
     onCollapse(categoryGroups.map(g => g.id));
   };
 
-  const schedulesQuery = useMemo(() => q('schedules').select('*'), []);
-
   return (
     <View
       data-testid="budget-table"
@@ -298,24 +290,21 @@ export function BudgetTable(props: BudgetTableProps) {
             }}
             onKeyDown={onKeyDown}
           >
-            <SchedulesProvider query={schedulesQuery}>
-              <BudgetCategories
-                categoryGroups={categoryGroups}
-                editingCell={editing}
-                onEditMonth={onEditMonth}
-                onEditName={onEditName}
-                onSaveCategory={onSaveCategory}
-                onSaveGroup={onSaveGroup}
-                onDeleteCategory={onDeleteCategory}
-                onDeleteGroup={onDeleteGroup}
-                onReorderCategory={_onReorderCategory}
-                onReorderGroup={_onReorderGroup}
-                onBudgetAction={onBudgetAction}
-                onShowActivity={onShowActivity}
-                onApplyBudgetTemplatesInGroup={onApplyBudgetTemplatesInGroup}
-                onSortCategories={onSortCategories}
-              />
-            </SchedulesProvider>
+            <BudgetCategories
+              categoryGroups={categoryGroups}
+              editingCell={editing}
+              onEditMonth={onEditMonth}
+              onEditName={onEditName}
+              onSaveCategory={onSaveCategory}
+              onSaveGroup={onSaveGroup}
+              onDeleteCategory={onDeleteCategory}
+              onDeleteGroup={onDeleteGroup}
+              onReorderCategory={_onReorderCategory}
+              onReorderGroup={_onReorderGroup}
+              onBudgetAction={onBudgetAction}
+              onShowActivity={onShowActivity}
+              onSortCategories={onSortCategories}
+            />
           </View>
         </View>
       </MonthsProvider>

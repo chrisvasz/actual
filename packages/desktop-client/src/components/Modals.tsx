@@ -16,7 +16,6 @@ import { AccountAutocompleteModal } from './modals/AccountAutocompleteModal';
 import { AccountGroupsModal } from './modals/AccountGroupsModal';
 import { AccountMenuModal } from './modals/AccountMenuModal';
 import { AkahuInitialiseModal } from './modals/AkahuInitialiseModal';
-import { BudgetAutomationsModal } from './modals/BudgetAutomationsModal';
 import { BudgetPageMenuModal } from './modals/BudgetPageMenuModal';
 import { CategoryAutocompleteModal } from './modals/CategoryAutocompleteModal';
 import { CategoryGroupAutocompleteModal } from './modals/CategoryGroupAutocompleteModal';
@@ -47,7 +46,6 @@ import { EnvelopeBudgetSummaryModal } from './modals/EnvelopeBudgetSummaryModal'
 import { EnvelopeIncomeBalanceMenuModal } from './modals/EnvelopeIncomeBalanceMenuModal';
 import { EnvelopeToBudgetMenuModal } from './modals/EnvelopeToBudgetMenuModal';
 import { FixEncryptionKeyModal } from './modals/FixEncryptionKeyModal';
-import { GoalTemplateModal } from './modals/GoalTemplateModal';
 import { GoCardlessExternalMsgModal } from './modals/GoCardlessExternalMsgModal';
 import { GoCardlessInitialiseModal } from './modals/GoCardlessInitialiseModal';
 import { HoldBufferModal } from './modals/HoldBufferModal';
@@ -80,7 +78,6 @@ import { TrackingBudgetSummaryModal } from './modals/TrackingBudgetSummaryModal'
 import { TransactionTableColumnsModal } from './modals/TransactionTableColumnsModal';
 import { TransferModal } from './modals/TransferModal';
 import { TransferOwnership } from './modals/TransferOwnership';
-import { UnmigrateBudgetAutomationsModal } from './modals/UnmigrateBudgetAutomationsModal';
 import { CategoryLearning } from './payees/CategoryLearning';
 import { DiscoverSchedules } from './schedules/DiscoverSchedules';
 import { PostsOfflineNotification } from './schedules/PostsOfflineNotification';
@@ -109,19 +106,6 @@ export function Modals() {
       const { name } = modal;
       const key = `${name}-${idx}`;
       switch (name) {
-        case 'goal-templates':
-          return budgetId ? <GoalTemplateModal key={key} /> : null;
-
-        case 'category-automations-edit':
-          return budgetId ? (
-            <BudgetAutomationsModal key={name} {...modal.options} />
-          ) : null;
-
-        case 'category-automations-unmigrate':
-          return budgetId ? (
-            <UnmigrateBudgetAutomationsModal key={name} {...modal.options} />
-          ) : null;
-
         case 'keyboard-shortcuts':
           // don't show the hotkey help modal when a budget is not open
           return budgetId ? <KeyboardShortcutModal key={key} /> : null;

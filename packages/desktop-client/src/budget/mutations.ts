@@ -13,7 +13,6 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { pushModal } from '#modals/modalsSlice';
 import { addNotification } from '#notifications/notificationsSlice';
-import type { Notification } from '#notifications/notificationsSlice';
 import { invalidateAndDeliver } from '#queries/invalidateAndDeliver';
 import { useDispatch } from '#redux';
 import type { AppDispatch } from '#redux/store';
@@ -59,81 +58,6 @@ function dispatchCategoryNameAlreadyExistsNotification(
       },
     }),
   );
-}
-
-export type BudgetTemplateNotification = Notification & {
-  count?: number | undefined;
-  sourceCount?: number | undefined;
-  sinkCount?: number | undefined;
-};
-
-// i18next-parser does not extract keys nested inside translation strings.
-// t('budget-template-source', { count: 1, defaultValue_one: '{{count}} source', defaultValue_other: '{{count}} sources' })
-// t('budget-template-sinking-fund', { count: 1, defaultValue_one: '{{count}} sinking fund', defaultValue_other: '{{count}} sinking funds' })
-function formatCleanupApplied(
-  notification: BudgetTemplateNotification,
-  t: TFunction,
-) {
-  const sourceCount = notification.sourceCount ?? 0;
-  const sinkCount = notification.sinkCount ?? 0;
-
-  return t(
-    'Successfully returned funds from $t(budget-template-source, {"count": {{sourceCount}}}) and funded $t(budget-template-sinking-fund, {"count": {{sinkCount}}}).',
-    { sourceCount, sinkCount },
-  );
-}
-
-function formatCleanupAppliedWithErrors(
-  notification: BudgetTemplateNotification,
-  t: TFunction,
-) {
-  const sourceCount = notification.sourceCount ?? 0;
-  const sinkCount = notification.sinkCount ?? 0;
-
-  return t(
-    'Successfully returned funds from $t(budget-template-source, {"count": {{sourceCount}}}) and funded $t(budget-template-sinking-fund, {"count": {{sinkCount}}}). There were errors interpreting some templates:',
-    { sourceCount, sinkCount },
-  );
-}
-
-export function translateBudgetTemplateNotification(
-  notification: BudgetTemplateNotification,
-  t: TFunction,
-): Notification {
-  switch (notification.message) {
-    case 'templates-up-to-date':
-      return { ...notification, message: t('Everything is up to date') };
-    case 'template-errors':
-      return {
-        ...notification,
-        message: t('There were errors interpreting some templates:'),
-      };
-    case 'templates-applied':
-      return {
-        ...notification,
-        message: t('Successfully applied templates to {{count}} categories', {
-          count: notification.count ?? 0,
-        }),
-      };
-    case 'templates-check-passed':
-      return { ...notification, message: t('All templates passed! 🎉') };
-    case 'cleanup-no-funds':
-      return { ...notification, message: t('Global: Funds not available:') };
-    case 'cleanup-up-to-date':
-      return { ...notification, message: t('All categories were up to date.') };
-    case 'cleanup-applied':
-      return {
-        ...notification,
-        message: formatCleanupApplied(notification, t),
-      };
-    case 'cleanup-applied-with-errors':
-      return {
-        ...notification,
-        message: formatCleanupAppliedWithErrors(notification, t),
-      };
-    default:
-      return notification;
-  }
 }
 
 type CreateCategoryPayload = {
@@ -636,26 +560,6 @@ type ApplyBudgetActionPayload =
       args?: never;
     }
   | {
-      type: 'check-templates';
-      month?: never;
-      args?: never;
-    }
-  | {
-      type: 'apply-goal-template';
-      month: string;
-      args?: never;
-    }
-  | {
-      type: 'overwrite-goal-template';
-      month: string;
-      args?: never;
-    }
-  | {
-      type: 'cleanup-goal-template';
-      month: string;
-      args?: never;
-    }
-  | {
       type: 'hold';
       month: string;
       args: {
@@ -715,20 +619,6 @@ type ApplyBudgetActionPayload =
       args?: never;
     }
   | {
-      type: 'apply-single-category-template';
-      month: string;
-      args: {
-        category: CategoryEntity['id'];
-      };
-    }
-  | {
-      type: 'apply-multiple-templates';
-      month: string;
-      args: {
-        categories: Array<CategoryEntity['id']>;
-      };
-    }
-  | {
       type: 'set-single-3-avg';
       month: string;
       args: {
@@ -777,44 +667,31 @@ export function useBudgetActions() {
             category: args.category,
             amount: args.amount,
           });
-          return null;
+          break;
         case 'copy-last':
           await send('budget/copy-previous-month', { month });
-          return null;
+          break;
         case 'set-zero':
           await send('budget/set-zero', { month });
-          return null;
+          break;
         case 'set-3-avg':
           await send('budget/set-3month-avg', { month });
-          return null;
+          break;
         case 'set-6-avg':
           await send('budget/set-6month-avg', { month });
-          return null;
+          break;
         case 'set-12-avg':
           await send('budget/set-12month-avg', { month });
-          return null;
-        case 'check-templates':
-          return await send('budget/check-templates');
-        case 'apply-goal-template':
-          return await send('budget/apply-goal-template', { month });
-        case 'overwrite-goal-template':
-          return await send('budget/overwrite-goal-template', { month });
-        case 'apply-single-category-template':
-          return await send('budget/apply-single-template', {
-            month,
-            category: args.category,
-          });
-        case 'cleanup-goal-template':
-          return await send('budget/cleanup-goal-template', { month });
+          break;
         case 'hold':
           await send('budget/hold-for-next-month', {
             month,
             amount: args.amount,
           });
-          return null;
+          break;
         case 'reset-hold':
           await send('budget/reset-hold', { month });
-          return null;
+          break;
         case 'cover-overspending':
           await send('budget/cover-overspending', {
             month,
@@ -822,21 +699,21 @@ export function useBudgetActions() {
             from: args.from,
             amount: args.amount,
           });
-          return null;
+          break;
         case 'transfer-available':
           await send('budget/transfer-available', {
             month,
             amount: args.amount,
             category: args.category,
           });
-          return null;
+          break;
         case 'cover-overbudgeted':
           await send('budget/cover-overbudgeted', {
             month,
             category: args.category,
             amount: args.amount,
           });
-          return null;
+          break;
         case 'transfer-category':
           await send('budget/transfer-category', {
             month,
@@ -844,67 +721,53 @@ export function useBudgetActions() {
             from: args.from,
             to: args.to,
           });
-          return null;
+          break;
         case 'carryover': {
           await send('budget/set-carryover', {
             startMonth: month,
             category: args.category,
             flag: args.flag,
           });
-          return null;
+          break;
         }
         case 'reset-income-carryover':
           await send('budget/reset-income-carryover', { month });
-          return null;
-        case 'apply-multiple-templates':
-          return await send('budget/apply-multiple-templates', {
-            month,
-            categoryIds: args.categories,
-          });
+          break;
         case 'set-single-3-avg':
           await send('budget/set-n-month-avg', {
             month,
             N: 3,
             category: args.category,
           });
-          return null;
+          break;
         case 'set-single-6-avg':
           await send('budget/set-n-month-avg', {
             month,
             N: 6,
             category: args.category,
           });
-          return null;
+          break;
         case 'set-single-12-avg':
           await send('budget/set-n-month-avg', {
             month,
             N: 12,
             category: args.category,
           });
-          return null;
+          break;
         case 'copy-single-last':
           await send('budget/copy-single-month', {
             month,
             category: args.category,
           });
-          return null;
+          break;
         case 'copy-until-year-end':
           await send('budget/copy-until-year-end', {
             month,
             category: args.category,
           });
-          return null;
+          break;
         default:
           throw new Error(`Unknown budget action type: ${String(type)}`);
-      }
-    },
-    onSuccess: notification => {
-      if (notification) {
-        dispatch(
-          addNotification({
-            notification: translateBudgetTemplateNotification(notification, t),
-          }),
-        );
       }
     },
     onError: error => {

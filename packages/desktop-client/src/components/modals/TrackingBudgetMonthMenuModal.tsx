@@ -188,30 +188,6 @@ export function TrackingBudgetMonthMenuModal({
                     message: `${displayMonth} budgets have all been set to ${numberOfMonths === 12 ? 'yearly' : `${numberOfMonths} month`} average.`,
                   });
                 }}
-                onCheckTemplates={() => {
-                  onBudgetAction(month, 'check-templates');
-                  state.close();
-                }}
-                onApplyBudgetTemplates={() => {
-                  onBudgetAction(month, 'apply-goal-template');
-                  state.close();
-                  showUndoNotification({
-                    message: t(
-                      '{{displayMonth}} budget templates have been applied.',
-                      { displayMonth },
-                    ),
-                  });
-                }}
-                onOverwriteWithBudgetTemplates={() => {
-                  onBudgetAction(month, 'overwrite-goal-template');
-                  state.close();
-                  showUndoNotification({
-                    message: t(
-                      '{{displayMonth}} budget templates have been overwritten.',
-                      { displayMonth },
-                    ),
-                  });
-                }}
               />
             )}
           </View>

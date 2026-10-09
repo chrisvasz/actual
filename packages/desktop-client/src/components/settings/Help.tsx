@@ -6,7 +6,6 @@ import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
 import { useTour } from '#components/tour/TourContext';
-import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 
@@ -15,7 +14,6 @@ import { Setting } from './UI';
 export function HelpSettings() {
   const dispatch = useDispatch();
   const { startTour } = useTour();
-  const showGoalTemplates = useFeatureFlag('goalTemplatesEnabled');
 
   return (
     <Setting
@@ -42,15 +40,6 @@ export function HelpSettings() {
           >
             <Trans>Keyboard shortcuts</Trans>
           </Button>
-          {showGoalTemplates && (
-            <Button
-              onPress={() =>
-                dispatch(pushModal({ modal: { name: 'goal-templates' } }))
-              }
-            >
-              <Trans>Goal templates</Trans>
-            </Button>
-          )}
           <Button onPress={() => startTour()}>
             <Trans>Take a tour</Trans>
           </Button>

@@ -62,7 +62,6 @@
     "uuid": "^14.0.2"
   },
   "devDependencies": {
-    "@actual-app/vite-plugin-peggy": "workspace:*",
     "@playwright/test": "1.61.1",
     "@typescript/native-preview": "beta",
     "rollup-plugin-visualizer": "^7.0.1",

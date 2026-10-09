@@ -4,26 +4,21 @@ import { useTranslation } from 'react-i18next';
 
 import { Menu } from '@actual-app/components/menu';
 
-import { useFeatureFlag } from '#hooks/useFeatureFlag';
-
 type BudgetMenuProps = Omit<
   ComponentPropsWithoutRef<typeof Menu>,
   'onMenuSelect' | 'items'
 > & {
   onCopyLastMonthAverage: () => void;
   onSetMonthsAverage: (numberOfMonths: number) => void;
-  onApplyBudgetTemplate: () => void;
   onCopyUntilYearEnd: () => void;
 };
 export function BudgetMenu({
   onCopyLastMonthAverage,
   onSetMonthsAverage,
-  onApplyBudgetTemplate,
   onCopyUntilYearEnd,
   ...props
 }: BudgetMenuProps) {
   const { t } = useTranslation();
-  const isGoalTemplatesEnabled = useFeatureFlag('goalTemplatesEnabled');
   const onMenuSelect = (name: string) => {
     switch (name) {
       case 'copy-single-last':
@@ -37,9 +32,6 @@ export function BudgetMenu({
         break;
       case 'set-single-12-avg':
         onSetMonthsAverage?.(12);
-        break;
-      case 'apply-single-category-template':
-        onApplyBudgetTemplate?.();
         break;
       case 'copy-until-year-end':
         onCopyUntilYearEnd?.();
@@ -74,14 +66,6 @@ export function BudgetMenu({
           name: 'copy-until-year-end',
           text: t('Copy until year end'),
         },
-        ...(isGoalTemplatesEnabled
-          ? [
-              {
-                name: 'apply-single-category-template',
-                text: t('Overwrite with template'),
-              },
-            ]
-          : []),
       ]}
     />
   );

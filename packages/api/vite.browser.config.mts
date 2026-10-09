@@ -1,7 +1,6 @@
 import path from 'path';
 
 import { collectEmbeddedAssets } from '@actual-app/core/default-filesystem';
-import { peggyLoader } from '@actual-app/vite-plugin-peggy';
 import { defineConfig } from 'vite';
 import type { Plugin } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
@@ -64,7 +63,7 @@ export default defineConfig({
   ],
   worker: {
     format: 'iife',
-    plugins: () => [embeddedAssets(), peggyLoader()],
+    plugins: () => [embeddedAssets()],
   },
   build: {
     target: 'esnext',

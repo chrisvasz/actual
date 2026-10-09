@@ -203,7 +203,6 @@
   },
   "devDependencies": {
     "@actual-app/crdt": "workspace:*",
-    "@actual-app/vite-plugin-peggy": "workspace:*",
     "@types/better-sqlite3": "^9.6.0",
     "@types/jlongster__sql.js": "npm:@types/sql.js@latest",
     "@types/node": "^22.20.1",

@@ -97,7 +97,6 @@ describe('formulaCatalog', () => {
       'spent',
       'balance_start',
       'balance_end',
-      'goal',
     ]);
 
     const sorted = sortFormulaCompletions([

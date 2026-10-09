@@ -5,7 +5,6 @@ import {
   defaultDbPath,
   migrationsDir,
 } from '@actual-app/core/default-filesystem';
-import { peggyLoader } from '@actual-app/vite-plugin-peggy';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 import { configDefaults } from 'vitest/config';
@@ -62,7 +61,6 @@ export default defineConfig({
   },
   plugins: [
     cleanOutputDirs(),
-    peggyLoader(),
     copyNodeRuntimeAssets(),
     visualizer({ template: 'raw-data', filename: 'app/stats.json' }),
   ],

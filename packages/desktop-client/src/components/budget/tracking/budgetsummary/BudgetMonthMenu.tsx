@@ -4,8 +4,6 @@ import { useTranslation } from 'react-i18next';
 
 import { Menu } from '@actual-app/components/menu';
 
-import { useFeatureFlag } from '#hooks/useFeatureFlag';
-
 type BudgetMonthMenuProps = Omit<
   ComponentPropsWithoutRef<typeof Menu>,
   'onMenuSelect' | 'items'
@@ -13,22 +11,15 @@ type BudgetMonthMenuProps = Omit<
   onCopyLastMonthBudget: () => void;
   onSetBudgetsToZero: () => void;
   onSetMonthsAverage: (numberOfMonths: number) => void;
-  onCheckTemplates: () => void;
-  onApplyBudgetTemplates: () => void;
-  onOverwriteWithBudgetTemplates: () => void;
 };
 
 export function BudgetMonthMenu({
   onCopyLastMonthBudget,
   onSetBudgetsToZero,
   onSetMonthsAverage,
-  onCheckTemplates,
-  onApplyBudgetTemplates,
-  onOverwriteWithBudgetTemplates,
   ...props
 }: BudgetMonthMenuProps) {
   const { t } = useTranslation();
-  const isGoalTemplatesEnabled = useFeatureFlag('goalTemplatesEnabled');
   return (
     <Menu
       {...props}
@@ -49,17 +40,8 @@ export function BudgetMonthMenu({
           case 'set-12-avg':
             onSetMonthsAverage(12);
             break;
-          case 'check-templates':
-            onCheckTemplates();
-            break;
-          case 'apply-goal-template':
-            onApplyBudgetTemplates();
-            break;
-          case 'overwrite-goal-template':
-            onOverwriteWithBudgetTemplates();
-            break;
           default:
-            throw new Error(`Unrecognized menu option: ${name}`);
+            throw new Error(`Unrecognized menu option: ${String(name)}`);
         }
       }}
       items={[
@@ -77,22 +59,6 @@ export function BudgetMonthMenu({
           name: 'set-12-avg',
           text: t('Set budgets to 12 month average'),
         },
-        ...(isGoalTemplatesEnabled
-          ? [
-              {
-                name: 'check-templates',
-                text: t('Check templates'),
-              },
-              {
-                name: 'apply-goal-template',
-                text: t('Apply budget template'),
-              },
-              {
-                name: 'overwrite-goal-template',
-                text: t('Overwrite with budget template'),
-              },
-            ]
-          : []),
       ]}
     />
   );

@@ -71,39 +71,23 @@ export function makeAmountGrey(value: number | string | null): CSSProperties {
     : null;
 }
 
-export function makeBalanceAmountStyle(
-  value: number,
-  goalValue?: number | null,
-  budgetedValue?: number | null,
-) {
+export function makeBalanceAmountStyle(value: number) {
   // Converts an integer currency value to a normalized decimal amount.
   // First converts the integer to currency format, then to a decimal amount.
   // Uses integerToCurrency to display the value correctly according to user prefs.
-
-  const normalizeIntegerValue = (val: number | null | undefined) =>
-    typeof val === 'number' ? currencyToAmount(integerToCurrency(val)) : 0;
-
-  const currencyValue = normalizeIntegerValue(value);
+  const currencyValue = currencyToAmount(
+    integerToCurrency(typeof value === 'number' ? value : 0),
+  );
 
   if (currencyValue < 0) {
     return { color: theme.budgetNumberNegative };
   }
 
-  if (goalValue == null) {
-    const greyed = makeAmountGrey(currencyValue);
-    if (greyed) {
-      return greyed;
-    }
-    return { color: theme.budgetNumberPositive };
-  } else {
-    const budgetedAmount = normalizeIntegerValue(budgetedValue);
-    const goalAmount = normalizeIntegerValue(goalValue);
-
-    if (budgetedAmount < goalAmount) {
-      return { color: theme.templateNumberUnderFunded };
-    }
-    return { color: theme.templateNumberFunded };
+  const greyed = makeAmountGrey(currencyValue);
+  if (greyed) {
+    return greyed;
   }
+  return { color: theme.budgetNumberPositive };
 }
 
 export function makeAmountFullStyle(
