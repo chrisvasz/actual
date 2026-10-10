@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgAdd, SvgExpandArrow } from '@actual-app/components/icons/v0';
-import { SvgCheveronDown } from '@actual-app/components/icons/v1';
 import { Menu } from '@actual-app/components/menu';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
@@ -108,45 +107,45 @@ export function SidebarGroup({
         height: 20,
       }}
       ref={triggerRef}
-      onClick={() => {
-        onToggleCollapse(group.id);
-      }}
     >
       {!dragPreview && (
-        <SvgExpandArrow
-          width={8}
-          height={8}
-          style={{
-            marginRight: 5,
-            marginLeft: 5,
-            flexShrink: 0,
-            transition: 'transform .1s',
-            transform: collapsed ? 'rotate(-90deg)' : '',
-          }}
-        />
+        <Button
+          variant="bare"
+          aria-label={collapsed ? t('Expand group') : t('Collapse group')}
+          style={{ flexShrink: 0, padding: '6px 5px', color: 'currentColor' }}
+          onPress={() => onToggleCollapse?.(group.id)}
+        >
+          <SvgExpandArrow
+            width={8}
+            height={8}
+            style={{
+              transition: 'transform .1s',
+              transform: collapsed ? 'rotate(-90deg)' : '',
+            }}
+          />
+        </Button>
       )}
-      <div
+      <Text
+        data-testid="category-group-name"
+        onClick={dragPreview ? undefined : handleContextMenu}
         style={{
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           minWidth: 0,
+          ...(!dragPreview && {
+            cursor: 'pointer',
+            ':hover': { textDecoration: 'underline' },
+          }),
         }}
       >
         {dragPreview && <Text style={{ fontWeight: 500 }}>Group: </Text>}
         {name}
-      </div>
+      </Text>
       {!dragPreview && (
         <>
           <View style={{ marginLeft: 5, flexShrink: 0 }}>
-            <Button
-              variant="bare"
-              className="hover-visible"
-              style={{ padding: 3 }}
-              onPress={handleContextMenu}
-            >
-              <SvgCheveronDown width={14} height={14} />
-            </Button>
+            <NotesButton id={group.id} defaultColor={theme.pageTextLight} />
           </View>
           <View style={{ flex: 1 }} />
           <View
@@ -173,8 +172,6 @@ export function SidebarGroup({
                 <SvgAdd style={{ width: 10, height: 10, flexShrink: 0 }} />
               </Button>
             </Tooltip>
-
-            <NotesButton id={group.id} defaultColor={theme.pageTextLight} />
           </View>
         </>
       )}

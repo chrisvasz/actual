@@ -3,8 +3,6 @@ import React, { useRef } from 'react';
 import type { CSSProperties, Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '@actual-app/components/button';
-import { SvgCheveronDown } from '@actual-app/components/icons/v1';
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -100,21 +98,17 @@ export function SidebarCategory({
       }}
       ref={triggerRef}
     >
-      <TextOneLine data-testid="category-name">{name}</TextOneLine>
-      <View style={{ flexShrink: 0, marginLeft: 5 }}>
-        <Button
-          variant="bare"
-          className="hover-visible"
-          style={{ color: 'currentColor', padding: 3 }}
-          onPress={handleContextMenu}
-        >
-          <SvgCheveronDown
-            width={14}
-            height={14}
-            style={{ color: 'currentColor' }}
-          />
-        </Button>
-      </View>
+      <TextOneLine
+        data-testid="category-name"
+        onClick={handleContextMenu}
+        style={{
+          cursor: 'pointer',
+          ...(!dragging &&
+            !dragPreview && { ':hover': { textDecoration: 'underline' } }),
+        }}
+      >
+        {name}
+      </TextOneLine>
       <SidebarCategoryButtons category={category} dragging={dragging} />
     </View>
   );
@@ -171,7 +165,7 @@ export function SidebarCategory({
           }
         }}
         onBlur={() => onEditName(null)}
-        style={{ paddingLeft: 13, ...(isLast && { borderBottomWidth: 0 }) }}
+        style={{ paddingLeft: 9, ...(isLast && { borderBottomWidth: 0 }) }}
         inputProps={{
           placeholder: temporary ? t('New category name') : '',
         }}

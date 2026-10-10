@@ -51,6 +51,28 @@ describe('SidebarCategory context menu', () => {
       );
   }
 
+  it('opens when the category name is clicked', async () => {
+    await renderRow(
+      <SidebarCategory
+        innerRef={null}
+        category={category}
+        editing={false}
+        onEditName={vi.fn()}
+        onSave={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Groceries'));
+
+    expect(store.getState().contextMenu.isOpen).toBe(true);
+    expect(contextMenuItemNames()).toEqual([
+      'rename',
+      'toggle-visibility',
+      'delete',
+    ]);
+  });
+
   it('opens after the category has been renamed', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
 
