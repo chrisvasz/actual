@@ -30,14 +30,19 @@ function getRules() {
     const sheet = styleEl.sheet!;
     sheet.insertRule(`.${CATEGORY_COLUMN_CLASS} {}`, 0);
     sheet.insertRule(`[${CATEGORY_COLUMN_ROOT_ATTR}] {}`, 1);
-    // While dragging, skip layout of rows scrolled out of view. `auto` keeps
-    // each row's last rendered height, so the scroll height doesn't change.
+    // While dragging, skip layout of rows scrolled out of view. The browser
+    // only remembers a row's real height for `contain-intrinsic-size: auto`
+    // if it's set while the row renders, so it's always on; it does nothing
+    // until `content-visibility` kicks in.
+    sheet.insertRule(
+      `.${CATEGORY_ROW_CLASS} { contain-intrinsic-size: auto 32px; }`,
+      2,
+    );
     sheet.insertRule(
       `[${CATEGORY_COLUMN_RESIZING_ATTR}] .${CATEGORY_ROW_CLASS} {
         content-visibility: auto;
-        contain-intrinsic-size: auto 32px;
       }`,
-      2,
+      3,
     );
     columnRule = sheet.cssRules[0] as CSSStyleRule;
     rootRule = sheet.cssRules[1] as CSSStyleRule;
