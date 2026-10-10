@@ -108,6 +108,7 @@ import type { TransactionsSnapshot } from '#transactions';
 import { updateNewTransactions } from '#transactions/transactionsSlice';
 
 import { AccountEmptyMessage } from './AccountEmptyMessage';
+import { unclearedCountCell } from './Balance';
 import { AccountHeader } from './Header';
 import { clearedBalanceCell } from './Reconcile';
 
@@ -2245,6 +2246,7 @@ async function prewarmHeaderBalances(
     { name, query },
     clearedBalanceCell({ name, query }, currentDay()),
     { name: `${name}-cleared`, query: query.filter({ cleared: true }) },
+    unclearedCountCell({ name, query }),
   ];
 
   await Promise.all(

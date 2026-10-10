@@ -170,6 +170,20 @@ function BalanceStatLayout({ label, color, children }: BalanceStatLayoutProps) {
   );
 }
 
+// Number of uncleared transactions in the view; the cleared balance is only
+// worth showing when it can differ from the total.
+export function unclearedCountCell(balanceQuery: {
+  name: `balance-query-${string}`;
+  query: Query;
+}) {
+  return {
+    name: `${balanceQuery.name}-uncleared-count`,
+    query: balanceQuery.query
+      .filter({ cleared: false })
+      .calculate({ $count: '$id' }),
+  } as const;
+}
+
 type BalancesProps = {
   balanceQuery: { name: `balance-query-${string}`; query: Query };
   account?: AccountEntity;
@@ -192,6 +206,9 @@ export function Balances({
     name: `${balanceQuery.name}-cleared`,
     query: balanceQuery.query.filter({ cleared: true }),
   });
+  const unclearedCount = useSheetValue<'balance', `balance-query-${string}`>(
+    unclearedCountCell(balanceQuery),
+  );
 
   return (
     <View
@@ -203,7 +220,7 @@ export function Balances({
         rowGap: 10,
       }}
     >
-      {clearedBalance !== balance && (
+      {(unclearedCount ?? 0) > 0 && (
         <BalanceStat
           label={t('Cleared')}
           value={clearedBalance ?? 0}
