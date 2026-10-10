@@ -1,37 +1,18 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { spacing } from '@actual-app/components/tokens';
 import { View } from '@actual-app/components/view';
 
-import * as bindings from '#spreadsheet/bindings';
-
-import { AccountSearchField } from './AccountSearchField';
 import { AccountsHeaderRow } from './AccountsHeaderRow';
 import { ClosedSection } from './ClosedSection';
 import { SideGroup } from './SideGroup';
-import {
-  filterSidebarTree,
-  useSidebarAccountTree,
-} from './useSidebarAccountTree';
+import { useSidebarAccountTree } from './useSidebarAccountTree';
 import { bucketKey, useSidebarCollapseState } from './useSidebarCollapseState';
 
 export function AccountsSection() {
   const { t } = useTranslation();
   const tree = useSidebarAccountTree();
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const trimmedQuery = query.trim().toLowerCase();
-  const isSearching = trimmedQuery !== '';
-
-  const collapse = useSidebarCollapseState({ tree, isSearching });
-
-  const onToggleSearch = () => {
-    setIsSearchOpen(!isSearchOpen);
-    setQuery('');
-  };
-
-  const visibleTree = filterSidebarTree(tree, trimmedQuery);
+  const collapse = useSidebarCollapseState({ tree });
 
   const showSyncDot = [
     ...tree.onBudget.buckets.map(b => b.accounts).flat(),
@@ -51,25 +32,13 @@ export function AccountsSection() {
         <AccountsHeaderRow
           allOpen={collapse.allOpen}
           onToggleAll={collapse.toggleAll}
-          isToggleAllDisabled={isSearching}
-          isSearchOpen={isSearchOpen}
-          onToggleSearch={onToggleSearch}
         />
-        {isSearchOpen && (
-          <AccountSearchField
-            value={query}
-            onChange={setQuery}
-            onClose={onToggleSearch}
-          />
-        )}
         {tree.onBudget.buckets.length > 0 && (
           <SideGroup
             label={t('On budget')}
             side="on"
-            isDragDisabled={isSearching}
             showSyncDot={showSyncDot}
-            sideData={visibleTree.onBudget}
-            totalBinding={bindings.onBudgetAccountBalanceCleared()}
+            sideData={tree.onBudget}
             balanceTestId="sidebar-on-budget-balance"
             isOpen={collapse.isOpen('onbudget')}
             onToggle={() => collapse.toggle('onbudget')}
@@ -81,10 +50,8 @@ export function AccountsSection() {
           <SideGroup
             label={t('Off budget')}
             side="off"
-            isDragDisabled={isSearching}
             showSyncDot={showSyncDot}
-            sideData={visibleTree.offBudget}
-            totalBinding={bindings.offBudgetAccountBalanceCleared()}
+            sideData={tree.offBudget}
             balanceTestId="sidebar-off-budget-balance"
             isOpen={collapse.isOpen('offbudget')}
             onToggle={() => collapse.toggle('offbudget')}
@@ -93,10 +60,9 @@ export function AccountsSection() {
           />
         )}
         <ClosedSection
-          accounts={visibleTree.closed}
+          accounts={tree.closed}
           isOpen={collapse.isOpen('closed')}
           onToggle={() => collapse.toggle('closed')}
-          isDragDisabled={isSearching}
         />
         <View style={{ height: spacing.md }} />
       </View>

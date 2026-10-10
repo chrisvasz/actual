@@ -19,12 +19,10 @@ export function bucketKey(side: Side, bucket: GroupBucket): SidebarSectionKey {
 
 type UseSidebarCollapseStateArgs = {
   tree: SidebarAccountTree;
-  isSearching: boolean;
 };
 
 export function useSidebarCollapseState({
   tree,
-  isSearching,
 }: UseSidebarCollapseStateArgs): {
   isOpen: (key: SidebarSectionKey) => boolean;
   toggle: (key: SidebarSectionKey) => void;
@@ -35,8 +33,7 @@ export function useSidebarCollapseState({
     'sidebar.accountsOpenState',
   );
 
-  const isOpen = (key: SidebarSectionKey) =>
-    isSearching ? true : (openState[key] ?? key !== 'closed');
+  const isOpen = (key: SidebarSectionKey) => openState[key] ?? key !== 'closed';
   const toggle = (key: SidebarSectionKey) =>
     setOpenState({ ...openState, [key]: !isOpen(key) });
 

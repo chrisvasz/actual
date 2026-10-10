@@ -8,7 +8,7 @@ import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 
 import { Link } from '#components/common/Link';
-import type { Binding } from '#spreadsheet';
+import * as bindings from '#spreadsheet/bindings';
 
 import { AccountTree } from './AccountTree';
 import { CollapseChevron } from './CollapseChevron';
@@ -17,20 +17,16 @@ import { SidebarBalance } from './SidebarBalance';
 import { sectionLabelStyle } from './styles';
 import { SyncErrorRollup } from './SyncErrorRollup';
 import type { GroupBucket, SidebarAccountSide } from './useSidebarAccountTree';
+import { useSidebarBalanceMode } from './useSidebarBalanceMode';
 
 type SideGroupProps = {
   label: string;
   side: 'on' | 'off';
   showSyncDot: boolean;
   sideData: SidebarAccountSide;
-  totalBinding: Binding<
-    'account',
-    'onbudget-accounts-balance-cleared' | 'offbudget-accounts-balance-cleared'
-  >;
   balanceTestId: string;
   isOpen: boolean;
   onToggle: () => void;
-  isDragDisabled: boolean;
   isBucketOpen: (bucket: GroupBucket) => boolean;
   onToggleBucket: (bucket: GroupBucket) => void;
 };
@@ -40,15 +36,14 @@ export function SideGroup({
   side,
   showSyncDot,
   sideData,
-  totalBinding,
   balanceTestId,
   isOpen,
   onToggle,
-  isDragDisabled,
   isBucketOpen,
   onToggleBucket,
 }: SideGroupProps) {
   const { t } = useTranslation();
+  const [balanceMode] = useSidebarBalanceMode();
 
   return (
     <View style={{ marginTop: spacing.xxs }}>
@@ -105,7 +100,11 @@ export function SideGroup({
           <SyncErrorRollup count={sideData.failedCount} />
           <View style={{ flex: 1 }} />
           <SidebarBalance
-            binding={totalBinding}
+            binding={
+              side === 'on'
+                ? bindings.onBudgetAccountBalanceByMode(balanceMode)
+                : bindings.offBudgetAccountBalanceByMode(balanceMode)
+            }
             testId={balanceTestId}
             style={{ fontSize: 12, fontWeight: 600, color: 'inherit' }}
           />
@@ -117,7 +116,6 @@ export function SideGroup({
           side={side}
           buckets={sideData.buckets}
           showSyncDot={showSyncDot}
-          isDragDisabled={isDragDisabled}
           isBucketOpen={isBucketOpen}
           onToggleBucket={onToggleBucket}
         />

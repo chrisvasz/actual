@@ -28,6 +28,7 @@ import { SidebarBalance } from './SidebarBalance';
 import { SyncDot, useSyncDotLabel } from './SyncDot';
 import type { SyncDotStatus } from './SyncDot';
 import { treeKeys } from './treeKeys';
+import { useSidebarBalanceMode } from './useSidebarBalanceMode';
 
 type AccountRowProps = {
   account: AccountEntity;
@@ -41,6 +42,7 @@ export function AccountRow({
   showSyncDot,
 }: AccountRowProps) {
   const { t } = useTranslation();
+  const [balanceMode] = useSidebarBalanceMode();
   const dispatch = useDispatch();
   const location = useLocation();
   const syncingAccountIds = useSelector(state => state.account.accountsSyncing);
@@ -189,7 +191,7 @@ export function AccountRow({
             )}
             <Text style={styles.visuallyHidden}>{statusLabel}</Text>
             <SidebarBalance
-              binding={bindings.accountBalanceCleared(account.id)}
+              binding={bindings.accountBalanceByMode(account.id, balanceMode)}
               style={{
                 fontSize: 12,
                 color: 'inherit',

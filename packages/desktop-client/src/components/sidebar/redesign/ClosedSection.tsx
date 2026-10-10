@@ -17,14 +17,12 @@ type ClosedSectionProps = {
   accounts: AccountEntity[];
   isOpen: boolean;
   onToggle: () => void;
-  isDragDisabled: boolean;
 };
 
 export function ClosedSection({
   accounts,
   isOpen,
   onToggle,
-  isDragDisabled,
 }: ClosedSectionProps) {
   const { t } = useTranslation();
 
@@ -67,7 +65,6 @@ export function ClosedSection({
           side="closed"
           buckets={[{ group: null, accounts, failedCount: 0 }]}
           showSyncDot={false}
-          isDragDisabled={isDragDisabled}
         />
       )}
     </View>

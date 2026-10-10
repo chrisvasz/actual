@@ -39,13 +39,11 @@ type DraggedNode =
 type UseAccountTreeDragAndDropArgs = {
   side: AccountTreeSide;
   buckets: GroupBucket[];
-  isDisabled: boolean;
 };
 
 export function useAccountTreeDragAndDrop({
   side,
   buckets,
-  isDisabled,
 }: UseAccountTreeDragAndDropArgs) {
   const { data: accounts = [] } = useAccounts();
   const { data: accountGroups = [] } = useAccountGroups();
@@ -147,7 +145,6 @@ export function useAccountTreeDragAndDrop({
   };
 
   const { dragAndDropHooks } = useDragAndDrop({
-    isDisabled,
     getItems: keys =>
       [...keys].flatMap((key): DragItem[] => {
         const node = parseTreeKey(key);
