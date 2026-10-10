@@ -51,6 +51,46 @@ describe('SidebarGroup context menu', () => {
       );
   }
 
+  it('opens when the group name is clicked, without collapsing', async () => {
+    const onToggleCollapse = vi.fn();
+    await renderRow(
+      <SidebarGroup
+        group={group}
+        editing={false}
+        collapsed={false}
+        onEdit={vi.fn()}
+        onSave={vi.fn()}
+        onDelete={vi.fn()}
+        onToggleCollapse={onToggleCollapse}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Usual Expenses'));
+
+    expect(store.getState().contextMenu.isOpen).toBe(true);
+    expect(onToggleCollapse).not.toHaveBeenCalled();
+  });
+
+  it('collapses when the arrow is clicked', async () => {
+    const onToggleCollapse = vi.fn();
+    await renderRow(
+      <SidebarGroup
+        group={group}
+        editing={false}
+        collapsed={false}
+        onEdit={vi.fn()}
+        onSave={vi.fn()}
+        onDelete={vi.fn()}
+        onToggleCollapse={onToggleCollapse}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse group' }));
+
+    expect(onToggleCollapse).toHaveBeenCalledWith(group.id);
+    expect(store.getState().contextMenu.isOpen).toBe(false);
+  });
+
   it('opens after the group has been renamed', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
 

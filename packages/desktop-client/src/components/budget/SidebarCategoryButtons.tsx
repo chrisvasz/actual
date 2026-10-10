@@ -17,15 +17,15 @@ export const SidebarCategoryButtons = ({
 }: SidebarCategoryButtonsProps) => {
   return (
     <>
-      <View style={{ flex: 1 }} />
-      {!category.is_income && <CategoryGoalChip category={category} />}
-      <View style={{ flexShrink: 0 }}>
+      <View style={{ flexShrink: 0, marginLeft: 5 }}>
         <NotesButton
           id={category.id}
           style={dragging ? { color: 'currentColor' } : undefined}
           defaultColor={theme.pageTextLight}
         />
       </View>
+      <View style={{ flex: 1 }} />
+      {!category.is_income && <CategoryGoalChip category={category} />}
     </>
   );
 };

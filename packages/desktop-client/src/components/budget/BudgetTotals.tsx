@@ -58,7 +58,7 @@ export const BudgetTotals = memo(function BudgetTotals({
           color: theme.tableHeaderText,
           justifyContent: 'center',
           // Line the header up with the category names below it.
-          paddingLeft: 18,
+          paddingLeft: 14,
           paddingRight: 5,
           display: 'flex',
           flexDirection: 'row',
