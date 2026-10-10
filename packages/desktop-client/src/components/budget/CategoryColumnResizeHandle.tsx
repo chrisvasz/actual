@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -70,21 +70,6 @@ export function CategoryColumnResizeHandle() {
   const { t } = useTranslation();
   const [width, setWidthPref] = useCategoryColumnWidth();
   const dragRef = useRef<DragState | null>(null);
-  const [maxWidth, setMaxWidth] = useState(MAX_CATEGORY_COLUMN_WIDTH);
-
-  // Don't leave the page's cursor or the table stuck if the budget is hidden
-  // or closes mid-drag. The table resets the stylesheet when it's shown again.
-  useEffect(
-    () => () => {
-      const drag = dragRef.current;
-      if (drag) {
-        dragRef.current = null;
-        document.documentElement.style.cursor = '';
-        setCategoryColumnResizing(drag.root, false);
-      }
-    },
-    [],
-  );
 
   function onPointerDown(e: PointerEvent<HTMLDivElement>) {
     if (e.button !== 0) {
@@ -97,15 +82,12 @@ export function CategoryColumnResizeHandle() {
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     const area = root.parentElement ?? root;
-    const areaLeft = area.getBoundingClientRect().left;
-    const max = getMaxWidth(root, width);
-    setMaxWidth(max);
     dragRef.current = {
       startWidth: width,
-      maxWidth: max,
+      maxWidth: getMaxWidth(root, width),
       width,
       root,
-      areaLeft,
+      areaLeft: area.getBoundingClientRect().left,
       areaWidth: area.clientWidth,
       monthsWidth:
         parseFloat(
@@ -148,7 +130,6 @@ export function CategoryColumnResizeHandle() {
       const delta = e.key === 'ArrowLeft' ? -KEYBOARD_STEP : KEYBOARD_STEP;
       const root = getRoot(e.currentTarget);
       const max = root ? getMaxWidth(root, width) : MAX_CATEGORY_COLUMN_WIDTH;
-      setMaxWidth(max);
       setWidthPref(clampCategoryColumnWidth(Math.min(max, width + delta)));
     }
   }
@@ -160,7 +141,7 @@ export function CategoryColumnResizeHandle() {
       aria-label={t('Resize category column')}
       aria-valuenow={width}
       aria-valuemin={MIN_CATEGORY_COLUMN_WIDTH}
-      aria-valuemax={maxWidth}
+      aria-valuemax={MAX_CATEGORY_COLUMN_WIDTH}
       tabIndex={0}
       title={t('Drag to resize, double-click to reset')}
       onPointerDown={onPointerDown}
@@ -170,12 +151,6 @@ export function CategoryColumnResizeHandle() {
       onLostPointerCapture={endDrag}
       onDoubleClick={() => setWidthPref(CATEGORY_COLUMN_WIDTH)}
       onKeyDown={onKeyDown}
-      onFocus={e => {
-        const root = getRoot(e.currentTarget);
-        if (root) {
-          setMaxWidth(getMaxWidth(root, width));
-        }
-      }}
       style={{
         position: 'absolute',
         top: 0,
