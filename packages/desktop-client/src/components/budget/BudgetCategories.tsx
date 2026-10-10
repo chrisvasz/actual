@@ -13,6 +13,7 @@ import type { DragState, OnDropCallback } from '#components/sort';
 import { Row } from '#components/table';
 import { useLocalPref } from '#hooks/useLocalPref';
 
+import { CATEGORY_ROW_CLASS } from './categoryColumnStyles';
 import { ExpenseCategory } from './ExpenseCategory';
 import { ExpenseGroup } from './ExpenseGroup';
 import { IncomeCategory } from './IncomeCategory';
@@ -390,6 +391,7 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
               value={pos}
             >
               <View
+                className={CATEGORY_ROW_CLASS}
                 style={
                   dragState
                     ? {}

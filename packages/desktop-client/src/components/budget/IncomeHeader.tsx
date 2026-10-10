@@ -4,8 +4,8 @@ import { Trans } from 'react-i18next';
 import { Button } from '@actual-app/components/button';
 import { View } from '@actual-app/components/view';
 
+import { CATEGORY_COLUMN_CLASS } from './categoryColumnStyles';
 import { RenderMonths } from './RenderMonths';
-import { CATEGORY_COLUMN_WIDTH } from './util';
 
 import { useBudgetComponents } from '.';
 
@@ -18,8 +18,8 @@ export function IncomeHeader({ onShowNewGroup }: IncomeHeaderProps) {
   return (
     <View style={{ flexDirection: 'row', flex: 1 }}>
       <View
+        className={CATEGORY_COLUMN_CLASS}
         style={{
-          width: CATEGORY_COLUMN_WIDTH,
           alignItems: 'flex-start',
           justifyContent: 'flex-start',
         }}

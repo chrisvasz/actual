@@ -6,9 +6,10 @@ import { View } from '@actual-app/components/view';
 
 import { useGlobalPref } from '#hooks/useGlobalPref';
 
+import { CATEGORY_COLUMN_CLASS } from './categoryColumnStyles';
 import { MonthCountSelector } from './MonthCountSelector';
 import { MonthPicker } from './MonthPicker';
-import { CATEGORY_COLUMN_WIDTH, getScrollbarWidth } from './util';
+import { getScrollbarWidth } from './util';
 
 type BudgetPageHeaderProps = {
   startMonth: string;
@@ -25,8 +26,9 @@ export const BudgetPageHeader = memo<BudgetPageHeaderProps>(
     return (
       <View style={{ flexDirection: 'row', flexShrink: 0 }}>
         <View
+          className={CATEGORY_COLUMN_CLASS}
           style={{
-            width: CATEGORY_COLUMN_WIDTH + 5 - offsetMultipleMonths,
+            marginRight: 5 - offsetMultipleMonths,
             flexShrink: 0,
             justifyContent: 'center',
           }}
