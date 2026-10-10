@@ -5,36 +5,33 @@ import {
   SvgCheveronDownUp,
   SvgCheveronUpDown,
 } from '@actual-app/components/icons/v1';
-import { SvgSearchAlternate } from '@actual-app/components/icons/v2';
 import { theme } from '@actual-app/components/theme';
 import { spacing } from '@actual-app/components/tokens';
 import { View } from '@actual-app/components/view';
+import { css } from '@emotion/css';
 
 import { Link } from '#components/common/Link';
 import { replaceModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 import * as bindings from '#spreadsheet/bindings';
 
+import { BalanceModeToggle } from './BalanceModeToggle';
 import { SidebarBalance } from './SidebarBalance';
 import { SidebarIconButton } from './SidebarIconButton';
+import { useSidebarBalanceMode } from './useSidebarBalanceMode';
 
 type AccountsHeaderRowProps = {
   allOpen: boolean;
   onToggleAll: () => void;
-  isToggleAllDisabled: boolean;
-  isSearchOpen: boolean;
-  onToggleSearch: () => void;
 };
 
 export function AccountsHeaderRow({
   allOpen,
   onToggleAll,
-  isToggleAllDisabled,
-  isSearchOpen,
-  onToggleSearch,
 }: AccountsHeaderRowProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const [balanceMode] = useSidebarBalanceMode();
 
   const onAddAccount = () => {
     dispatch(replaceModal({ modal: { name: 'add-account', options: {} } }));
@@ -42,6 +39,11 @@ export function AccountsHeaderRow({
 
   return (
     <View
+      className={css({
+        [`& .${balanceToggleClassName}`]: { display: 'none' },
+        [`&:hover .${balanceToggleClassName}, &:focus-within .${balanceToggleClassName}`]:
+          { display: 'flex' },
+      })}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -67,14 +69,7 @@ export function AccountsHeaderRow({
       <SidebarIconButton
         Icon={allOpen ? SvgCheveronDownUp : SvgCheveronUpDown}
         label={allOpen ? t('Collapse all groups') : t('Expand all groups')}
-        isDisabled={isToggleAllDisabled}
         onPress={onToggleAll}
-      />
-      <SidebarIconButton
-        Icon={SvgSearchAlternate}
-        label={t('Find account')}
-        isToggledOn={isSearchOpen}
-        onPress={onToggleSearch}
       />
       <SidebarIconButton
         Icon={SvgAdd}
@@ -82,6 +77,7 @@ export function AccountsHeaderRow({
         onPress={onAddAccount}
       />
       <View style={{ flex: 1 }} />
+      <BalanceModeToggle className={balanceToggleClassName} />
       <Link
         variant="internal"
         to="/accounts"
@@ -90,7 +86,7 @@ export function AccountsHeaderRow({
         activeStyle={{ color: theme.sidebarItemTextSelected }}
       >
         <SidebarBalance
-          binding={bindings.allAccountBalanceCleared()}
+          binding={bindings.allAccountBalanceByMode(balanceMode)}
           testId="sidebar-all-accounts-balance"
           style={{ fontSize: 12, fontWeight: 600 }}
         />
@@ -98,3 +94,5 @@ export function AccountsHeaderRow({
     </View>
   );
 }
+
+const balanceToggleClassName = 'sidebar-balance-mode-toggle';

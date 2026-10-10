@@ -59,6 +59,26 @@ export function allAccountBalance() {
   } satisfies Binding<'account', 'accounts-balance'>;
 }
 
+// Which transactions a sidebar balance sums: only cleared ones, or all of them.
+export type SidebarBalanceMode = 'cleared' | 'all';
+
+function clearedFilter(mode: SidebarBalanceMode) {
+  return mode === 'cleared' ? { cleared: true } : {};
+}
+
+export function accountBalanceByMode(
+  accountId: AccountEntity['id'],
+  mode: SidebarBalanceMode,
+) {
+  return mode === 'cleared'
+    ? accountBalanceCleared(accountId)
+    : accountBalance(accountId);
+}
+
+export function allAccountBalanceByMode(mode: SidebarBalanceMode) {
+  return mode === 'cleared' ? allAccountBalanceCleared() : allAccountBalance();
+}
+
 export function allAccountBalanceCleared() {
   return {
     name: 'accounts-balance-cleared',
@@ -69,50 +89,74 @@ export function allAccountBalanceCleared() {
   } satisfies Binding<'account', 'accounts-balance-cleared'>;
 }
 
-export function onBudgetAccountBalanceCleared() {
+function sideAccountBalanceByMode<
+  Side extends 'onbudget' | 'offbudget',
+  Mode extends SidebarBalanceMode,
+>(side: Side, mode: Mode) {
   return {
-    name: 'onbudget-accounts-balance-cleared',
+    name: `${side}-accounts-balance${mode === 'cleared' ? '-cleared' : ''}` as
+      | `${Side}-accounts-balance`
+      | `${Side}-accounts-balance-cleared`,
     query: q('transactions')
       .filter({
-        'account.offbudget': false,
+        'account.offbudget': side === 'offbudget',
         'account.closed': false,
-        cleared: true,
+        ...clearedFilter(mode),
       })
       .options({ splits: 'none' })
       .calculate({ $sum: '$amount' }),
+  } satisfies Binding<
+    'account',
+    `${Side}-accounts-balance` | `${Side}-accounts-balance-cleared`
+  >;
+}
+
+export function onBudgetAccountBalanceByMode(mode: SidebarBalanceMode) {
+  return sideAccountBalanceByMode('onbudget', mode);
+}
+
+export function offBudgetAccountBalanceByMode(mode: SidebarBalanceMode) {
+  return sideAccountBalanceByMode('offbudget', mode);
+}
+
+export function onBudgetAccountBalanceCleared() {
+  return {
+    ...onBudgetAccountBalanceByMode('cleared'),
+    name: 'onbudget-accounts-balance-cleared',
   } satisfies Binding<'account', 'onbudget-accounts-balance-cleared'>;
 }
 
 export function offBudgetAccountBalanceCleared() {
   return {
+    ...offBudgetAccountBalanceByMode('cleared'),
     name: 'offbudget-accounts-balance-cleared',
+  } satisfies Binding<'account', 'offbudget-accounts-balance-cleared'>;
+}
+
+export function accountGroupBalanceByMode(
+  groupId: AccountGroupEntity['id'],
+  offbudget: boolean,
+  mode: SidebarBalanceMode,
+) {
+  return {
+    name: `account-group-balance-${groupId}-${offbudget ? 'off' : 'on'}${mode === 'cleared' ? '-cleared' : ''}`,
     query: q('transactions')
       .filter({
-        'account.offbudget': true,
+        'account.account_group_id': groupId,
+        'account.offbudget': offbudget,
         'account.closed': false,
-        cleared: true,
+        ...clearedFilter(mode),
       })
       .options({ splits: 'none' })
       .calculate({ $sum: '$amount' }),
-  } satisfies Binding<'account', 'offbudget-accounts-balance-cleared'>;
+  } satisfies Binding<'account', `account-group-balance-${string}`>;
 }
 
 export function accountGroupBalanceCleared(
   groupId: AccountGroupEntity['id'],
   offbudget: boolean,
 ) {
-  return {
-    name: `account-group-balance-${groupId}-${offbudget ? 'off' : 'on'}-cleared`,
-    query: q('transactions')
-      .filter({
-        'account.account_group_id': groupId,
-        'account.offbudget': offbudget,
-        'account.closed': false,
-        cleared: true,
-      })
-      .options({ splits: 'none' })
-      .calculate({ $sum: '$amount' }),
-  } satisfies Binding<'account', `account-group-balance-${string}`>;
+  return accountGroupBalanceByMode(groupId, offbudget, 'cleared');
 }
 
 export function categoryBalance(

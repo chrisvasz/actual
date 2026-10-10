@@ -13,6 +13,8 @@ export type Spreadsheets = {
     'accounts-balance-cleared': number;
     'onbudget-accounts-balance-cleared': number;
     'offbudget-accounts-balance-cleared': number;
+    'onbudget-accounts-balance': number;
+    'offbudget-accounts-balance': number;
     [key: `account-group-balance-${string}`]: number;
     balanceCleared: number;
     balanceUncleared: number;

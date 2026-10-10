@@ -38,6 +38,7 @@ import { SidebarBalance } from './SidebarBalance';
 import { dropZoneStyle, groupLabelStyle } from './styles';
 import { SyncErrorRollup } from './SyncErrorRollup';
 import { treeKeys } from './treeKeys';
+import { useSidebarBalanceMode } from './useSidebarBalanceMode';
 
 type AccountGroupHeaderProps = {
   group: AccountGroupEntity;
@@ -57,6 +58,7 @@ export function AccountGroupHeader({
   isDropZoneActive,
 }: AccountGroupHeaderProps) {
   const { t } = useTranslation();
+  const [balanceMode] = useSidebarBalanceMode();
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const updateGroup = useUpdateAccountGroupMutation();
@@ -182,9 +184,10 @@ export function AccountGroupHeader({
                 <SyncErrorRollup count={failedCount} />
                 <View style={{ flex: 1 }} />
                 <SidebarBalance
-                  binding={bindings.accountGroupBalanceCleared(
+                  binding={bindings.accountGroupBalanceByMode(
                     group.id,
                     side === 'off',
+                    balanceMode,
                   )}
                   style={{ fontSize: 11, color: groupLabelStyle.color }}
                 />

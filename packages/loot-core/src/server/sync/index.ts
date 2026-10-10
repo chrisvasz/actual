@@ -580,6 +580,8 @@ async function _applyMessages(messages: Message[], deferUnknownSchema = false) {
           'accounts-balance-cleared',
           'onbudget-accounts-balance-cleared',
           'offbudget-accounts-balance-cleared',
+          'onbudget-accounts-balance',
+          'offbudget-accounts-balance',
         ].map(cellName => resolveName('__global', cellName)),
       );
       const accountGroupCellPrefix = resolveName(

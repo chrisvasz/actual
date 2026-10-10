@@ -15,7 +15,6 @@ type AccountTreeProps = {
   side: AccountTreeSide;
   buckets: GroupBucket[];
   showSyncDot: boolean;
-  isDragDisabled: boolean;
   isBucketOpen?: (bucket: GroupBucket) => boolean;
   onToggleBucket?: (bucket: GroupBucket) => void;
 };
@@ -25,12 +24,11 @@ export function AccountTree({
   side,
   buckets,
   showSyncDot,
-  isDragDisabled,
   isBucketOpen,
   onToggleBucket,
 }: AccountTreeProps) {
   const { dragAndDropHooks, isGroupDropZoneActive, isDraggingGroup } =
-    useAccountTreeDragAndDrop({ side, buckets, isDisabled: isDragDisabled });
+    useAccountTreeDragAndDrop({ side, buckets });
 
   const groupBuckets = buckets.filter(bucket => bucket.group != null);
   const expandedKeys = new Set<Key>(
