@@ -220,18 +220,25 @@ export function Balances({
         rowGap: 10,
       }}
     >
-      {(unclearedCount ?? 0) > 0 && (
-        <BalanceStat
-          label={t('Cleared')}
-          value={clearedBalance ?? 0}
-          testId="account-cleared-balance"
-        />
-      )}
       <BalanceStat
         label={t('Total')}
         value={balance ?? 0}
         testId="account-balance"
       />
+      {(unclearedCount ?? 0) > 0 && (
+        <>
+          <BalanceStat
+            label={t('Cleared')}
+            value={clearedBalance ?? 0}
+            testId="account-cleared-balance"
+          />
+          <BalanceStat
+            label={t('Uncleared')}
+            value={(balance ?? 0) - (clearedBalance ?? 0)}
+            testId="account-uncleared-balance"
+          />
+        </>
+      )}
 
       {selectedItems.size > 0 && (
         <SelectedBalance selectedItems={selectedItems} account={account} />
