@@ -72,6 +72,22 @@ describe('ReconcilingMessage', () => {
     expect(screen.getByRole('button', { name: 'Adjust' })).toBeDisabled();
   });
 
+  test('the right arrow fills in the cleared balance', async () => {
+    vi.mocked(useSheetValue).mockReturnValue(5000);
+    renderMessage();
+
+    const input = screen.getByLabelText('Balance');
+    expect(input).toHaveAttribute('placeholder', '50.00 →');
+    await userEvent.click(input);
+    await userEvent.keyboard('{ArrowRight}');
+    expect(input).toHaveValue('50.00');
+    expect(screen.getByRole('button', { name: 'Lock' })).toBeInTheDocument();
+
+    // Once there's a value, the arrow just moves the cursor
+    await userEvent.type(input, '1{ArrowRight}');
+    expect(input).toHaveValue('50.001');
+  });
+
   test('reconciles as of the chosen date', async () => {
     vi.mocked(useSheetValue).mockReturnValue(5000);
     const onDone = vi.fn();

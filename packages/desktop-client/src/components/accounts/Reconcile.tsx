@@ -152,6 +152,14 @@ export function ReconcilingMessage({
             id={targetInputId}
             value={inputValue}
             minWidthText={format(10000, 'financial')}
+            // Like a budget cell's "←" hint: the right arrow fills in the
+            // cleared balance whenever the input is empty
+            placeholder={cleared != null ? `${clearedBalance} →` : undefined}
+            onFillPlaceholder={
+              cleared != null
+                ? () => setInputValue(format(cleared, 'financial'))
+                : undefined
+            }
             onChangeValue={setInputValue}
             onUpdate={formatTarget}
             onEnter={() => (targetDiff === 0 ? lock() : formatTarget())}
@@ -249,6 +257,8 @@ type AmountInputProps = {
   id: string;
   value: string;
   minWidthText: string;
+  placeholder?: string;
+  onFillPlaceholder?: () => void;
   onChangeValue: (value: string) => void;
   onUpdate: () => void;
   onEnter: () => void;
@@ -262,6 +272,8 @@ function AmountInput({
   id,
   value,
   minWidthText,
+  placeholder,
+  onFillPlaceholder,
   onChangeValue,
   onUpdate,
   onEnter,
@@ -284,7 +296,7 @@ function AmountInput({
 
   return (
     <div style={{ display: 'inline-grid' }}>
-      {[value, minWidthText].map((text, i) => (
+      {[value || placeholder || '', minWidthText].map((text, i) => (
         <span key={i} aria-hidden style={sizerStyle}>
           {text}
         </span>
@@ -296,6 +308,17 @@ function AmountInput({
         // Drop the browser's default ~20 character width so the sizers alone
         // decide how wide the input is
         size={1}
+        placeholder={placeholder}
+        onKeyDown={e => {
+          if (
+            onFillPlaceholder &&
+            e.key === 'ArrowRight' &&
+            e.currentTarget.value === ''
+          ) {
+            e.preventDefault();
+            onFillPlaceholder();
+          }
+        }}
         onChangeValue={onChangeValue}
         onUpdate={onUpdate}
         onEnter={onEnter}
