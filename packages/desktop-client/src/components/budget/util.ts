@@ -21,8 +21,20 @@ import type { useSpreadsheet } from '#hooks/useSpreadsheet';
 
 import { getValidMonthBounds } from './MonthsContext';
 
-// Width of the budget table's category column.
+// Default width of the budget table's category column. The user can drag it
+// between the min and max below; see categoryColumnStyles.ts.
 export const CATEGORY_COLUMN_WIDTH = 200;
+export const MIN_CATEGORY_COLUMN_WIDTH = 150;
+export const MAX_CATEGORY_COLUMN_WIDTH = 500;
+
+export function clampCategoryColumnWidth(width: number) {
+  return Math.round(
+    Math.min(
+      MAX_CATEGORY_COLUMN_WIDTH,
+      Math.max(MIN_CATEGORY_COLUMN_WIDTH, width),
+    ),
+  );
+}
 
 export function addToBeBudgetedGroup(groups: CategoryGroupEntity[]) {
   return [

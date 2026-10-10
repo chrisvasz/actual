@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect } from 'react';
 import type { ComponentProps } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -13,7 +13,11 @@ import { useHotkeys } from '#hooks/useHotkeys';
 import { useBudgetMonthCount } from './BudgetMonthCountContext';
 import { BudgetPageHeader } from './BudgetPageHeader';
 import { BudgetTable } from './BudgetTable';
-import { CATEGORY_COLUMN_WIDTH } from './util';
+import {
+  CATEGORY_COLUMN_ROOT_ATTR,
+  setCategoryColumnWidth,
+  useCategoryColumnWidth,
+} from './categoryColumnStyles';
 
 function getNumPossibleMonths(width: number, categoryWidth: number) {
   const estimatedTableWidth = width - categoryWidth;
@@ -52,9 +56,14 @@ const DynamicBudgetTable = ({
 }: DynamicBudgetTableProps) => {
   const { setDisplayMax } = useBudgetMonthCount();
 
-  const numPossible = getNumPossibleMonths(width, CATEGORY_COLUMN_WIDTH);
+  const [categoryWidth] = useCategoryColumnWidth();
+
+  const numPossible = getNumPossibleMonths(width, categoryWidth);
   const numMonths = Math.min(numPossible, maxMonths);
-  const maxWidth = CATEGORY_COLUMN_WIDTH + 500 * numMonths;
+
+  useLayoutEffect(() => {
+    setCategoryColumnWidth(categoryWidth);
+  }, [categoryWidth]);
 
   useEffect(() => {
     setDisplayMax(numPossible);
@@ -128,7 +137,12 @@ const DynamicBudgetTable = ({
         opacity: width <= 0 || height <= 0 ? 0 : 1,
       }}
     >
-      <View style={{ width: '100%', maxWidth }}>
+      <View
+        {...{ [CATEGORY_COLUMN_ROOT_ATTR]: '' }}
+        style={{ width: '100%' }}
+        // The max width (category column + this) is set in categoryColumnStyles.
+        nativeStyle={{ '--budget-months-width': `${500 * numMonths}px` }}
+      >
         <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
           <BudgetPageHeader
             startMonth={prewarmStartMonth}

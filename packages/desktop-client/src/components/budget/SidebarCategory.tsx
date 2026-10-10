@@ -17,8 +17,8 @@ import { InputCell } from '#components/table';
 import { useContextMenu } from '#hooks/useContextMenu';
 import { usePendingValue } from '#hooks/usePendingValue';
 
+import { CATEGORY_COLUMN_CLASS } from './categoryColumnStyles';
 import { SidebarCategoryButtons } from './SidebarCategoryButtons';
-import { CATEGORY_COLUMN_WIDTH } from './util';
 
 type SidebarCategoryProps = {
   innerRef: Ref<HTMLDivElement>;
@@ -122,8 +122,8 @@ export function SidebarCategory({
   return (
     <View
       innerRef={innerRef}
+      className={CATEGORY_COLUMN_CLASS}
       style={{
-        width: CATEGORY_COLUMN_WIDTH,
         overflow: 'hidden',
         '& .hover-visible': {
           display: 'none',

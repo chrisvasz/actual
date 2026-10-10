@@ -19,7 +19,7 @@ import { InputCell } from '#components/table';
 import { useContextMenu } from '#hooks/useContextMenu';
 import { usePendingValue } from '#hooks/usePendingValue';
 
-import { CATEGORY_COLUMN_WIDTH } from './util';
+import { CATEGORY_COLUMN_CLASS } from './categoryColumnStyles';
 
 type SidebarGroupProps = {
   group: CategoryGroupEntity;
@@ -184,9 +184,9 @@ export function SidebarGroup({
   return (
     <View
       innerRef={innerRef}
+      className={CATEGORY_COLUMN_CLASS}
       style={{
         ...style,
-        width: CATEGORY_COLUMN_WIDTH,
         backgroundColor: theme.budgetHeaderCurrentMonth,
         overflow: 'hidden',
         '& .hover-visible': {

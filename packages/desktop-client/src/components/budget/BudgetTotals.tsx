@@ -9,8 +9,10 @@ import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
+import { CategoryColumnResizeHandle } from './CategoryColumnResizeHandle';
+import { CATEGORY_COLUMN_CLASS } from './categoryColumnStyles';
 import { RenderMonths } from './RenderMonths';
-import { CATEGORY_COLUMN_WIDTH, getScrollbarWidth } from './util';
+import { getScrollbarWidth } from './util';
 
 import { useBudgetComponents } from '.';
 
@@ -53,8 +55,8 @@ export const BudgetTotals = memo(function BudgetTotals({
       }}
     >
       <View
+        className={CATEGORY_COLUMN_CLASS}
         style={{
-          width: CATEGORY_COLUMN_WIDTH,
           color: theme.tableHeaderText,
           justifyContent: 'center',
           // Line the header up with the category names below it.
@@ -117,6 +119,7 @@ export const BudgetTotals = memo(function BudgetTotals({
             ]}
           />
         </Popover>
+        <CategoryColumnResizeHandle />
       </View>
       <RenderMonths>
         <MonthComponent />
