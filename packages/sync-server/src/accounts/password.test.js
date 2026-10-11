@@ -5,15 +5,12 @@ import { getAccountDb } from '#account-db';
 import {
   bootstrapPassword,
   changePassword,
-  checkPassword,
   hashPassword,
   isValidPassword,
   loginWithPassword,
   setPasswordHash,
   verifyPassword,
 } from './password';
-
-const FALLBACK_OWNER_ID = 'password-test-owner';
 
 function getStoredPasswordHash() {
   const row = getAccountDb().first(
@@ -22,40 +19,16 @@ function getStoredPasswordHash() {
   return row ? row.extra_data : null;
 }
 
-function getAuthMethods() {
-  return getAccountDb().all('SELECT method, active FROM auth ORDER BY method');
-}
-
-function insertOpenIdAuth(extraData) {
-  getAccountDb().mutate(
-    'INSERT INTO auth (method, display_name, extra_data, active) VALUES (?, ?, ?, ?)',
-    ['openid', 'OpenID', JSON.stringify(extraData), 1],
-  );
-}
-
-function ensureOwner() {
-  const db = getAccountDb();
-  const owner = db.first("SELECT id FROM users WHERE user_name = ''");
-  if (!owner) {
-    db.mutate(
-      'INSERT INTO users (id, user_name, display_name, enabled, owner, role) VALUES (?, ?, ?, 1, 1, ?)',
-      [FALLBACK_OWNER_ID, '', '', 'ADMIN'],
-    );
-  }
-}
-
 beforeEach(() => {
   const db = getAccountDb();
   db.mutate('DELETE FROM auth');
   db.mutate("DELETE FROM sessions WHERE auth_method = 'password'");
-  ensureOwner();
 });
 
 afterEach(() => {
   const db = getAccountDb();
   db.mutate('DELETE FROM auth');
   db.mutate("DELETE FROM sessions WHERE auth_method = 'password'");
-  db.mutate('DELETE FROM users WHERE id = ?', [FALLBACK_OWNER_ID]);
 });
 
 describe('isValidPassword', () => {
@@ -169,34 +142,11 @@ describe('bootstrapPassword / changePassword', () => {
   });
 });
 
-describe('changePassword on an OIDC-only instance', () => {
+describe('changePassword without a password set', () => {
   it('reports an error instead of silently succeeding', async () => {
-    insertOpenIdAuth({ issuer: 'https://issuer.example.com' });
-
     expect(await changePassword('new password')).toEqual({
       error: 'no-password-method',
     });
     expect(getStoredPasswordHash()).toBeNull();
-  });
-
-  it('does not disable the existing openid method', async () => {
-    insertOpenIdAuth({ issuer: 'https://issuer.example.com' });
-
-    await changePassword('new password');
-
-    expect(getAuthMethods()).toEqual([{ method: 'openid', active: 1 }]);
-  });
-});
-
-describe('checkPassword', () => {
-  it('returns true for the correct stored password and false otherwise', async () => {
-    await bootstrapPassword('correct horse');
-
-    expect(await checkPassword('correct horse')).toBe(true);
-    expect(await checkPassword('battery staple')).toBe(false);
-  });
-
-  it('returns false when no password is configured', async () => {
-    expect(await checkPassword('anything')).toBe(false);
   });
 });

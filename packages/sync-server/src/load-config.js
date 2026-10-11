@@ -33,7 +33,7 @@ debug(`Actual web build path: '${actualAppWebBuildPath}'`);
 convict.addFormat({
   name: 'tokenExpiration',
   validate(val) {
-    if (val === 'never' || val === 'openid-provider') return;
+    if (val === 'never') return;
     if (typeof val === 'number' && Number.isFinite(val) && val >= 0) return;
 
     // Handle string values that can be converted to numbers (from env vars)
@@ -47,7 +47,7 @@ convict.addFormat({
     );
   },
   coerce(val) {
-    if (val === 'never' || val === 'openid-provider') return val;
+    if (val === 'never') return val;
     if (typeof val === 'number') return val;
 
     // Convert string values to numbers for environment variables
@@ -122,14 +122,14 @@ const configSchema = convict({
   },
   loginMethod: {
     doc: 'Authentication method.',
-    format: ['password', 'header', 'openid'],
+    format: ['password', 'header'],
     default: 'password',
     env: 'ACTUAL_LOGIN_METHOD',
   },
   allowedLoginMethods: {
     doc: 'Allowed authentication methods.',
     format: Array,
-    default: ['password', 'header', 'openid'],
+    default: ['password', 'header'],
     env: 'ACTUAL_ALLOWED_LOGIN_METHODS',
   },
   trustedProxies: {
@@ -194,88 +194,11 @@ const configSchema = convict({
     },
   },
 
-  openId: {
-    doc: 'OpenID authentication settings.',
-
-    discoveryURL: {
-      doc: 'OpenID Provider discovery URL.',
-      format: String,
-      default: '',
-      env: 'ACTUAL_OPENID_DISCOVERY_URL',
-    },
-    issuer: {
-      doc: 'OpenID issuer',
-
-      name: {
-        doc: 'Name of the provider',
-        default: '',
-        format: String,
-        env: 'ACTUAL_OPENID_PROVIDER_NAME',
-      },
-      authorization_endpoint: {
-        doc: 'Authorization endpoint',
-        default: '',
-        format: String,
-        env: 'ACTUAL_OPENID_AUTHORIZATION_ENDPOINT',
-      },
-      token_endpoint: {
-        doc: 'Token endpoint',
-        default: '',
-        format: String,
-        env: 'ACTUAL_OPENID_TOKEN_ENDPOINT',
-      },
-      userinfo_endpoint: {
-        doc: 'Userinfo endpoint',
-        default: '',
-        format: String,
-        env: 'ACTUAL_OPENID_USERINFO_ENDPOINT',
-      },
-    },
-    client_id: {
-      doc: 'OpenID client ID.',
-      format: String,
-      default: '',
-      env: 'ACTUAL_OPENID_CLIENT_ID',
-    },
-    client_secret: {
-      doc: 'OpenID client secret.',
-      format: String,
-      default: '',
-      env: 'ACTUAL_OPENID_CLIENT_SECRET',
-    },
-    server_hostname: {
-      doc: 'OpenID server hostname.',
-      format: String,
-      default: '',
-      env: 'ACTUAL_OPENID_SERVER_HOSTNAME',
-    },
-    authMethod: {
-      doc: 'OpenID authentication method.',
-      format: ['openid', 'oauth2'],
-      default: 'openid',
-      env: 'ACTUAL_OPENID_AUTH_METHOD',
-    },
-  },
-
   token_expiration: {
     doc: 'Token expiration time.',
     format: 'tokenExpiration',
     default: 'never',
     env: 'ACTUAL_TOKEN_EXPIRATION',
-  },
-
-  enforceOpenId: {
-    doc: 'Enforce OpenID authentication.',
-    format: Boolean,
-    default: false,
-    env: 'ACTUAL_OPENID_ENFORCE',
-  },
-
-  userCreationMode: {
-    doc: 'Determines how users can be created.',
-    format: ['manual', 'login'],
-    default: 'manual',
-    env: 'ACTUAL_USER_CREATION_MODE',
   },
 
   github: {
@@ -325,7 +248,6 @@ if (fs.existsSync(configPath)) {
 // `<VAR>_FILE` is applied after loadFile so it beats both config.json and the
 // plain environment variable, and before validate so the value is checked.
 for (const [fileEnvVar, settingPath] of [
-  ['ACTUAL_OPENID_CLIENT_SECRET_FILE', 'openId.client_secret'],
   ['ACTUAL_GITHUB_TOKEN_FILE', 'github.token'],
 ]) {
   if (applyFileEnv(configSchema, fileEnvVar, settingPath)) {

@@ -65,12 +65,6 @@ describe('tokenExpiration format', () => {
     testSchema.load({});
     expect(() => testSchema.validate()).not.toThrow();
     expect(testSchema.get('token_expiration')).toBe('never');
-
-    // Test 'openid-provider' value
-    process.env.TEST_TOKEN_EXPIRATION = 'openid-provider';
-    testSchema.load({});
-    expect(() => testSchema.validate()).not.toThrow();
-    expect(testSchema.get('token_expiration')).toBe('openid-provider');
   });
 
   it('should accept numeric values directly', () => {
@@ -113,29 +107,26 @@ describe('tokenExpiration format', () => {
 
 describe('config schema', () => {
   it('should parse nested object from environment variables correctly', () => {
-    const authorizationEndpoint =
-      'https://testprovider.com/.well-known/openid-configuration';
-    process.env.TEST_OPENID_AUTHORIZATION_ENDPOINT = authorizationEndpoint;
+    const certPath = '/etc/ssl/certs/actual.pem';
+    process.env.TEST_HTTPS_CERT = certPath;
 
     const testSchema = convict({
-      openId: {
-        doc: 'OpenID authentication settings.',
+      https: {
+        doc: 'HTTPS configuration.',
 
-        issuer: {
-          doc: 'OpenID issuer',
+        tls: {
+          doc: 'TLS settings',
 
-          authorization_endpoint: {
-            doc: 'Authorization endpoint',
+          cert: {
+            doc: 'HTTPS Certificate',
             default: '',
             format: String,
-            env: 'TEST_OPENID_AUTHORIZATION_ENDPOINT',
+            env: 'TEST_HTTPS_CERT',
           },
         },
       },
     });
     expect(() => testSchema.validate()).not.toThrow();
-    expect(testSchema.get('openId.issuer.authorization_endpoint')).toBe(
-      authorizationEndpoint,
-    );
+    expect(testSchema.get('https.tls.cert')).toBe(certPath);
   });
 });

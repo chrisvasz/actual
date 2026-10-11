@@ -6,11 +6,8 @@ import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 
-import { bootstrap } from './account-db';
 import * as accountApp from './app-account';
-import * as adminApp from './app-admin';
 import * as corsApp from './app-cors-proxy';
-import * as openidApp from './app-openid';
 import * as syncApp from './app-sync';
 import { config } from './load-config';
 
@@ -56,9 +53,6 @@ app.use('/account', accountApp.handlers);
 if (config.get('corsProxy.enabled')) {
   app.use('/cors-proxy', corsApp.handlers);
 }
-
-app.use('/admin', adminApp.handlers);
-app.use('/openid', openidApp.handlers);
 
 app.get('/mode', (req, res) => {
   res.send(config.get('mode'));
@@ -181,24 +175,6 @@ export async function run() {
   const portVal = config.get('port');
   const port = typeof portVal === 'string' ? parseInt(portVal) : portVal;
   const hostname = config.get('hostname');
-  const openIdConfig = config?.getProperties()?.openId;
-  if (
-    openIdConfig?.discoveryURL ||
-    openIdConfig?.issuer?.authorization_endpoint
-  ) {
-    console.log('OpenID configuration found. Preparing server to use it');
-    try {
-      const result = await bootstrap({ openId: openIdConfig }, true);
-      if ('error' in result && result.error) {
-        console.log(result.error);
-      } else {
-        console.log('OpenID configured!');
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
   if (config.get('https.key') && config.get('https.cert')) {
     const https = await import('node:https');
     const httpsOptions = {

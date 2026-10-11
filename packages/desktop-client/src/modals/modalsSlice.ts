@@ -6,13 +6,10 @@ import type {
   CategoryEntity,
   CategoryGroupEntity,
   NewRuleEntity,
-  NewUserEntity,
   NoteEntity,
   RuleEntity,
   ScheduleEntity,
   TransactionEntity,
-  UserAccessEntity,
-  UserEntity,
 } from '@actual-app/core/types/models';
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
@@ -475,38 +472,6 @@ export type Modal =
       name: 'copy-widget-to-dashboard';
       options: {
         onSelect: (dashboardId: string) => void;
-      };
-    }
-  | {
-      name: 'edit-user';
-      options: {
-        user: UserEntity | NewUserEntity;
-        onSave: (user: UserEntity) => void;
-      };
-    }
-  | {
-      name: 'edit-access';
-      options: {
-        access: UserAccessEntity;
-        onSave: (userAccess: UserAccessEntity) => void;
-      };
-    }
-  | {
-      name: 'transfer-ownership';
-      options: {
-        onSave: () => void;
-      };
-    }
-  | {
-      name: 'enable-openid';
-      options: {
-        onSave?: () => void;
-      };
-    }
-  | {
-      name: 'enable-password-auth';
-      options: {
-        onSave?: () => void;
       };
     }
   | {

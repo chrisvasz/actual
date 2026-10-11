@@ -1,4 +1,3 @@
-import { isAdmin } from '#account-db';
 import { FileNotFound, GenericFileError } from '#app-sync/errors';
 import type { WrappedDatabase } from '#db';
 import { isValidFileId, isValidGroupId } from '#util/paths';
@@ -13,7 +12,6 @@ class FileBase {
   encryptMeta: string | null | undefined;
   syncVersion: string | null | undefined;
   deleted: boolean;
-  owner: string | null | undefined;
 
   constructor(
     name: string | null | undefined,
@@ -24,7 +22,6 @@ class FileBase {
     encryptMeta: string | null | undefined,
     syncVersion: string | null | undefined,
     deleted: number | boolean | undefined,
-    owner: string | null | undefined,
   ) {
     this.name = name;
     this.groupId = groupId;
@@ -34,7 +31,6 @@ class FileBase {
     this.encryptMeta = encryptMeta;
     this.syncVersion = syncVersion;
     this.deleted = typeof deleted === 'boolean' ? deleted : Boolean(deleted);
-    this.owner = owner;
   }
 }
 
@@ -48,7 +44,6 @@ type FileConstructorArgs = {
   encryptMeta: string | null;
   syncVersion: string | null;
   deleted?: number | boolean;
-  owner: string | null;
 };
 
 class File extends FileBase {
@@ -64,7 +59,6 @@ class File extends FileBase {
     encryptMeta = null,
     syncVersion = null,
     deleted = false,
-    owner = null,
   }: FileConstructorArgs) {
     super(
       name,
@@ -75,7 +69,6 @@ class File extends FileBase {
       encryptMeta,
       syncVersion,
       deleted,
-      owner,
     );
     this.id = id;
   }
@@ -96,7 +89,6 @@ class FileUpdate extends FileBase {
     encryptMeta,
     syncVersion,
     deleted,
-    owner,
   }: Partial<FileConstructorArgs>) {
     super(
       name,
@@ -107,7 +99,6 @@ class FileUpdate extends FileBase {
       encryptMeta,
       syncVersion,
       deleted,
-      owner,
     );
   }
 }
@@ -126,7 +117,6 @@ type RawFile = {
   encrypt_test: string | null;
   encrypt_keyid: string | null;
   deleted: number;
-  owner: string | null;
 };
 
 class FilesService {
@@ -148,7 +138,7 @@ class FilesService {
   set(file: File) {
     const deletedInt = boolToInt(file.deleted);
     this.accountDb.mutate(
-      'INSERT INTO files (id, group_id, sync_version, name, encrypt_meta, encrypt_salt, encrypt_test, encrypt_keyid, deleted, owner) VALUES (?, ?, ?, ?, ?, ?, ?, ? ,?, ?)',
+      'INSERT INTO files (id, group_id, sync_version, name, encrypt_meta, encrypt_salt, encrypt_test, encrypt_keyid, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         file.id,
         file.groupId,
@@ -159,53 +149,14 @@ class FilesService {
         file.encryptTest,
         file.encryptKeyId,
         deletedInt,
-        file.owner,
       ],
     );
   }
 
-  find({ userId, limit = 1000 }: { userId: string; limit?: number }) {
-    const canSeeAll = isAdmin(userId);
-
-    return (
-      canSeeAll
-        ? this.accountDb.all('SELECT * FROM files WHERE deleted = 0 LIMIT ?', [
-            limit,
-          ])
-        : this.accountDb.all(
-            `SELECT files.*
-        FROM files
-        WHERE files.owner = ? and deleted = 0
-      UNION
-       SELECT files.*
-        FROM files
-        JOIN user_access
-          ON user_access.file_id = files.id
-          AND user_access.user_id = ?
-       WHERE files.deleted = 0 LIMIT ?`,
-            [userId, userId, limit],
-          )
-    ).map((item: RawFile) => this.validate(item));
-  }
-
-  findUsersWithAccess(fileId: FileId) {
-    const userAccess =
-      this.accountDb.all(
-        `SELECT UA.user_id as userId, users.display_name displayName, users.user_name userName
-              FROM files
-                JOIN user_access UA ON UA.file_id = files.id
-                JOIN users on users.id = UA.user_id
-              WHERE files.id = ?
-          UNION ALL
-        SELECT users.id, users.display_name, users.user_name
-              FROM files
-                JOIN users on users.id = files.owner
-              WHERE files.id = ?
-          `,
-        [fileId, fileId],
-      ) || [];
-
-    return userAccess;
+  find({ limit = 1000 }: { limit?: number } = {}) {
+    return this.accountDb
+      .all('SELECT * FROM files WHERE deleted = 0 LIMIT ?', [limit])
+      .map((item: RawFile) => this.validate(item));
   }
 
   update(id: FileId, fileUpdate: Partial<File>) {
@@ -295,7 +246,6 @@ class FilesService {
       encryptMeta: rawFile.encrypt_meta,
       syncVersion: rawFile.sync_version,
       deleted: Boolean(rawFile.deleted),
-      owner: rawFile.owner,
     });
   }
 }

@@ -45,14 +45,6 @@ export default defineConfig({
           __dirname,
           'src/scripts/reset-password.js',
         ),
-        'scripts/disable-openid': path.resolve(
-          __dirname,
-          'src/scripts/disable-openid.js',
-        ),
-        'scripts/enable-openid': path.resolve(
-          __dirname,
-          'src/scripts/enable-openid.js',
-        ),
         'scripts/health-check': path.resolve(
           __dirname,
           'src/scripts/health-check.ts',

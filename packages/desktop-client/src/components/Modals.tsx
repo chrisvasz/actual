@@ -28,10 +28,8 @@ import { CopyWidgetToDashboardModal } from './modals/CopyWidgetToDashboardModal'
 import { CoverModal } from './modals/CoverModal';
 import { CreateEncryptionKeyModal } from './modals/CreateEncryptionKeyModal';
 import { CreateLocalAccountModal } from './modals/CreateLocalAccountModal';
-import { EditUserAccess } from './modals/EditAccess';
 import { EditFieldModal } from './modals/EditFieldModal';
 import { EditRuleModal } from './modals/EditRuleModal';
-import { EditUserFinanceApp } from './modals/EditUser';
 import { EnvelopeBalanceMenuModal } from './modals/EnvelopeBalanceMenuModal';
 import { EnvelopeBudgetMenuModal } from './modals/EnvelopeBudgetMenuModal';
 import { EnvelopeBudgetMonthMenuModal } from './modals/EnvelopeBudgetMonthMenuModal';
@@ -54,14 +52,11 @@ import { MergeUnusedPayeesModal } from './modals/MergeUnusedPayeesModal';
 import { NewCategoryGroupModal } from './modals/NewCategoryGroupModal';
 import { NewCategoryModal } from './modals/NewCategoryModal';
 import { NotesModal } from './modals/NotesModal';
-import { OpenIDEnableModal } from './modals/OpenIDEnableModal';
 import { OutOfSyncMigrationsModal } from './modals/OutOfSyncMigrationsModal';
-import { PasswordEnableModal } from './modals/PasswordEnableModal';
 import { PayeeAutocompleteModal } from './modals/PayeeAutocompleteModal';
 import { ScheduledTransactionMenuModal } from './modals/ScheduledTransactionMenuModal';
 import { TransactionTableColumnsModal } from './modals/TransactionTableColumnsModal';
 import { TransferModal } from './modals/TransferModal';
-import { TransferOwnership } from './modals/TransferOwnership';
 import { CategoryLearning } from './payees/CategoryLearning';
 import { DiscoverSchedules } from './schedules/DiscoverSchedules';
 import { PostsOfflineNotification } from './schedules/PostsOfflineNotification';
@@ -302,21 +297,6 @@ export function Modals() {
 
         case 'out-of-sync-migrations':
           return <OutOfSyncMigrationsModal key={key} />;
-
-        case 'edit-access':
-          return <EditUserAccess key={key} {...modal.options} />;
-
-        case 'edit-user':
-          return <EditUserFinanceApp key={key} {...modal.options} />;
-
-        case 'transfer-ownership':
-          return <TransferOwnership key={key} {...modal.options} />;
-
-        case 'enable-openid':
-          return <OpenIDEnableModal key={key} {...modal.options} />;
-
-        case 'enable-password-auth':
-          return <PasswordEnableModal key={key} {...modal.options} />;
 
         default:
           throw new Error('Unknown modal');

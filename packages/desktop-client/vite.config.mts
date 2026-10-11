@@ -386,8 +386,6 @@ export default defineConfig(async ({ mode, command }) => {
           maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
           navigateFallbackDenylist: [
             /^\/account\/.*$/,
-            /^\/admin\/.*$/,
-            /^\/openid\/.*$/,
             /^\/plugins\/.*$/,
             /^\/kcab\/.*$/,
             /^\/plugin-data\/.*$/,

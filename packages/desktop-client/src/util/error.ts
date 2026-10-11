@@ -140,45 +140,11 @@ export function getSyncError(error: string, id: string) {
   }
 }
 
-export function getUserAccessErrors(reason: string) {
-  switch (reason) {
-    case 'unauthorized':
-      return 'You are not logged in.';
-    case 'token-expired':
-      return 'Login expired, please log in again.';
-    case 'user-cant-be-empty':
-      return 'Please select a user.';
-    case 'invalid-file-id':
-      return 'This file is invalid.';
-    case 'file-denied':
-      return 'You don`t have permissions over this file.';
-    case 'user-already-have-access':
-      return 'User already has access.';
-    default:
-      return `An internal error occurred, sorry! Visit https://actualbudget.org/contact/ for support. (ref: ${reason})`;
-  }
-}
-
 export function getSecretsError(error: string, reason: string) {
   switch (reason) {
     case 'unauthorized':
       return 'You are not logged in.';
-    case 'not-admin':
-      return 'You have to be admin to set secrets';
     default:
       return `An error occurred while setting the secret. Please try again. (ref: ${error})`;
-  }
-}
-
-export function getOpenIdErrors(reason: string) {
-  switch (reason) {
-    case 'unauthorized':
-      return 'You are not logged in.';
-    case 'configuration-error':
-      return 'This configuration is not valid. Please check it again.';
-    case 'unable-to-change-file-config-enabled':
-      return 'Unable to enable OpenID. Please update the config.json file in this case.';
-    default:
-      return `An internal error occurred, sorry! Visit https://actualbudget.org/contact/ for support. (ref: ${reason})`;
   }
 }

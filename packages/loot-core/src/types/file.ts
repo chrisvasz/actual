@@ -1,5 +1,3 @@
-import type { UsersWithAccess } from '#server/cloud-storage';
-
 import type { Budget } from './budget';
 
 export type FileState =
@@ -20,7 +18,6 @@ export type SyncableLocalFile = Budget & {
   groupId: string;
   state: 'broken' | 'unknown';
   hasKey: boolean;
-  owner: string;
 };
 
 export type SyncedLocalFile = Budget & {
@@ -29,8 +26,6 @@ export type SyncedLocalFile = Budget & {
   encryptKeyId?: string;
   hasKey: boolean;
   state: 'synced' | 'detached';
-  owner: string;
-  usersWithAccess: UsersWithAccess[];
 };
 
 export type RemoteFile = {
@@ -40,8 +35,6 @@ export type RemoteFile = {
   encryptKeyId?: string;
   hasKey: boolean;
   state: 'remote';
-  owner: string;
-  usersWithAccess: UsersWithAccess[];
 };
 
 export type File = LocalFile | SyncableLocalFile | SyncedLocalFile | RemoteFile;
