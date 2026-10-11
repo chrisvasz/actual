@@ -18,7 +18,6 @@ type BudgetType<SheetName extends SheetNames> = Record<
 const accountParametrizedField = parametrizedField<'account'>();
 const categoryParametrizedField = parametrizedField<'category'>();
 const envelopeParametrizedField = parametrizedField<'envelope-budget'>();
-const trackingParametrizedField = parametrizedField<'tracking-budget'>();
 
 export function accountBalance(accountId: AccountEntity['id']) {
   return {
@@ -248,25 +247,3 @@ export const envelopeBudget = {
   catBalance: envelopeParametrizedField('leftover'),
   catCarryover: envelopeParametrizedField('carryover'),
 } satisfies BudgetType<'envelope-budget'>;
-
-export const trackingBudget = {
-  totalBudgetedExpense: 'total-budgeted',
-  totalBudgetedIncome: 'total-budget-income',
-  totalBudgetedSaved: 'total-saved',
-
-  totalIncome: 'total-income',
-  totalSpent: 'total-spent',
-  totalSaved: 'real-saved',
-
-  totalLeftover: 'total-leftover',
-  groupSumAmount: trackingParametrizedField('group-sum-amount'),
-  groupIncomeReceived: 'total-income',
-
-  groupBudgeted: trackingParametrizedField('group-budget'),
-  groupBalance: trackingParametrizedField('group-leftover'),
-
-  catBudgeted: trackingParametrizedField('budget'),
-  catSumAmount: trackingParametrizedField('sum-amount'),
-  catBalance: trackingParametrizedField('leftover'),
-  catCarryover: trackingParametrizedField('carryover'),
-} satisfies BudgetType<'tracking-budget'>;

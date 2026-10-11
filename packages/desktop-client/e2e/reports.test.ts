@@ -98,26 +98,6 @@ test.describe('Reports', () => {
 
       await expect(page).toMatchThemeScreenshots();
     });
-
-    test('loads tracking budget forecast report', async () => {
-      const settingsPage = await navigation.goToSettingsPage();
-      await settingsPage.useBudgetType('Tracking');
-
-      const budgetPage = await navigation.goToBudgetPage();
-      await budgetPage.goToNextMonth();
-      await budgetPage.setBudgetedAmount('Food', '1200', 0);
-      await budgetPage.goToNextMonth();
-      await budgetPage.setBudgetedAmount('Food', '1200', 0);
-      await budgetPage.goToNextMonth();
-      await budgetPage.setBudgetedAmount('Food', '1200', 0);
-
-      reportsPage = await navigation.goToReportsPage();
-      await reportsPage.waitToLoad();
-      await reportsPage.goToBalanceForecastPage();
-      await reportsPage.selectForecastSource('Tracking budget');
-
-      await expect(page).toMatchThemeScreenshots();
-    });
   });
 
   test.describe('custom reports', () => {

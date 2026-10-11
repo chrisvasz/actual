@@ -8,7 +8,6 @@ import { theme } from '@actual-app/components/theme';
 import { useModalState } from '#hooks/useModalState';
 import { useNavigate } from '#hooks/useNavigate';
 import { useReducedMotion } from '#hooks/useReducedMotion';
-import { useSyncedPref } from '#hooks/useSyncedPref';
 
 import { ADD_ACCOUNT_STEP_ID, getTourSteps } from './steps';
 import { useTour } from './TourContext';
@@ -28,13 +27,9 @@ export function TourHost({ tourId }: TourHostProps) {
   const { activeModal, modalStack } = useModalState();
   const reducedMotion = useReducedMotion();
   const navigate = useNavigate();
-  const [budgetTypePref] = useSyncedPref('budgetType');
   const pausedAtIndexRef = useRef<number | null>(null);
 
-  const steps = getTourSteps(tourId, {
-    navigate,
-    budgetType: budgetTypePref === 'tracking' ? 'tracking' : 'envelope',
-  });
+  const steps = getTourSteps(tourId, { navigate });
 
   const handleEvent = (data: EventData, controls: Controls) => {
     if (data.type === 'error:target_not_found') {

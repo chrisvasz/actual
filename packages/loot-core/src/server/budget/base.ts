@@ -10,12 +10,6 @@ import type { CategoryGroupEntity } from '#types/models';
 
 import * as budgetActions from './actions';
 import * as envelopeBudget from './envelope';
-import * as trackingBudget from './tracking';
-
-export function getBudgetType() {
-  const meta = sheet.get().meta();
-  return meta.budgetType || 'envelope';
-}
 
 export function getBudgetRange(start: string, end: string) {
   start = monthUtils.getMonth(start);
@@ -89,11 +83,7 @@ export function createCategory(cat, sheetName, prevSheetName, start, end) {
     },
   });
 
-  if (getBudgetType() === 'envelope') {
-    envelopeBudget.createCategory(cat, sheetName, prevSheetName);
-  } else {
-    void trackingBudget.createCategory(cat, sheetName, prevSheetName);
-  }
+  envelopeBudget.createCategory(cat, sheetName, prevSheetName);
 }
 
 function handleAccountChange(months, oldValue, newValue) {
@@ -175,7 +165,6 @@ function handleBudgetChange(budget) {
 
 export function triggerBudgetChanges(oldValues, newValues) {
   const { createdMonths = new Set() } = sheet.get().meta();
-  const budgetType = getBudgetType();
   sheet.startTransaction();
 
   try {
@@ -187,7 +176,7 @@ export function triggerBudgetChanges(oldValues, newValues) {
 
         if (table === 'zero_budget_months') {
           handleBudgetMonthChange(newValue);
-        } else if (table === 'zero_budgets' || table === 'reflect_budgets') {
+        } else if (table === 'zero_budgets') {
           handleBudgetChange(newValue);
         } else if (table === 'transactions') {
           const changed = new Set(
@@ -201,33 +190,17 @@ export function triggerBudgetChanges(oldValues, newValues) {
         } else if (table === 'category_mapping') {
           handleCategoryMappingChange(createdMonths, oldValue, newValue);
         } else if (table === 'categories') {
-          if (budgetType === 'envelope') {
-            envelopeBudget.handleCategoryChange(
-              createdMonths,
-              oldValue,
-              newValue,
-            );
-          } else {
-            trackingBudget.handleCategoryChange(
-              createdMonths,
-              oldValue,
-              newValue,
-            );
-          }
+          envelopeBudget.handleCategoryChange(
+            createdMonths,
+            oldValue,
+            newValue,
+          );
         } else if (table === 'category_groups') {
-          if (budgetType === 'envelope') {
-            envelopeBudget.handleCategoryGroupChange(
-              createdMonths,
-              oldValue,
-              newValue,
-            );
-          } else {
-            trackingBudget.handleCategoryGroupChange(
-              createdMonths,
-              oldValue,
-              newValue,
-            );
-          }
+          envelopeBudget.handleCategoryGroupChange(
+            createdMonths,
+            oldValue,
+            newValue,
+          );
         } else if (table === 'accounts') {
           handleAccountChange(createdMonths, oldValue, newValue);
         }
@@ -271,11 +244,7 @@ export async function createBudget(months) {
   const meta = sheet.get().meta();
   meta.createdMonths = meta.createdMonths || new Set();
 
-  const budgetType = getBudgetType();
-
-  if (budgetType === 'envelope') {
-    envelopeBudget.createBudget(meta, categories, months);
-  }
+  envelopeBudget.createBudget(meta, categories, months);
 
   // Only months that don't already exist need to be created and seeded.
   const monthsToCreate = months.filter(month => !meta.createdMonths.has(month));
@@ -328,23 +297,10 @@ export async function createBudget(months) {
       createCategory(cat, sheetName, prevSheetName, start, end);
     });
     groups.forEach(group => {
-      if (budgetType === 'envelope') {
-        envelopeBudget.createCategoryGroup(group, sheetName);
-      } else {
-        trackingBudget.createCategoryGroup(group, sheetName);
-      }
+      envelopeBudget.createCategoryGroup(group, sheetName);
     });
 
-    if (budgetType === 'envelope') {
-      envelopeBudget.createSummary(
-        groups,
-        categories,
-        prevSheetName,
-        sheetName,
-      );
-    } else {
-      trackingBudget.createSummary(groups, sheetName);
-    }
+    envelopeBudget.createSummary(groups, categories, prevSheetName, sheetName);
 
     meta.createdMonths.add(month);
   });
@@ -382,30 +338,4 @@ export async function createAllBudgets() {
   }
 
   return { start, end };
-}
-
-export async function setType(type) {
-  const meta = sheet.get().meta();
-  if (type === meta.budgetType) {
-    return;
-  }
-
-  meta.budgetType = type;
-  meta.createdMonths = new Set();
-
-  // Go through and force all the cells to be recomputed
-  const nodes = sheet.get().getNodes();
-  db.transaction(() => {
-    for (const name of nodes.keys()) {
-      const [sheetName, cellName] = name.split('!');
-      if (sheetName.match(/^budget\d+/)) {
-        sheet.get().deleteCell(sheetName, cellName);
-      }
-    }
-  });
-
-  void sheet.loadUserBudgets(db);
-  const bounds = await createAllBudgets();
-
-  return bounds;
 }

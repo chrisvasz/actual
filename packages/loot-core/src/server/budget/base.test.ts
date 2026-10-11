@@ -65,174 +65,8 @@ describe('Base budget', () => {
     ).toBe(-5000);
   });
 
-  it('Excludes hidden categories from group totals in Tracking Budget', async () => {
-    await sheet.loadSpreadsheet(db);
-    sheet.get().meta().budgetType = 'tracking';
-
-    // Create a group with multiple categories
-    await db.insertCategoryGroup({ id: 'group1', name: 'Test Group' });
-    await db.insertCategoryGroup({
-      id: 'group2',
-      name: 'Income',
-      is_income: 1,
-    });
-
-    const visibleCatId = await db.insertCategory({
-      name: 'Visible Category',
-      cat_group: 'group1',
-    });
-
-    const hiddenCatId = await db.insertCategory({
-      name: 'Hidden Category',
-      cat_group: 'group1',
-      hidden: 1,
-    });
-
-    await createAllBudgets();
-    const month = '2017-01';
-    const sheetName = monthUtils.sheetForMonth(month);
-
-    await db.insertAccount({ id: 'account1', name: 'Account 1' });
-
-    await db.insertTransaction({
-      date: '2017-01-15',
-      amount: -1000,
-      account: 'account1',
-      category: visibleCatId,
-    });
-
-    await db.insertTransaction({
-      date: '2017-01-15',
-      amount: -2000,
-      account: 'account1',
-      category: hiddenCatId,
-    });
-
-    await sheet.waitOnSpreadsheet();
-
-    // Verify individual category amounts
-    expect(sheet.getCellValue(sheetName, `sum-amount-${visibleCatId}`)).toBe(
-      -1000,
-    );
-
-    expect(sheet.getCellValue(sheetName, `sum-amount-${hiddenCatId}`)).toBe(
-      -2000,
-    );
-
-    // Verify group total only includes visible category
-    expect(sheet.getCellValue(sheetName, `group-sum-amount-group1`)).toBe(
-      -1000,
-    );
-
-    // Now toggle hidden status of the hidden category to make it visible
-    await db.updateCategory({
-      id: hiddenCatId,
-      name: 'Hidden Category',
-      cat_group: 'group1',
-      is_income: 0,
-      hidden: 0,
-    });
-
-    await sheet.waitOnSpreadsheet();
-
-    // After making hidden category visible, group total should include both
-    expect(sheet.getCellValue(sheetName, `group-sum-amount-group1`)).toBe(
-      -3000,
-    );
-  });
-
-  it('Excludes hidden category groups from budget totals in Tracking Budget', async () => {
-    await sheet.loadSpreadsheet(db);
-    sheet.get().meta().budgetType = 'tracking';
-
-    // Create two expense groups - one visible, one hidden
-    await db.insertCategoryGroup({
-      id: 'visible-group',
-      name: 'Visible Group',
-    });
-    await db.insertCategoryGroup({
-      id: 'hidden-group',
-      name: 'Hidden Group',
-      hidden: 1,
-    });
-
-    await db.insertCategoryGroup({
-      id: 'income-group',
-      name: 'Income',
-      is_income: 1,
-    });
-
-    const visibleGroupCatId = await db.insertCategory({
-      name: 'Visible Group Category',
-      cat_group: 'visible-group',
-    });
-
-    const hiddenGroupCatId = await db.insertCategory({
-      name: 'Hidden Group Category',
-      cat_group: 'hidden-group',
-    });
-
-    await createAllBudgets();
-    const month = '2017-01';
-    const sheetName = monthUtils.sheetForMonth(month);
-
-    await db.insertAccount({ id: 'account1', name: 'Account 1' });
-
-    await db.insertTransaction({
-      date: '2017-01-15',
-      amount: -1000,
-      account: 'account1',
-      category: visibleGroupCatId,
-    });
-
-    await db.insertTransaction({
-      date: '2017-01-15',
-      amount: -2000,
-      account: 'account1',
-      category: hiddenGroupCatId,
-    });
-
-    await sheet.waitOnSpreadsheet();
-
-    // Verify individual amounts
-    expect(
-      sheet.getCellValue(sheetName, `sum-amount-${visibleGroupCatId}`),
-    ).toBe(-1000);
-
-    expect(
-      sheet.getCellValue(sheetName, `sum-amount-${hiddenGroupCatId}`),
-    ).toBe(-2000);
-
-    expect(
-      sheet.getCellValue(sheetName, `group-sum-amount-visible-group`),
-    ).toBe(-1000);
-
-    expect(sheet.getCellValue(sheetName, `group-sum-amount-hidden-group`)).toBe(
-      -2000,
-    );
-
-    // Verify total spent only includes visible group
-    expect(sheet.getCellValue(sheetName, 'total-spent')).toBe(-1000);
-
-    // Now toggle hidden status of the hidden group to make it visible
-    await db.updateCategoryGroup({
-      id: 'hidden-group',
-      name: 'Hidden Group',
-      is_income: 0,
-      hidden: 0,
-    });
-
-    await sheet.waitOnSpreadsheet();
-
-    // After making hidden group visible, total should include both
-    expect(sheet.getCellValue(sheetName, 'total-spent')).toBe(-3000);
-  });
-
   it('Includes hidden categories in group totals for Envelope Budget', async () => {
     await sheet.loadSpreadsheet(db);
-    // Envelope is the default, but explicit for clarity
-    sheet.get().meta().budgetType = 'envelope';
-
     // Create a group with multiple categories
     await db.insertCategoryGroup({ id: 'group1', name: 'Test Group' });
     await db.insertCategoryGroup({
@@ -282,9 +116,6 @@ describe('Base budget', () => {
 
   it('Includes hidden category groups in budget totals for Envelope Budget', async () => {
     await sheet.loadSpreadsheet(db);
-    // Envelope is the default, but explicit for clarity
-    sheet.get().meta().budgetType = 'envelope';
-
     // Create two expense groups - one visible, one hidden
     await db.insertCategoryGroup({
       id: 'visible-group',
@@ -340,7 +171,6 @@ describe('Base budget', () => {
 
   it('Seeds sum-amount across all months when building the budget (Envelope Budget)', async () => {
     await sheet.loadSpreadsheet(db);
-    sheet.get().meta().budgetType = 'envelope';
 
     await db.insertCategoryGroup({ id: 'group1', name: 'Expenses' });
     await db.insertCategoryGroup({
@@ -415,62 +245,8 @@ describe('Base budget', () => {
     expect(sheet.getCellValue(jan, `leftover-${foodId}`)).toBe(-1500);
   });
 
-  it('Seeds sum-amount across all months when building the budget (Tracking Budget)', async () => {
-    await sheet.loadSpreadsheet(db);
-    sheet.get().meta().budgetType = 'tracking';
-
-    await db.insertCategoryGroup({ id: 'group1', name: 'Expenses' });
-    await db.insertCategoryGroup({
-      id: 'group2',
-      name: 'Income',
-      is_income: 1,
-    });
-    const foodId = await db.insertCategory({
-      name: 'Food',
-      cat_group: 'group1',
-    });
-    const rentId = await db.insertCategory({
-      name: 'Rent',
-      cat_group: 'group1',
-    });
-
-    await db.insertAccount({ id: 'account1', name: 'Account 1' });
-
-    await db.insertTransaction({
-      date: '2017-01-10',
-      amount: -1500,
-      account: 'account1',
-      category: foodId,
-    });
-    await db.insertTransaction({
-      date: '2017-01-05',
-      amount: -90000,
-      account: 'account1',
-      category: rentId,
-    });
-    await db.insertTransaction({
-      date: '2017-02-15',
-      amount: -2500,
-      account: 'account1',
-      category: foodId,
-    });
-
-    await createAllBudgets();
-    await sheet.waitOnSpreadsheet();
-
-    const jan = monthUtils.sheetForMonth('2017-01');
-    const feb = monthUtils.sheetForMonth('2017-02');
-
-    expect(sheet.getCellValue(jan, `sum-amount-${foodId}`)).toBe(-1500);
-    expect(sheet.getCellValue(jan, `sum-amount-${rentId}`)).toBe(-90000);
-    expect(sheet.getCellValue(feb, `sum-amount-${foodId}`)).toBe(-2500);
-    expect(sheet.getCellValue(jan, 'total-spent')).toBe(-91500);
-    expect(sheet.getCellValue(feb, 'total-spent')).toBe(-2500);
-  });
-
   it('Excludes off-budget account spending when seeding sum-amount', async () => {
     await sheet.loadSpreadsheet(db);
-    sheet.get().meta().budgetType = 'envelope';
 
     await db.insertCategoryGroup({ id: 'group1', name: 'Expenses' });
     await db.insertCategoryGroup({

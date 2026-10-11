@@ -28,7 +28,6 @@ import {
 } from './util';
 
 type BudgetTableProps = {
-  type: string;
   prewarmStartMonth: string;
   startMonth: string;
   numMonths: number;
@@ -56,7 +55,6 @@ type BudgetTableProps = {
 
 export function BudgetTable(props: BudgetTableProps) {
   const {
-    type,
     prewarmStartMonth,
     startMonth,
     numMonths,
@@ -172,10 +170,7 @@ export function BudgetTable(props: BudgetTableProps) {
         if ('isGroup' in next && next.isGroup) {
           nextIdx += dir;
           continue;
-        } else if (
-          type === 'tracking' ||
-          ('is_income' in next && !next.is_income)
-        ) {
+        } else if ('is_income' in next && !next.is_income) {
           onEditMonth(next.id, editing.cell);
           return;
         } else {
@@ -257,7 +252,6 @@ export function BudgetTable(props: BudgetTableProps) {
           startMonth={prewarmStartMonth}
           numMonths={numMonths}
           monthBounds={monthBounds}
-          type={type}
         >
           <BudgetSummaries />
         </MonthsProvider>
@@ -267,7 +261,6 @@ export function BudgetTable(props: BudgetTableProps) {
         startMonth={startMonth}
         numMonths={numMonths}
         monthBounds={monthBounds}
-        type={type}
       >
         <BudgetTotals
           toggleHiddenCategories={toggleHiddenCategories}

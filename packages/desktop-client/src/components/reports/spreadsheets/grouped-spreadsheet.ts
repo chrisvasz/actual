@@ -24,7 +24,6 @@ export function createGroupedSpreadsheet({
   endDate,
   interval,
   categories,
-  budgetType = 'envelope',
   conditions = [],
   conditionsOp,
   showEmpty,
@@ -66,7 +65,6 @@ export function createGroupedSpreadsheet({
       conditionsOp,
       conditionsOpKey,
       filters,
-      budgetType,
     }));
 
     if (interval === 'Weekly' && balanceTypeOp !== 'totalBudgeted') {

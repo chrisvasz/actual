@@ -4,7 +4,6 @@ import type {
   CategoryGroupEntity,
   RuleConditionEntity,
 } from '@actual-app/core/types/models';
-import type { SyncedPrefs } from '@actual-app/core/types/prefs';
 
 import type { QueryDataEntity } from '#components/reports/ReportOptions';
 import { aqlQuery } from '#queries/aqlQuery';
@@ -23,7 +22,6 @@ export async function fetchSpreadsheetQueryData({
   conditionsOp,
   conditionsOpKey,
   filters,
-  budgetType,
 }: {
   balanceTypeOp: balanceTypeOpType | undefined;
   startDate: string;
@@ -35,7 +33,6 @@ export async function fetchSpreadsheetQueryData({
   conditionsOp: string;
   conditionsOpKey: string;
   filters: unknown[];
-  budgetType?: SyncedPrefs['budgetType'];
 }): Promise<{ assets: QueryDataEntity[]; debts: QueryDataEntity[] }> {
   if (balanceTypeOp === 'totalBudgeted') {
     return fetchBudgetData({
@@ -46,7 +43,6 @@ export async function fetchSpreadsheetQueryData({
       categoryGroups,
       conditions,
       conditionsOp: conditionsOp === 'or' ? 'or' : 'and',
-      budgetType,
     });
   }
 

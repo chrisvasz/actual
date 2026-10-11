@@ -56,15 +56,12 @@ type BalanceWithCarryoverProps = Omit<
   'children' | 'binding'
 > & {
   children?: ChildrenWithClassName;
-  carryover: Binding<'envelope-budget' | 'tracking-budget', 'carryover'>;
+  carryover: Binding<'envelope-budget', 'carryover'>;
   /**
    * Expense category balance binding is `leftover`,
    * while income category balance binding is `sum-amount`.
    */
-  balance: Binding<
-    'envelope-budget' | 'tracking-budget',
-    'leftover' | 'sum-amount'
-  >;
+  balance: Binding<'envelope-budget', 'leftover' | 'sum-amount'>;
   isDisabled?: boolean;
   CarryoverIndicator?: ComponentType<CarryoverIndicatorProps>;
 };

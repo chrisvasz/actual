@@ -11,7 +11,6 @@ export const ADD_ACCOUNT_STEP_ID = 'add-account';
 
 export type TourStepDeps = {
   navigate: (to: string) => void;
-  budgetType: 'envelope' | 'tracking';
 };
 
 function getDisplayedMonths(): string[] {
@@ -64,7 +63,7 @@ function waitForElement(selector: string, timeoutMs = 4000): Promise<void> {
   });
 }
 
-function getBudgetTourSteps({ navigate, budgetType }: TourStepDeps): Step[] {
+function getBudgetTourSteps({ navigate }: TourStepDeps): Step[] {
   return [
     {
       id: 'welcome',
@@ -92,74 +91,33 @@ function getBudgetTourSteps({ navigate, budgetType }: TourStepDeps): Step[] {
         await waitForElement('[data-testid="budget-table"]');
       },
       title: <Trans>Your Budget</Trans>,
-      content:
-        budgetType === 'tracking' ? (
-          <Trans>
-            In a tracking budget, the amounts you budget are targets for your
-            income and spending rather than envelopes of money. This approach is
-            called{' '}
-            <Link
-              variant="external"
-              to="https://actualbudget.org/docs/getting-started/tracking-budget"
-            >
-              tracking budgeting
-            </Link>
-            . If you prefer, you can switch to{' '}
-            <Link
-              variant="external"
-              to="https://actualbudget.org/docs/getting-started/envelope-budgeting"
-            >
-              envelope budgeting
-            </Link>{' '}
-            in the settings.
-          </Trans>
-        ) : (
-          <Trans>
-            Categories in {{ appName: 'Actual' }} work like virtual envelopes:
-            you assign the money you already have to them, then spend from each
-            envelope. This approach is called{' '}
-            <Link
-              variant="external"
-              to="https://actualbudget.org/docs/getting-started/envelope-budgeting"
-            >
-              envelope budgeting
-            </Link>
-            . If you prefer, you can switch to{' '}
-            <Link
-              variant="external"
-              to="https://actualbudget.org/docs/getting-started/tracking-budget"
-            >
-              tracking budgeting
-            </Link>{' '}
-            in the settings.
-          </Trans>
-        ),
+      content: (
+        <Trans>
+          Categories in {{ appName: 'Actual' }} work like virtual envelopes: you
+          assign the money you already have to them, then spend from each
+          envelope. This approach is called{' '}
+          <Link
+            variant="external"
+            to="https://actualbudget.org/docs/getting-started/envelope-budgeting"
+          >
+            envelope budgeting
+          </Link>
+          .
+        </Trans>
+      ),
     },
     {
-      ...(budgetType === 'tracking'
-        ? {
-            title: <Trans>Saved This Month</Trans>,
-            content: (
-              <Trans>
-                This summary compares your income and expenses to show how much
-                you saved this month. Rather than rolling funds over, a tracking
-                budget plans each month on its own.
-              </Trans>
-            ),
-          }
-        : {
-            title: <Trans>To Budget</Trans>,
-            content: (
-              <Trans>
-                The <strong>To Budget</strong> amount shows the money you have
-                not assigned to a category yet. Aim to bring it to zero, so that
-                all of your money has a job.
-              </Trans>
-            ),
-          }),
       id: 'budget-summary',
       target: findBudgetSummary,
       placement: 'bottom',
+      title: <Trans>To Budget</Trans>,
+      content: (
+        <Trans>
+          The <strong>To Budget</strong> amount shows the money you have not
+          assigned to a category yet. Aim to bring it to zero, so that all of
+          your money has a job.
+        </Trans>
+      ),
     },
     {
       id: 'category',

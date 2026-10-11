@@ -29,7 +29,6 @@ type createSpendingSpreadsheetProps = {
   compare?: string;
   compareTo?: string;
   averageRange?: SpendingAverageRange;
-  budgetType?: 'envelope' | 'tracking';
 };
 
 export function getSpendingBudgetFilters({
@@ -73,7 +72,6 @@ export function createSpendingSpreadsheet({
   compare,
   compareTo,
   averageRange,
-  budgetType = 'envelope',
 }: createSpendingSpreadsheetProps) {
   const compareMonth = compare ?? monthUtils.currentMonth();
   const compareToMonth = compareTo ?? monthUtils.subMonths(compareMonth, 1);
@@ -192,8 +190,6 @@ export function createSpendingSpreadsheet({
       });
 
     const budgetMonth = parseInt(compareMonth.replace('-', ''));
-    const budgetTable =
-      budgetType === 'tracking' ? 'reflect_budgets' : 'zero_budgets';
     const hasBudgetConditions = conditions.some(
       cond =>
         !cond.customName &&
@@ -211,7 +207,7 @@ export function createSpendingSpreadsheet({
       : [];
     const [budgets] = await Promise.all([
       aqlQuery(
-        q(budgetTable)
+        q('zero_budgets')
           .filter({
             $and: [{ month: { $eq: budgetMonth } }, ...budgetFilters],
           })

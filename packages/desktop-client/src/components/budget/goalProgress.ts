@@ -74,8 +74,8 @@ export function useGoalTargets({
 }: {
   category: CategoryEntity;
   month: string;
-  balance: Binding<'envelope-budget' | 'tracking-budget', 'leftover'>;
-  budgeted: Binding<'envelope-budget' | 'tracking-budget', 'budget'>;
+  balance: Binding<'envelope-budget', 'leftover'>;
+  budgeted: Binding<'envelope-budget', 'budget'>;
 }): GoalTargets {
   const balanceValue = useSheetValue(balance) ?? 0;
   const budgetedValue = useSheetValue(budgeted) ?? 0;
@@ -153,7 +153,7 @@ export function useBudgetCellInput({
   editing: boolean;
   target: GoalTarget | null;
   month: string;
-  budgeted: Binding<'envelope-budget' | 'tracking-budget', 'budget'>;
+  budgeted: Binding<'envelope-budget', 'budget'>;
   format: Format;
 }) {
   // The same cell in the previous month's sheet. Before the budget's first

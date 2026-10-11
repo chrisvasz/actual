@@ -22,7 +22,6 @@ import {
 import { createSpendingSpreadsheet } from '#components/reports/spreadsheets/spending-spreadsheet';
 import { useReportQuery } from '#components/reports/useReport';
 import { useFormat } from '#hooks/useFormat';
-import { useSyncedPref } from '#hooks/useSyncedPref';
 
 type SpendingCardProps = {
   widgetId: string;
@@ -39,9 +38,6 @@ export function SpendingCard({
 }: SpendingCardProps) {
   const { t } = useTranslation();
   const format = useFormat();
-  const [budgetTypePref] = useSyncedPref('budgetType');
-  const budgetType: 'envelope' | 'tracking' =
-    budgetTypePref === 'tracking' ? 'tracking' : 'envelope';
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
   const spendingReportMode = meta?.mode ?? 'single-month';
@@ -60,16 +56,8 @@ export function SpendingCard({
         compare,
         compareTo,
         averageRange,
-        budgetType,
       }),
-    [
-      meta?.conditions,
-      meta?.conditionsOp,
-      compare,
-      compareTo,
-      averageRange,
-      budgetType,
-    ],
+    [meta?.conditions, meta?.conditionsOp, compare, compareTo, averageRange],
     { name: 'spending' },
   );
   const todayDay =

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildBalanceForecastRequest } from './useBalanceForecast';
 
 describe('buildBalanceForecastRequest', () => {
-  it('keeps schedule forecast filters and account selection', () => {
+  it('keeps forecast filters and account selection', () => {
     expect(
       buildBalanceForecastRequest({
         accountIds: ['acct'],
@@ -12,7 +12,6 @@ describe('buildBalanceForecastRequest', () => {
         startDate: '2024-03-01',
         endDate: '2024-03-31',
         includeAccountlessSchedules: true,
-        source: 'schedules',
       }),
     ).toEqual({
       accountIds: ['acct'],
@@ -21,25 +20,10 @@ describe('buildBalanceForecastRequest', () => {
       startDate: '2024-03-01',
       endDate: '2024-03-31',
       includeAccountlessSchedules: true,
-      source: 'schedules',
     });
   });
 
-  it('omits tracking budget filters and account selection when undefined', () => {
-    expect(
-      buildBalanceForecastRequest({
-        startDate: '2024-03-01',
-        endDate: '2024-03-31',
-        source: 'tracking-budget',
-      }),
-    ).toEqual({
-      startDate: '2024-03-01',
-      endDate: '2024-03-31',
-      source: 'tracking-budget',
-    });
-  });
-
-  it('defaults to schedules when source is omitted', () => {
+  it('omits filters and account selection when undefined', () => {
     expect(
       buildBalanceForecastRequest({
         startDate: '2024-03-01',
@@ -48,7 +32,6 @@ describe('buildBalanceForecastRequest', () => {
     ).toEqual({
       startDate: '2024-03-01',
       endDate: '2024-03-31',
-      source: 'schedules',
     });
   });
 });

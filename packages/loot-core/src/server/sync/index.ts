@@ -11,10 +11,7 @@ import { captureException } from '#platform/exceptions';
 import * as asyncStorage from '#platform/server/asyncStorage';
 import * as connection from '#platform/server/connection';
 import { logger } from '#platform/server/log';
-import {
-  setType as setBudgetType,
-  triggerBudgetChanges,
-} from '#server/budget/base';
+import { triggerBudgetChanges } from '#server/budget/base';
 import * as db from '#server/db';
 import { PostError, SyncError } from '#server/errors';
 import { app } from '#server/main-app';
@@ -417,7 +414,6 @@ async function _applyMessages(messages: Message[], deferUnknownSchema = false) {
   }
 
   const prefsToSet: MetadataPrefs = {};
-  let budgetTypeToSet: Message['value'] | undefined;
   const deferredMessages = new Set<Message>();
   const idsPerTable: Record<string, string[]> = {};
   let oldData: DataMap = new Map();
@@ -495,15 +491,6 @@ async function _applyMessages(messages: Message[], deferUnknownSchema = false) {
             // so it knows whether they already exist in the db or not. We
             // ignore any changes to the spreadsheet.
             added.add(dataset + row);
-
-            // Special treatment for some synced prefs. Applied messages
-            // only — an old or deferred message must not flip the
-            // in-memory budget type. Remember it here and switch after
-            // the commit: switching mutates the in-memory spreadsheet,
-            // which a rollback could not undo
-            if (dataset === 'preferences' && row === 'budgetType') {
-              budgetTypeToSet = value;
-            }
           }
         } else {
           // Deferred messages must not be tracked in `added`: their
@@ -543,10 +530,6 @@ async function _applyMessages(messages: Message[], deferUnknownSchema = false) {
 
   // The transaction succeeded, so we can update in-memory objects now
   undo.appendMessages(messages, oldData);
-
-  if (budgetTypeToSet !== undefined) {
-    void setBudgetType(budgetTypeToSet);
-  }
 
   if (checkSyncingMode('enabled')) {
     // Update the in-memory clock.

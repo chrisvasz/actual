@@ -1,12 +1,10 @@
 import { send } from '@actual-app/core/platform/client/connection';
 import * as monthUtils from '@actual-app/core/shared/months';
-import type { Handlers } from '@actual-app/core/types/handlers';
 import type {
   CategoryEntity,
   CategoryGroupEntity,
   RuleConditionEntity,
 } from '@actual-app/core/types/models';
-import type { SyncedPrefs } from '@actual-app/core/types/prefs';
 
 import type { QueryDataEntity } from '#components/reports/ReportOptions';
 
@@ -185,7 +183,6 @@ export async function fetchBudgetData({
   categoryGroups,
   conditions,
   conditionsOp,
-  budgetType = 'envelope',
 }: {
   startDate: string;
   endDate: string;
@@ -194,7 +191,6 @@ export async function fetchBudgetData({
   categoryGroups: CategoryGroupEntity[];
   conditions?: RuleConditionEntity[];
   conditionsOp?: BudgetDataConditionsOp;
-  budgetType?: SyncedPrefs['budgetType'];
 }): Promise<{ assets: QueryDataEntity[]; debts: QueryDataEntity[] }> {
   const groupById = new Map(categoryGroups.map(g => [g.id, g] as const));
   const assets: QueryDataEntity[] = [];
@@ -213,17 +209,13 @@ export async function fetchBudgetData({
   );
 
   const monthFetchConcurrency = 8;
-  const endpointName: keyof Handlers =
-    budgetType === 'tracking'
-      ? 'tracking-budget-month'
-      : 'envelope-budget-month';
 
   const monthDataList = await mapWithConcurrency(
     months,
     monthFetchConcurrency,
     async month => ({
       month,
-      monthData: await send(endpointName, { month }),
+      monthData: await send('envelope-budget-month', { month }),
     }),
   );
 

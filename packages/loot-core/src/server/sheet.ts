@@ -7,12 +7,7 @@ import { sheetForMonth } from '#shared/months';
 import * as Platform from '#shared/platform';
 
 import type * as DbModule from './db';
-import type {
-  DbPreference,
-  DbReflectBudget,
-  DbZeroBudget,
-  DbZeroBudgetMonth,
-} from './db';
+import type { DbZeroBudget, DbZeroBudgetMonth } from './db';
 import { Spreadsheet } from './spreadsheet/spreadsheet';
 import { resolveName } from './spreadsheet/util';
 
@@ -97,15 +92,8 @@ export async function reloadSpreadsheet(db): Promise<Spreadsheet> {
 export async function loadUserBudgets(db: typeof DbModule): Promise<void> {
   const sheet = globalSheet;
 
-  const { value: budgetType = 'envelope' } =
-    (await db.first<Pick<DbPreference, 'value'>>(
-      'SELECT value from preferences WHERE id = ?',
-      ['budgetType'],
-    )) ?? {};
-
-  const table = budgetType === 'tracking' ? 'reflect_budgets' : 'zero_budgets';
-  const budgets = await db.all<DbReflectBudget | DbZeroBudget>(`
-      SELECT * FROM ${table} b
+  const budgets = await db.all<DbZeroBudget>(`
+      SELECT * FROM zero_budgets b
       LEFT JOIN categories c ON c.id = b.category
       WHERE c.tombstone = 0
     `);
@@ -124,15 +112,13 @@ export async function loadUserBudgets(db: typeof DbModule): Promise<void> {
     }
   }
 
-  // For zero-based budgets, load the buffered amounts
-  if (budgetType !== 'tracking') {
-    const budgetMonths = await db.all<DbZeroBudgetMonth>(
-      'SELECT * FROM zero_budget_months',
-    );
-    for (const budgetMonth of budgetMonths) {
-      const sheetName = sheetForMonth(budgetMonth.id);
-      sheet.set(`${sheetName}!buffered`, budgetMonth.buffered);
-    }
+  // Load the buffered amounts
+  const budgetMonths = await db.all<DbZeroBudgetMonth>(
+    'SELECT * FROM zero_budget_months',
+  );
+  for (const budgetMonth of budgetMonths) {
+    const sheetName = sheetForMonth(budgetMonth.id);
+    sheet.set(`${sheetName}!buffered`, budgetMonth.buffered);
   }
 
   sheet.endTransaction();

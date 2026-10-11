@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getTourSteps } from './steps';
 import type { TourStepDeps } from './steps';
 
-const deps: TourStepDeps = { navigate: vi.fn(), budgetType: 'envelope' };
+const deps: TourStepDeps = { navigate: vi.fn() };
 
 describe('getTourSteps', () => {
   it('returns a tour that starts with a centered welcome step', () => {
@@ -28,17 +28,14 @@ describe('getTourSteps', () => {
     }
   });
 
-  it.each(['envelope', 'tracking'] as const)(
-    'returns a complete tour for %s budgets',
-    budgetType => {
-      const steps = getTourSteps('budget-tour', { ...deps, budgetType });
+  it('returns a complete budget summary step', () => {
+    const steps = getTourSteps('budget-tour', deps);
 
-      const summaryStep = steps.find(step => step.id === 'budget-summary');
-      expect(summaryStep?.title).toBeTruthy();
-      expect(summaryStep?.content).toBeTruthy();
-      expect(summaryStep?.target).toBeTruthy();
-    },
-  );
+    const summaryStep = steps.find(step => step.id === 'budget-summary');
+    expect(summaryStep?.title).toBeTruthy();
+    expect(summaryStep?.content).toBeTruthy();
+    expect(summaryStep?.target).toBeTruthy();
+  });
 });
 
 // In test mode, monthUtils.currentMonth() returns '2017-01'

@@ -43,7 +43,6 @@ type DynamicBudgetTableProps = {
 } & AutoSizingBudgetTableProps;
 
 const DynamicBudgetTable = ({
-  type,
   width,
   height,
   prewarmStartMonth,
@@ -113,11 +112,7 @@ const DynamicBudgetTable = ({
       _onMonthSelect(
         monthUtils.subMonths(
           monthUtils.currentMonth(),
-          type === 'envelope'
-            ? Math.floor((numMonths - 1) / 2)
-            : numMonths === 2
-              ? 1
-              : Math.max(numMonths - 2, 0),
+          Math.floor((numMonths - 1) / 2),
         ),
       );
     },
@@ -151,7 +146,6 @@ const DynamicBudgetTable = ({
             onMonthSelect={_onMonthSelect}
           />
           <BudgetTable
-            type={type}
             prewarmStartMonth={prewarmStartMonth}
             startMonth={startMonth}
             numMonths={numMonths}

@@ -8,7 +8,6 @@ import {
   schema,
   schemaConfig,
 } from '#server/aql';
-import type { BudgetType } from '#server/prefs';
 import type { QueryState } from '#shared/query';
 
 import { Graph } from './graph-data-structure';
@@ -30,7 +29,6 @@ export type Node = {
 export class Spreadsheet {
   _meta: {
     createdMonths: Set<string>;
-    budgetType: BudgetType;
   };
   computeQueue;
   dirtyCells;
@@ -50,7 +48,6 @@ export class Spreadsheet {
     this.events = mitt();
     this._meta = {
       createdMonths: new Set(),
-      budgetType: 'envelope',
     };
   }
 

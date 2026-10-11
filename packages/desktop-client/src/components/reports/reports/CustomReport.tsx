@@ -20,7 +20,6 @@ import type {
   sortByOpType,
   TransactionEntity,
 } from '@actual-app/core/types/models';
-import type { SyncedPrefs } from '@actual-app/core/types/prefs';
 import type { TransObjectLiteral } from '@actual-app/core/types/util';
 
 import { Warning } from '#components/alerts';
@@ -119,30 +118,19 @@ const BUDGETED_SUPPORTED_CONDITION_FIELDS = new Set<
 export function CustomReport() {
   const params = useParams();
   const { data: report, isPending } = useCustomReport(params.id);
-  const [budgetType = 'envelope'] = useSyncedPref('budgetType');
 
   if (isPending) {
     return <LoadingIndicator />;
   }
 
-  return (
-    <CustomReportInner
-      key={report?.id}
-      report={report}
-      budgetType={budgetType}
-    />
-  );
+  return <CustomReportInner key={report?.id} report={report} />;
 }
 
 type CustomReportInnerProps = {
   report?: CustomReportEntity;
-  budgetType: SyncedPrefs['budgetType'];
 };
 
-function CustomReportInner({
-  report: initialReport,
-  budgetType,
-}: CustomReportInnerProps) {
+function CustomReportInner({ report: initialReport }: CustomReportInnerProps) {
   const locale = useLocale();
   const { t } = useTranslation();
   const format = useFormat();
@@ -516,7 +504,6 @@ function CustomReportInner({
       endDate,
       interval,
       categories,
-      budgetType,
       conditions,
       conditionsOp,
       showEmpty,
@@ -532,7 +519,6 @@ function CustomReportInner({
     startDate,
     endDate,
     interval,
-    budgetType,
     balanceTypeOp,
     categories,
     conditions,
@@ -552,7 +538,6 @@ function CustomReportInner({
       endDate,
       interval,
       categories,
-      budgetType,
       conditions,
       conditionsOp,
       showEmpty,
@@ -574,7 +559,6 @@ function CustomReportInner({
     endDate,
     interval,
     groupBy,
-    budgetType,
     balanceTypeOp,
     categories,
     payees,
