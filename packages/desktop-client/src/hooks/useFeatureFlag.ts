@@ -11,7 +11,6 @@ const DEFAULT_FEATURE_FLAG_STATE: Record<FeatureFlag, boolean> = {
   customThemes: false,
   budgetAnalysisReport: false,
   sankeyReport: false,
-  mobileCalculator: false,
   monteCarloReport: false,
 };
 

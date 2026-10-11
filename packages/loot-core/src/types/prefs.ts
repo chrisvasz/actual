@@ -7,7 +7,6 @@ export type FeatureFlag =
   | 'customThemes'
   | 'budgetAnalysisReport'
   | 'sankeyReport'
-  | 'mobileCalculator'
   | 'monteCarloReport';
 
 /**

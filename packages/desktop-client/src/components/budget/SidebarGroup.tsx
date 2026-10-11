@@ -8,7 +8,6 @@ import { SvgAdd, SvgExpandArrow } from '@actual-app/components/icons/v0';
 import { Menu } from '@actual-app/components/menu';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
-import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
 import type { CategoryGroupEntity } from '@actual-app/core/types/models';
 import { css, cx } from '@emotion/css';
@@ -155,23 +154,21 @@ export function SidebarGroup({
               alignItems: 'center',
             }}
           >
-            <Tooltip content={t('Add category')} disablePointerEvents>
-              <Button
-                variant="bare"
-                aria-label={t('Add category')}
-                className={cx(
-                  css({
-                    color: theme.pageTextLight,
-                  }),
-                  'hover-visible',
-                )}
-                onPress={() => {
-                  onShowNewCategory?.(group.id);
-                }}
-              >
-                <SvgAdd style={{ width: 10, height: 10, flexShrink: 0 }} />
-              </Button>
-            </Tooltip>
+            <Button
+              variant="bare"
+              aria-label={t('Add category')}
+              className={cx(
+                css({
+                  color: theme.pageTextLight,
+                }),
+                'hover-visible',
+              )}
+              onPress={() => {
+                onShowNewCategory?.(group.id);
+              }}
+            >
+              <SvgAdd style={{ width: 10, height: 10, flexShrink: 0 }} />
+            </Button>
           </View>
         </>
       )}
