@@ -45,7 +45,7 @@ function clearCategory(transaction, transferAcct) {
   return false;
 }
 
-export async function addTransfer(transaction, transferredAccount) {
+export function addTransfer(transaction, transferredAccount) {
   if (transaction.is_parent) {
     // For split transactions, we should create transfers using child transactions.
     // This is to ensure that the amounts received by the transferred account
@@ -69,7 +69,7 @@ export async function addTransfer(transaction, transferredAccount) {
     schedule: transaction.schedule,
     cleared: false,
   };
-  const { notes, cleared, schedule } = await runRules(transferTransaction);
+  const { notes, cleared, schedule } = runRules(transferTransaction);
   const matchedSchedule = schedule ?? transaction.schedule;
 
   const id = db.insertTransaction({
@@ -138,7 +138,7 @@ export function updateTransfer(transaction, transferredAccount) {
   }
 }
 
-export async function onInsert(transaction) {
+export function onInsert(transaction) {
   const transferredAccount = getTransferredAccount(transaction);
 
   if (transferredAccount) {
@@ -152,7 +152,7 @@ export function onDelete(transaction) {
   }
 }
 
-export async function onUpdate(transaction) {
+export function onUpdate(transaction) {
   const transferredAccount = getTransferredAccount(transaction);
 
   if (transaction.is_parent) {

@@ -87,7 +87,6 @@ async function saveGlobalPrefs(prefs: GlobalPrefs) {
   }
   if (prefs.language !== undefined) {
     await asyncStorage.setItem('language', prefs.language);
-    resetFormulaPreferencesCache();
   }
   if (prefs.theme !== undefined) {
     await asyncStorage.setItem('theme', prefs.theme);

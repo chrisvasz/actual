@@ -31,8 +31,8 @@ export async function mergeTransactions(
   const transferAccount = aTransferId ? a.payee : b.payee;
 
   setTransfers([a.id, b.id, aTransferId, bTransferId], null);
-  const transferId = await mergeTransfers(aTransferId, bTransferId);
-  const keptTxId = await mergeTransactionsNoTransfer(a, b);
+  const transferId = mergeTransfers(aTransferId, bTransferId);
+  const keptTxId = mergeTransactionsNoTransfer(a, b);
   if (transferId) {
     db.updateTransaction({
       id: keptTxId,
@@ -73,7 +73,7 @@ function setTransfers(
   }
 }
 
-async function mergeTransfers(
+function mergeTransfers(
   aTransferId: TransactionEntity['id'] | undefined,
   bTransferId: TransactionEntity['id'] | undefined,
 ) {
@@ -105,10 +105,10 @@ function mapAndValidateTransactions(
   return [a, b];
 }
 
-export async function mergeTransactionsNoTransfer(
+export function mergeTransactionsNoTransfer(
   a: TransactionEntity,
   b: TransactionEntity,
-): Promise<TransactionEntity['id']> {
+): TransactionEntity['id'] {
   const { keep, drop } = determineKeepDrop(a, b);
 
   // Load subtransactions with a single query, then split by parent_id in memory
@@ -184,7 +184,7 @@ export async function mergeTransactionsNoTransfer(
   const ungroupedTransactions = ungroupTransactions(transactionsToDelete);
   if (ungroupedTransactions.length > 0) {
     const { diff } = sharedDeleteTransaction(ungroupedTransactions, drop.id);
-    await batchUpdateTransactions(diff);
+    batchUpdateTransactions(diff);
   }
 
   return keep.id;

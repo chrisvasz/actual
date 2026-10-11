@@ -43,7 +43,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: 100000, // $1000.00 in cents
         date: '2024-01-01',
         imported_payee: 'Bank Transfer',
@@ -74,7 +74,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -5000, // -$50.00
         date: '2024-01-15',
         imported_payee: 'Store Purchase',
@@ -105,7 +105,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -2500,
         date: '2024-03-15',
         imported_payee: 'Shop',
@@ -139,7 +139,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -15000, // cents
         date: '2024-02-10',
         payee: payeeId,
@@ -171,7 +171,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -5000,
         date: '2024-01-20',
         imported_payee: 'DEBIT CARD PURCHASE - STORE #1234',
@@ -201,7 +201,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -2000,
         date: '2024-01-30',
         imported_payee: '  grocery shopping  ',
@@ -231,7 +231,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -8000,
         date: '2024-02-01',
         imported_payee: 'Amazon Prime Subscription',
@@ -263,7 +263,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -10000, // $100.00 in cents
         date: '2024-01-30',
         imported_payee: 'Split Payment',
@@ -292,7 +292,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -50000, // $500.00 in cents
         date: '2024-02-01',
         imported_payee: 'Fee Charge',
@@ -323,7 +323,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -4567, // $45.67 in cents
         date: '2024-02-05',
         imported_payee: 'Round Up',
@@ -355,7 +355,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: 10000, // $100.00
         date: '2024-02-10',
         imported_payee: 'Math Test',
@@ -388,7 +388,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -7500,
         date: '2024-06-15',
         imported_payee: 'Date Test',
@@ -419,7 +419,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -5000,
         date: '2024-01-01',
         imported_payee: 'Days Test',
@@ -451,7 +451,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -12000,
         date: '2024-03-15',
         imported_payee: 'Billing Cycle',
@@ -482,7 +482,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -3000,
         date: '2024-01-15', // Monday
         imported_payee: 'Week Test',
@@ -515,7 +515,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -15000,
         date: '2024-02-20',
         imported_payee: 'Logic Test',
@@ -546,7 +546,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: 0,
         date: '2024-02-25',
         imported_payee: 'Error Test',
@@ -577,7 +577,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -8000,
         date: '2024-04-10',
         imported_payee: 'Quarter Test',
@@ -605,7 +605,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -5000,
         date: '2024-03-01',
         imported_payee: 'Not Test',
@@ -637,7 +637,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: 123456789, // $1,234,567.89
         date: '2024-03-01',
         imported_payee: 'Format Test',
@@ -666,7 +666,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -50000, // cents
         date: '2024-03-05',
         imported_payee: 'Euro Transaction',
@@ -694,7 +694,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: 123456789,
         date: '2024-03-10',
         imported_payee: 'EU Payment',
@@ -724,7 +724,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: 1234500,
         date: '2024-03-15',
         imported_payee: 'Whole Number',
@@ -757,7 +757,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -100000, // $1000 payment in cents
         date: '2024-01-15',
         imported_payee: 'Loan Payment',
@@ -790,7 +790,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -8500, // cents
         date: '2024-02-14',
         imported_payee: 'Grocery Store',
@@ -823,7 +823,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -5000,
         date: '2024-07-15', // July = month 7, ceiling(7/3) = 3 = Summer
         imported_payee: 'Season Test',
@@ -855,7 +855,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -25000, // cents
         date: '2024-03-20',
         payee: payeeId,
@@ -889,7 +889,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -10000,
         date: '2024-04-01',
         imported_payee: 'Tax Calculation',
@@ -926,7 +926,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: 15000,
         date: '2024-04-10',
         imported_payee: 'Number Test',
@@ -957,7 +957,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -5000,
         date: '2024-04-15',
         imported_payee: 'Text Test',
@@ -987,7 +987,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -10000,
         date: '2024-04-20',
         imported_payee: 'Even Test',
@@ -1018,7 +1018,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -5000,
         date: '2024-04-25',
         imported_payee: 'Blank Test',
@@ -1050,7 +1050,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -5000,
         date: '2024-03-25',
         imported_payee: 'DivZero Test',
@@ -1081,7 +1081,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: 10000,
         date: '2024-03-30',
         imported_payee: 'Invalid Type',
@@ -1114,7 +1114,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: 100000, // $1000 in cents
         date: '2024-05-01',
         imported_payee: 'Interest Calculation',
@@ -1146,7 +1146,7 @@ describe('Formula Rule Actions - Integration Tests', () => {
         ],
       });
 
-      const transaction = await runRules({
+      const transaction = runRules({
         amount: -5000,
         date: '2024-05-05',
         imported_payee: 'Calc Test',

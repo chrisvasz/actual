@@ -3,7 +3,7 @@
 import * as connection from '#platform/server/connection';
 import * as db from '#server/db';
 import { incrFetch, whereIn } from '#server/db/util';
-import { batchMessages, batchMessagesAsync } from '#server/sync';
+import { batchMessages } from '#server/sync';
 import type { Diff } from '#shared/util';
 import type { PayeeEntity, TransactionEntity } from '#types/models';
 
@@ -35,7 +35,7 @@ function getTransactionsByIds(ids: string[]): TransactionEntity[] {
   );
 }
 
-export async function batchUpdateTransactions({
+export function batchUpdateTransactions({
   added,
   deleted,
   updated,
@@ -146,17 +146,18 @@ export async function batchUpdateTransactions({
   // transactions just return the full transaction.
   const resultAdded = allAdded;
   const resultUpdated = allUpdated;
-  let transfersUpdated: Awaited<ReturnType<typeof transfer.onUpdate>>[];
+  let transfersUpdated: ReturnType<typeof transfer.onUpdate>[];
 
   if (runTransfers) {
-    // Adding a transfer runs rules, which are still async
-    await batchMessagesAsync(async () => {
-      await Promise.all(allAdded.map(t => transfer.onInsert(t)));
+    batchMessages(() => {
+      for (const t of allAdded) {
+        transfer.onInsert(t);
+      }
 
       // Return any updates from here
-      transfersUpdated = (
-        await Promise.all(allUpdated.map(t => transfer.onUpdate(t)))
-      ).filter(Boolean);
+      transfersUpdated = allUpdated
+        .map(t => transfer.onUpdate(t))
+        .filter(Boolean);
 
       for (const t of allDeleted) {
         transfer.onDelete(t);

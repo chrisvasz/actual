@@ -1,4 +1,3 @@
-import * as asyncStorage from '#platform/server/asyncStorage';
 import { aqlQuery } from '#server/aql';
 import { getCurrency } from '#shared/currencies';
 import type { Currency } from '#shared/currencies';
@@ -101,12 +100,17 @@ function getCurrencySymbolPosition(
 
 const DEFAULT_CURRENCY_SYMBOL_POSITION: CurrencySymbolPosition = 'before';
 
-// Function to load user preferences from the database
-// This should be called before formula execution
-export async function loadUserPreferencesForFormulas({
+export async function loadUserPreferencesForFormulas(
+  options: FormulaPreferencesOptions = {},
+): Promise<UserPreferences> {
+  return getUserPreferencesForFormulas(options);
+}
+
+// Reads user preferences from the database
+export function getUserPreferencesForFormulas({
   selectedLocale,
   browserLocale,
-}: FormulaPreferencesOptions = {}): Promise<UserPreferences> {
+}: FormulaPreferencesOptions = {}): UserPreferences {
   try {
     const preferencesQuery = aqlQuery(
       q('preferences')
@@ -131,7 +135,6 @@ export async function loadUserPreferencesForFormulas({
 
     const locale =
       normalizeLocale(selectedLocale) ??
-      normalizeLocale(await asyncStorage.getItem('language')) ??
       normalizeLocale(browserLocale) ??
       'en-US';
 

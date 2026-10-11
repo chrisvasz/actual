@@ -223,10 +223,7 @@ export async function buildFutureScheduleOccurrences(
         schedule: schedule.id,
         cleared: false,
       };
-      const sourceTransaction = await runRules(
-        baseTransaction,
-        ruleAccountsById,
-      );
+      const sourceTransaction = runRules(baseTransaction, ruleAccountsById);
       simulatedTransactions.push(sourceTransaction);
       occurrences.push({
         accountId: sourceTransaction.account,
@@ -261,7 +258,7 @@ export async function buildFutureScheduleOccurrences(
       const reverseTransferPayee = transferPayeesByAccountId.get(
         sourceTransaction.account,
       );
-      const transferTransaction = await runRules(
+      const transferTransaction = runRules(
         {
           id: `${sourceTransaction.id}-transfer`,
           account: transferAccountId,

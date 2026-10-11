@@ -312,11 +312,11 @@ export function getAllRuleIdsFromSchedules(excluding: string): string[] {
 }
 
 // Runner
-export async function runRules(
+export function runRules(
   trans,
   accounts: Map<string, db.DbAccount> | null = null,
 ) {
-  await ensureFormulaPreferencesLoaded();
+  ensureFormulaPreferencesLoaded();
 
   let accountsMap: Map<string, db.DbAccount> = null;
   if (accounts === null) {
@@ -734,11 +734,11 @@ export function conditionsToAQL(
   return { filters, errors };
 }
 
-export async function applyActions(
+export function applyActions(
   transactions: TransactionEntity[],
   actions: Array<Action | RuleActionEntity>,
 ) {
-  await ensureFormulaPreferencesLoaded();
+  ensureFormulaPreferencesLoaded();
 
   const parsedActions = actions
     .map(action => {

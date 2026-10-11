@@ -10,8 +10,9 @@ import { runHandler, runMutator } from '#server/mutators';
 import * as sheet from '#server/sheet';
 import {
   batchMessages,
-  batchMessagesAsync,
+  endMessageBatch,
   setSyncingMode,
+  startMessageBatch,
 } from '#server/sync';
 import * as monthUtils from '#shared/months';
 import { q } from '#shared/query';
@@ -141,6 +142,20 @@ function getChildTagNotes(categoryName: string, amount: number): string {
   }
 
   return tags.join(' ');
+}
+
+// Batches the messages of every handler `func` calls into one, like the
+// API's batch-budget-start/end. Writes made inside apply when the batch
+// ends, so a handler won't read back what an earlier one wrote
+async function batchHandlerMessages(func: () => Promise<void>) {
+  const isOwner = startMessageBatch();
+  try {
+    await func();
+  } finally {
+    if (isOwner) {
+      endMessageBatch();
+    }
+  }
 }
 
 async function insertDemoTags(handlers: Handlers) {
@@ -789,7 +804,7 @@ export async function createTestBudget(handlers: Handlers) {
   const payees: PayeeEntity[] = [];
 
   await runMutator(() =>
-    batchMessagesAsync(async () => {
+    batchHandlerMessages(async () => {
       for (const newPayee of newPayees) {
         const id = await handlers['payee-create']({ name: newPayee.name });
         payees.push({
@@ -871,13 +886,13 @@ export async function createTestBudget(handlers: Handlers) {
   setSyncingMode('import');
 
   await runMutator(() =>
-    batchMessagesAsync(async () => {
+    batchHandlerMessages(async () => {
       await insertDemoTags(handlers);
     }),
   );
 
   await runMutator(() =>
-    batchMessagesAsync(async () => {
+    batchHandlerMessages(async () => {
       for (const account of accounts) {
         if (account.name === 'Bank of America') {
           await fillPrimaryChecking(handlers, account, payees, allGroups);
@@ -943,7 +958,7 @@ export async function createTestBudget(handlers: Handlers) {
 
   // Create some schedules
   await runMutator(() =>
-    batchMessagesAsync(async () => {
+    batchHandlerMessages(async () => {
       const account = accounts.find(acc => acc.name === 'Bank of America');
 
       await runHandler(handlers['schedule/create'], {
