@@ -186,12 +186,6 @@ export function ExperimentalFeatures() {
               <Trans>Currency support</Trans>
             </FeatureToggle>
             <FeatureToggle
-              flag="newSidebarUI"
-              feedbackLink="https://github.com/actualbudget/actual/issues/9007"
-            >
-              <Trans>Redesigned sidebar</Trans>
-            </FeatureToggle>
-            <FeatureToggle
               flag="sankeyReport"
               feedbackLink="https://github.com/actualbudget/actual/issues/1919"
             >

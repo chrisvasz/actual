@@ -47,7 +47,6 @@ import type { SavedFilter } from '#components/filters/SavedFilterMenuButton';
 import { NotesButton } from '#components/NotesButton';
 import { SelectedTransactionsButton } from '#components/transactions/SelectedTransactionsButton';
 import { UncategorizedChip } from '#components/UncategorizedChip';
-import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useHotkeys } from '#hooks/useHotkeys';
 import { useLocale } from '#hooks/useLocale';
 import { useLocalPref } from '#hooks/useLocalPref';
@@ -781,7 +780,6 @@ function AccountMenu({
 }: AccountMenuProps) {
   const { t } = useTranslation();
   const syncServerStatus = useSyncServerStatus();
-  const newSidebarUIEnabled = useFeatureFlag('newSidebarUI');
 
   return (
     <Menu
@@ -808,14 +806,10 @@ function AccountMenu({
           name: 'manage-columns',
           text: t('Manage table columns'),
         },
-        ...(newSidebarUIEnabled
-          ? [
-              {
-                name: 'account-group',
-                text: t('Set account group'),
-              } as const,
-            ]
-          : []),
+        {
+          name: 'account-group',
+          text: t('Set account group'),
+        },
         {
           name: 'toggle-reconciled',
           text: showReconciled

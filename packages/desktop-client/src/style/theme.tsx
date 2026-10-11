@@ -4,7 +4,6 @@ import darkThemeCss from '@actual-app/components/themes/dark.css?inline';
 import lightThemeCss from '@actual-app/components/themes/light.css?inline';
 import midnightThemeCss from '@actual-app/components/themes/midnight.css?inline';
 import paletteCss from '@actual-app/components/themes/palette.css?inline';
-import sidebarRedesignLightCss from '@actual-app/components/themes/sidebar-redesign-light.css?inline';
 import type { DarkTheme, Theme } from '@actual-app/core/types/prefs';
 
 import { useGlobalPref } from '#hooks/useGlobalPref';
@@ -13,7 +12,6 @@ import {
   isBaseTheme,
   migrateLegacyOverride,
   parseInstalledTheme,
-  usesRedesignSidebarPalette,
   validateThemeCssSafely,
 } from './customThemes';
 
@@ -105,8 +103,6 @@ export function ThemeStyle() {
     'installedCustomDarkTheme',
   );
 
-  const [customCssOverride] = useGlobalPref('customCssOverride');
-
   // Rendered rather than injected from an effect so the CSS variables exist
   // in the same commit as any consumer effect that reads them.
   const customLightTheme = parseInstalledTheme(installedCustomLightThemeJson);
@@ -116,22 +112,11 @@ export function ThemeStyle() {
 
   if (!themeColors) return null;
 
-  const sidebarRedesignCss =
-    themeColors === themes.light.colors &&
-    usesRedesignSidebarPalette(
-      [customLightTheme?.cssContent, customCssOverride]
-        .map(css => validateThemeCssSafely(css))
-        .join('\n'),
-    )
-      ? sidebarRedesignLightCss
-      : null;
-
   if (activeTheme !== 'auto') {
     return (
       <>
         <style>{paletteCss}</style>
         <style>{themeColors}</style>
-        {sidebarRedesignCss != null && <style>{sidebarRedesignCss}</style>}
       </>
     );
   }
@@ -148,11 +133,6 @@ export function ThemeStyle() {
     <>
       <style>{paletteCss}</style>
       <style media="(prefers-color-scheme: light)">{themeColors}</style>
-      {sidebarRedesignCss != null && (
-        <style media="(prefers-color-scheme: light)">
-          {sidebarRedesignCss}
-        </style>
-      )}
       <style media="(prefers-color-scheme: dark)">{darkColors}</style>
     </>
   );

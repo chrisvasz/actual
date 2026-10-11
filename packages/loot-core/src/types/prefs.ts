@@ -1,5 +1,4 @@
 export type FeatureFlag =
-  | 'newSidebarUI'
   | 'actionTemplating'
   | 'formulaMode'
   | 'currency'
