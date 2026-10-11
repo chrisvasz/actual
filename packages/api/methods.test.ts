@@ -954,6 +954,69 @@ describe('API CRUD operations', () => {
     expect(transactions).toHaveLength(1);
   });
 
+  // apis: updateTransaction, deleteTransaction
+  test('Transactions: updateTransaction resolves with the transfer updates once persisted', async () => {
+    const accountId = await api.createAccount({ name: 'test-account' }, 0);
+    const otherAccountId = await api.createAccount({ name: 'other' }, 0);
+    await api.addTransactions(accountId, [{ date: '2023-11-03', amount: 100 }]);
+    const [transaction] = await api.getTransactions(
+      accountId,
+      '2023-11-01',
+      '2023-11-30',
+    );
+
+    // A plain edit causes no follow-up transfer updates
+    const updated = await api.updateTransaction(transaction.id, {
+      amount: 500,
+    });
+    expect(updated).toEqual([]);
+    expect(
+      await api.getTransactions(accountId, '2023-11-01', '2023-11-30'),
+    ).toEqual([expect.objectContaining({ id: transaction.id, amount: 500 })]);
+
+    // Turning it into a transfer reports the new transfer link
+    const payees = await api.getPayees();
+    const transferPayee = payees.find(p => p.transfer_acct === otherAccountId);
+    const transferUpdates = await api.updateTransaction(transaction.id, {
+      payee: transferPayee?.id,
+    });
+    const [transferred] = await api.getTransactions(
+      accountId,
+      '2023-11-01',
+      '2023-11-30',
+    );
+    expect(transferred.transfer_id).toEqual(expect.any(String));
+    expect(transferUpdates).toEqual([
+      expect.objectContaining({
+        id: transaction.id,
+        transfer_id: transferred.transfer_id,
+      }),
+    ]);
+  });
+
+  test('Transactions: deleteTransaction resolves with the deleted transactions once persisted', async () => {
+    const accountId = await api.createAccount({ name: 'test-account' }, 0);
+    await api.addTransactions(accountId, [
+      { date: '2023-11-03', amount: 100 },
+      { date: '2023-11-04', amount: 200 },
+    ]);
+    const before = await api.getTransactions(
+      accountId,
+      '2023-11-01',
+      '2023-11-30',
+    );
+    const [toDelete] = before.filter(t => t.amount === 100);
+
+    const deleted = await api.deleteTransaction(toDelete.id);
+
+    expect(deleted).toEqual([
+      expect.objectContaining({ id: toDelete.id, tombstone: true }),
+    ]);
+    expect(
+      await api.getTransactions(accountId, '2023-11-01', '2023-11-30'),
+    ).toEqual([expect.objectContaining({ amount: 200 })]);
+  });
+
   // apis: mergeTransactions
   test('Transactions: successfully merge two transactions', async () => {
     const accountId = await api.createAccount({ name: 'test-account' }, 0);
