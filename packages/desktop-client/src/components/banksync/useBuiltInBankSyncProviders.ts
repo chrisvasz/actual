@@ -12,10 +12,10 @@ import type { SyncServerSimpleFinAccount } from '@actual-app/core/types/models/s
 import { authorizeBank as authorizeEnableBanking } from '#enablebanking';
 import { authorizeBank } from '#gocardless';
 import { useAkahuStatus } from '#hooks/useAkahuStatus';
-import { useCurrentAccess } from '#hooks/useCurrentAccess';
 import { useEnableBankingStatus } from '#hooks/useEnableBankingStatus';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useGoCardlessStatus } from '#hooks/useGoCardlessStatus';
+import { useMetadataPref } from '#hooks/useMetadataPref';
 import { usePluggyAiStatus } from '#hooks/usePluggyAiStatus';
 import { useSimpleFinStatus } from '#hooks/useSimpleFinStatus';
 import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
@@ -75,22 +75,6 @@ type UseBuiltInBankSyncProvidersOptions = {
   upgradingAccountId?: AccountEntity['id'];
 };
 
-export function getPermissionWarning(
-  syncServerStatus: 'offline' | 'no-server' | 'online',
-  isAdmin: boolean,
-  isFileOwner: boolean,
-): 'general' | 'file-owner' | null {
-  if (syncServerStatus !== 'online') {
-    return null;
-  }
-
-  if (isAdmin) {
-    return null;
-  }
-
-  return isFileOwner ? 'file-owner' : 'general';
-}
-
 async function ensureSuccessResponse(
   response: SecretSetResponse,
   fallbackMessage: string,
@@ -110,8 +94,7 @@ export function useBuiltInBankSyncProviders({
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const syncServerStatus = useSyncServerStatus();
-  const { cloudFileId, isAdmin, isFileOwner } = useCurrentAccess();
-  const canConfigureProviders = isAdmin;
+  const [cloudFileId] = useMetadataPref('cloudFileId');
 
   const [isGoCardlessSetupComplete, setIsGoCardlessSetupComplete] = useState<
     boolean | null
@@ -656,7 +639,7 @@ export function useBuiltInBankSyncProviders({
             isConfigured: configuredProviders.goCardless,
             credentialSource: 'global',
             supportsPerBudgetFile: false,
-            canConfigure: canConfigureProviders,
+            canConfigure: true,
             onConfigure: onGoCardlessInit,
             onLink: onConnectGoCardless,
             onReset: onGoCardlessReset,
@@ -673,7 +656,7 @@ export function useBuiltInBankSyncProviders({
             isConfigured: configuredProviders.simpleFin,
             credentialSource: 'global',
             supportsPerBudgetFile: false,
-            canConfigure: canConfigureProviders,
+            canConfigure: true,
             isLoading: loadingSimpleFinAccounts,
             onConfigure: onSimpleFinInit,
             onLink: onConnectSimpleFin,
@@ -690,9 +673,7 @@ export function useBuiltInBankSyncProviders({
           isConfigured: configuredProviders.pluggyai,
           credentialSource: pluggyAiStatus.source ?? 'global',
           supportsPerBudgetFile: true,
-          canConfigure:
-            syncServerStatus === 'online' &&
-            (isAdmin || (isFileOwner && pluggyAiStatus.source !== 'global')),
+          canConfigure: syncServerStatus === 'online',
           onConfigure: onPluggyAiInit,
           onLink: onConnectPluggyAi,
           onReset: onPluggyAiReset,
@@ -709,7 +690,7 @@ export function useBuiltInBankSyncProviders({
         isConfigured: configuredProviders.akahu,
         credentialSource: 'global',
         supportsPerBudgetFile: false,
-        canConfigure: canConfigureProviders,
+        canConfigure: true,
         isLoading: loadingAkahuAccounts,
         onConfigure: onAkahuInit,
         onLink: onConnectAkahu,
@@ -727,7 +708,7 @@ export function useBuiltInBankSyncProviders({
         isConfigured: configuredProviders.enableBanking,
         credentialSource: 'global',
         supportsPerBudgetFile: false,
-        canConfigure: canConfigureProviders,
+        canConfigure: true,
         isLoading: isEnableBankingLoading,
         onConfigure: onEnableBankingInit,
         onLink: onConnectEnableBanking,
@@ -737,9 +718,6 @@ export function useBuiltInBankSyncProviders({
 
     return baseProviders;
   }, [
-    canConfigureProviders,
-    isAdmin,
-    isFileOwner,
     configuredProviders.enableBanking,
     configuredProviders.goCardless,
     configuredProviders.pluggyai,
@@ -770,15 +748,8 @@ export function useBuiltInBankSyncProviders({
     t,
   ]);
 
-  const permissionWarning = getPermissionWarning(
-    syncServerStatus,
-    isAdmin,
-    isFileOwner,
-  );
-
   return {
     providers,
     syncServerStatus,
-    permissionWarning,
   };
 }

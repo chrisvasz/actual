@@ -12,10 +12,10 @@ describe('config file env', () => {
 
   const buildSchema = () =>
     convict({
-      openId: {
-        doc: 'OpenID settings.',
-        client_secret: {
-          doc: 'Client secret',
+      github: {
+        doc: 'GitHub settings.',
+        token: {
+          doc: 'GitHub token',
           format: String,
           default: '',
           env: 'TEST_SECRET',
@@ -80,15 +80,12 @@ describe('config file env', () => {
       const config = buildSchema();
       const filePath = writeSecret('secret', 'from-file');
 
-      const applied = applyFileEnv(
-        config,
-        'TEST_SECRET_FILE',
-        'openId.client_secret',
-        { TEST_SECRET_FILE: filePath },
-      );
+      const applied = applyFileEnv(config, 'TEST_SECRET_FILE', 'github.token', {
+        TEST_SECRET_FILE: filePath,
+      });
 
       expect(applied).toBe(true);
-      expect(config.get('openId.client_secret')).toBe('from-file');
+      expect(config.get('github.token')).toBe('from-file');
     });
 
     it('takes precedence over the plain environment variable', () => {
@@ -97,14 +94,14 @@ describe('config file env', () => {
 
       // convict has already imported TEST_SECRET at this point, exactly as it
       // would at startup.
-      config.set('openId.client_secret', 'from-env');
+      config.set('github.token', 'from-env');
 
-      applyFileEnv(config, 'TEST_SECRET_FILE', 'openId.client_secret', {
+      applyFileEnv(config, 'TEST_SECRET_FILE', 'github.token', {
         TEST_SECRET: 'from-env',
         TEST_SECRET_FILE: filePath,
       });
 
-      expect(config.get('openId.client_secret')).toBe('from-file');
+      expect(config.get('github.token')).toBe('from-file');
     });
 
     it('leaves the setting alone when the variable is not set', () => {
@@ -113,12 +110,12 @@ describe('config file env', () => {
       const applied = applyFileEnv(
         config,
         'TEST_SECRET_FILE',
-        'openId.client_secret',
+        'github.token',
         {},
       );
 
       expect(applied).toBe(false);
-      expect(config.get('openId.client_secret')).toBe('');
+      expect(config.get('github.token')).toBe('');
       expect(() => config.validate({ allowed: 'strict' })).not.toThrow();
     });
   });

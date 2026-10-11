@@ -24,7 +24,6 @@ import { useMetadataPref } from '#hooks/useMetadataPref';
 import { loadPrefs, saveSyncedPrefs } from '#prefs/prefsSlice';
 import { useDispatch, useSelector } from '#redux';
 
-import { AuthSettings } from './AuthSettings';
 import { CurrencySettings } from './Currency';
 import { DeployedCommit } from './DeployedCommit';
 import { EncryptionSettings } from './Encryption';
@@ -262,7 +261,6 @@ export function Settings() {
         <FormatSettings />
         {isCurrencyExperimentalEnabled && <CurrencySettings />}
         <LanguageSettings />
-        <AuthSettings />
         <EncryptionSettings />
         <ExportBudget />
         <AdvancedToggle>

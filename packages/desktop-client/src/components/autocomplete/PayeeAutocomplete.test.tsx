@@ -10,7 +10,6 @@ import type { Screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 
-import { AuthProvider } from '#auth/AuthProvider';
 import { useNearbyPayees } from '#hooks/useNearbyPayees';
 import { createTestQueryClient, TestProviders } from '#mocks';
 
@@ -172,17 +171,15 @@ describe('PayeeAutocomplete.getPayeeSuggestions', () => {
 
     render(
       <TestProviders queryClient={queryClient}>
-        <AuthProvider>
-          <div data-testid="autocomplete-test">
-            <PayeeAutocomplete
-              {...autocompleteProps}
-              onSelect={vi.fn()}
-              type="single"
-              value={null}
-              embedded={false}
-            />
-          </div>
-        </AuthProvider>
+        <div data-testid="autocomplete-test">
+          <PayeeAutocomplete
+            {...autocompleteProps}
+            onSelect={vi.fn()}
+            type="single"
+            value={null}
+            embedded={false}
+          />
+        </div>
       </TestProviders>,
     );
     return screen.getByTestId('autocomplete-test');

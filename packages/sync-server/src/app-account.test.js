@@ -5,27 +5,15 @@ import { getAccountDb, getLoginMethod, getServerPrefs } from './account-db';
 import { bootstrapPassword } from './accounts/password';
 import { handlers as app, authRateLimiter } from './app-account';
 
-const ADMIN_ROLE = 'ADMIN';
-const BASIC_ROLE = 'BASIC';
-
-// Create user helper function
-const createUser = (userId, userName, role, owner = 0, enabled = 1) => {
+const createSession = (sessionToken, authMethod = null) => {
   getAccountDb().mutate(
-    'INSERT INTO users (id, user_name, display_name, enabled, owner, role) VALUES (?, ?, ?, ?, ?, ?)',
-    [userId, userName, `${userName} display`, enabled, owner, role],
+    'INSERT INTO sessions (token, expires_at, auth_method) VALUES (?, ?, ?)',
+    [sessionToken, Math.floor(Date.now() / 1000) + 60 * 60, authMethod], // Expire in 1 hour (stored in seconds)
   );
 };
 
-const deleteUser = userId => {
-  getAccountDb().mutate('DELETE FROM user_access WHERE user_id = ?', [userId]);
-  getAccountDb().mutate('DELETE FROM users WHERE id = ?', [userId]);
-};
-
-const createSession = (userId, sessionToken, authMethod = null) => {
-  getAccountDb().mutate(
-    'INSERT INTO sessions (token, user_id, expires_at, auth_method) VALUES (?, ?, ?, ?)',
-    [sessionToken, userId, Math.floor(Date.now() / 1000) + 60 * 60, authMethod], // Expire in 1 hour (stored in seconds)
-  );
+const deleteSession = sessionToken => {
+  getAccountDb().mutate('DELETE FROM sessions WHERE token = ?', [sessionToken]);
 };
 
 const generateSessionToken = () => `token-${uuidv4()}`;
@@ -91,28 +79,18 @@ describe('auth rate limiting', () => {
 });
 
 describe('/change-password', () => {
-  let adminUserId,
-    basicUserId,
-    adminPasswordToken,
-    adminOpenidToken,
-    basicPasswordToken;
+  let passwordToken, otherAuthToken;
 
   beforeEach(() => {
-    adminUserId = uuidv4();
-    basicUserId = uuidv4();
-    adminPasswordToken = generateSessionToken();
-    adminOpenidToken = generateSessionToken();
-    basicPasswordToken = generateSessionToken();
-    createUser(adminUserId, 'admin', ADMIN_ROLE);
-    createUser(basicUserId, 'basic', BASIC_ROLE);
-    createSession(adminUserId, adminPasswordToken, 'password');
-    createSession(adminUserId, adminOpenidToken, 'openid');
-    createSession(basicUserId, basicPasswordToken, 'password');
+    passwordToken = generateSessionToken();
+    otherAuthToken = generateSessionToken();
+    createSession(passwordToken, 'password');
+    createSession(otherAuthToken);
   });
 
   afterEach(() => {
-    deleteUser(adminUserId);
-    deleteUser(basicUserId);
+    deleteSession(passwordToken);
+    deleteSession(otherAuthToken);
     clearAuth();
   });
 
@@ -126,28 +104,12 @@ describe('/change-password', () => {
     expect(res.body).toHaveProperty('reason', 'unauthorized');
   });
 
-  it('should return 403 when user is not an admin', async () => {
+  it('should return 403 when the session did not use password auth', async () => {
     await bootstrapPassword('oldpassword');
 
     const res = await request(app)
       .post('/change-password')
-      .set('x-actual-token', basicPasswordToken)
-      .send({ password: 'newpassword' });
-
-    expect(res.statusCode).toEqual(403);
-    expect(res.body).toEqual({
-      status: 'error',
-      reason: 'forbidden',
-      details: 'permission-not-found',
-    });
-  });
-
-  it('should return 403 when admin session uses openid auth method', async () => {
-    await bootstrapPassword('oldpassword');
-
-    const res = await request(app)
-      .post('/change-password')
-      .set('x-actual-token', adminOpenidToken)
+      .set('x-actual-token', otherAuthToken)
       .send({ password: 'newpassword' });
 
     expect(res.statusCode).toEqual(403);
@@ -158,24 +120,24 @@ describe('/change-password', () => {
     });
   });
 
-  it('should return 400 when admin password-auth session sends empty password', async () => {
+  it('should return 400 when a password-auth session sends an empty password', async () => {
     await bootstrapPassword('oldpassword');
 
     const res = await request(app)
       .post('/change-password')
-      .set('x-actual-token', adminPasswordToken)
+      .set('x-actual-token', passwordToken)
       .send({ password: '' });
 
     expect(res.statusCode).toEqual(400);
     expect(res.body).toEqual({ status: 'error', reason: 'invalid-password' });
   });
 
-  it('should return 200 when admin with password-auth session sends valid password', async () => {
+  it('should return 200 when a password-auth session sends a valid password', async () => {
     await bootstrapPassword('oldpassword');
 
     const res = await request(app)
       .post('/change-password')
-      .set('x-actual-token', adminPasswordToken)
+      .set('x-actual-token', passwordToken)
       .send({ password: 'newpassword' });
 
     expect(res.statusCode).toEqual(200);
@@ -193,23 +155,16 @@ describe('getLoginMethod()', () => {
     expect(getLoginMethod(undefined)).toBe('password');
   });
 
-  it('honors a client-requested method when it is active in DB', () => {
-    insertAuthRow('openid', 1);
-    const req = { body: { loginMethod: 'openid' } };
-    expect(getLoginMethod(req)).toBe('openid');
-  });
-
   it('honors a client-requested method that exists but is inactive in DB', () => {
-    insertAuthRow('openid', 1);
     insertAuthRow('password', 0);
     const req = { body: { loginMethod: 'password' } };
     expect(getLoginMethod(req)).toBe('password');
   });
 
   it('ignores a client-requested method that is not in DB', () => {
-    insertAuthRow('openid', 1);
-    const req = { body: { loginMethod: 'password' } };
-    expect(getLoginMethod(req)).toBe('openid');
+    insertAuthRow('password', 1);
+    const req = { body: { loginMethod: 'header' } };
+    expect(getLoginMethod(req)).toBe('password');
   });
 
   it('falls back to config default when auth table is empty and no req', () => {
@@ -224,12 +179,8 @@ describe('/login', () => {
     clearAuth();
   });
 
-  it('should allow password login when OIDC is the active method', async () => {
+  it('should return a token for the correct password', async () => {
     await bootstrapPassword('testpassword');
-    insertAuthRow('openid', 1);
-    getAccountDb().mutate(
-      "UPDATE auth SET active = 0 WHERE method = 'password'",
-    );
 
     const res = await request(app)
       .post('/login')
@@ -240,12 +191,8 @@ describe('/login', () => {
     expect(res.body.data).toHaveProperty('token');
   });
 
-  it('should reject wrong password even when method is explicitly requested', async () => {
+  it('should reject a wrong password', async () => {
     await bootstrapPassword('testpassword');
-    insertAuthRow('openid', 1);
-    getAccountDb().mutate(
-      "UPDATE auth SET active = 0 WHERE method = 'password'",
-    );
 
     const res = await request(app)
       .post('/login')
@@ -258,23 +205,15 @@ describe('/login', () => {
 
 describe('/server-prefs', () => {
   describe('POST /server-prefs', () => {
-    let adminUserId, basicUserId, adminSessionToken, basicSessionToken;
+    let sessionToken;
 
     beforeEach(() => {
-      adminUserId = uuidv4();
-      basicUserId = uuidv4();
-      adminSessionToken = generateSessionToken();
-      basicSessionToken = generateSessionToken();
-
-      createUser(adminUserId, 'admin', ADMIN_ROLE);
-      createUser(basicUserId, 'user', BASIC_ROLE);
-      createSession(adminUserId, adminSessionToken);
-      createSession(basicUserId, basicSessionToken);
+      sessionToken = generateSessionToken();
+      createSession(sessionToken);
     });
 
     afterEach(() => {
-      deleteUser(adminUserId);
-      deleteUser(basicUserId);
+      deleteSession(sessionToken);
       clearServerPrefs();
     });
 
@@ -290,26 +229,10 @@ describe('/server-prefs', () => {
       expect(res.body).toHaveProperty('reason', 'unauthorized');
     });
 
-    it('should return 403 if user is not an admin', async () => {
-      const res = await request(app)
-        .post('/server-prefs')
-        .set('x-actual-token', basicSessionToken)
-        .send({
-          prefs: { 'flags.plugins': 'true' },
-        });
-
-      expect(res.statusCode).toEqual(403);
-      expect(res.body).toEqual({
-        status: 'error',
-        reason: 'forbidden',
-        details: 'permission-not-found',
-      });
-    });
-
     it('should return 400 if prefs is not an object', async () => {
       const res = await request(app)
         .post('/server-prefs')
-        .set('x-actual-token', adminSessionToken)
+        .set('x-actual-token', sessionToken)
         .send({
           prefs: 'invalid',
         });
@@ -324,7 +247,7 @@ describe('/server-prefs', () => {
     it('should return 400 if prefs is missing', async () => {
       const res = await request(app)
         .post('/server-prefs')
-        .set('x-actual-token', adminSessionToken)
+        .set('x-actual-token', sessionToken)
         .send({});
 
       expect(res.statusCode).toEqual(400);
@@ -337,7 +260,7 @@ describe('/server-prefs', () => {
     it('should return 400 if prefs is null', async () => {
       const res = await request(app)
         .post('/server-prefs')
-        .set('x-actual-token', adminSessionToken)
+        .set('x-actual-token', sessionToken)
         .send({
           prefs: null,
         });
@@ -349,12 +272,12 @@ describe('/server-prefs', () => {
       });
     });
 
-    it('should return 200 and save server preferences for admin user', async () => {
+    it('should return 200 and save server preferences', async () => {
       const prefs = { 'flags.plugins': 'true' };
 
       const res = await request(app)
         .post('/server-prefs')
-        .set('x-actual-token', adminSessionToken)
+        .set('x-actual-token', sessionToken)
         .send({ prefs });
 
       expect(res.statusCode).toEqual(200);
@@ -379,7 +302,7 @@ describe('/server-prefs', () => {
       const updatedPrefs = { 'flags.plugins': 'true' };
       const res = await request(app)
         .post('/server-prefs')
-        .set('x-actual-token', adminSessionToken)
+        .set('x-actual-token', sessionToken)
         .send({ prefs: updatedPrefs });
 
       expect(res.statusCode).toEqual(200);
@@ -401,7 +324,7 @@ describe('/server-prefs', () => {
 
       const res = await request(app)
         .post('/server-prefs')
-        .set('x-actual-token', adminSessionToken)
+        .set('x-actual-token', sessionToken)
         .send({ prefs });
 
       expect(res.statusCode).toEqual(200);

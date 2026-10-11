@@ -8,19 +8,10 @@ import { tokens } from '@actual-app/components/tokens';
 import { View } from '@actual-app/components/view';
 
 import { setAppState } from '#app/appSlice';
-import { ProtectedRoute } from '#auth/ProtectedRoute';
-import { Permissions } from '#auth/types';
-import {
-  BackToFileListButton,
-  UserDirectoryPage,
-} from '#components/admin/UserDirectory/UserDirectoryPage';
 import { AppBackground } from '#components/AppBackground';
 import { LoggedInUser } from '#components/LoggedInUser';
 import { Notifications } from '#components/Notifications';
-import {
-  useMultiuserEnabled,
-  useServerVersion,
-} from '#components/ServerContext';
+import { useServerVersion } from '#components/ServerContext';
 import { useMetaThemeColor } from '#hooks/useMetaThemeColor';
 import { useDispatch, useSelector } from '#redux';
 import { loggedIn } from '#users/usersSlice';
@@ -32,7 +23,6 @@ import { Bootstrap } from './subscribe/Bootstrap';
 import { ChangePassword } from './subscribe/ChangePassword';
 import { Error } from './subscribe/Error';
 import { Login } from './subscribe/Login';
-import { OpenIdCallback } from './subscribe/OpenIdCallback';
 import { WelcomeScreen } from './WelcomeScreen';
 
 function Version() {
@@ -69,7 +59,6 @@ export function ManagementApp() {
   const files = useSelector(state => state.budgetfiles.allFiles);
   const isLoading = useSelector(state => state.app.loadingText !== null);
   const userData = useSelector(state => state.user.data);
-  const multiuserEnabled = useMultiuserEnabled();
 
   const managerHasInitialized = useSelector(
     state => state.app.managerHasInitialized,
@@ -141,21 +130,6 @@ export function ManagementApp() {
                   <Route path="/" element={<WelcomeScreen />} />
                 )}
 
-                {multiuserEnabled && (
-                  <Route
-                    path="/user-directory"
-                    element={
-                      <ProtectedRoute
-                        permission={Permissions.ADMINISTRATOR}
-                        element={
-                          <UserDirectoryPage
-                            bottomContent={<BackToFileListButton />}
-                          />
-                        }
-                      />
-                    }
-                  />
-                )}
                 {/* Redirect all other pages to this route */}
                 <Route path="/*" element={<Navigate to="/" />} />
               </Routes>
@@ -186,22 +160,9 @@ export function ManagementApp() {
           ) : (
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route path="/openid-cb" element={<OpenIdCallback />} />
               <Route path="/error" element={<Error />} />
               <Route path="/config-server" element={<ConfigServer />} />
               <Route path="/bootstrap" element={<Bootstrap />} />
-              {multiuserEnabled && (
-                <Route
-                  path="/userdirectory"
-                  element={
-                    <ProtectedRoute
-                      permission={Permissions.ADMINISTRATOR}
-                      element={<UserDirectoryPage />}
-                    />
-                  }
-                />
-              )}
-
               {/* Redirect all other pages to this route */}
               <Route path="/*" element={<Navigate to="/bootstrap" replace />} />
             </Routes>

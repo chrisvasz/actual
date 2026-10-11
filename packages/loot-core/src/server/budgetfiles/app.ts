@@ -128,7 +128,6 @@ async function getBudgets() {
             ...(prefs.cloudFileId ? { cloudFileId: prefs.cloudFileId } : {}),
             ...(prefs.encryptKeyId ? { encryptKeyId: prefs.encryptKeyId } : {}),
             ...(prefs.groupId ? { groupId: prefs.groupId } : {}),
-            ...(prefs.owner ? { owner: prefs.owner } : {}),
             name: prefs.budgetName || '(no name)',
           } satisfies Budget;
         }

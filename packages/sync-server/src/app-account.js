@@ -3,16 +3,12 @@ import rateLimit from 'express-rate-limit';
 
 import {
   bootstrap,
-  getActiveLoginMethod,
   getLoginMethod,
   getServerPrefs,
-  getUserInfo,
-  isAdmin,
   listLoginMethods,
   needsBootstrap,
   setServerPrefs,
 } from './account-db';
-import { isValidRedirectUrl, loginWithOpenIdSetup } from './accounts/openid';
 import { changePassword, loginWithPassword } from './accounts/password';
 import { errorMiddleware, requestLoggerMiddleware } from './util/middlewares';
 import { validateAuthHeader, validateSession } from './util/validate-user';
@@ -51,7 +47,6 @@ app.get('/needs-bootstrap', (req, res) => {
           ? availableLoginMethods[0].method
           : getLoginMethod(),
       availableLoginMethods,
-      multiuser: getActiveLoginMethod() === 'openid',
     },
   });
 });
@@ -94,26 +89,6 @@ app.post('/login', authRateLimiter, async (req, res) => {
       }
       break;
     }
-    case 'openid': {
-      if (!isValidRedirectUrl(req.body.returnUrl)) {
-        res
-          .status(400)
-          .send({ status: 'error', reason: 'Invalid redirect URL' });
-        return;
-      }
-
-      const { error, url } = await loginWithOpenIdSetup(
-        req.body.returnUrl,
-        req.body.password,
-      );
-      if (error) {
-        res.status(400).send({ status: 'error', reason: error });
-        return;
-      }
-      res.send({ status: 'ok', data: { returnUrl: url } });
-      return;
-    }
-
     default:
       tokenRes = await loginWithPassword(req.body.password);
       break;
@@ -131,15 +106,6 @@ app.post('/login', authRateLimiter, async (req, res) => {
 app.post('/change-password', async (req, res) => {
   const session = validateSession(req, res);
   if (!session) return;
-
-  if (!isAdmin(session.user_id)) {
-    res.status(403).send({
-      status: 'error',
-      reason: 'forbidden',
-      details: 'permission-not-found',
-    });
-    return;
-  }
 
   if (session.auth_method !== 'password') {
     res.status(403).send({
@@ -164,15 +130,6 @@ app.post('/server-prefs', (req, res) => {
   const session = validateSession(req, res);
   if (!session) return;
 
-  if (!isAdmin(session.user_id)) {
-    res.status(403).send({
-      status: 'error',
-      reason: 'forbidden',
-      details: 'permission-not-found',
-    });
-    return;
-  }
-
   const { prefs } = req.body || {};
 
   if (!prefs || typeof prefs !== 'object') {
@@ -188,21 +145,11 @@ app.post('/server-prefs', (req, res) => {
 app.get('/validate', (req, res) => {
   const session = validateSession(req, res);
   if (session) {
-    const user = getUserInfo(session.user_id);
-    if (!user) {
-      res.status(400).send({ status: 'error', reason: 'User not found' });
-      return;
-    }
-
     res.send({
       status: 'ok',
       data: {
         validated: true,
-        userName: user?.user_name,
-        permission: user?.role,
-        userId: session?.user_id,
-        displayName: user?.display_name,
-        loginMethod: session?.auth_method,
+        loginMethod: session.auth_method,
         prefs: getServerPrefs(),
       },
     });

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import type { ComponentPropsWithoutRef, CSSProperties } from 'react';
 import { GridList, GridListItem } from 'react-aria-components';
 import { Trans, useTranslation } from 'react-i18next';
@@ -11,8 +11,6 @@ import {
   SvgCloudDownload,
   SvgDotsHorizontalTriple,
   SvgFileDouble,
-  SvgUser,
-  SvgUserGroup,
 } from '@actual-app/components/icons/v1';
 import {
   SvgCloudUnknown,
@@ -25,13 +23,11 @@ import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { tokens } from '@actual-app/components/tokens';
-import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
 import { isNonProductionEnvironment } from '@actual-app/core/shared/environment';
 import type {
   File,
   LocalFile,
-  RemoteFile,
   SyncableLocalFile,
   SyncedLocalFile,
 } from '@actual-app/core/types/file';
@@ -45,7 +41,6 @@ import {
   loadAllFiles,
   loadBudget,
 } from '#budgetfiles/budgetfilesSlice';
-import { useMultiuserEnabled } from '#components/ServerContext';
 import { useInitialMount } from '#hooks/useInitialMount';
 import { useMetadataPref } from '#hooks/useMetadataPref';
 import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
@@ -154,65 +149,38 @@ function BudgetFileMenuButton({
 
 type BudgetFileStateProps = {
   file: File;
-  currentUserId: string;
 };
 
-function BudgetFileState({ file, currentUserId }: BudgetFileStateProps) {
+function BudgetFileState({ file }: BudgetFileStateProps) {
   const { t } = useTranslation();
-  const multiuserEnabled = useMultiuserEnabled();
 
   let Icon;
   let status;
   let color;
-  let ownerName = null;
-
-  const getOwnerDisplayName = useCallback(() => {
-    if ('usersWithAccess' in file) {
-      const userFound = file.usersWithAccess?.find(f => f.owner);
-
-      if (userFound?.userName === '') {
-        return 'Server';
-      }
-
-      return userFound?.displayName ?? userFound?.userName ?? t('Unassigned');
-    }
-
-    return t('Unknown');
-  }, [file, t]);
 
   switch (file.state) {
     case 'unknown':
       Icon = SvgCloudUnknown;
       status = t('Network unavailable');
       color = theme.buttonNormalDisabledText;
-      ownerName = t('Unknown');
       break;
     case 'remote':
       Icon = SvgCloudDownload;
       status = t('Available for download');
-      ownerName = getOwnerDisplayName();
       break;
     case 'local':
-      Icon = SvgFileDouble;
-      status = t('Local');
-      ownerName = t('You');
-      break;
     case 'broken':
       Icon = SvgFileDouble;
       status = t('Local');
-      ownerName = t('Unknown');
       break;
     default:
       Icon = SvgCloudCheck;
       status = t('Syncing');
-      ownerName = getOwnerDisplayName();
       break;
   }
 
-  const showOwnerContent = multiuserEnabled && file.owner !== currentUserId;
-
   return (
-    <View style={{ width: '100%' }}>
+    <View style={{ width: '100%', paddingBottom: 10 }}>
       <View
         style={{
           color,
@@ -231,31 +199,6 @@ function BudgetFileState({ file, currentUserId }: BudgetFileStateProps) {
 
         <Text style={{ marginLeft: 5 }}>{status}</Text>
       </View>
-
-      <View style={{ paddingTop: 10, flexDirection: 'row', width: '100%' }}>
-        {showOwnerContent && (
-          <View style={{ flexDirection: 'row' }}>
-            <Text
-              style={{
-                ...styles.altMenuHeaderText,
-                ...styles.verySmallText,
-                color: theme.pageTextLight,
-              }}
-            >
-              <Trans>Owner:</Trans>
-            </Text>
-            <Text
-              style={{
-                ...styles.verySmallText,
-                color: theme.pageTextLight,
-                paddingLeft: 10,
-              }}
-            >
-              {ownerName}
-            </Text>
-          </View>
-        )}
-      </View>
     </View>
   );
 }
@@ -267,7 +210,6 @@ type BudgetFileListItemProps = ComponentPropsWithoutRef<
   onSelect: (file: File) => Promise<void>;
   onDelete: (file: File) => void;
   onDuplicate: (file: File) => void;
-  currentUserId: string;
 };
 
 function BudgetFileListItem({
@@ -275,11 +217,9 @@ function BudgetFileListItem({
   onSelect,
   onDelete,
   onDuplicate,
-  currentUserId,
   ...props
 }: BudgetFileListItemProps) {
   const { t } = useTranslation();
-  const multiuserEnabled = useMultiuserEnabled();
 
   const selecting = useRef(false);
 
@@ -327,15 +267,9 @@ function BudgetFileListItem({
         >
           <View style={{ flexDirection: 'row', width: '100%' }}>
             <Text style={{ fontSize: 16, fontWeight: 700 }}>{file.name}</Text>
-            {multiuserEnabled && 'cloudFileId' in file && (
-              <UserAccessForFile
-                fileId={file.cloudFileId}
-                currentUserId={currentUserId}
-              />
-            )}
           </View>
 
-          <BudgetFileState file={file} currentUserId={currentUserId} />
+          <BudgetFileState file={file} />
         </View>
 
         <View
@@ -376,7 +310,6 @@ type BudgetFileListProps = {
   onSelect: (file: File) => Promise<void>;
   onDelete: (file: File) => void;
   onDuplicate: (file: File) => void;
-  currentUserId: string;
 };
 
 function BudgetFileList({
@@ -385,7 +318,6 @@ function BudgetFileList({
   onSelect,
   onDelete,
   onDuplicate,
-  currentUserId,
 }: BudgetFileListProps) {
   const { t } = useTranslation();
   return (
@@ -417,7 +349,6 @@ function BudgetFileList({
             key={id}
             id={id}
             value={file}
-            currentUserId={currentUserId}
             quickSwitchMode={quickSwitchMode}
             onSelect={onSelect}
             onDelete={onDelete}
@@ -508,25 +439,8 @@ export function BudgetFileSelection({
 }: BudgetFileSelectionProps) {
   const dispatch = useDispatch();
   const allFiles = useSelector(state => state.budgetfiles.allFiles || []);
-  const multiuserEnabled = useMultiuserEnabled();
   const [id] = useMetadataPref('id');
-  const [currentUserId, setCurrentUserId] = useState('');
-  const userData = useSelector(state => state.user.data);
   const serverStatus = useSyncServerStatus();
-
-  const fetchUsers = useCallback(async () => {
-    try {
-      setCurrentUserId(userData?.userId ?? '');
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
-    }
-  }, [userData?.userId]);
-
-  useEffect(() => {
-    if (multiuserEnabled && !userData?.offline) {
-      void fetchUsers();
-    }
-  }, [multiuserEnabled, userData?.offline, fetchUsers]);
 
   // Remote files do not have the 'id' field
   function isNonRemoteFile(
@@ -607,7 +521,6 @@ export function BudgetFileSelection({
       )}
       <BudgetFileList
         files={files}
-        currentUserId={currentUserId}
         quickSwitchMode={quickSwitchMode}
         onSelect={onSelect}
         onDelete={(file: File) =>
@@ -682,109 +595,6 @@ export function BudgetFileSelection({
           )}
         </View>
       )}
-    </View>
-  );
-}
-
-type UserAccessForFileProps = {
-  fileId: string;
-  currentUserId: string;
-};
-
-function UserAccessForFile({ fileId, currentUserId }: UserAccessForFileProps) {
-  const { t } = useTranslation();
-
-  const allFiles = useSelector(state => state.budgetfiles.allFiles || []);
-  const remoteFiles = allFiles.filter(
-    f => f.state === 'remote' || f.state === 'synced' || f.state === 'detached',
-  ) as (SyncedLocalFile | RemoteFile)[];
-  const currentFile = remoteFiles.find(f => f.cloudFileId === fileId);
-  const multiuserEnabled = useMultiuserEnabled();
-
-  let usersAccess = currentFile?.usersWithAccess ?? [];
-  usersAccess = usersAccess?.filter(user => user.userName !== '') ?? [];
-
-  const sortedUsersAccess = [...usersAccess].sort((a, b) => {
-    const textA =
-      a.userId === currentUserId ? t('You') : (a.displayName ?? a.userName);
-    const textB =
-      b.userId === currentUserId ? t('You') : (b.displayName ?? b.userName);
-    return textA.localeCompare(textB);
-  });
-
-  return (
-    <View>
-      {multiuserEnabled &&
-        usersAccess.length > 0 &&
-        !(sortedUsersAccess.length === 1 && sortedUsersAccess[0].owner) && (
-          <View
-            style={{
-              marginLeft: '5px',
-              alignSelf: 'center',
-            }}
-          >
-            <Tooltip
-              content={
-                <View
-                  style={{
-                    margin: 5,
-                  }}
-                >
-                  <Text
-                    style={{
-                      ...styles.altMenuHeaderText,
-                      ...styles.verySmallText,
-                      color: theme.pageTextLight,
-                    }}
-                  >
-                    File shared with:
-                  </Text>
-                  <View
-                    style={{
-                      padding: 0,
-                    }}
-                  >
-                    {sortedUsersAccess.map(user => (
-                      <View key={user.userId} style={{ flexDirection: 'row' }}>
-                        <SvgUser
-                          style={{
-                            width: 10,
-                            height: 10,
-                            opacity: 0.7,
-                            marginTop: 3,
-                            marginRight: 5,
-                          }}
-                        />
-                        <View
-                          style={{
-                            ...styles.verySmallText,
-                            color: theme.pageTextLight,
-                            margin: 0,
-                            listStylePosition: 'inside',
-                          }}
-                        >
-                          {user.userId === currentUserId
-                            ? t('You')
-                            : (user.displayName ?? user.userName)}
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              }
-              placement="bottom end"
-            >
-              <SvgUserGroup
-                style={{
-                  width: 15,
-                  height: 15,
-                  alignSelf: 'flex-end',
-                  opacity: 0.7,
-                }}
-              />
-            </Tooltip>
-          </View>
-        )}
     </View>
   );
 }

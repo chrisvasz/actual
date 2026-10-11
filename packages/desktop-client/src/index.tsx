@@ -14,7 +14,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import * as accountsSlice from './accounts/accountsSlice';
 import * as appSlice from './app/appSlice';
-import { AuthProvider } from './auth/AuthProvider';
 import * as budgetfilesSlice from './budgetfiles/budgetfilesSlice';
 import { App } from './components/App';
 import { ServerProvider } from './components/ServerContext';
@@ -89,9 +88,7 @@ root.render(
   <QueryClientProvider client={queryClient}>
     <Provider store={store}>
       <ServerProvider>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <App />
       </ServerProvider>
     </Provider>
   </QueryClientProvider>,

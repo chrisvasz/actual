@@ -84,7 +84,6 @@
     "db:test-migrate": "yarn build && cross-env NODE_ENV=test node build/scripts/run-migrations.js up",
     "db:test-downgrade": "yarn build && cross-env NODE_ENV=test node build/scripts/run-migrations.js down",
     "reset-password": "yarn build && node build/scripts/reset-password.js",
-    "disable-openid": "yarn build && node build/scripts/disable-openid.js",
     "health-check": "yarn build && node build/scripts/health-check.js"
   },
   "dependencies": {
@@ -104,7 +103,6 @@
     "ipaddr.js": "^2.4.0",
     "jws": "^4.0.1",
     "migrate": "^2.1.0",
-    "openid-client": "^5.7.1",
     "pluggy-sdk": "^0.89.0",
     "uuid": "^14.0.2",
     "winston": "^3.19.0"

@@ -201,8 +201,6 @@ export const remoteFileModel = {
       name: file.name,
       encryptKeyId: file.encryptKeyId,
       hasKey: file.hasKey,
-      owner: file.owner,
-      usersWithAccess: file.usersWithAccess,
     };
   },
 

@@ -7,7 +7,7 @@ import { Button, ButtonWithLoading } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
 import { SvgCheveronDown } from '@actual-app/components/icons/v1';
-import { BigInput, ResponsiveInput } from '@actual-app/components/input';
+import { BigInput } from '@actual-app/components/input';
 import { Menu } from '@actual-app/components/menu';
 import { Popover } from '@actual-app/components/popover';
 import { styles } from '@actual-app/components/styles';
@@ -15,19 +15,16 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { send } from '@actual-app/core/platform/client/connection';
-import type { OpenIdConfig } from '@actual-app/core/types/models';
 
 import { Link } from '#components/common/Link';
 import {
   useAvailableLoginMethods,
   useLoginMethod,
 } from '#components/ServerContext';
-import { useNavigate } from '#hooks/useNavigate';
 import { useDispatch } from '#redux';
 import { loggedIn } from '#users/usersSlice';
 
 import { Title, useBootstrapped } from './common';
-import { OpenIdForm } from './OpenIdForm';
 
 function PasswordLogin({ setError, dispatch }) {
   const [password, setPassword] = useState('');
@@ -83,179 +80,6 @@ function PasswordLogin({ setError, dispatch }) {
       >
         <Trans>Sign in</Trans>
       </ButtonWithLoading>
-    </View>
-  );
-}
-
-function OpenIdLogin({ setError }) {
-  const { t } = useTranslation();
-  const { isNarrowWidth } = useResponsive();
-  const [warnMasterCreation, setWarnMasterCreation] = useState(false);
-  const loginMethods = useAvailableLoginMethods();
-  const [askForPassword, setAskForPassword] = useState(false);
-  const [reviewOpenIdConfiguration, setReviewOpenIdConfiguration] =
-    useState(false);
-  const navigate = useNavigate();
-  const [openIdConfig, setOpenIdConfig] = useState<OpenIdConfig | null>(null);
-  const [firstLoginPassword, setFirstLoginPassword] = useState<string>('');
-
-  async function onSetOpenId(config: OpenIdConfig) {
-    setError(null);
-    const { error } = await send('subscribe-bootstrap', { openId: config });
-
-    if (error) {
-      setError(error);
-    } else {
-      void navigate('/');
-    }
-  }
-
-  useEffect(() => {
-    void send('owner-created').then(created => setWarnMasterCreation(!created));
-  }, []);
-
-  useEffect(() => {
-    if (loginMethods.some(method => method.method === 'password')) {
-      setAskForPassword(true);
-    } else {
-      setAskForPassword(false);
-    }
-  }, [loginMethods]);
-
-  async function onSubmitOpenId() {
-    const { error, redirectUrl } = await send('subscribe-sign-in', {
-      returnUrl: window.location.origin,
-      loginMethod: 'openid',
-      password: firstLoginPassword,
-    });
-
-    if (error) {
-      setError(error);
-    } else {
-      window.location.href = redirectUrl;
-    }
-  }
-
-  return (
-    <View>
-      {!reviewOpenIdConfiguration && (
-        <>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'flex-end',
-              marginTop: 5,
-              gap: '1rem',
-            }}
-          >
-            {warnMasterCreation && askForPassword && (
-              <ResponsiveInput
-                autoFocus
-                placeholder={t('Enter server password')}
-                type="password"
-                onChangeValue={newValue => {
-                  setFirstLoginPassword(newValue);
-                }}
-                style={{ flex: 1 }}
-              />
-            )}
-            <Button
-              variant="primary"
-              onPress={onSubmitOpenId}
-              style={{
-                padding: 6,
-                fontSize: 14,
-                width: 170,
-              }}
-              isDisabled={
-                firstLoginPassword === '' &&
-                askForPassword &&
-                warnMasterCreation
-              }
-            >
-              {warnMasterCreation ? (
-                <Trans>Start using OpenID</Trans>
-              ) : (
-                <Trans>Sign in with OpenID</Trans>
-              )}
-            </Button>
-          </View>
-          {warnMasterCreation && (
-            <>
-              <label style={{ color: theme.warningText, marginTop: 10 }}>
-                <Trans>
-                  The first user to login with OpenID will be the{' '}
-                  <Text style={{ fontWeight: 'bold' }}>server owner</Text>. This
-                  can&apos;t be changed using UI.
-                </Trans>
-              </label>
-              {askForPassword && (
-                <Button
-                  variant="bare"
-                  isDisabled={firstLoginPassword === '' && warnMasterCreation}
-                  onPress={() => {
-                    void send('get-openid-config', {
-                      password: firstLoginPassword,
-                    }).then(config => {
-                      if ('error' in config) {
-                        setError(config.error);
-                      } else if ('openId' in config) {
-                        setError(null);
-                        setOpenIdConfig(config.openId);
-                        setReviewOpenIdConfiguration(true);
-                      }
-                    });
-                  }}
-                  style={{
-                    marginTop: 5,
-                    ...(isNarrowWidth ? { padding: 10 } : null),
-                  }}
-                >
-                  <Trans>Review OpenID configuration</Trans>
-                </Button>
-              )}
-            </>
-          )}
-        </>
-      )}
-      {reviewOpenIdConfiguration && (
-        <View style={{ marginTop: 20 }}>
-          <Text
-            style={{
-              ...styles.verySmallText,
-              color: theme.pageTextLight,
-              fontWeight: 'bold ',
-              width: '100%',
-              textAlign: 'center',
-            }}
-          >
-            <Trans>Review OpenID configuration</Trans>
-          </Text>
-          <OpenIdForm
-            openIdData={openIdConfig}
-            otherButtons={[
-              <Button
-                key="cancel"
-                variant="bare"
-                style={{
-                  marginRight: 10,
-                  ...(isNarrowWidth && { padding: 10 }),
-                }}
-                onPress={() => {
-                  setReviewOpenIdConfiguration(false);
-                  setOpenIdConfig(null);
-                  setFirstLoginPassword('');
-                }}
-              >
-                <Trans>Cancel</Trans>
-              </Button>,
-            ]}
-            onSetOpenId={async config => {
-              void onSetOpenId(config);
-            }}
-          />
-        </View>
-      )}
     </View>
   );
 }
@@ -370,8 +194,6 @@ export function Login() {
       {method === 'password' && (
         <PasswordLogin setError={setError} dispatch={dispatch} />
       )}
-
-      {method === 'openid' && <OpenIdLogin setError={setError} />}
 
       {method === 'header' && <HeaderLogin error={error} />}
 

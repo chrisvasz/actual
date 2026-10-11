@@ -1,8 +1,6 @@
 import express from 'express';
 
-import { isAdmin } from './account-db';
 import { SecretName, secretsService } from './services/secrets-service';
-import * as UserService from './services/user-service';
 import {
   requestLoggerMiddleware,
   validateSessionMiddleware,
@@ -15,23 +13,6 @@ export { app as handlers };
 app.use(express.json());
 app.use(requestLoggerMiddleware);
 app.use(validateSessionMiddleware);
-
-// Global secrets are admin-managed.
-function canManageGlobalSecrets(userId) {
-  return isAdmin(userId);
-}
-
-// Per-budget-file secrets are managed by file owners
-function isBudgetFileOwner(fileId, userId) {
-  const { granted } = UserService.checkFilePermission(fileId, userId) || {
-    granted: 0,
-  };
-  return granted > 0;
-}
-
-function canManagePerBudgetFileSecrets(fileId, userId) {
-  return isAdmin(userId) || isBudgetFileOwner(fileId, userId);
-}
 
 app.post('/', async (req, res) => {
   const { name, value } = req.body || {};
@@ -56,22 +37,6 @@ app.post('/', async (req, res) => {
       });
       return;
     }
-
-    if (!canManagePerBudgetFileSecrets(fileId, res.locals.user_id)) {
-      res.status(403).send({
-        status: 'error',
-        reason: 'file-access-denied',
-        details: "You don't have permissions over this file",
-      });
-      return;
-    }
-  } else if (!canManageGlobalSecrets(res.locals.user_id)) {
-    res.status(403).send({
-      status: 'error',
-      reason: 'not-admin',
-      details: 'You have to be admin to manage global secrets',
-    });
-    return;
   }
 
   const secretFileId = perBudgetFile ? fileId : null;
@@ -91,15 +56,6 @@ app.delete('/:name', async (req, res) => {
   }
 
   if (!perBudgetFile) {
-    if (!canManageGlobalSecrets(res.locals.user_id)) {
-      res.status(403).send({
-        status: 'error',
-        reason: 'not-admin',
-        details: 'You have to be admin to manage global secrets',
-      });
-      return;
-    }
-
     secretsService.reset(name);
     res.status(200).send({ status: 'ok' });
     return;
@@ -110,15 +66,6 @@ app.delete('/:name', async (req, res) => {
       status: 'error',
       reason: 'invalid-file-id',
       details: 'invalid fileId',
-    });
-    return;
-  }
-
-  if (!canManagePerBudgetFileSecrets(fileId, res.locals.user_id)) {
-    res.status(403).send({
-      status: 'error',
-      reason: 'file-access-denied',
-      details: "You don't have permissions over this file",
     });
     return;
   }
@@ -137,33 +84,13 @@ app.get('/:name', async (req, res) => {
     return;
   }
 
-  if (!perBudgetFile) {
-    if (!canManageGlobalSecrets(res.locals.user_id)) {
-      res.status(403).send({
-        status: 'error',
-        reason: 'not-admin',
-        details: 'You have to be admin to manage global secrets',
-      });
-      return;
-    }
-  } else {
-    if (!isValidFileId(fileId)) {
-      res.status(400).send({
-        status: 'error',
-        reason: 'invalid-file-id',
-        details: 'invalid fileId',
-      });
-      return;
-    }
-
-    if (!canManagePerBudgetFileSecrets(fileId, res.locals.user_id)) {
-      res.status(403).send({
-        status: 'error',
-        reason: 'file-access-denied',
-        details: "You don't have permissions over this file",
-      });
-      return;
-    }
+  if (perBudgetFile && !isValidFileId(fileId)) {
+    res.status(400).send({
+      status: 'error',
+      reason: 'invalid-file-id',
+      details: 'invalid fileId',
+    });
+    return;
   }
 
   const keyExists = secretsService.exists(name, perBudgetFile ? fileId : null);

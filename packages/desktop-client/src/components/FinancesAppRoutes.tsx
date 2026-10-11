@@ -1,17 +1,11 @@
 import { ErrorBoundary } from 'react-error-boundary';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 
-import { ProtectedRoute } from '#auth/ProtectedRoute';
-import { Permissions } from '#auth/types';
-
-import { UserAccessPage } from './admin/UserAccess/UserAccessPage';
-import { UserDirectoryPage } from './admin/UserDirectory/UserDirectoryPage';
 import { EnableBankingCallback } from './EnableBankingCallback';
 import { FeatureErrorFallback } from './FeatureErrorFallback';
 import { NotificationsPage } from './news/NotificationsPage';
 import { Reports } from './reports';
 import { WideComponent } from './responsive';
-import { useMultiuserEnabled } from './ServerContext';
 import { Settings } from './settings';
 import { ManageTagsPage } from './tags/ManageTagsPage';
 
@@ -24,7 +18,6 @@ import { ManageTagsPage } from './tags/ManageTagsPage';
  */
 export function FinancesAppRoutes() {
   const location = useLocation();
-  const multiuserEnabled = useMultiuserEnabled();
 
   return (
     <Routes>
@@ -141,29 +134,6 @@ export function FinancesAppRoutes() {
           </ErrorBoundary>
         }
       />
-      {multiuserEnabled && (
-        <Route
-          path="/user-directory"
-          element={
-            <ProtectedRoute
-              permission={Permissions.ADMINISTRATOR}
-              element={<UserDirectoryPage />}
-            />
-          }
-        />
-      )}
-      {multiuserEnabled && (
-        <Route
-          path="/user-access"
-          element={
-            <ProtectedRoute
-              permission={Permissions.ADMINISTRATOR}
-              validateOwner
-              element={<UserAccessPage />}
-            />
-          }
-        />
-      )}
       {/* redirect all other traffic to the budget page */}
       <Route path="/*" element={<Navigate to="/budget" replace />} />
     </Routes>

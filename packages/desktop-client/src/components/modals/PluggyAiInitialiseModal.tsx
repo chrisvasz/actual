@@ -19,7 +19,7 @@ import {
   ModalHeader,
 } from '#components/common/Modal';
 import { FormField, FormLabel } from '#components/forms';
-import { useCurrentAccess } from '#hooks/useCurrentAccess';
+import { useMetadataPref } from '#hooks/useMetadataPref';
 import type { Modal as ModalType } from '#modals/modalsSlice';
 import { getSecretsError } from '#util/error';
 
@@ -33,12 +33,12 @@ export const PluggyAiInitialiseModal = ({
   credentialSource,
 }: PluggyAiInitialiseProps) => {
   const { t } = useTranslation();
-  const { cloudFileId, isAdmin: canSetGlobalCredentials } = useCurrentAccess();
+  const [cloudFileId] = useMetadataPref('cloudFileId');
   const [clientId, setClientId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
   const [itemIds, setItemIds] = useState('');
   const [perBudgetFile, setPerBudgetFile] = useState(
-    credentialSource === 'per-budget-file' || !canSetGlobalCredentials,
+    credentialSource === 'per-budget-file',
   );
   const [isValid, setIsValid] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -159,7 +159,6 @@ export const PluggyAiInitialiseModal = ({
               <Toggle
                 id="pluggyai-per-budget-file"
                 isOn={perBudgetFile}
-                isDisabled={!canSetGlobalCredentials}
                 onToggle={setPerBudgetFile}
               />
             </View>

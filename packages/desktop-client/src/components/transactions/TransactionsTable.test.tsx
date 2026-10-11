@@ -39,7 +39,6 @@ import userEvent from '@testing-library/user-event';
 import { format as formatDate, parse as parseDate } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-import { AuthProvider } from '#auth/AuthProvider';
 import { SchedulesProvider } from '#hooks/useCachedSchedules';
 import { SelectedProviderWithItems } from '#hooks/useSelected';
 import { SplitsExpandedProvider } from '#hooks/useSplitsExpanded';
@@ -217,36 +216,34 @@ function LiveTransactionTable(props: LiveTransactionTableProps) {
   // hook dependencies haven't changed
   return (
     <TestProviders queryClient={queryClient}>
-      <AuthProvider>
-        <SpreadsheetProvider>
-          <SchedulesProvider>
-            <SelectedProviderWithItems
-              name="transactions"
-              items={transactions}
-              fetchAllIds={() => Promise.resolve(transactions.map(t => t.id))}
-            >
-              <SplitsExpandedProvider>
-                <TransactionTable
-                  {...props}
-                  transactions={transactions}
-                  loadMoreTransactions={vi.fn()}
-                  // @ts-expect-error TODO: fix me
-                  commonPayees={[]}
-                  payees={payees}
-                  addNotification={console.log}
-                  onSave={onSave}
-                  onSplit={onSplit}
-                  onAdd={onAdd}
-                  onAddSplit={onAddSplit}
-                  onCreatePayee={onCreatePayee}
-                  showSelection
-                  allowSplitTransaction
-                />
-              </SplitsExpandedProvider>
-            </SelectedProviderWithItems>
-          </SchedulesProvider>
-        </SpreadsheetProvider>
-      </AuthProvider>
+      <SpreadsheetProvider>
+        <SchedulesProvider>
+          <SelectedProviderWithItems
+            name="transactions"
+            items={transactions}
+            fetchAllIds={() => Promise.resolve(transactions.map(t => t.id))}
+          >
+            <SplitsExpandedProvider>
+              <TransactionTable
+                {...props}
+                transactions={transactions}
+                loadMoreTransactions={vi.fn()}
+                // @ts-expect-error TODO: fix me
+                commonPayees={[]}
+                payees={payees}
+                addNotification={console.log}
+                onSave={onSave}
+                onSplit={onSplit}
+                onAdd={onAdd}
+                onAddSplit={onAddSplit}
+                onCreatePayee={onCreatePayee}
+                showSelection
+                allowSplitTransaction
+              />
+            </SplitsExpandedProvider>
+          </SelectedProviderWithItems>
+        </SchedulesProvider>
+      </SpreadsheetProvider>
     </TestProviders>
   );
 }

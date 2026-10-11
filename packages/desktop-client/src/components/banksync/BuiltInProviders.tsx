@@ -14,7 +14,6 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
-import { Warning } from '#components/alerts';
 import { Link } from '#components/common/Link';
 
 import type { BuiltInBankSyncProviderState } from './useBuiltInBankSyncProviders';
@@ -22,7 +21,6 @@ import type { BuiltInBankSyncProviderState } from './useBuiltInBankSyncProviders
 type BuiltInProvidersProps = {
   providers: BuiltInBankSyncProviderState[];
   syncServerStatus: 'offline' | 'no-server' | 'online';
-  permissionWarning: 'general' | 'file-owner' | null;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 };
@@ -30,7 +28,6 @@ type BuiltInProvidersProps = {
 export function BuiltInProviders({
   providers,
   syncServerStatus,
-  permissionWarning,
   isCollapsed = false,
   onToggleCollapse,
 }: BuiltInProvidersProps) {
@@ -256,36 +253,9 @@ export function BuiltInProviders({
                   <Trans>Link bank account</Trans>
                 </ButtonWithLoading>
               </View>
-              {provider.supportsPerBudgetFile &&
-                provider.credentialSource === 'global' &&
-                !provider.canConfigure && (
-                  <Text style={{ color: theme.pageTextSubdued, fontSize: 13 }}>
-                    <Trans>
-                      Reset credentials before setting credentials for this
-                      budget file.
-                    </Trans>
-                  </Text>
-                )}
             </View>
           ))}
         </View>
-      )}
-
-      {permissionWarning && (
-        <Warning>
-          {permissionWarning === 'file-owner' ? (
-            <Trans>
-              You don&apos;t have the required permissions to configure all bank
-              sync providers. You can set up Pluggy.ai because you are the owner
-              of this budget file.
-            </Trans>
-          ) : (
-            <Trans>
-              You don&apos;t have the required permissions to configure bank
-              sync providers. Please contact an Admin.
-            </Trans>
-          )}
-        </Warning>
       )}
     </View>
   );
