@@ -9,20 +9,6 @@ import { getAccountDb } from './account-db';
 import { handlers as app } from './app-sync';
 import { getPathForUserFile, isValidFileId } from './util/paths';
 
-const ADMIN_ROLE = 'ADMIN';
-const OTHER_USER_ID = 'otherUser';
-
-const createUser = (userId, userName, role, owner = 0, enabled = 1) => {
-  getAccountDb().mutate(
-    'INSERT INTO users (id, user_name, display_name, enabled, owner, role) VALUES (?, ?, ?, ?, ?, ?)',
-    [userId, userName, `${userName} display`, enabled, owner, role],
-  );
-};
-
-const deleteUser = (userId: string) => {
-  getAccountDb().mutate('DELETE FROM users WHERE id = ?', [userId]);
-};
-
 function generateFileId() {
   const id = crypto.randomBytes(16).toString('hex');
   if (!isValidFileId(id)) {
@@ -50,8 +36,8 @@ describe('/user-get-key', () => {
     const encrypt_test = 'test-encrypt-test';
 
     getAccountDb().mutate(
-      'INSERT INTO files (id, encrypt_salt, encrypt_keyid, encrypt_test, owner) VALUES (?, ?, ?, ?, ?)',
-      [fileId, encrypt_salt, encrypt_keyid, encrypt_test, 'genericAdmin'],
+      'INSERT INTO files (id, encrypt_salt, encrypt_keyid, encrypt_test) VALUES (?, ?, ?, ?)',
+      [fileId, encrypt_salt, encrypt_keyid, encrypt_test],
     );
 
     const res = await request(app)
@@ -88,48 +74,6 @@ describe('/user-get-key', () => {
 
     expect(res.statusCode).toEqual(400);
     expect(res.text).toBe('invalid fileId');
-  });
-
-  it('returns 403 when non-owner gets encryption key', async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    getAccountDb().mutate(
-      'INSERT INTO files (id, encrypt_salt, encrypt_keyid, encrypt_test, owner) VALUES (?, ?, ?, ?, ?)',
-      [fileId, 'salt', 'key-id', 'test', OTHER_USER_ID],
-    );
-
-    const res = await request(app)
-      .post('/user-get-key')
-      .set('x-actual-token', 'valid-token-user')
-      .send({ fileId });
-
-    expect(res.statusCode).toEqual(403);
-    expect(res.text).toEqual('file-access-not-allowed');
-  });
-
-  it("allows an admin to get encryption key for another user's file", async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    const encrypt_salt = 'salt';
-    const encrypt_keyid = 'key-id';
-    const encrypt_test = 'test';
-    getAccountDb().mutate(
-      'INSERT INTO files (id, encrypt_salt, encrypt_keyid, encrypt_test, owner) VALUES (?, ?, ?, ?, ?)',
-      [fileId, encrypt_salt, encrypt_keyid, encrypt_test, OTHER_USER_ID],
-    );
-
-    const res = await request(app)
-      .post('/user-get-key')
-      .set('x-actual-token', 'valid-token-admin')
-      .send({ fileId });
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.body).toEqual({
-      status: 'ok',
-      data: {
-        id: encrypt_keyid,
-        salt: encrypt_salt,
-        test: encrypt_test,
-      },
-    });
   });
 });
 
@@ -163,101 +107,6 @@ describe('/user-create-key', () => {
 
     expect(res.statusCode).toEqual(400);
     expect(res.text).toBe('invalid fileId');
-  });
-
-  it('returns 403 when non-owner creates encryption key', async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    getAccountDb().mutate(
-      'INSERT INTO files (id, encrypt_salt, encrypt_keyid, encrypt_test, owner) VALUES (?, ?, ?, ?, ?)',
-      [fileId, 'old-salt', 'old-key', 'old-test', OTHER_USER_ID],
-    );
-
-    const res = await request(app)
-      .post('/user-create-key')
-      .set('x-actual-token', 'valid-token-user')
-      .send({
-        fileId,
-        keyId: 'new-key',
-        keySalt: 'new-salt',
-        testContent: 'new-test',
-      });
-
-    expect(res.statusCode).toEqual(403);
-    expect(res.text).toEqual('file-access-not-allowed');
-  });
-
-  it("allows an admin to create encryption key for another user's file", async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    const old_encrypt_salt = 'old-salt';
-    const old_encrypt_keyid = 'old-key';
-    const old_encrypt_test = 'old-test';
-    const encrypt_salt = 'new-salt';
-    const encrypt_keyid = 'new-key-id';
-    const encrypt_test = 'new-encrypt-test';
-    getAccountDb().mutate(
-      'INSERT INTO files (id, encrypt_salt, encrypt_keyid, encrypt_test, owner) VALUES (?, ?, ?, ?, ?)',
-      [
-        fileId,
-        old_encrypt_salt,
-        old_encrypt_keyid,
-        old_encrypt_test,
-        OTHER_USER_ID,
-      ],
-    );
-
-    const res = await request(app)
-      .post('/user-create-key')
-      .set('x-actual-token', 'valid-token-admin')
-      .send({
-        fileId,
-        keyId: encrypt_keyid,
-        keySalt: encrypt_salt,
-        testContent: encrypt_test,
-      });
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.body).toEqual({ status: 'ok' });
-
-    const rows = getAccountDb().all(
-      'SELECT encrypt_salt, encrypt_keyid, encrypt_test FROM files WHERE id = ?',
-      [fileId],
-    );
-    expect(rows[0].encrypt_salt).toEqual(encrypt_salt);
-    expect(rows[0].encrypt_keyid).toEqual(encrypt_keyid);
-    expect(rows[0].encrypt_test).toEqual(encrypt_test);
-  });
-
-  it('returns 403 when a shared user (user_access only) tries to create a key on a file owned by someone else', async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    getAccountDb().mutate(
-      'INSERT INTO files (id, encrypt_salt, encrypt_keyid, encrypt_test, owner) VALUES (?, ?, ?, ?, ?)',
-      [fileId, 'old-salt', 'old-key', 'old-test', OTHER_USER_ID],
-    );
-    getAccountDb().mutate(
-      'INSERT INTO user_access (file_id, user_id) VALUES (?, ?)',
-      [fileId, 'genericUser'],
-    );
-
-    const res = await request(app)
-      .post('/user-create-key')
-      .set('x-actual-token', 'valid-token-user')
-      .send({
-        fileId,
-        keyId: 'attacker-key',
-        keySalt: 'attacker-salt',
-        testContent: 'attacker-test',
-      });
-
-    expect(res.statusCode).toEqual(403);
-    expect(res.text).toEqual('file-access-not-allowed');
-
-    const rows = getAccountDb().all(
-      'SELECT encrypt_salt, encrypt_keyid, encrypt_test FROM files WHERE id = ?',
-      [fileId],
-    );
-    expect(rows[0].encrypt_salt).toEqual('old-salt');
-    expect(rows[0].encrypt_keyid).toEqual('old-key');
-    expect(rows[0].encrypt_test).toEqual('old-test');
   });
 
   it('creates a new encryption key for the file', async () => {
@@ -317,13 +166,8 @@ describe('/reset-user-file', () => {
 
     // Use addMockFile to insert a mock file into the database
     getAccountDb().mutate(
-      'INSERT INTO files (id, group_id, deleted, owner) VALUES (?, ?, FALSE, ?)',
-      [fileId, groupId, 'genericAdmin'],
-    );
-
-    getAccountDb().mutate(
-      'INSERT INTO user_access (file_id, user_id) VALUES (?, ?)',
-      [fileId, 'genericAdmin'],
+      'INSERT INTO files (id, group_id, deleted) VALUES (?, ?, FALSE)',
+      [fileId, groupId],
     );
 
     const res = await request(app)
@@ -360,70 +204,6 @@ describe('/reset-user-file', () => {
 
     expect(res.statusCode).toEqual(400);
     expect(res.text).toBe('invalid fileId');
-  });
-
-  it('returns 403 when non-owner resets another user file', async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    getAccountDb().mutate(
-      'INSERT OR IGNORE INTO files (id, deleted, owner) VALUES (?, FALSE, ?)',
-      [fileId, OTHER_USER_ID],
-    );
-
-    const res = await request(app)
-      .post('/reset-user-file')
-      .set('x-actual-token', 'valid-token-user')
-      .send({ fileId });
-
-    expect(res.statusCode).toEqual(403);
-    expect(res.text).toEqual('file-access-not-allowed');
-  });
-
-  it("allows an admin to reset another user's file", async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    const groupId = 'admin-reset-group-id';
-    getAccountDb().mutate(
-      'INSERT INTO files (id, group_id, deleted, owner) VALUES (?, ?, FALSE, ?)',
-      [fileId, groupId, OTHER_USER_ID],
-    );
-
-    const res = await request(app)
-      .post('/reset-user-file')
-      .set('x-actual-token', 'valid-token-admin')
-      .send({ fileId });
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.body).toEqual({ status: 'ok' });
-
-    const rows = getAccountDb().all('SELECT group_id FROM files WHERE id = ?', [
-      fileId,
-    ]);
-    expect(rows[0].group_id).toBeNull();
-  });
-
-  it('returns 403 when a shared user (user_access only) tries to reset a file owned by someone else', async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    const groupId = 'shared-user-reset-group-id';
-    getAccountDb().mutate(
-      'INSERT INTO files (id, group_id, deleted, owner) VALUES (?, ?, FALSE, ?)',
-      [fileId, groupId, OTHER_USER_ID],
-    );
-    getAccountDb().mutate(
-      'INSERT INTO user_access (file_id, user_id) VALUES (?, ?)',
-      [fileId, 'genericUser'],
-    );
-
-    const res = await request(app)
-      .post('/reset-user-file')
-      .set('x-actual-token', 'valid-token-user')
-      .send({ fileId });
-
-    expect(res.statusCode).toEqual(403);
-    expect(res.text).toEqual('file-access-not-allowed');
-
-    const rows = getAccountDb().all('SELECT group_id FROM files WHERE id = ?', [
-      fileId,
-    ]);
-    expect(rows[0].group_id).toEqual(groupId);
   });
 });
 
@@ -680,94 +460,6 @@ describe('/upload-user-file', () => {
     expect(res.statusCode).toEqual(400);
     expect(res.text).toEqual('file-has-new-key');
   });
-
-  it('returns 403 when non-owner overwrites another user file', async () => {
-    const fileId = generateFileId();
-    const groupId = 'group-id';
-    const keyId = 'key-id';
-    const syncVersion = 2;
-    fs.writeFileSync(getPathForUserFile(fileId), 'existing content');
-    getAccountDb().mutate(
-      'INSERT INTO files (id, group_id, sync_version, name, encrypt_meta, encrypt_keyid, deleted, owner) VALUES (?, ?, ?, ?, ?, ?, 0, ?)',
-      [
-        fileId,
-        groupId,
-        syncVersion,
-        'existing.txt',
-        JSON.stringify({ keyId }),
-        keyId,
-        OTHER_USER_ID,
-      ],
-    );
-    onTestFinished(() => {
-      try {
-        fs.unlinkSync(getPathForUserFile(fileId));
-      } catch {}
-    });
-
-    const res = await request(app)
-      .post('/upload-user-file')
-      .set('Content-Type', 'application/encrypted-file')
-      .set('x-actual-token', 'valid-token-user')
-      .set('x-actual-file-id', fileId)
-      .set('x-actual-name', 'hacked.txt')
-      .set('x-actual-group-id', groupId)
-      .set('x-actual-format', syncVersion.toString())
-      .set('x-actual-encrypt-meta', JSON.stringify({ keyId }))
-      .send(Buffer.from('overwrite content'));
-
-    expect(res.statusCode).toEqual(403);
-    expect(res.text).toEqual('file-access-not-allowed');
-  });
-
-  it("allows an admin to overwrite another user's file", async () => {
-    const fileId = generateFileId();
-    const groupId = 'admin-upload-group-id';
-    const keyId = 'key-id';
-    const syncVersion = 2;
-    const existingContent = 'existing content';
-    const newContent = 'admin overwrite content';
-    fs.writeFileSync(getPathForUserFile(fileId), existingContent);
-    getAccountDb().mutate(
-      'INSERT INTO files (id, group_id, sync_version, name, encrypt_meta, encrypt_keyid, deleted, owner) VALUES (?, ?, ?, ?, ?, ?, 0, ?)',
-      [
-        fileId,
-        groupId,
-        syncVersion,
-        'existing.txt',
-        JSON.stringify({ keyId }),
-        keyId,
-        OTHER_USER_ID,
-      ],
-    );
-    onTestFinished(() => {
-      try {
-        fs.unlinkSync(getPathForUserFile(fileId));
-      } catch {}
-    });
-
-    const res = await request(app)
-      .post('/upload-user-file')
-      .set('Content-Type', 'application/encrypted-file')
-      .set('x-actual-token', 'valid-token-admin')
-      .set('x-actual-file-id', fileId)
-      .set('x-actual-name', 'admin-renamed.txt')
-      .set('x-actual-group-id', groupId)
-      .set('x-actual-format', syncVersion.toString())
-      .set('x-actual-encrypt-meta', JSON.stringify({ keyId }))
-      .send(Buffer.from(newContent));
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.body).toEqual({ status: 'ok', groupId });
-
-    expect(fs.readFileSync(getPathForUserFile(fileId), 'utf8')).toEqual(
-      newContent,
-    );
-    const rows = getAccountDb().all('SELECT name FROM files WHERE id = ?', [
-      fileId,
-    ]);
-    expect(rows[0].name).toEqual('admin-renamed.txt');
-  });
 });
 
 describe('/download-user-file', () => {
@@ -855,91 +547,6 @@ describe('/download-user-file', () => {
       expect(res.body).toBeInstanceOf(Buffer);
       expect(res.body.toString('utf8')).toEqual(fileContent);
     });
-
-    describe('access control', () => {
-      it('returns 403 when non-owner downloads another user file', async () => {
-        const fileId = generateFileId();
-        const fileContent = 'sensitive content';
-        fs.writeFileSync(getPathForUserFile(fileId), fileContent);
-        getAccountDb().mutate(
-          'INSERT INTO files (id, deleted, owner) VALUES (?, FALSE, ?)',
-          [fileId, OTHER_USER_ID],
-        );
-        onTestFinished(() => {
-          try {
-            fs.unlinkSync(getPathForUserFile(fileId));
-          } catch {}
-        });
-
-        const res = await request(app)
-          .get('/download-user-file')
-          .set('x-actual-token', 'valid-token-user')
-          .set('x-actual-file-id', fileId);
-
-        expect(res.statusCode).toEqual(403);
-        expect(res.text).toEqual('file-access-not-allowed');
-      });
-
-      it("allows an admin to download another user's file", async () => {
-        const fileId = generateFileId();
-        const fileContent = 'admin-downloaded content';
-        fs.writeFileSync(getPathForUserFile(fileId), fileContent);
-        getAccountDb().mutate(
-          'INSERT INTO files (id, deleted, owner) VALUES (?, FALSE, ?)',
-          [fileId, OTHER_USER_ID],
-        );
-        onTestFinished(() => {
-          try {
-            fs.unlinkSync(getPathForUserFile(fileId));
-          } catch {}
-        });
-
-        const res = await request(app)
-          .get('/download-user-file')
-          .set('x-actual-token', 'valid-token-admin')
-          .set('x-actual-file-id', fileId);
-
-        expect(res.statusCode).toEqual(200);
-        expect(res.body).toBeInstanceOf(Buffer);
-        expect(res.body.toString('utf8')).toEqual(fileContent);
-      });
-
-      it('allows non-owner with user_access to download via requireFileAccess (UserService.countUserAccess > 0)', async () => {
-        // File owned by another user; access granted only via user_access row, not owner/admin.
-        // This exercises the requireFileAccess branch that uses UserService.countUserAccess.
-        const fileId = generateFileId();
-        const fileContent = 'shared-user content';
-        fs.writeFileSync(getPathForUserFile(fileId), fileContent);
-        getAccountDb().mutate(
-          'INSERT INTO files (id, deleted, owner) VALUES (?, FALSE, ?)',
-          [fileId, OTHER_USER_ID],
-        );
-        getAccountDb().mutate(
-          'INSERT INTO user_access (file_id, user_id) VALUES (?, ?)',
-          [fileId, 'genericUser'],
-        );
-        onTestFinished(() => {
-          try {
-            fs.unlinkSync(getPathForUserFile(fileId));
-          } catch {}
-        });
-
-        const res = await request(app)
-          .get('/download-user-file')
-          .set('x-actual-token', 'valid-token-user')
-          .set('x-actual-file-id', fileId);
-
-        expect(res.statusCode).toEqual(200);
-        expect(res.headers).toEqual(
-          expect.objectContaining({
-            'content-disposition': `attachment;filename=${fileId}`,
-            'content-type': 'application/octet-stream',
-          }),
-        );
-        expect(res.body).toBeInstanceOf(Buffer);
-        expect(res.body.toString('utf8')).toEqual(fileContent);
-      });
-    });
   });
 });
 
@@ -1001,45 +608,6 @@ describe('/update-user-filename', () => {
 
     expect(rows[0].name).toEqual(newName);
   });
-
-  it('returns 403 when non-owner renames another user file', async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    getAccountDb().mutate(
-      'INSERT INTO files (id, name, deleted, owner) VALUES (?, ?, FALSE, ?)',
-      [fileId, 'original-name', OTHER_USER_ID],
-    );
-
-    const res = await request(app)
-      .post('/update-user-filename')
-      .set('x-actual-token', 'valid-token-user')
-      .send({ fileId, name: 'stolen' });
-
-    expect(res.statusCode).toEqual(403);
-    expect(res.text).toEqual('file-access-not-allowed');
-  });
-
-  it("allows an admin to rename another user's file", async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    const originalName = 'original-name';
-    const newName = 'admin-renamed-file';
-    getAccountDb().mutate(
-      'INSERT INTO files (id, name, deleted, owner) VALUES (?, ?, FALSE, ?)',
-      [fileId, originalName, OTHER_USER_ID],
-    );
-
-    const res = await request(app)
-      .post('/update-user-filename')
-      .set('x-actual-token', 'valid-token-admin')
-      .send({ fileId, name: newName });
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.body).toEqual({ status: 'ok' });
-
-    const rows = getAccountDb().all('SELECT name FROM files WHERE id = ?', [
-      fileId,
-    ]);
-    expect(rows[0].name).toEqual(newName);
-  });
 });
 
 describe('/list-user-files', () => {
@@ -1055,9 +623,6 @@ describe('/list-user-files', () => {
   });
 
   it('returns a list of user files for an authenticated user', async () => {
-    createUser('fileListAdminId', 'admin', ADMIN_ROLE, 1);
-    onTestFinished(() => deleteUser('fileListAdminId'));
-
     const fileId1 = crypto.randomBytes(16).toString('hex');
     const fileId2 = crypto.randomBytes(16).toString('hex');
     const fileName1 = 'file1.txt';
@@ -1065,12 +630,12 @@ describe('/list-user-files', () => {
 
     // Insert mock files into the database
     getAccountDb().mutate(
-      'INSERT INTO files (id, name, deleted, owner) VALUES (?, ?, FALSE, ?)',
-      [fileId1, fileName1, ''],
+      'INSERT INTO files (id, name, deleted) VALUES (?, ?, FALSE)',
+      [fileId1, fileName1],
     );
     getAccountDb().mutate(
-      'INSERT INTO files (id, name, deleted, owner) VALUES (?, ?, FALSE, ?)',
-      [fileId2, fileName2, ''],
+      'INSERT INTO files (id, name, deleted) VALUES (?, ?, FALSE)',
+      [fileId2, fileName2],
     );
 
     const res = await request(app)
@@ -1141,7 +706,6 @@ describe('/get-user-file-info', () => {
         groupId: fileInfo.group_id,
         name: fileInfo.name,
         encryptMeta: { key: 'value' },
-        usersWithAccess: [],
       },
     });
   });
@@ -1177,51 +741,6 @@ describe('/get-user-file-info', () => {
       status: 'error',
       reason: 'unauthorized',
       details: 'token-not-found',
-    });
-  });
-
-  it('returns 403 when non-owner gets another user file info', async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    getAccountDb().mutate(
-      'INSERT INTO files (id, group_id, name, deleted, owner) VALUES (?, ?, ?, FALSE, ?)',
-      [fileId, 'group-id', 'budget', OTHER_USER_ID],
-    );
-
-    const res = await request(app)
-      .get('/get-user-file-info')
-      .set('x-actual-token', 'valid-token-user')
-      .set('x-actual-file-id', fileId);
-
-    expect(res.statusCode).toEqual(403);
-    expect(res.text).toEqual('file-access-not-allowed');
-  });
-
-  it("allows an admin to get another user's file info", async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    const groupId = 'admin-file-info-group';
-    const name = 'admin-info-file';
-    const encrypt_meta = JSON.stringify({ key: 'value' });
-    getAccountDb().mutate(
-      'INSERT INTO files (id, group_id, name, encrypt_meta, deleted, owner) VALUES (?, ?, ?, ?, 0, ?)',
-      [fileId, groupId, name, encrypt_meta, OTHER_USER_ID],
-    );
-
-    const res = await request(app)
-      .get('/get-user-file-info')
-      .set('x-actual-token', 'valid-token-admin')
-      .set('x-actual-file-id', fileId);
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.body).toEqual({
-      status: 'ok',
-      data: {
-        deleted: 0,
-        fileId,
-        groupId,
-        name,
-        encryptMeta: { key: 'value' },
-        usersWithAccess: [],
-      },
     });
   });
 });
@@ -1295,112 +814,6 @@ describe('/delete-user-file', () => {
       fileId,
     ]);
     expect(rows[0].deleted).toBe(1);
-  });
-
-  it('returns 403 if the user is not the owner and not an admin', async () => {
-    const accountDb = getAccountDb();
-    const fileId = crypto.randomBytes(16).toString('hex');
-
-    // Insert a file owned by another user
-    accountDb.mutate(
-      'INSERT OR IGNORE INTO files (id, deleted, owner) VALUES (?, FALSE, ?)',
-      [fileId, 'differentUser'],
-    );
-
-    // Try to delete with a non-admin, non-owner user
-    const res = await request(app)
-      .post('/delete-user-file')
-      .set('x-actual-token', 'valid-token-user')
-      .send({ fileId });
-
-    expect(res.statusCode).toEqual(403);
-    expect(res.text).toEqual('file-access-not-allowed');
-
-    // Verify that the file is NOT deleted
-    const rows = accountDb.all('SELECT deleted FROM files WHERE id = ?', [
-      fileId,
-    ]);
-    expect(rows[0].deleted).toBe(0);
-  });
-
-  it('allows the file owner to delete the file', async () => {
-    const accountDb = getAccountDb();
-    const fileId = crypto.randomBytes(16).toString('hex');
-
-    // Insert a file owned by genericUser
-    accountDb.mutate(
-      'INSERT OR IGNORE INTO files (id, deleted, owner) VALUES (?, FALSE, ?)',
-      [fileId, 'genericUser'],
-    );
-
-    // Delete with the owner user
-    const res = await request(app)
-      .post('/delete-user-file')
-      .set('x-actual-token', 'valid-token-user')
-      .send({ fileId });
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.body).toEqual({ status: 'ok' });
-
-    // Verify that the file is deleted
-    const rows = accountDb.all('SELECT deleted FROM files WHERE id = ?', [
-      fileId,
-    ]);
-    expect(rows[0].deleted).toBe(1);
-  });
-
-  it('allows an admin to delete any file', async () => {
-    const accountDb = getAccountDb();
-    const fileId = crypto.randomBytes(16).toString('hex');
-
-    // Insert a file owned by another user
-    accountDb.mutate(
-      'INSERT OR IGNORE INTO files (id, deleted, owner) VALUES (?, FALSE, ?)',
-      [fileId, 'someOtherUser'],
-    );
-
-    // Delete with an admin user
-    const res = await request(app)
-      .post('/delete-user-file')
-      .set('x-actual-token', 'valid-token-admin')
-      .send({ fileId });
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.body).toEqual({ status: 'ok' });
-
-    // Verify that the file is deleted
-    const rows = accountDb.all('SELECT deleted FROM files WHERE id = ?', [
-      fileId,
-    ]);
-    expect(rows[0].deleted).toBe(1);
-  });
-
-  it('returns 403 when a shared user (user_access only) tries to delete a file owned by someone else', async () => {
-    const accountDb = getAccountDb();
-    const fileId = crypto.randomBytes(16).toString('hex');
-
-    // File owned by another user; genericUser only has shared user_access.
-    accountDb.mutate(
-      'INSERT OR IGNORE INTO files (id, deleted, owner) VALUES (?, FALSE, ?)',
-      [fileId, OTHER_USER_ID],
-    );
-    accountDb.mutate(
-      'INSERT INTO user_access (file_id, user_id) VALUES (?, ?)',
-      [fileId, 'genericUser'],
-    );
-
-    const res = await request(app)
-      .post('/delete-user-file')
-      .set('x-actual-token', 'valid-token-user')
-      .send({ fileId });
-
-    expect(res.statusCode).toEqual(403);
-    expect(res.text).toEqual('file-access-not-allowed');
-
-    const rows = accountDb.all('SELECT deleted FROM files WHERE id = ?', [
-      fileId,
-    ]);
-    expect(rows[0].deleted).toBe(0);
   });
 });
 
@@ -1540,51 +953,6 @@ describe('/sync', () => {
     expect(res.statusCode).toEqual(400);
     expect(res.text).toEqual('file-has-new-key');
   });
-
-  it('returns 403 when non-owner syncs another user file', async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    const groupId = 'group-id';
-    const keyId = 'key-id';
-    const syncVersion = 2;
-    const encryptMeta = JSON.stringify({ keyId });
-    addMockFile(
-      fileId,
-      groupId,
-      keyId,
-      encryptMeta,
-      syncVersion,
-      OTHER_USER_ID,
-    );
-    const syncRequest = createMinimalSyncRequest(fileId, groupId, keyId);
-
-    const res = await sendSyncRequest(syncRequest, 'valid-token-user');
-
-    expect(res.statusCode).toEqual(403);
-    expect(res.text).toEqual('file-access-not-allowed');
-  });
-
-  it("allows an admin to sync another user's file", async () => {
-    const fileId = crypto.randomBytes(16).toString('hex');
-    const groupId = 'group-id';
-    const keyId = 'key-id';
-    const syncVersion = 2;
-    const encryptMeta = JSON.stringify({ keyId });
-    addMockFile(
-      fileId,
-      groupId,
-      keyId,
-      encryptMeta,
-      syncVersion,
-      OTHER_USER_ID,
-    );
-    const syncRequest = createMinimalSyncRequest(fileId, groupId, keyId);
-
-    const res = await sendSyncRequest(syncRequest, 'valid-token-admin');
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.headers['content-type']).toEqual('application/actual-sync');
-    expect(res.headers['x-actual-sync-method']).toEqual('simple');
-  });
 });
 
 function addMockFile(
@@ -1593,11 +961,10 @@ function addMockFile(
   keyId: string,
   encryptMeta: string,
   syncVersion: number,
-  owner: string = 'genericAdmin',
 ) {
   getAccountDb().mutate(
-    'INSERT INTO files (id, group_id, encrypt_keyid, encrypt_meta, sync_version, owner) VALUES (?, ?, ?,?, ?, ?)',
-    [fileId, groupId, keyId, encryptMeta, syncVersion, owner],
+    'INSERT INTO files (id, group_id, encrypt_keyid, encrypt_meta, sync_version) VALUES (?, ?, ?,?, ?)',
+    [fileId, groupId, keyId, encryptMeta, syncVersion],
   );
 }
 

@@ -15,24 +15,24 @@ describe('load-config _FILE overrides', () => {
   beforeAll(async () => {
     secretDirectory = mkdtempSync(join(tmpdir(), 'actual-load-config-'));
 
-    const secretPath = join(secretDirectory, 'client-secret');
+    const secretPath = join(secretDirectory, 'github-token');
     writeFileSync(secretPath, 'secret-from-file\n');
 
-    process.env.ACTUAL_OPENID_CLIENT_SECRET_FILE = secretPath;
+    process.env.ACTUAL_GITHUB_TOKEN_FILE = secretPath;
     // Also set the plain variable, which convict imports at construction time
     // and re-imports at the end of loadFile. The file must still win.
-    process.env.ACTUAL_OPENID_CLIENT_SECRET = 'secret-from-env';
+    process.env.ACTUAL_GITHUB_TOKEN = 'secret-from-env';
 
     ({ config } = await import('./load-config'));
   });
 
   afterAll(() => {
-    delete process.env.ACTUAL_OPENID_CLIENT_SECRET_FILE;
-    delete process.env.ACTUAL_OPENID_CLIENT_SECRET;
+    delete process.env.ACTUAL_GITHUB_TOKEN_FILE;
+    delete process.env.ACTUAL_GITHUB_TOKEN;
     rmSync(secretDirectory, { recursive: true, force: true });
   });
 
   it('loads the secret from the file, superseding the plain variable', () => {
-    expect(config.get('openId.client_secret')).toBe('secret-from-file');
+    expect(config.get('github.token')).toBe('secret-from-file');
   });
 });

@@ -4,5 +4,4 @@ export type Budget = {
   encryptKeyId?: string;
   groupId?: string;
   name: string;
-  owner?: string;
 };

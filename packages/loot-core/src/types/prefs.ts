@@ -153,8 +153,6 @@ export type GlobalPrefsJson = Partial<{
   showNewsFeed?: GlobalPrefs['showNewsFeed'];
 }>;
 
-export type AuthMethods = 'password' | 'openid';
-
 export type ServerPrefs = Partial<{
   'flags.plugins': 'true' | 'false';
 }>;

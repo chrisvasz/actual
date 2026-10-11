@@ -30,7 +30,6 @@ function createFile(overrides: Partial<File> = {}) {
     groupId: GROUP_ID,
     encryptMeta: null,
     syncVersion: '2',
-    owner: null,
   });
   return Object.assign(file, overrides);
 }

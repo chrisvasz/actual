@@ -29,12 +29,6 @@ import {
 
 const UPLOAD_FREQUENCY_IN_DAYS = 7;
 
-export type UsersWithAccess = {
-  userId: string;
-  userName: string;
-  displayName: string;
-  owner: boolean;
-};
 export type RemoteFile = {
   deleted: boolean;
   fileId: string;
@@ -42,8 +36,6 @@ export type RemoteFile = {
   name: string;
   encryptKeyId: string;
   hasKey: boolean;
-  owner: string;
-  usersWithAccess: UsersWithAccess[];
 };
 
 async function checkHTTPStatus(res) {

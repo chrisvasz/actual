@@ -1,13 +1,10 @@
 import { join, resolve } from 'node:path';
 
-import { bootstrapOpenId } from './accounts/openid';
 import {
-  bootstrapPassword,
   hashPassword,
   isValidPassword,
   loginWithPassword,
   setPasswordHash,
-  verifyPassword,
 } from './accounts/password';
 import { openDatabase } from './db';
 import { config } from './load-config';
@@ -32,17 +29,11 @@ export function needsBootstrap() {
 export function listLoginMethods() {
   const accountDb = getAccountDb();
   const rows = accountDb.all('SELECT method, display_name, active FROM auth');
-  return rows
-    .filter(f =>
-      rows.length > 1 && config.get('enforceOpenId')
-        ? f.method === 'openid'
-        : true,
-    )
-    .map(r => ({
-      method: r.method,
-      active: r.active,
-      displayName: r.display_name,
-    }));
+  return rows.map(r => ({
+    method: r.method,
+    active: r.active,
+    displayName: r.display_name,
+  }));
 }
 
 export function getActiveLoginMethod() {
@@ -83,166 +74,42 @@ export function getLoginMethod(req) {
   return activeMethod || config.get('loginMethod');
 }
 
-export async function bootstrap(loginSettings, forced = false) {
+export async function bootstrap(loginSettings) {
   if (!loginSettings) {
     return { error: 'invalid-login-settings' };
   }
-  const passEnabled = 'password' in loginSettings;
-  const openIdEnabled = 'openId' in loginSettings;
 
-  const accountDb = getAccountDb();
-
-  let passwordHash;
-  if (passEnabled) {
-    if (!isValidPassword(loginSettings.password)) {
-      return { error: 'invalid-password' };
-    }
-    passwordHash = await hashPassword(loginSettings.password);
+  if (!('password' in loginSettings)) {
+    return { error: 'no-auth-method-selected' };
   }
+
+  if (!isValidPassword(loginSettings.password)) {
+    return { error: 'invalid-password' };
+  }
+
+  const passwordHash = await hashPassword(loginSettings.password);
+  const accountDb = getAccountDb();
 
   accountDb.mutate('BEGIN TRANSACTION');
   try {
-    const { countOfOwner } =
-      accountDb.first(
-        `SELECT count(*) as countOfOwner
-   FROM users
-   WHERE users.user_name <> '' and users.owner = 1`,
-      ) || {};
-
-    if (!forced && (!openIdEnabled || countOfOwner > 0)) {
-      if (!needsBootstrap()) {
-        accountDb.mutate('ROLLBACK');
-        return { error: 'already-bootstrapped' };
-      }
-    }
-
-    if (!passEnabled && !openIdEnabled) {
+    if (!needsBootstrap()) {
       accountDb.mutate('ROLLBACK');
-      return { error: 'no-auth-method-selected' };
+      return { error: 'already-bootstrapped' };
     }
 
-    if (passEnabled && openIdEnabled && !forced) {
-      accountDb.mutate('ROLLBACK');
-      return { error: 'max-one-method-allowed' };
-    }
-
-    if (passEnabled) {
-      setPasswordHash(passwordHash);
-    }
-
-    if (openIdEnabled && forced) {
-      const { error } = await bootstrapOpenId(loginSettings.openId);
-      if (error) {
-        accountDb.mutate('ROLLBACK');
-        return { error };
-      }
-    }
-
+    setPasswordHash(passwordHash);
     accountDb.mutate('COMMIT');
-    return passEnabled ? await loginWithPassword(loginSettings.password) : {};
   } catch (error) {
     accountDb.mutate('ROLLBACK');
     throw error;
   }
-}
 
-export function isAdmin(userId) {
-  return hasPermission(userId, 'ADMIN');
-}
-
-export function hasPermission(userId, permission) {
-  return getUserPermission(userId) === permission;
-}
-
-export async function enableOpenID(loginSettings) {
-  if (!loginSettings || !loginSettings.openId) {
-    return { error: 'invalid-login-settings' };
-  }
-
-  const { error } = (await bootstrapOpenId(loginSettings.openId)) || {};
-  if (error) {
-    return { error };
-  }
-
-  getAccountDb().mutate('DELETE FROM sessions');
-}
-
-export async function disableOpenID(loginSettings) {
-  if (!loginSettings || !loginSettings.password) {
-    return { error: 'invalid-login-settings' };
-  }
-
-  const accountDb = getAccountDb();
-  const { extra_data: passwordHash } =
-    accountDb.first('SELECT extra_data FROM auth WHERE method = ?', [
-      'password',
-    ]) || {};
-
-  if (!passwordHash) {
-    return { error: 'invalid-password' };
-  }
-
-  if (!loginSettings?.password) {
-    return { error: 'invalid-password' };
-  }
-
-  const confirmed = await verifyPassword(loginSettings.password, passwordHash);
-
-  if (!confirmed) {
-    return { error: 'invalid-password' };
-  }
-
-  const { error } = await bootstrapPassword(loginSettings.password);
-  if (error) {
-    return { error };
-  }
-
-  try {
-    accountDb.transaction(() => {
-      accountDb.mutate('DELETE FROM sessions');
-      accountDb.mutate(
-        `DELETE FROM user_access
-                              WHERE user_access.user_id IN (
-                                  SELECT users.id
-                                  FROM users
-                                  WHERE users.user_name <> ?
-                              );`,
-        [''],
-      );
-      accountDb.mutate('DELETE FROM users WHERE user_name <> ?', ['']);
-      accountDb.mutate('DELETE FROM auth WHERE method = ?', ['openid']);
-    });
-  } catch (err) {
-    console.error('Error cleaning up openid information:', err);
-    return { error: 'database-error' };
-  }
+  return await loginWithPassword(loginSettings.password);
 }
 
 export function getSession(token) {
   const accountDb = getAccountDb();
-  return accountDb.first(
-    `SELECT sessions.*
-     FROM sessions
-     JOIN users ON users.id = sessions.user_id
-     WHERE sessions.token = ? AND users.enabled = 1`,
-    [token],
-  );
-}
-
-export function getUserInfo(userId) {
-  const accountDb = getAccountDb();
-  return accountDb.first('SELECT * FROM users WHERE id = ?', [userId]);
-}
-
-export function getUserPermission(userId) {
-  const accountDb = getAccountDb();
-  const { role } = accountDb.first(
-    `SELECT role FROM users
-          WHERE users.id = ?`,
-    [userId],
-  ) || { role: '' };
-
-  return role;
+  return accountDb.first('SELECT * FROM sessions WHERE token = ?', [token]);
 }
 
 export function getServerPrefs() {

@@ -11,8 +11,6 @@ export { ManageRulesPage as RuleEdit } from '#components/ManageRulesPage';
 export { ManagePayeesPage as Payees } from '#components/payees/ManagePayeesPage';
 export { ManagePayeesPage as PayeeEdit } from '#components/payees/ManagePayeesPage';
 
-export { UserDirectoryPage } from '#components/admin/UserDirectory/UserDirectoryPage';
-
 // Account component is currently used for uncategorized transactions view.
 // Need to separate this to it's own component in the future.
 export { Account as Category } from '#components/accounts/Account';

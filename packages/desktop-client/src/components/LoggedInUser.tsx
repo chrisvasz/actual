@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { useLocation } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
 import { Menu } from '@actual-app/components/menu';
@@ -10,18 +9,14 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
-import type { RemoteFile, SyncedLocalFile } from '@actual-app/core/types/file';
 
-import { useAuth } from '#auth/AuthProvider';
-import { Permissions } from '#auth/types';
 import { closeBudget } from '#budgetfiles/budgetfilesSlice';
-import { useMetadataPref } from '#hooks/useMetadataPref';
 import { useNavigate } from '#hooks/useNavigate';
 import { useUserData } from '#hooks/useUserData';
-import { useDispatch, useSelector } from '#redux';
+import { useDispatch } from '#redux';
 import { signOut } from '#users/usersSlice';
 
-import { useMultiuserEnabled, useServerURL } from './ServerContext';
+import { useServerURL } from './ServerContext';
 
 type LoggedInUserProps = {
   hideIfNoServer?: boolean;
@@ -35,17 +30,6 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const serverUrl = useServerURL();
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const [budgetId] = useMetadataPref('id');
-  const [cloudFileId] = useMetadataPref('cloudFileId');
-  const location = useLocation();
-  const { hasPermission } = useAuth();
-  const multiuserEnabled = useMultiuserEnabled();
-  const allFiles = useSelector(state => state.budgetfiles.allFiles || []);
-  const remoteFiles = allFiles.filter(
-    f => f.state === 'remote' || f.state === 'synced' || f.state === 'detached',
-  ) as (SyncedLocalFile | RemoteFile)[];
-  const currentFile = remoteFiles.find(f => f.cloudFileId === cloudFileId);
-  const hasSyncedPrefs = useSelector(state => state.prefs.synced);
 
   async function onCloseBudget() {
     await dispatch(closeBudget());
@@ -66,15 +50,6 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
       case 'sign-in':
         await onCloseBudget();
         void navigate('/login');
-        break;
-      case 'user-access':
-        void navigate('/user-access');
-        break;
-      case 'user-directory':
-        void navigate('/user-directory');
-        break;
-      case 'index':
-        void navigate('/');
         break;
       case 'sign-out':
         void dispatch(signOut());
@@ -144,58 +119,24 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
     text: string;
   };
 
-  const getMenuItems = (): (MenuItem | typeof Menu.line)[] => {
-    const isAdmin = hasPermission(Permissions.ADMINISTRATOR);
-
-    const baseMenu: (MenuItem | typeof Menu.line)[] = [];
+  const getMenuItems = (): MenuItem[] => {
+    const items: MenuItem[] = [];
     if (
       serverUrl &&
       !userData?.offline &&
       userData?.loginMethod === 'password'
     ) {
-      baseMenu.push({ name: 'change-password', text: 'Change password' });
+      items.push({ name: 'change-password', text: 'Change password' });
     }
     if (serverUrl) {
-      baseMenu.push({ name: 'sign-out', text: 'Sign out' });
+      items.push({ name: 'sign-out', text: 'Sign out' });
     }
-    baseMenu.push({
+    items.push({
       name: 'config-server',
       text: serverUrl ? 'Change server URL' : 'Start using a server',
     });
 
-    const adminMenu: (MenuItem | typeof Menu.line)[] = [];
-    if (multiuserEnabled && isAdmin) {
-      if (!budgetId && location.pathname !== '/') {
-        adminMenu.push({ name: 'index', text: 'View file list' });
-      } else if (
-        serverUrl &&
-        !userData?.offline &&
-        location.pathname !== '/user-directory'
-      ) {
-        adminMenu.push({ name: 'user-directory', text: 'User Directory' });
-      }
-    }
-
-    if (
-      multiuserEnabled &&
-      ((currentFile && userData && currentFile.owner === userData.userId) ||
-        isAdmin) &&
-      serverUrl &&
-      !userData?.offline &&
-      cloudFileId &&
-      location.pathname !== '/user-access'
-    ) {
-      adminMenu.push({
-        name: 'user-access',
-        text: 'User Access Management',
-      });
-    }
-
-    if (adminMenu.length > 0) {
-      adminMenu.push(Menu.line);
-    }
-
-    return [...adminMenu, ...baseMenu];
+    return items;
   };
 
   const serverStatus = getServerStatus();
@@ -215,35 +156,13 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
           {serverStatus.message}
         </Button>
       </Tooltip>
-      {!loading &&
-        multiuserEnabled &&
-        userData &&
-        userData?.displayName &&
-        !hasSyncedPrefs && (
-          <small>
-            (logged in as: <span>{userData?.displayName}</span>)
-          </small>
-        )}
-      {!loading &&
-        multiuserEnabled &&
-        userData &&
-        userData?.displayName &&
-        hasSyncedPrefs && (
-          <small>
-            (logged in as: <span>{userData?.displayName}</span>)
-          </small>
-        )}
-
       <Popover
         offset={8}
         triggerRef={triggerRef}
         isOpen={menuOpen}
         onOpenChange={() => setMenuOpen(false)}
       >
-        <Menu
-          onMenuSelect={handleMenuSelect}
-          items={getMenuItems().filter(Boolean)}
-        />
+        <Menu onMenuSelect={handleMenuSelect} items={getMenuItems()} />
       </Popover>
     </View>
   );

@@ -33,12 +33,6 @@ export function Bootstrap() {
         return 'Passwords do not match';
       case 'network-failure':
         return 'Unable to contact the server';
-      case 'missing-issuer':
-        return 'OpenID server cannot be empty';
-      case 'missing-client-id':
-        return 'Client ID cannot be empty';
-      case 'missing-client-secret':
-        return 'Client secret cannot be empty';
       default:
         return `An unknown error occurred: ${error}`;
     }
