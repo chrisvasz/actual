@@ -10,6 +10,7 @@ import { runHandler, runMutator } from '#server/mutators';
 import * as sheet from '#server/sheet';
 import {
   batchMessages,
+  discardMessageBatch,
   endMessageBatch,
   setSyncingMode,
   startMessageBatch,
@@ -146,16 +147,23 @@ function getChildTagNotes(categoryName: string, amount: number): string {
 
 // Batches the messages of every handler `func` calls into one, like the
 // API's batch-budget-start/end. Writes made inside apply when the batch
-// ends, so a handler won't read back what an earlier one wrote
+// ends, so a handler won't read back what an earlier one wrote. If
+// `func` throws, nothing it queued is applied. A nested call joins the
+// open batch and leaves ending or discarding it to the outer one
 async function batchHandlerMessages(func: () => Promise<void>) {
   const isOwner = startMessageBatch();
+  if (!isOwner) {
+    await func();
+    return;
+  }
+
   try {
     await func();
-  } finally {
-    if (isOwner) {
-      endMessageBatch();
-    }
+  } catch (e) {
+    discardMessageBatch(e);
+    throw e;
   }
+  endMessageBatch();
 }
 
 async function insertDemoTags(handlers: Handlers) {
@@ -628,7 +636,7 @@ async function fillOther(handlers, account, payees, groups) {
 }
 
 async function createBudget(accounts, payees, groups) {
-  const primaryAccount = accounts.find(a => (a.name = 'Bank of America'));
+  const primaryAccount = accounts.find(a => a.name === 'Bank of America');
   const earliestDate = db.first<Pick<db.DbViewTransaction, 'date'>>(
     `SELECT t.date FROM v_transactions t LEFT JOIN accounts a ON t.account = a.id
        WHERE a.offbudget = 0 AND t.is_child = 0 ORDER BY date ASC LIMIT 1`,
@@ -926,7 +934,7 @@ export async function createTestBudget(handlers: Handlers) {
   // This might happen depending on the transactions added, but we
   // don't want to show that as it'd be weird. We modify the latest
   // deposit transaction to force it to be positive
-  const primaryAccount = accounts.find(a => (a.name = 'Bank of America'));
+  const primaryAccount = accounts.find(a => a.name === 'Bank of America');
   const { data: primaryBalance } = aqlQuery(
     q('transactions')
       .filter({ account: primaryAccount.id })
