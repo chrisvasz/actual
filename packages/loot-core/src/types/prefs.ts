@@ -105,7 +105,6 @@ export type GlobalPrefs = Partial<{
   floatingSidebar: boolean;
   maxMonths: number;
   keyId?: string;
-  language: string;
   theme: Theme;
   preferredDarkTheme: DarkTheme;
   plugins: boolean;
@@ -140,7 +139,6 @@ export type GlobalPrefsJson = Partial<{
   'floating-sidebar'?: string; // "true" or "false"
   'max-months'?: string; // e.g. "2" or "3"
   'encrypt-key'?: string;
-  language?: GlobalPrefs['language'];
   theme?: GlobalPrefs['theme'];
   'preferred-dark-theme'?: GlobalPrefs['preferredDarkTheme'];
   'installed-custom-theme'?: GlobalPrefs['installedCustomLightTheme'];

@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as asyncStorage from '#platform/server/asyncStorage';
 import * as aql from '#server/aql';
 import * as db from '#server/db';
 import { handlers } from '#server/main';
@@ -114,19 +113,6 @@ describe('formula preference bootstrap', () => {
     });
     ensureFormulaPreferencesLoaded();
 
-    expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1,234.50');
-  });
-
-  it('ignores the stored language', async () => {
-    vi.mocked(asyncStorage.getItem).mockResolvedValue('de-DE');
-    await runHandler(handlers['save-global-prefs'], {
-      language: 'de-DE',
-    });
-    ensureFormulaPreferencesLoaded();
-
-    expect(vi.mocked(asyncStorage.getItem)).not.toHaveBeenCalledWith(
-      'language',
-    );
     expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1,234.50');
   });
 });

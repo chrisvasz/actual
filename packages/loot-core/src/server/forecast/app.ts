@@ -65,7 +65,7 @@ export async function generateForecast({
     conditions,
     conditionsOp,
   );
-  let accounts = await resolveForecastAccounts({
+  let accounts = resolveForecastAccounts({
     accountIds,
     plainConditions,
     resolvedConditionsOp,
@@ -107,7 +107,7 @@ export async function generateForecast({
     );
   }
 
-  const futureOccurrences = await buildFutureScheduleOccurrences(
+  const futureOccurrences = buildFutureScheduleOccurrences(
     schedules,
     dateContext.endDateObj,
     accountsById,

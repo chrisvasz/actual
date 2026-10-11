@@ -25,20 +25,20 @@ afterEach(() => {
 describe('node asyncStorage', () => {
   it('persists values as valid JSON and reads them back', async () => {
     asyncStorage.init();
-    await asyncStorage.setItem('language', 'en');
+    await asyncStorage.setItem('lastBudget', 'en');
 
     // The on-disk file is complete, valid JSON.
     const raw = fs.readFileSync(storePath(), 'utf8');
-    expect(JSON.parse(raw)).toEqual({ language: 'en' });
+    expect(JSON.parse(raw)).toEqual({ lastBudget: 'en' });
 
     // A fresh init reads the persisted value.
     asyncStorage.init();
-    expect(await asyncStorage.getItem('language')).toBe('en');
+    expect(await asyncStorage.getItem('lastBudget')).toBe('en');
   });
 
   it('does not leave temp files behind after a write', async () => {
     asyncStorage.init();
-    await asyncStorage.setItem('language', 'en');
+    await asyncStorage.setItem('lastBudget', 'en');
     await asyncStorage.setItem('theme', 'dark');
 
     const leftovers = fs
@@ -51,7 +51,7 @@ describe('node asyncStorage', () => {
     asyncStorage.init();
 
     await Promise.all([
-      asyncStorage.setItem('language', 'en'),
+      asyncStorage.setItem('lastBudget', 'en'),
       asyncStorage.setItem('theme', 'dark'),
       asyncStorage.multiSet([
         ['max-months', '3'],
@@ -62,7 +62,7 @@ describe('node asyncStorage', () => {
     // The file is complete, valid JSON, retains every key (no write clobbered
     // another), and leaves no temp files behind.
     expect(JSON.parse(fs.readFileSync(storePath(), 'utf8'))).toEqual({
-      language: 'en',
+      lastBudget: 'en',
       theme: 'dark',
       'max-months': '3',
       'floating-sidebar': 'true',
@@ -82,12 +82,12 @@ describe('node asyncStorage', () => {
   it('backs up a corrupt store instead of silently wiping it', async () => {
     // Simulate a truncated/corrupt file left behind by an interrupted write
     // (e.g. the process was killed mid-write during an app update).
-    const corrupt = '{"language":"en"';
+    const corrupt = '{"lastBudget":"en"';
     fs.writeFileSync(storePath(), corrupt, 'utf8');
 
     // init must not throw, and must start from defaults.
     expect(() => asyncStorage.init()).not.toThrow();
-    expect(await asyncStorage.getItem('language')).toBeUndefined();
+    expect(await asyncStorage.getItem('lastBudget')).toBeUndefined();
 
     // The corrupt content is preserved in a backup so it can be recovered,
     // rather than being thrown away.
@@ -103,7 +103,7 @@ describe('node asyncStorage', () => {
     fs.writeFileSync(storePath(), invalid, 'utf8');
 
     expect(() => asyncStorage.init()).not.toThrow();
-    expect(await asyncStorage.getItem('language')).toBeUndefined();
+    expect(await asyncStorage.getItem('lastBudget')).toBeUndefined();
 
     const backupPath = `${storePath()}.corrupt`;
     expect(fs.existsSync(backupPath)).toBe(true);

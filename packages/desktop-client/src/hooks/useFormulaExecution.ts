@@ -27,7 +27,6 @@ import {
 } from '#components/reports/reportRanges';
 import { bootstrapHyperFormula } from '#util/bootstrapHyperFormula';
 
-import { useGlobalPref } from './useGlobalPref';
 import { useLocale } from './useLocale';
 
 bootstrapHyperFormula();
@@ -143,7 +142,6 @@ export function useFormulaExecution(
   accounts?: SimpleAccount[],
 ) {
   const locale = useLocale();
-  const [language] = useGlobalPref('language');
   const [result, setResult] = useState<number | string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -186,14 +184,11 @@ export function useFormulaExecution(
       try {
         const browserLocale =
           typeof navigator === 'undefined' ? undefined : navigator.language;
-        const formulaLocale = language || browserLocale || locale || 'en-US';
+        const formulaLocale = browserLocale || locale || 'en-US';
 
         try {
           setCachedUserPreferences(
-            await send('formula-load-user-preferences', {
-              selectedLocale: language,
-              browserLocale,
-            }),
+            await send('formula-load-user-preferences', { browserLocale }),
           );
         } catch (err) {
           console.error('Error loading formula preferences:', err);
@@ -258,7 +253,6 @@ export function useFormulaExecution(
     formula,
     queriesVersion,
     locale,
-    language,
     queriesKey,
     namedExpressionsKey,
     accountsKey,

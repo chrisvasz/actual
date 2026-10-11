@@ -61,10 +61,10 @@ export function matchesAccountCondition(
   }
 }
 
-export async function resolveAccountIdsFromConditions(
+export function resolveAccountIdsFromConditions(
   conditions: RuleConditionEntity[],
   conditionsOp: 'and' | 'or',
-): Promise<string[] | undefined> {
+): string[] | undefined {
   const accountConditions = conditions.filter(
     (condition): condition is AccountCondition => condition.field === 'account',
   );
@@ -153,7 +153,7 @@ export function getAccounts(
   }));
 }
 
-export async function resolveForecastAccounts({
+export function resolveForecastAccounts({
   accountIds,
   plainConditions,
   resolvedConditionsOp,
@@ -167,7 +167,7 @@ export async function resolveForecastAccounts({
   let resolvedAccountIds = accountIds;
 
   if (canRestrictAccounts && plainConditions.length > 0) {
-    const conditionAccountIds = await resolveAccountIdsFromConditions(
+    const conditionAccountIds = resolveAccountIdsFromConditions(
       plainConditions,
       resolvedConditionsOp,
     );
