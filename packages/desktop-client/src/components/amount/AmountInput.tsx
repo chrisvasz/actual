@@ -1,18 +1,24 @@
 import { memo, useEffect, useState } from 'react';
-import type { FocusEvent } from 'react';
+import type { CSSProperties, FocusEvent, RefObject } from 'react';
 
 import { styles } from '@actual-app/components/styles';
 import * as Platform from '@actual-app/core/shared/platform';
 
-import { useFeatureFlag } from '#hooks/useFeatureFlag';
-
-import { CalculatorAmountInput } from './CalculatorAmountInput';
-import type { CalculatorAmountInputProps } from './CalculatorAmountInput';
 import { FocusableAmountInput } from './FocusableAmountInput';
 
-export type AmountInputProps = Omit<CalculatorAmountInputProps, 'onFocus'> & {
-  disableNativeAutoFocusOnIOS?: boolean;
+export type AmountInputProps = {
+  value: number;
+  variant?: 'normal' | 'large';
+  negate?: boolean;
+  style?: CSSProperties;
+  inputRef?: RefObject<HTMLInputElement | null>;
+  onEnter?: () => void;
+  onChange?: (value: number) => void;
   onFocus?: (event?: FocusEvent<HTMLInputElement>) => void;
+  onBlur?: (event: FocusEvent<HTMLInputElement>) => void;
+  autoFocus?: boolean;
+  disabled?: boolean;
+  disableNativeAutoFocusOnIOS?: boolean;
 };
 
 export const AmountInput = memo(function AmountInput({
@@ -29,7 +35,6 @@ export const AmountInput = memo(function AmountInput({
   variant = 'normal',
   ...props
 }: AmountInputProps) {
-  const mobileCalculatorEnabled = useFeatureFlag('mobileCalculator');
   const fallbackAutoFocus =
     autoFocus && !(disableNativeAutoFocusOnIOS && Platform.isIOSAgent);
   const [focused, setFocused] = useState(fallbackAutoFocus);
@@ -39,25 +44,6 @@ export const AmountInput = memo(function AmountInput({
       setFocused(true);
     }
   }, [fallbackAutoFocus]);
-
-  if (mobileCalculatorEnabled) {
-    return (
-      <CalculatorAmountInput
-        {...props}
-        autoFocus={autoFocus}
-        autoFocusIndirect={disableNativeAutoFocusOnIOS}
-        disabled={disabled}
-        inputRef={inputRef}
-        negate={negate}
-        onBlur={onBlur}
-        onChange={onChange}
-        onEnter={onEnter}
-        onFocus={onFocus}
-        value={value}
-        variant={variant}
-      />
-    );
-  }
 
   return (
     <FocusableAmountInput
