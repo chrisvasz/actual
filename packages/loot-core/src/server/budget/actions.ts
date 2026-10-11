@@ -1,27 +1,28 @@
 // @ts-strict-ignore
 
 import * as db from '#server/db';
-import * as sheet from '#server/sheet';
 import { batchMessages } from '#server/sync';
 import * as monthUtils from '#shared/months';
 import { safeNumber } from '#shared/util';
 import type { IntegerAmount } from '#shared/util';
 import type { CategoryEntity } from '#types/models';
 
+import { getBudgetCellValue, getBudgetMonths } from './state';
+
 export async function getSheetValue(
   sheetName: string,
   cell: string,
 ): Promise<number> {
-  const node = sheet.getCell(sheetName, cell);
-  return safeNumber(typeof node.value === 'number' ? node.value : 0);
+  const value = getBudgetCellValue(sheetName, cell);
+  return safeNumber(typeof value === 'number' ? value : 0);
 }
 
 export async function getSheetBoolean(
   sheetName: string,
   cell: string,
 ): Promise<boolean> {
-  const node = sheet.getCell(sheetName, cell);
-  return typeof node.value === 'boolean' ? node.value : false;
+  const value = getBudgetCellValue(sheetName, cell);
+  return typeof value === 'boolean' ? value : false;
 }
 
 // We want to only allow the positive movement of money back and
@@ -75,14 +76,8 @@ function getBudgetData(month: string): BudgetData[] {
 }
 
 function getAllMonths(startMonth: string): string[] {
-  const { createdMonths } = sheet.get().meta();
-  let latest = null;
-  for (const month of createdMonths) {
-    if (latest == null || month > latest) {
-      latest = month;
-    }
-  }
-  return monthUtils.rangeInclusive(startMonth, latest);
+  const months = getBudgetMonths();
+  return monthUtils.rangeInclusive(startMonth, months[months.length - 1]);
 }
 
 // TODO: Valid month format in all the functions below

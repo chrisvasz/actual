@@ -9,6 +9,16 @@ import * as fs from '#platform/server/fs';
 import { logger } from '#platform/server/log';
 import { createApp } from '#server/app';
 import * as budget from '#server/budget/base';
+import {
+  loadBudgetState,
+  reloadBudgetState,
+  unloadBudgetState,
+} from '#server/budget/state';
+import {
+  clearQueryCells,
+  setQueryCellListener,
+} from '#server/cells/query-cells';
+import type { CellChange } from '#server/cells/types';
 import * as cloudStorage from '#server/cloud-storage';
 import * as db from '#server/db';
 import * as mappings from '#server/db/mappings';
@@ -19,7 +29,6 @@ import { app as mainApp } from '#server/main-app';
 import { mutator } from '#server/mutators';
 import * as prefs from '#server/prefs';
 import { getServer } from '#server/server-config';
-import * as sheet from '#server/sheet';
 import {
   clearFullSyncTimeout,
   initialFullSync,
@@ -145,9 +154,7 @@ async function getRemoteFiles() {
 }
 
 async function recomputeBudget() {
-  sheet.loadUserBudgets(db);
-  sheet.get().recomputeAll();
-  await sheet.waitOnSpreadsheet();
+  reloadBudgetState();
 }
 
 async function uploadBudget({ id }: { id?: Budget['id'] } = {}): Promise<{
@@ -258,9 +265,9 @@ async function closeBudget() {
   captureBreadcrumb({ message: 'Closing budget' });
   resetFormulaPreferencesCache();
 
-  // The spreadsheet may be running, wait for it to complete
-  await sheet.waitOnSpreadsheet();
-  sheet.unloadSpreadsheet();
+  unloadBudgetState();
+  setQueryCellListener(null);
+  clearQueryCells();
 
   clearFullSyncTimeout();
   await mainApp.stopServices();
@@ -525,12 +532,8 @@ async function exportBudget() {
   }
 }
 
-function onSheetChange({ names }: { names: string[] }) {
-  const nodes = names.map(name => {
-    const node = sheet.get()._getNode(name);
-    return { name: node.name, value: node.value };
-  });
-  connection.send('cells-changed', nodes);
+function onCellsChange(changes: CellChange[]) {
+  connection.send('cells-changed', changes);
 }
 
 async function _loadBudget(id: Budget['id']): Promise<{
@@ -633,7 +636,9 @@ async function _loadBudget(id: Budget['id']): Promise<{
   }
 
   try {
-    await sheet.loadSpreadsheet(db, onSheetChange);
+    clearQueryCells();
+    setQueryCellListener(onCellsChange);
+    await loadBudgetState(onCellsChange);
   } catch (e) {
     captureException(e);
     await closeBudget();

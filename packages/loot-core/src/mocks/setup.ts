@@ -3,6 +3,11 @@ import * as nativeFs from 'fs';
 
 import * as fetchClient from '#platform/client/connection';
 import * as sqlite from '#platform/server/sqlite';
+import { unloadBudgetState } from '#server/budget/state';
+import {
+  clearQueryCells,
+  setQueryCellListener,
+} from '#server/cells/query-cells';
 import * as db from '#server/db';
 import type * as MigrationsType from '#server/migrate/migrations';
 import {
@@ -10,7 +15,6 @@ import {
   enableGlobalMutations,
 } from '#server/mutators';
 import { setServer } from '#server/server-config';
-import * as sheet from '#server/sheet';
 import { setSyncingMode, waitForScheduledSyncs } from '#server/sync';
 import * as rules from '#server/transactions/transaction-rules';
 import { updateVersion } from '#server/update';
@@ -166,16 +170,9 @@ afterEach(async () => {
   tracer.end();
   void fetchClient.clearServer();
 
-  return new Promise(resolve => {
-    if (sheet.get()) {
-      sheet.get().onFinish(() => {
-        sheet.unloadSpreadsheet();
-        resolve(undefined);
-      });
-    } else {
-      resolve(undefined);
-    }
-  });
+  unloadBudgetState();
+  setQueryCellListener(null);
+  clearQueryCells();
 });
 
 // Tests by default are allowed to mutate the db at any time

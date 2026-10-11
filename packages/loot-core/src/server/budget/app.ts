@@ -4,8 +4,6 @@ import * as db from '#server/db';
 import { APIError } from '#server/errors';
 import { categoryGroupModel, categoryModel } from '#server/models';
 import { mutator } from '#server/mutators';
-import * as sheet from '#server/sheet';
-import { resolveName } from '#server/spreadsheet/util';
 import { batchMessages } from '#server/sync';
 import { undoable } from '#server/undo';
 import * as monthUtils from '#shared/months';
@@ -15,6 +13,7 @@ import type { CategoryEntity, CategoryGroupEntity } from '#types/models';
 import * as actions from './actions';
 import * as budget from './base';
 import { sortCategories } from './sort-categories';
+import { getBudgetCellValue, getBudgetMonths } from './state';
 
 export type BudgetHandlers = {
   'budget/budget-amount': typeof budgetAmount;
@@ -139,8 +138,10 @@ async function envelopeBudgetMonth({ month }: { month: string }) {
   const sheetName = monthUtils.sheetForMonth(month);
 
   function value(name: string) {
-    const v = sheet.getCellValue(sheetName, name);
-    return { value: v === '' ? 0 : v, name: resolveName(sheetName, name) };
+    return {
+      value: getBudgetCellValue(sheetName, name),
+      name: `${sheetName}!${name}`,
+    };
   }
 
   let values = [
@@ -285,7 +286,7 @@ async function deleteCategory({
       throw new Error('Cannot transfer between income and expense categories.');
     }
 
-    // Update spreadsheet values if it's an expense category
+    // Move the budgeted amounts if it's an expense category
     if (row.is_income === 0) {
       if (transferId) {
         budget.doTransfer([id], transferId);
@@ -387,9 +388,9 @@ async function isCategoryTransferRequired({
 
   // If there are any non-zero budget values, also force the user to
   // transfer the category.
-  return [...(sheet.get().meta().createdMonths as Set<string>)].some(month => {
+  return getBudgetMonths().some(month => {
     const sheetName = monthUtils.sheetForMonth(month);
-    const value = sheet.get().getCellValue(sheetName, 'budget-' + id);
+    const value = getBudgetCellValue(sheetName, 'budget-' + id);
 
     return value != null && value !== 0;
   });

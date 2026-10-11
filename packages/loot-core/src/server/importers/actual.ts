@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import * as cloudStorage from '#server/cloud-storage';
 import { handlers } from '#server/main';
-import { waitOnSpreadsheet } from '#server/sheet';
 
 export async function importActual(_filepath: string, buffer: Buffer) {
   // Importing Actual files is a special case because we can directly
@@ -22,11 +21,9 @@ export async function importActual(_filepath: string, buffer: Buffer) {
     throw e;
   }
 
-  // Load the budget, force everything to be computed, and try
-  // to upload it as a cloud file
+  // Load the budget and try to upload it as a cloud file
   await handlers['load-budget']({ id });
   await handlers['get-budget-bounds']();
-  await waitOnSpreadsheet();
   await cloudStorage.upload().catch(() => {
     // Ignore errors
   });

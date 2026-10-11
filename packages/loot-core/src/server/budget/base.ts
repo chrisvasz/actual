@@ -1,15 +1,8 @@
-import { aqlQuery } from '#server/aql';
 import * as db from '#server/db';
-import * as sheet from '#server/sheet';
-import { resolveName } from '#server/spreadsheet/util';
-// @ts-strict-ignore
 import * as monthUtils from '#shared/months';
-import { q } from '#shared/query';
-import { getChangedValues } from '#shared/util';
-import type { CategoryGroupEntity } from '#types/models';
 
 import * as budgetActions from './actions';
-import * as envelopeBudget from './envelope';
+import { extendBudgetMonths, getBudgetMonths } from './state';
 
 export function getBudgetRange(start: string, end: string) {
   start = monthUtils.getMonth(start);
@@ -32,189 +25,8 @@ export function getBudgetRange(start: string, end: string) {
   return { start, end, range: monthUtils.rangeInclusive(start, end) };
 }
 
-// Computes the spend total for every category in every month within the
-// given day range using a single grouped query. This is used to seed the
-// `sum-amount` cells when months are created so we avoid running one
-// `SELECT SUM(amount)` query per category per month (which scales as
-// categories × months and dominates load time for budgets with many years
-// of data). The filters must match the per-cell query in `createCategory`
-// exactly so balances stay identical.
-function getSumAmountsByMonth(
-  rangeStart: number,
-  rangeEnd: number,
-): Map<string, number> {
-  const rows = db.runQuery<{ month: number; category: string; amount: number }>(
-    `SELECT t.category AS category,
-            t.date / 100 AS month,
-            SUM(t.amount) AS amount
-       FROM v_transactions_internal_alive t
-       LEFT JOIN accounts a ON a.id = t.account
-      WHERE t.date >= ${rangeStart} AND t.date <= ${rangeEnd}
-        AND t.category IS NOT NULL
-        AND a.offbudget = 0
-      GROUP BY t.category, t.date / 100`,
-    [],
-    true,
-  );
-
-  const sums = new Map<string, number>();
-  for (const row of rows) {
-    sums.set(`${row.month}-${row.category}`, row.amount || 0);
-  }
-  return sums;
-}
-
-export function createCategory(cat, sheetName, prevSheetName, start, end) {
-  sheet.get().createDynamic(sheetName, 'sum-amount-' + cat.id, {
-    initialValue: 0,
-    run: () => {
-      // Making this sync is faster!
-      const rows = db.runQuery<{ amount: number }>(
-        `SELECT SUM(amount) as amount FROM v_transactions_internal_alive t
-           LEFT JOIN accounts a ON a.id = t.account
-         WHERE t.date >= ${start} AND t.date <= ${end}
-           AND category = '${cat.id}' AND a.offbudget = 0`,
-        [],
-        true,
-      );
-      const row = rows[0];
-      const amount = row ? row.amount : 0;
-      return amount || 0;
-    },
-  });
-
-  envelopeBudget.createCategory(cat, sheetName, prevSheetName);
-}
-
-function handleAccountChange(months, oldValue, newValue) {
-  if (!oldValue || oldValue.offbudget !== newValue.offbudget) {
-    const rows = db.runQuery<Pick<db.DbTransaction, 'category'>>(
-      `
-        SELECT DISTINCT(category) as category FROM transactions
-        WHERE acct = ?
-      `,
-      [newValue.id],
-      true,
-    );
-
-    months.forEach(month => {
-      const sheetName = monthUtils.sheetForMonth(month);
-
-      rows.forEach(row => {
-        sheet
-          .get()
-          .recompute(resolveName(sheetName, 'sum-amount-' + row.category));
-      });
-    });
-  }
-}
-
-function handleTransactionChange(transaction, changedFields) {
-  if (
-    (changedFields.has('date') ||
-      changedFields.has('acct') ||
-      changedFields.has('amount') ||
-      changedFields.has('category') ||
-      changedFields.has('tombstone') ||
-      changedFields.has('isParent')) &&
-    transaction.date &&
-    transaction.category
-  ) {
-    const month = monthUtils.monthFromDate(db.fromDateRepr(transaction.date));
-    const sheetName = monthUtils.sheetForMonth(month);
-
-    sheet
-      .get()
-      .recompute(resolveName(sheetName, 'sum-amount-' + transaction.category));
-  }
-}
-
-function handleCategoryMappingChange(months, oldValue, newValue) {
-  months.forEach(month => {
-    const sheetName = monthUtils.sheetForMonth(month);
-    if (oldValue) {
-      sheet
-        .get()
-        .recompute(resolveName(sheetName, 'sum-amount-' + oldValue.transferId));
-    }
-    sheet
-      .get()
-      .recompute(resolveName(sheetName, 'sum-amount-' + newValue.transferId));
-  });
-}
-
-function handleBudgetMonthChange(budget) {
-  const sheetName = monthUtils.sheetForMonth(budget.id);
-  sheet.get().set(`${sheetName}!buffered`, budget.buffered);
-}
-
-function handleBudgetChange(budget) {
-  if (budget.category) {
-    const sheetName = monthUtils.sheetForMonth(budget.month.toString());
-    sheet
-      .get()
-      .set(`${sheetName}!budget-${budget.category}`, budget.amount || 0);
-    sheet
-      .get()
-      .set(
-        `${sheetName}!carryover-${budget.category}`,
-        budget.carryover === 1 ? true : false,
-      );
-  }
-}
-
-export function triggerBudgetChanges(oldValues, newValues) {
-  const { createdMonths = new Set() } = sheet.get().meta();
-  sheet.startTransaction();
-
-  try {
-    newValues.forEach((items, table) => {
-      const old = oldValues.get(table);
-
-      items.forEach(newValue => {
-        const oldValue = old && old.get(newValue.id);
-
-        if (table === 'zero_budget_months') {
-          handleBudgetMonthChange(newValue);
-        } else if (table === 'zero_budgets') {
-          handleBudgetChange(newValue);
-        } else if (table === 'transactions') {
-          const changed = new Set(
-            Object.keys(getChangedValues(oldValue || {}, newValue) || {}),
-          );
-
-          if (oldValue) {
-            handleTransactionChange(oldValue, changed);
-          }
-          handleTransactionChange(newValue, changed);
-        } else if (table === 'category_mapping') {
-          handleCategoryMappingChange(createdMonths, oldValue, newValue);
-        } else if (table === 'categories') {
-          envelopeBudget.handleCategoryChange(
-            createdMonths,
-            oldValue,
-            newValue,
-          );
-        } else if (table === 'category_groups') {
-          envelopeBudget.handleCategoryGroupChange(
-            createdMonths,
-            oldValue,
-            newValue,
-          );
-        } else if (table === 'accounts') {
-          handleAccountChange(createdMonths, oldValue, newValue);
-        }
-      });
-    });
-  } finally {
-    sheet.endTransaction();
-  }
-}
-
-export function doTransfer(categoryIds, transferId) {
-  const { createdMonths: months } = sheet.get().meta();
-
-  [...months].forEach(month => {
+export function doTransfer(categoryIds: string[], transferId: string): void {
+  getBudgetMonths().forEach(month => {
     const totalValue = categoryIds
       .map(id => {
         return budgetActions.getBudget({ month, category: id });
@@ -234,85 +46,6 @@ export function doTransfer(categoryIds, transferId) {
   });
 }
 
-export async function createBudget(months) {
-  const { data: groups }: { data: CategoryGroupEntity[] } = aqlQuery(
-    q('category_groups').select('*'),
-  );
-  const categories = groups.flatMap(group => group.categories);
-
-  sheet.startTransaction();
-  const meta = sheet.get().meta();
-  meta.createdMonths = meta.createdMonths || new Set();
-
-  envelopeBudget.createBudget(meta, categories, months);
-
-  // Only months that don't already exist need to be created and seeded.
-  const monthsToCreate = months.filter(month => !meta.createdMonths.has(month));
-
-  // Spend totals for every category in the months being created, computed
-  // once via a single grouped query and used to seed the `sum-amount` cells so
-  // they don't each run their own query. Scoped to the new month span so
-  // extending the budget horizon doesn't rescan the entire transaction
-  // history, and loaded lazily so a call with no new months never queries.
-  let sumAmounts: Map<string, number> | null = null;
-  const getSumAmounts = () => {
-    if (!sumAmounts) {
-      // `monthsToCreate` isn't guaranteed to be sorted, so find the span
-      // explicitly ('YYYY-MM' strings compare chronologically).
-      let firstMonth = monthsToCreate[0];
-      let lastMonth = monthsToCreate[0];
-      for (const month of monthsToCreate) {
-        if (month < firstMonth) {
-          firstMonth = month;
-        }
-        if (month > lastMonth) {
-          lastMonth = month;
-        }
-      }
-      sumAmounts = getSumAmountsByMonth(
-        monthUtils.bounds(firstMonth).start,
-        monthUtils.bounds(lastMonth).end,
-      );
-    }
-    return sumAmounts;
-  };
-
-  monthsToCreate.forEach(month => {
-    const prevMonth = monthUtils.prevMonth(month);
-    const { start, end } = monthUtils.bounds(month);
-    const sheetName = monthUtils.sheetForMonth(month);
-    const prevSheetName = monthUtils.sheetForMonth(prevMonth);
-    const dbMonth = parseInt(month.replace('-', ''));
-
-    categories.forEach(cat => {
-      // Seed the spend total before creating the dynamic cell so the cell
-      // skips its per-category query.
-      const sumCell = `sum-amount-${cat.id}`;
-      if (sheet.get().getCellValueLoose(sheetName, sumCell) == null) {
-        const name = resolveName(sheetName, sumCell);
-        sheet
-          .get()
-          .load(name, getSumAmounts().get(`${dbMonth}-${cat.id}`) || 0);
-      }
-      createCategory(cat, sheetName, prevSheetName, start, end);
-    });
-    groups.forEach(group => {
-      envelopeBudget.createCategoryGroup(group, sheetName);
-    });
-
-    envelopeBudget.createSummary(groups, categories, prevSheetName, sheetName);
-
-    meta.createdMonths.add(month);
-  });
-
-  sheet.get().setMeta(meta);
-  sheet.endTransaction();
-
-  // Wait for the new cells to finish computing, so the loading screen stays
-  // up until the budget has values.
-  await sheet.waitOnSpreadsheet();
-}
-
 export async function createAllBudgets() {
   const earliestTransaction = db.first<db.DbTransaction>(
     'SELECT * FROM transactions WHERE isChild=0 AND date IS NOT NULL ORDER BY date ASC LIMIT 1',
@@ -329,13 +62,7 @@ export async function createAllBudgets() {
     currentMonth,
   );
 
-  const meta = sheet.get().meta();
-  const createdMonths = meta.createdMonths || new Set();
-  const newMonths = range.filter(m => !createdMonths.has(m));
-
-  if (newMonths.length > 0) {
-    await createBudget(range);
-  }
+  extendBudgetMonths(range);
 
   return { start, end };
 }

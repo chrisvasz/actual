@@ -2,9 +2,10 @@
 import MockDate from 'mockdate';
 
 import { aqlQuery } from '#server/aql';
+import { loadBudgetState } from '#server/budget/state';
+import { createQueryCell, getQueryCellValue } from '#server/cells/query-cells';
 import * as db from '#server/db';
 import { loadMappings } from '#server/db/mappings';
-import * as sheet from '#server/sheet';
 import { loadRules, updateRule } from '#server/transactions/transaction-rules';
 import { q } from '#shared/query';
 import { getNextDate } from '#shared/schedules';
@@ -1133,7 +1134,7 @@ describe('schedule app', () => {
   });
 });
 
-describe('schedule queries in the spreadsheet', () => {
+describe('schedule queries in cells', () => {
   it('a query on next_date follows a skipped date', async () => {
     const id = await createSchedule({
       conditions: [
@@ -1145,24 +1146,21 @@ describe('schedule queries in the spreadsheet', () => {
       ],
     });
 
-    const spreadsheet = await sheet.loadSpreadsheet(db);
-    spreadsheet.createQuery(
-      'schedule',
-      'next-date',
+    await loadBudgetState();
+    createQueryCell(
+      'schedule!next-date',
       q('schedules').filter({ id }).calculate('next_date').serialize(),
     );
-    await sheet.waitOnSpreadsheet();
-    const before = spreadsheet.getValue('schedule!next-date');
+    const before = getQueryCellValue('schedule!next-date');
 
     // Skipping only writes `schedules_next_date`, which the `schedules` view
     // reads
     await skipNextDate({ id });
-    await sheet.waitOnSpreadsheet();
 
     const { data: after } = aqlQuery(
       q('schedules').filter({ id }).calculate('next_date'),
     );
     expect(after).not.toBe(before);
-    expect(spreadsheet.getValue('schedule!next-date')).toBe(after);
+    expect(getQueryCellValue('schedule!next-date')).toBe(after);
   });
 });

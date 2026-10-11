@@ -3,9 +3,8 @@ import { getClock, merkle, Timestamp } from '@actual-app/crdt';
 import jsc from 'jsverify';
 import type { Arbitrary } from 'jsverify';
 
-import * as db from '#server/db';
+import { loadBudgetState } from '#server/budget/state';
 import * as prefs from '#server/prefs';
-import * as sheet from '#server/sheet';
 import * as mockSyncServer from '#server/tests/mockSyncServer';
 
 import * as encoder from './encoder';
@@ -237,7 +236,7 @@ async function run(msgs) {
   });
 
   await global.emptyDatabase()();
-  await sheet.loadSpreadsheet(db, vi.fn());
+  await loadBudgetState(vi.fn());
 
   // The test: split up the messages into chunks and in parallel send
   // them all through `sendMessages`. Then add some messages to the

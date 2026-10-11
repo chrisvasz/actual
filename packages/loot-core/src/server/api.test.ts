@@ -1,11 +1,10 @@
+import { extendBudgetMonths, loadBudgetState } from '#server/budget/state';
 import * as db from '#server/db';
-import * as sheet from '#server/sheet';
 import type { ServerHandlers } from '#types/server-handlers';
 
 import { app as accountGroupsApp } from './account-groups/app';
 import { app as accountsApp } from './accounts/app';
 import { installAPI } from './api';
-import { createBudget } from './budget/base';
 import * as prefs from './prefs';
 
 describe('API handlers', () => {
@@ -81,7 +80,7 @@ describe('API handlers', () => {
     beforeEach(async () => {
       global.currentMonth = '2026-01';
 
-      await sheet.loadSpreadsheet(db);
+      await loadBudgetState();
       await prefs.loadPrefs();
 
       db.insertCategoryGroup({
@@ -108,7 +107,7 @@ describe('API handlers', () => {
     });
 
     it('envelope budget: income group returns only received', async () => {
-      await createBudget(['2026-02', '2026-03']);
+      extendBudgetMonths(['2026-02', '2026-03']);
       db.insertTransaction({
         id: 'tx1',
         date: '2026-03-15',
@@ -116,7 +115,6 @@ describe('API handlers', () => {
         amount: 5000,
         category: 'income-cat',
       });
-      await sheet.waitOnSpreadsheet();
 
       const result = await handlers['api/budget-month']({ month: '2026-03' });
       const group = result.categoryGroups.find(g => g.is_income);
