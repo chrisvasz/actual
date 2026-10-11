@@ -88,7 +88,11 @@ export function handleGlobalEvents(store: AppStore, queryClient: QueryClient) {
 
     if (tagged) {
       void Promise.all(promises).then(() => {
-        undo.setUndoState('undoEvent', undoState);
+        // The undo is left pending only for a modal or screen this opens,
+        // and whichever one acts on it on mount clears it. A modal or screen
+        // that is already showing handles it through its own `undo-event`
+        // listener. Any older pending undo is superseded by this one.
+        undo.setUndoState('undoEvent', null);
 
         // If a modal has been tagged, open it instead of navigating
         if (tagged.openModal) {
@@ -104,6 +108,7 @@ export function handleGlobalEvents(store: AppStore, queryClient: QueryClient) {
             modalStack.length === 0 ||
             modalStack[modalStack.length - 1].name !== openModal.name
           ) {
+            undo.setUndoState('undoEvent', undoState);
             store.dispatch(replaceModal({ modal: openModal }));
           }
         } else {
@@ -113,6 +118,7 @@ export function handleGlobalEvents(store: AppStore, queryClient: QueryClient) {
             window.location.href.replace(window.location.origin, '') !==
             tagged.url
           ) {
+            undo.setUndoState('undoEvent', undoState);
             void window.__navigate(tagged.url);
             // This stops propagation of the undo event, which is
             // important because if we are changing URLs any existing

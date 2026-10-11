@@ -1,3 +1,5 @@
+import * as undo from '@actual-app/core/platform/client/undo';
+import type { UndoState } from '@actual-app/core/server/undo';
 import { act, renderHook, waitFor } from '@testing-library/react';
 
 import { useSelected } from './useSelected';
@@ -105,5 +107,86 @@ describe('useSelected', () => {
     await waitFor(() =>
       expect(result.current.items).toEqual(new Set(['one', 'three'])),
     );
+  });
+
+  describe('pending undo', () => {
+    // Leaves an undo pending the way the global undo handler does before it
+    // opens the screen the undo was tagged with
+    function leavePendingUndo(selectedName: string, selectedIds: string[]) {
+      undo.setUndoState('selectedItems', {
+        name: selectedName,
+        items: new Set(selectedIds),
+      });
+      const undoTag = undo.snapshot();
+      undo.setUndoState('selectedItems', null);
+
+      const undoEvent: UndoState = { messages: [], tables: [], undoTag };
+      undo.setUndoState('undoEvent', undoEvent);
+      return undoEvent;
+    }
+
+    const items = [{ id: 'one' }, { id: 'two' }, { id: 'three' }];
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      undo.setUndoState('undoEvent', null);
+    });
+
+    it('restores the selection once and then clears the pending undo', () => {
+      leavePendingUndo('test', ['one', 'three']);
+
+      const first = renderUseSelected(items);
+      expect(first.result.current.items).toEqual(new Set(['one', 'three']));
+
+      act(() => {
+        vi.runAllTimers();
+      });
+      expect(undo.getUndoState('undoEvent')).toBeNull();
+
+      // Reopening the screen later doesn't restore the selection again
+      first.unmount();
+      const second = renderUseSelected(items);
+      expect(second.result.current.items).toEqual(new Set());
+    });
+
+    it('lets every component mounting for the undo see it', () => {
+      leavePendingUndo('test', ['two']);
+
+      const { result } = renderHook(() => ({
+        first: useSelected('test', items, []),
+        second: useSelected('test', items, []),
+      }));
+
+      expect(result.current.first.items).toEqual(new Set(['two']));
+      expect(result.current.second.items).toEqual(new Set(['two']));
+    });
+
+    it('leaves a pending undo for another selection alone', () => {
+      const undoEvent = leavePendingUndo('other', ['one']);
+
+      const { result } = renderUseSelected(items);
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      expect(result.current.items).toEqual(new Set());
+      expect(undo.getUndoState('undoEvent')).toBe(undoEvent);
+    });
+
+    it('does not clear a newer pending undo', () => {
+      leavePendingUndo('test', ['one']);
+      renderUseSelected(items);
+
+      const newer = leavePendingUndo('other', ['two']);
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      expect(undo.getUndoState('undoEvent')).toBe(newer);
+    });
   });
 });
