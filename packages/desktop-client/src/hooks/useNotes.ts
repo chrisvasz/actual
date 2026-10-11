@@ -7,7 +7,7 @@ export function useNotes(id: string) {
   // note changes - not whenever any note in the budget file does.
   const { data } = useQuery({
     ...noteQueries.list(),
-    select: ({ data: notesById }) => notesById.get(id) ?? null,
+    select: notesById => notesById.get(id) ?? null,
   });
   return data ?? null;
 }

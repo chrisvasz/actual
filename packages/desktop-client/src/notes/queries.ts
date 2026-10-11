@@ -3,8 +3,6 @@ import type { NoteEntity } from '@actual-app/core/types/models';
 import { queryOptions } from '@tanstack/react-query';
 
 import { aqlQuery } from '#queries/aqlQuery';
-import { snapshotDependencies } from '#queries/dependencies';
-import type { AqlSnapshot } from '#queries/dependencies';
 
 type NotesById = ReadonlyMap<NoteEntity['id'], NoteEntity['note']>;
 
@@ -17,23 +15,18 @@ export const noteQueries = {
   // page opened. The notes table only holds a row per annotated entity, so
   // fetching all of it is cheap.
   list: () =>
-    queryOptions<AqlSnapshot<NotesById>, Error, NotesById>({
+    queryOptions<NotesById>({
       queryKey: [...noteQueries.lists()],
       queryFn: async () => {
-        const {
-          data,
-          dependencies,
-        }: { data: NoteEntity[]; dependencies: string[] } = await aqlQuery(
+        const { data }: { data: NoteEntity[] } = await aqlQuery(
           q('notes').select('*'),
         );
-        return {
-          data: new Map(data.map(note => [note.id, note.note])),
-          dependencies,
-        };
+        return new Map(data.map(note => [note.id, note.note]));
       },
-      select: ({ data }) => data,
-      placeholderData: { data: new Map(), dependencies: [] },
+      placeholderData: new Map(),
+      // Refetched when a sync event changes the notes table, the only one it
+      // reads
       staleTime: Infinity,
-      meta: { dependencies: snapshotDependencies },
+      meta: { dependencies: ['notes'] },
     }),
 };

@@ -9,8 +9,6 @@ import { queryOptions } from '@tanstack/react-query';
 
 import type { useSpreadsheet } from '#hooks/useSpreadsheet';
 import { aqlQuery } from '#queries/aqlQuery';
-import { snapshotDependencies } from '#queries/dependencies';
-import type { AqlSnapshot } from '#queries/dependencies';
 
 type Spreadsheet = ReturnType<typeof useSpreadsheet>;
 
@@ -36,41 +34,37 @@ export const dashboardQueries = {
   all: () => ['dashboards'],
   lists: () => [...dashboardQueries.all(), 'lists'],
   listDashboardWidgets: <T extends DashboardWidgetEntity>() =>
-    queryOptions<AqlSnapshot<T[]>, Error, T[]>({
+    queryOptions<T[]>({
       queryKey: [...dashboardQueries.lists(), 'widgets'],
-      queryFn: () => aqlQuery(q('dashboard').select('*')),
-      select: ({ data }) => data,
-      meta: { dependencies: snapshotDependencies },
+      queryFn: async () => {
+        const { data }: { data: T[] } = await aqlQuery(
+          q('dashboard').select('*'),
+        );
+        return data;
+      },
+      // The only table it reads
+      meta: { dependencies: ['dashboard'] },
     }),
   listDashboardPageWidgets: <T extends DashboardWidgetEntity>(
     dashboardPageId?: DashboardPageEntity['id'] | null,
   ) =>
-    queryOptions<AqlSnapshot<T[]>, Error, T[]>({
+    queryOptions<T[]>({
       ...dashboardQueries.listDashboardWidgets<T>(),
-      select: ({ data: widgets }) =>
+      select: widgets =>
         widgets.filter(w => w.dashboard_page_id === dashboardPageId),
       enabled: !!dashboardPageId,
     }),
   listDashboardPages: () =>
-    queryOptions<
-      AqlSnapshot<DashboardPageEntity[]>,
-      Error,
-      DashboardPageEntity[]
-    >({
+    queryOptions<DashboardPageEntity[]>({
       queryKey: [...dashboardQueries.lists(), 'pages'],
       queryFn: async () => {
-        const {
-          data,
-          dependencies,
-        }: { data: DashboardPageEntity[]; dependencies: string[] } =
-          await aqlQuery(q('dashboard_pages').select('*'));
-        return {
-          data: data.map(page => ({ ...page, name: page.name ?? '' })),
-          dependencies,
-        };
+        const { data }: { data: DashboardPageEntity[] } = await aqlQuery(
+          q('dashboard_pages').select('*'),
+        );
+        return data.map(page => ({ ...page, name: page.name ?? '' }));
       },
-      select: ({ data }) => data,
-      meta: { dependencies: snapshotDependencies },
+      // The only table it reads
+      meta: { dependencies: ['dashboard_pages'] },
     }),
 };
 

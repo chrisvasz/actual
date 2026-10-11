@@ -6,9 +6,12 @@ import type { Query, QueryClient, QueryMeta } from '@tanstack/react-query';
  *
  * - A query on a handler that runs raw SQL lists them up front, from
  *   `handlerReads` in loot-core.
- * - A query on AQL reads them from its cached data: the server's reply lists
+ * - A query on AQL whose tables depend on the query (transactions, through
+ *   views and joins) reads them from its cached data: the server's reply lists
  *   them, so its data keeps the reply's `dependencies` (an `AqlSnapshot`) and
  *   its `meta` points at them with `snapshotDependencies`.
+ * - A query on AQL that reads a single table with no views (notes,
+ *   dashboards) lists that table up front.
  */
 export type QueryDependencies =
   | readonly string[]
