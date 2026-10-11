@@ -1,5 +1,4 @@
 import type { ComponentType, SVGProps } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import {
   SvgCloudCheck,
@@ -25,7 +24,6 @@ type SyncPresentation = {
 };
 
 export function SyncStatusLine() {
-  const { t } = useTranslation();
   const serverStatus = useSyncServerStatus();
   const { isSyncing, syncState } = useSyncStatus();
 
@@ -36,37 +34,37 @@ export function SyncStatusLine() {
     'no-server': {
       Icon: SvgCloudUnknown,
       color: theme.sidebarTextSubdued,
-      label: t('Local only'),
+      label: 'Local only',
     },
     syncing: {
       Icon: SvgCloudCheck,
       color: theme.sidebarTextSubdued,
-      label: t('Syncing…'),
+      label: 'Syncing…',
     },
     error: {
       Icon: SvgCloudWarning,
       color: theme.sidebarTextFailed,
-      label: t('Sync error'),
+      label: 'Sync error',
     },
     offline: {
       Icon: SvgCloudUnknown,
       color: theme.sidebarTextSubdued,
-      label: t('Offline'),
+      label: 'Offline',
     },
     local: {
       Icon: SvgCloudUnknown,
       color: theme.sidebarTextSubdued,
-      label: t('Local file'),
+      label: 'Local file',
     },
     disabled: {
       Icon: SvgCloudUnknown,
       color: theme.sidebarTextSubdued,
-      label: t('Sync disabled'),
+      label: 'Sync disabled',
     },
     synced: {
       Icon: SvgCloudCheck,
       color: theme.sidebarTextPositive,
-      label: t('Synced'),
+      label: 'Synced',
     },
   };
 

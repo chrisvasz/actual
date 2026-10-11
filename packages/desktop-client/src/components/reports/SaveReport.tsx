@@ -1,5 +1,4 @@
 import React, { createRef, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgExpandArrow } from '@actual-app/components/icons/v0';
@@ -64,11 +63,10 @@ type SaveReportProps<T extends CustomReportEntity = CustomReportEntity> = {
 export function SaveReportWrapper<
   T extends CustomReportEntity = CustomReportEntity,
 >(props: Omit<SaveReportProps<T>, 'dashboardPages'>) {
-  const { t } = useTranslation();
   const { data = [], isPending } = useDashboardPages();
 
   if (isPending) {
-    return <LoadingIndicator message={t('Loading dashboards...')} />;
+    return <LoadingIndicator message="Loading dashboards..." />;
   }
 
   return <SaveReport {...props} dashboardPages={data} />;
@@ -91,7 +89,6 @@ export function SaveReport({
   const [err, setErr] = useState('');
   const [newName, setNewName] = useState(report.name ?? '');
   const inputRef = createRef<HTMLInputElement>();
-  const { t } = useTranslation();
   const [saveDashboardId, setSaveDashboardId] = useState<string | null>(
     dashboardPages.length > 0 ? dashboardPages[0].id : null,
   );
@@ -119,7 +116,7 @@ export function SaveReport({
       };
 
       if (!saveDashboardId) {
-        setErr(t('Please select a dashboard to save the report'));
+        setErr('Please select a dashboard to save the report');
         return;
       }
 
@@ -264,13 +261,9 @@ export function SaveReport({
             flexShrink: 0,
           }}
         >
-          {!report.id ? <Trans>Unsaved report</Trans> : report.name}&nbsp;
+          {!report.id ? 'Unsaved report' : report.name}&nbsp;
         </Text>
-        {savedStatus === 'modified' && (
-          <Text>
-            <Trans>(modified)</Trans>&nbsp;
-          </Text>
-        )}
+        {savedStatus === 'modified' && <Text>(modified)&nbsp;</Text>}
         <SvgExpandArrow width={8} height={8} style={{ marginRight: 5 }} />
       </Button>
 
@@ -314,7 +307,7 @@ export function SaveReport({
               >
                 <FormField style={{ flex: 1 }}>
                   <FormLabel
-                    title={t('Dashboard')}
+                    title="Dashboard"
                     htmlFor="dashboard-select"
                     style={{ userSelect: 'none' }}
                   />
@@ -322,7 +315,7 @@ export function SaveReport({
                     id="dashboard-select"
                     value={saveDashboardId}
                     onChange={v => setSaveDashboardId(v)}
-                    defaultLabel={t('None')}
+                    defaultLabel="None"
                     options={dashboardPages.map(d => [d.id, d.name])}
                     style={{ marginTop: 10, width: 300 }}
                   />

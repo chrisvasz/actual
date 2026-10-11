@@ -6,24 +6,23 @@ import type {
   ScheduleEntity,
 } from '@actual-app/core/types/models';
 import type { Locale } from 'date-fns';
-import { t } from 'i18next';
 
 export function getStatusLabel(status: string) {
   switch (status) {
     case 'completed':
-      return t('completed');
+      return 'completed';
     case 'paid':
-      return t('paid');
+      return 'paid';
     case 'due':
-      return t('due');
+      return 'due';
     case 'upcoming':
-      return t('upcoming');
+      return 'upcoming';
     case 'missed':
-      return t('missed');
+      return 'missed';
     case 'scheduled':
-      return t('scheduled');
+      return 'scheduled';
     default:
-      return t('unknown');
+      return 'unknown';
   }
 }
 
@@ -35,13 +34,13 @@ function makeNumberSuffix(num: number, locale: Locale) {
 
 function prettyDayName(day) {
   const days = {
-    SU: t('Sunday'),
-    MO: t('Monday'),
-    TU: t('Tuesday'),
-    WE: t('Wednesday'),
-    TH: t('Thursday'),
-    FR: t('Friday'),
-    SA: t('Saturday'),
+    SU: 'Sunday',
+    MO: 'Monday',
+    TU: 'Tuesday',
+    WE: 'Wednesday',
+    TH: 'Thursday',
+    FR: 'Friday',
+    SA: 'Saturday',
   };
   return days[day];
 }
@@ -57,17 +56,13 @@ export function getRecurringDescription(
   switch (config.endMode) {
     case 'after_n_occurrences':
       if (config.endOccurrences === 1) {
-        endModeSuffix = t('once');
+        endModeSuffix = 'once';
       } else {
-        endModeSuffix = t('{{endOccurrences}} times', {
-          endOccurrences: config.endOccurrences,
-        });
+        endModeSuffix = `${config.endOccurrences} times`;
       }
       break;
     case 'on_date':
-      endModeSuffix = t('until {{dateFormatted}}', {
-        dateFormatted: monthUtils.format(config.endDate, dateFormat),
-      });
+      endModeSuffix = `until ${monthUtils.format(config.endDate, dateFormat)}`;
       break;
     default:
       break;
@@ -75,8 +70,8 @@ export function getRecurringDescription(
 
   const weekendSolveModeString = config.weekendSolveMode
     ? config.weekendSolveMode === 'after'
-      ? t('(after weekend)')
-      : t('(before weekend)')
+      ? '(after weekend)'
+      : '(before weekend)'
     : '';
 
   const weekendSolveSuffix = config.skipWeekend ? weekendSolveModeString : '';
@@ -93,21 +88,13 @@ export function getRecurringDescription(
 
   switch (config.frequency) {
     case 'daily':
-      desc =
-        interval !== 1
-          ? t(`Every {{interval}} days`, { interval })
-          : t('Every day');
+      desc = interval !== 1 ? `Every ${interval} days` : 'Every day';
       break;
     case 'weekly':
       desc =
         interval !== 1
-          ? t(`Every {{interval}} weeks on {{dateFormatted}}`, {
-              interval,
-              dateFormatted: monthUtils.format(config.start, 'EEEE', locale),
-            })
-          : t('Every week on {{dateFormatted}}', {
-              dateFormatted: monthUtils.format(config.start, 'EEEE', locale),
-            });
+          ? `Every ${interval} weeks on ${monthUtils.format(config.start, 'EEEE', locale)}`
+          : `Every week on ${monthUtils.format(config.start, 'EEEE', locale)}`;
       break;
     case 'monthly':
       if (config.patterns && config.patterns.length > 0) {
@@ -137,7 +124,7 @@ export function getRecurringDescription(
         for (const pattern of patterns) {
           if (pattern.type === 'day') {
             if (pattern.value === -1) {
-              strs.push(t('last day'));
+              strs.push('last day');
             } else {
               // Example: 15th day
               strs.push(makeNumberSuffix(pattern.value, locale));
@@ -147,7 +134,7 @@ export function getRecurringDescription(
 
             if (pattern.value === -1) {
               // Example: last Monday
-              strs.push(t('last') + dayName);
+              strs.push('last' + dayName);
             } else {
               // Example: 3rd Monday
               strs.push(makeNumberSuffix(pattern.value, locale) + dayName);
@@ -158,10 +145,10 @@ export function getRecurringDescription(
         let range = '';
         if (strs.length > 2) {
           range += strs.slice(0, strs.length - 1).join(', ');
-          range += `, ${t('and')} `;
+          range += `, ${'and'} `;
           range += strs[strs.length - 1];
         } else {
-          range += strs.join(` ${t('and')} `);
+          range += strs.join(` ${'and'} `);
         }
 
         if (isSameDay) {
@@ -170,38 +157,25 @@ export function getRecurringDescription(
 
         desc =
           interval !== 1
-            ? t(`Every {{interval}} months on the {{range}}`, {
-                interval,
-                range,
-              })
-            : t('Every month on the {{range}}', { range });
+            ? `Every ${interval} months on the ${range}`
+            : `Every month on the ${range}`;
       } else {
         desc =
           interval !== 1
-            ? t(`Every {{interval}} months on the {{dateFormatted}}`, {
-                interval,
-                dateFormatted: monthUtils.format(config.start, 'do', locale),
-              })
-            : t('Every month on the {{dateFormatted}}', {
-                dateFormatted: monthUtils.format(config.start, 'do', locale),
-              });
+            ? `Every ${interval} months on the ${monthUtils.format(config.start, 'do', locale)}`
+            : `Every month on the ${monthUtils.format(config.start, 'do', locale)}`;
       }
       break;
 
     case 'yearly':
       desc =
         interval !== 1
-          ? t(`Every {{interval}} years on {{dateFormatted}}`, {
-              interval,
-              dateFormatted: monthUtils.format(config.start, 'LLL do', locale),
-            })
-          : t('Every year on {{dateFormatted}}', {
-              dateFormatted: monthUtils.format(config.start, 'LLL do', locale),
-            });
+          ? `Every ${interval} years on ${monthUtils.format(config.start, 'LLL do', locale)}`
+          : `Every year on ${monthUtils.format(config.start, 'LLL do', locale)}`;
       break;
 
     default:
-      return t('Recurring error');
+      return 'Recurring error';
   }
 
   return `${desc}${suffix}`.trim();
@@ -214,6 +188,6 @@ export function describeSchedule(
   if (payee) {
     return `${payee.name} (${schedule.next_date})`;
   } else {
-    return `${t('Next:')} ${schedule.next_date}`;
+    return `${'Next:'} ${schedule.next_date}`;
   }
 }

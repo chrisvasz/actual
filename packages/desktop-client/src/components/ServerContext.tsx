@@ -10,7 +10,6 @@ import type { ReactNode } from 'react';
 import { send } from '@actual-app/core/platform/client/connection';
 import * as Platform from '@actual-app/core/shared/platform';
 import type { Handlers } from '@actual-app/core/types/handlers';
-import { t } from 'i18next';
 
 import { useOnVisible } from '#hooks/useOnVisible';
 import { addNotification } from '#notifications/notificationsSlice';
@@ -133,8 +132,8 @@ export function ServerProvider({ children }: { children: ReactNode }) {
           addNotification({
             notification: {
               type: 'error',
-              title: t('Failed to refresh login methods'),
-              message: data.error ?? t('Unknown'),
+              title: 'Failed to refresh login methods',
+              message: data.error ?? 'Unknown',
             },
           }),
         );

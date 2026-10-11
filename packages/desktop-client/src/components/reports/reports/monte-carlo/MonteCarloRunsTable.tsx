@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Select } from '@actual-app/components/select';
@@ -20,15 +19,13 @@ type SortOrder = 'worst-first' | 'best-first';
  * worst run, 1 = best run), as Select options. Shared with the cashflow
  * chart's scenario picker so both land on the same runs.
  */
-export function getRunPercentileOptions(
-  translate: (key: string) => string,
-): Array<[string, string]> {
+export function getRunPercentileOptions(): Array<[string, string]> {
   return [
-    ['0', translate('Worst run')],
-    ['0.25', translate('25th percentile')],
-    ['0.5', translate('Median run')],
-    ['0.75', translate('75th percentile')],
-    ['1', translate('Best run')],
+    ['0', 'Worst run'],
+    ['0.25', '25th percentile'],
+    ['0.5', 'Median run'],
+    ['0.75', '75th percentile'],
+    ['1', 'Best run'],
   ];
 }
 
@@ -50,7 +47,6 @@ export function MonteCarloRunsTable({
   startAge,
   onSelectRun,
 }: MonteCarloRunsTableProps) {
-  const { t } = useTranslation();
   const format = useFormat();
 
   const [sortOrder, setSortOrder] = useState<SortOrder>('worst-first');
@@ -99,11 +95,7 @@ export function MonteCarloRunsTable({
         }}
       >
         <Text>
-          {t('Showing {{from}}-{{to}} of {{total}} runs', {
-            from: pageStart + 1,
-            to: pageStart + pageIndices.length,
-            total: simulationCount,
-          })}
+          {`Showing ${pageStart + 1}-${pageStart + pageIndices.length} of ${simulationCount} runs`}
         </Text>
         <Select
           value={sortOrder}
@@ -113,8 +105,8 @@ export function MonteCarloRunsTable({
             setHighlightedRank(null);
           }}
           options={[
-            ['worst-first', t('Worst outcomes first')],
-            ['best-first', t('Best outcomes first')],
+            ['worst-first', 'Worst outcomes first'],
+            ['best-first', 'Best outcomes first'],
           ]}
           style={{ width: 200 }}
         />
@@ -131,21 +123,17 @@ export function MonteCarloRunsTable({
           gap: 10,
         }}
       >
-        <Text style={{ ...GROUP_HEADING_STYLE, width: 80 }}>
-          <Trans>Rank</Trans>
-        </Text>
-        <Text style={{ ...GROUP_HEADING_STYLE, flex: 1 }}>
-          <Trans>Outcome</Trans>
+        <Text style={{ ...GROUP_HEADING_STYLE, width: 80 }}>Rank</Text>
+        <Text style={{ ...GROUP_HEADING_STYLE, flex: 1 }}>Outcome</Text>
+        <Text
+          style={{ ...GROUP_HEADING_STYLE, width: 160, textAlign: 'right' }}
+        >
+          Ending balance
         </Text>
         <Text
           style={{ ...GROUP_HEADING_STYLE, width: 160, textAlign: 'right' }}
         >
-          <Trans>Ending balance</Trans>
-        </Text>
-        <Text
-          style={{ ...GROUP_HEADING_STYLE, width: 160, textAlign: 'right' }}
-        >
-          <Trans>Total withdrawn</Trans>
+          Total withdrawn
         </Text>
       </View>
 
@@ -192,12 +180,8 @@ export function MonteCarloRunsTable({
                 }}
               >
                 {hasSurvived
-                  ? t('Survived')
-                  : t('Ran out at age {{age}}', {
-                      // The age of the year that couldn't be funded, matching
-                      // the drill-in's failure row
-                      age: startAge + depletionYear - 1,
-                    })}
+                  ? 'Survived'
+                  : `Ran out at age ${startAge + depletionYear - 1}`}
               </Text>
               <Text style={{ width: 160, textAlign: 'right' }}>
                 {hasSurvived ? (
@@ -243,7 +227,7 @@ export function MonteCarloRunsTable({
               jumpToPercentile(Number(value));
             }
           }}
-          options={[['', t('Jump to…')], ...getRunPercentileOptions(t)]}
+          options={[['', 'Jump to…'], ...getRunPercentileOptions()]}
           style={{ width: 170 }}
         />
         <Button
@@ -253,7 +237,7 @@ export function MonteCarloRunsTable({
             setHighlightedRank(null);
           }}
         >
-          <Trans>Previous</Trans>
+          Previous
         </Button>
         <Button
           isDisabled={currentPage >= pageCount - 1}
@@ -262,7 +246,7 @@ export function MonteCarloRunsTable({
             setHighlightedRank(null);
           }}
         >
-          <Trans>Next</Trans>
+          Next
         </Button>
       </View>
     </View>

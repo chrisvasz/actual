@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { SvgAdd } from '@actual-app/components/icons/v1';
 import { View } from '@actual-app/components/view';
@@ -17,7 +16,6 @@ import { SidebarShell } from './SidebarShell';
 import { ToggleButton } from './ToggleButton';
 
 export function Sidebar() {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const sidebar = useSidebar();
   const [isFloating = false, setFloatingSidebarPref] =
@@ -54,7 +52,7 @@ export function Sidebar() {
         <SecondaryButtons
           buttons={[
             {
-              title: t('Add account'),
+              title: 'Add account',
               Icon: SvgAdd,
               onClick: onAddAccount,
             },

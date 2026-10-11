@@ -1,5 +1,4 @@
 import { useEffect, useEffectEvent, useRef } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
 import { styles } from '@actual-app/components/styles';
@@ -20,7 +19,6 @@ const BLOG_URL = 'https://actualbudget.org/blog';
 const DISCORD_URL = 'https://discord.gg/pRYNYr4W5A';
 
 export function NotificationsPage() {
-  const { t } = useTranslation();
   const { entries, isLoading, error, lastSeenNewsDate, markAllSeen } =
     useNewsFeed();
 
@@ -40,7 +38,7 @@ export function NotificationsPage() {
   }, [entries]);
 
   return (
-    <Page header={t('Notifications')}>
+    <Page header="Notifications">
       <View
         style={{
           marginTop: 10,
@@ -58,13 +56,13 @@ export function NotificationsPage() {
           }}
         >
           <Link variant="external" to={RELEASE_NOTES_URL} linkColor="purple">
-            <Trans>All release notes</Trans>
+            All release notes
           </Link>
           <Link variant="external" to={BLOG_URL} linkColor="purple">
-            <Trans>Blog</Trans>
+            Blog
           </Link>
           <Link variant="external" to={DISCORD_URL} linkColor="purple">
-            <Trans>Community (Discord)</Trans>
+            Community (Discord)
           </Link>
         </View>
 
@@ -85,21 +83,17 @@ export function NotificationsPage() {
         {error && (
           <Setting>
             <Text data-testid="notifications-offline">
-              <Trans>
-                <strong>The latest news isn't available right now.</strong>{' '}
-                Actual couldn't reach actualbudget.org, which usually means
-                you're offline. That's fine - everything else in Actual keeps
-                working, and the news will load next time you're connected.
-              </Trans>
+              <strong>The latest news isn't available right now.</strong> Actual
+              couldn't reach actualbudget.org, which usually means you're
+              offline. That's fine - everything else in Actual keeps working,
+              and the news will load next time you're connected.
             </Text>
           </Setting>
         )}
 
         {!isLoading && !error && entries.length === 0 && (
           <Setting>
-            <Text>
-              <Trans>Nothing new to show yet.</Trans>
-            </Text>
+            <Text>Nothing new to show yet.</Text>
           </Setting>
         )}
 

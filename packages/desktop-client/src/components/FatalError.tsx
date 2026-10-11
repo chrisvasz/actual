@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { Button } from '@actual-app/components/button';
@@ -50,12 +49,10 @@ function RenderSimple({ error }: RenderSimpleProps) {
     // IndexedDB wasn't able to open the database
     msg = (
       <Text>
-        <Trans>
-          Your browser doesn't support IndexedDB in this environment, a feature
-          that Actual requires to run. This might happen if you are in private
-          browsing mode. Please try a different browser or turn off private
-          browsing.
-        </Trans>
+        Your browser doesn't support IndexedDB in this environment, a feature
+        that Actual requires to run. This might happen if you are in private
+        browsing mode. Please try a different browser or turn off private
+        browsing.
       </Text>
     );
   } else if (
@@ -65,20 +62,18 @@ function RenderSimple({ error }: RenderSimpleProps) {
     // SharedArrayBuffer isn't available
     msg = (
       <Text>
-        <Trans>
-          Actual requires access to <code>SharedArrayBuffer</code> in order to
-          function properly. If you're seeing this error, either your browser
-          does not support <code>SharedArrayBuffer</code>, or your server is not
-          sending the appropriate headers, or you are not using HTTPS. See{' '}
-          <Link
-            variant="external"
-            linkColor="muted"
-            to="https://actualbudget.org/docs/troubleshooting/shared-array-buffer"
-          >
-            our troubleshooting documentation
-          </Link>{' '}
-          to learn more. <SharedArrayBufferOverride />
-        </Trans>
+        Actual requires access to <code>SharedArrayBuffer</code> in order to
+        function properly. If you're seeing this error, either your browser does
+        not support <code>SharedArrayBuffer</code>, or your server is not
+        sending the appropriate headers, or you are not using HTTPS. See{' '}
+        <Link
+          variant="external"
+          linkColor="muted"
+          to="https://actualbudget.org/docs/troubleshooting/shared-array-buffer"
+        >
+          our troubleshooting documentation
+        </Link>{' '}
+        to learn more. <SharedArrayBufferOverride />
       </Text>
     );
   } else if (
@@ -87,29 +82,21 @@ function RenderSimple({ error }: RenderSimpleProps) {
   ) {
     msg = (
       <Text>
-        <Trans>
-          Actual is already open in another tab. Close it and reload this page
-          to use Actual here.
-        </Trans>
+        Actual is already open in another tab. Close it and reload this page to
+        use Actual here.
       </Text>
     );
   } else if ('BackendInitFailure' in error && error.BackendInitFailure) {
     msg = (
       <Text>
-        <Trans>
-          Actual couldn't load a critical backend worker. Reload the page to try
-          again; if the problem persists, do a hard refresh to clear any stale
-          cached assets.
-        </Trans>
+        Actual couldn't load a critical backend worker. Reload the page to try
+        again; if the problem persists, do a hard refresh to clear any stale
+        cached assets.
       </Text>
     );
   } else {
     msg = (
-      <Text>
-        <Trans>
-          There was a problem loading the app in this browser version.
-        </Trans>
-      </Text>
+      <Text>There was a problem loading the app in this browser version.</Text>
     );
   }
 
@@ -145,39 +132,29 @@ function RenderDocumentDirError({ path, code }: RenderDocumentDirErrorProps) {
       }}
     >
       <Text>
-        <Trans>
-          Actual couldn't access the folder where it stores your budget files:
-        </Trans>
+        Actual couldn't access the folder where it stores your budget files:
       </Text>
       {path && <DirectoryDisplay directory={path} />}
       {isAccessDenied ? (
         <Text>
-          <Trans>
-            Access to this folder was denied. This is usually caused by folder
-            permissions, or by security software (such as ransomware protection
-            or antivirus) blocking Actual. Allow Actual to use this folder, or
-            choose a different folder below.
-          </Trans>
+          Access to this folder was denied. This is usually caused by folder
+          permissions, or by security software (such as ransomware protection or
+          antivirus) blocking Actual. Allow Actual to use this folder, or choose
+          a different folder below.
         </Text>
       ) : (
         <Text>
-          {code ? (
-            <Trans>The system reported the error code {{ code }}. </Trans>
-          ) : null}
-          <Trans>
-            Check that this location exists and that Actual is allowed to write
-            to it, or choose a different folder below.
-          </Trans>
+          {code ? <>The system reported the error code {code}. </> : null}
+          Check that this location exists and that Actual is allowed to write to
+          it, or choose a different folder below.
         </Text>
       )}
       <Text>
-        <Trans>
-          See{' '}
-          <Link variant="external" linkColor="muted" to={DATA_FOLDER_DOCS_URL}>
-            our troubleshooting documentation
-          </Link>{' '}
-          for step-by-step instructions.
-        </Trans>
+        See{' '}
+        <Link variant="external" linkColor="muted" to={DATA_FOLDER_DOCS_URL}>
+          our troubleshooting documentation
+        </Link>{' '}
+        for step-by-step instructions.
       </Text>
     </SpaceBetween>
   );
@@ -194,12 +171,10 @@ function RenderLazyLoadError() {
       }}
     >
       <Text>
-        <Trans>
-          There was a problem loading one of the chunks of the application.
-          Please reload the page and try again. If the issue persists - there
-          might be an issue with either your internet connection and/or the
-          server where the app is hosted.
-        </Trans>
+        There was a problem loading one of the chunks of the application. Please
+        reload the page and try again. If the issue persists - there might be an
+        issue with either your internet connection and/or the server where the
+        app is hosted.
       </Text>
     </SpaceBetween>
   );
@@ -208,17 +183,13 @@ function RenderLazyLoadError() {
 function RenderUIError() {
   return (
     <>
+      <Paragraph>There was an unrecoverable error in the UI. Sorry!</Paragraph>
       <Paragraph>
-        <Trans>There was an unrecoverable error in the UI. Sorry!</Trans>
-      </Paragraph>
-      <Paragraph>
-        <Trans>
-          If this error persists, please get{' '}
-          <Link variant="external" to="https://actualbudget.org/contact">
-            in touch
-          </Link>{' '}
-          so it can be investigated.
-        </Trans>
+        If this error persists, please get{' '}
+        <Link variant="external" to="https://actualbudget.org/contact">
+          in touch
+        </Link>{' '}
+        so it can be investigated.
       </Paragraph>
     </>
   );
@@ -231,13 +202,11 @@ function SharedArrayBufferOverride() {
   return expanded ? (
     <>
       <Paragraph style={{ marginTop: 10 }}>
-        <Trans>
-          Actual uses <code>SharedArrayBuffer</code> to allow usage from
-          multiple tabs at once and to ensure correct behavior when switching
-          files. While it can run without access to
-          <code>SharedArrayBuffer</code>, you may encounter data loss or notice
-          multiple budget files being merged with each other.
-        </Trans>
+        Actual uses <code>SharedArrayBuffer</code> to allow usage from multiple
+        tabs at once and to ensure correct behavior when switching files. While
+        it can run without access to
+        <code>SharedArrayBuffer</code>, you may encounter data loss or notice
+        multiple budget files being merged with each other.
       </Paragraph>
       <label
         style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}
@@ -246,9 +215,7 @@ function SharedArrayBufferOverride() {
           checked={understand}
           onChange={() => setUnderstand(!understand)}
         />{' '}
-        <Trans>
-          I understand the risks, run Actual in the unsupported fallback mode
-        </Trans>
+        I understand the risks, run Actual in the unsupported fallback mode
       </label>
       <Button
         isDisabled={!understand}
@@ -257,7 +224,7 @@ function SharedArrayBufferOverride() {
           window.location.reload();
         }}
       >
-        <Trans>Open Actual</Trans>
+        Open Actual
       </Button>
     </>
   ) : (
@@ -266,14 +233,12 @@ function SharedArrayBufferOverride() {
       onClick={() => setExpanded(true)}
       style={{ marginLeft: 5 }}
     >
-      <Trans>Advanced options</Trans>
+      Advanced options
     </Link>
   );
 }
 
 export function FatalError({ error: rawError }: FatalErrorProps) {
-  const { t } = useTranslation();
-
   const { modalStack } = useModalState();
   const lastModal = modalStack[modalStack.length - 1];
 
@@ -299,16 +264,16 @@ export function FatalError({ error: rawError }: FatalErrorProps) {
     'code' in error && typeof error.code === 'string' ? error.code : undefined;
   const isLazyLoadError = error instanceof LazyLoadFailedError;
 
-  let title = t('Fatal Error');
+  let title = 'Fatal Error';
   if (isLazyLoadError) {
-    title = t('Loading Error');
+    title = 'Loading Error';
   } else if (isDocumentDirError) {
-    title = t('Data folder unavailable');
+    title = 'Data folder unavailable';
   } else if (
     'AlreadyOpenInAnotherTab' in error &&
     error.AlreadyOpenInAnotherTab
   ) {
-    title = t('Already open in another tab');
+    title = 'Already open in another tab';
   }
 
   return (
@@ -335,13 +300,13 @@ export function FatalError({ error: rawError }: FatalErrorProps) {
         <Paragraph>
           <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
             <Button onPress={() => window.Actual.relaunch()}>
-              <Trans>Restart app</Trans>
+              Restart app
             </Button>
           </View>
         </Paragraph>
         <Paragraph isLast style={{ fontSize: 11 }}>
           <Link variant="text" onClick={() => setShowError(state => !state)}>
-            <Trans>Show Error</Trans>
+            Show Error
           </Link>
           {showError && (
             <Block

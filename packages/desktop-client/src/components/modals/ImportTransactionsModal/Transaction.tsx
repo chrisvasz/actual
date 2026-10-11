@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import type { ComponentProps } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { SvgDownAndRightArrow } from '@actual-app/components/icons/v2';
 import { SpaceBetween } from '@actual-app/components/space-between';
@@ -51,8 +50,6 @@ export function Transaction({
   reconcile,
   index,
 }: TransactionProps) {
-  const { t } = useTranslation();
-
   const categoryList = categories.map(category => category.name);
   const transaction = useMemo(
     () =>
@@ -113,17 +110,13 @@ export function Transaction({
             <Tooltip
               content={
                 transaction.tombstone
-                  ? t('This transaction will be deleted by Rules')
+                  ? 'This transaction will be deleted by Rules'
                   : !transaction.existing && !transaction.ignored
-                    ? t('New transaction. You can import it, or skip it.')
+                    ? 'New transaction. You can import it, or skip it.'
                     : transaction.ignored
-                      ? t(
-                          'Already imported transaction. You can skip it, or import it again.',
-                        )
+                      ? 'Already imported transaction. You can skip it, or import it again.'
                       : transaction.existing
-                        ? t(
-                            'Updated transaction. You can update it, import it again, or skip it.',
-                          )
+                        ? 'Updated transaction. You can update it, import it again, or skip it.'
                         : ''
               }
               placement="right top"
@@ -254,7 +247,7 @@ export function Transaction({
             }}
             title={
               outflow === null
-                ? t('Invalid: unable to parse the value')
+                ? 'Invalid: unable to parse the value'
                 : amountToCurrency(outflow)
             }
           >
@@ -271,7 +264,7 @@ export function Transaction({
             }}
             title={
               inflow === null
-                ? t('Invalid: unable to parse the value')
+                ? 'Invalid: unable to parse the value'
                 : amountToCurrency(inflow)
             }
           >
@@ -288,9 +281,7 @@ export function Transaction({
           }}
           title={
             amount === null
-              ? t('Invalid: unable to parse the value ({{amount}})', {
-                  amount: transaction.amount,
-                })
+              ? `Invalid: unable to parse the value (${transaction.amount})`
               : amountToCurrency(amount)
           }
         >

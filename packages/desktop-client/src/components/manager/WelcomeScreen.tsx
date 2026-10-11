@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -77,7 +76,7 @@ export function WelcomeScreen() {
           style={{ color: theme.pageTextPositive }}
         />
         <Text style={{ ...styles.veryLargeText, textAlign: 'center' }}>
-          <Trans>Welcome to Actual</Trans>
+          Welcome to Actual
         </Text>
         <Text
           style={{
@@ -86,7 +85,7 @@ export function WelcomeScreen() {
             fontStyle: 'italic',
           }}
         >
-          <Trans>Your finances - made simple</Trans>
+          Your finances - made simple
         </Text>
       </View>
 
@@ -97,11 +96,9 @@ export function WelcomeScreen() {
         <Paragraph
           style={{ textAlign: 'center', maxWidth: 400, marginBottom: 0 }}
         >
-          <Trans>
-            Actual is a super fast, privacy-focused app for managing your
-            finances. It is 100% free and open source: everything stays on your
-            device, no data is collected, and there is nothing to sign up for.
-          </Trans>
+          Actual is a super fast, privacy-focused app for managing your
+          finances. It is 100% free and open source: everything stays on your
+          device, no data is collected, and there is nothing to sign up for.
         </Paragraph>
       </View>
 
@@ -121,20 +118,20 @@ export function WelcomeScreen() {
           style={buttonStyle}
           onPress={() => dispatch(createBudget({}))}
         >
-          <Trans>Start budgeting</Trans>
+          Start budgeting
         </Button>
         <Button
           style={buttonStyle}
           onPress={() => dispatch(createBudget({ testMode: true }))}
         >
-          <Trans>Try the demo</Trans>
+          Try the demo
         </Button>
         {!serverURL && (
           <Button
             style={buttonStyle}
             onPress={() => navigate('/config-server')}
           >
-            <Trans>Connect to a sync server</Trans>
+            Connect to a sync server
           </Button>
         )}
       </View>
@@ -149,14 +146,14 @@ export function WelcomeScreen() {
         }}
       >
         <Text style={{ color: theme.pageTextLight }}>
-          <Trans>Coming from another budgeting app?</Trans>
+          Coming from another budgeting app?
         </Text>
         <Button
           variant="bare"
           style={{ color: theme.pageTextLink }}
           onPress={() => dispatch(pushModal({ modal: { name: 'import' } }))}
         >
-          <Trans>Import my budget</Trans>
+          Import my budget
         </Button>
         <Paragraph
           style={{
@@ -168,17 +165,15 @@ export function WelcomeScreen() {
             marginBottom: 0,
           }}
         >
-          <Trans>
-            New to budgeting? Take the{' '}
-            <Link
-              variant="external"
-              to="https://actualbudget.org/docs/tour/"
-              linkColor="purple"
-            >
-              guided tour
-            </Link>{' '}
-            to learn how Actual works.
-          </Trans>
+          New to budgeting? Take the{' '}
+          <Link
+            variant="external"
+            to="https://actualbudget.org/docs/tour/"
+            linkColor="purple"
+          >
+            guided tour
+          </Link>{' '}
+          to learn how Actual works.
         </Paragraph>
       </View>
     </View>

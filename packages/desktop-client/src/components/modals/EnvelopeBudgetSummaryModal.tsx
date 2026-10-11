@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { styles } from '@actual-app/components/styles';
 import {
@@ -32,7 +31,6 @@ export function EnvelopeBudgetSummaryModal({
   month,
   onBudgetAction,
 }: EnvelopeBudgetSummaryModalProps) {
-  const { t } = useTranslation();
   const format = useFormat();
 
   const locale = useLocale();
@@ -57,7 +55,7 @@ export function EnvelopeBudgetSummaryModal({
         modal: {
           name: 'transfer',
           options: {
-            title: t('Transfer to category'),
+            title: 'Transfer to category',
             month,
             amount: sheetValue,
             onSubmit: (amount, toCategoryId) => {
@@ -68,10 +66,7 @@ export function EnvelopeBudgetSummaryModal({
               });
               dispatch(collapseModals({ rootModalName: 'transfer' }));
               showUndoNotification({
-                message: t('Transferred {{amount}} to {{categoryName}}', {
-                  amount: format(amount, 'financial'),
-                  categoryName: categoriesById[toCategoryId].name,
-                }),
+                message: `Transferred ${format(amount, 'financial')} to ${categoriesById[toCategoryId].name}`,
               });
             },
           },
@@ -86,7 +81,7 @@ export function EnvelopeBudgetSummaryModal({
         modal: {
           name: 'cover',
           options: {
-            title: t('Cover overbudgeted'),
+            title: 'Cover overbudgeted',
             month,
             showToBeBudgeted: false,
             amount: sheetValue,
@@ -97,9 +92,7 @@ export function EnvelopeBudgetSummaryModal({
               });
               dispatch(collapseModals({ rootModalName: 'cover' }));
               showUndoNotification({
-                message: t('Covered overbudgeted from {{categoryName}}', {
-                  categoryName: categoriesById[categoryId].name,
-                }),
+                message: `Covered overbudgeted from ${categoriesById[categoryId].name}`,
               });
             },
           },
@@ -155,7 +148,7 @@ export function EnvelopeBudgetSummaryModal({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Budget Summary')}
+            title="Budget Summary"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <SheetNameProvider name={sheetForMonth(month)}>

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -58,7 +57,6 @@ export function MonteCarlo() {
     type: 'monte-carlo-card',
   });
 
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const format = useFormat();
   const navigate = useNavigate();
@@ -133,7 +131,7 @@ export function MonteCarlo() {
             addNotification({
               notification: {
                 type: 'message',
-                message: t('Dashboard widget successfully saved.'),
+                message: 'Dashboard widget successfully saved.',
               },
             }),
           );
@@ -142,14 +140,14 @@ export function MonteCarlo() {
     );
   }
 
-  const title = widget?.meta?.name || t('Monte Carlo Analysis');
+  const title = widget?.meta?.name || 'Monte Carlo Analysis';
   const onSaveWidgetName = async (newName: string) => {
     // The editable title only renders when a widget exists
     if (!widget) {
       return;
     }
 
-    const name = newName || t('Monte Carlo Analysis');
+    const name = newName || 'Monte Carlo Analysis';
     updateWidget({
       widget: {
         id: widget.id,
@@ -310,11 +308,11 @@ export function MonteCarlo() {
                 fontWeight: 600,
               }}
             >
-              <Trans>Configuration</Trans>
+              Configuration
             </Text>
             {widget && (
               <Button variant="primary" onPress={onSaveWidget}>
-                <Trans>Save widget</Trans>
+                Save widget
               </Button>
             )}
           </View>
@@ -344,7 +342,7 @@ export function MonteCarlo() {
               fontWeight: 600,
             }}
           >
-            <Trans>Results</Trans>
+            Results
           </Text>
           <LabeledCheckbox
             id="mc-todays-money"
@@ -352,7 +350,7 @@ export function MonteCarlo() {
             onChange={event => setShowTodaysMoney(event.target.checked)}
             style={{ flex: 'unset' }}
           >
-            <Trans>Show values in today&apos;s money</Trans>
+            Show values in today&apos;s money
           </LabeledCheckbox>
         </View>
 
@@ -375,9 +373,7 @@ export function MonteCarlo() {
             }}
           >
             <View style={{ gap: 4 }}>
-              <Text style={GROUP_HEADING_STYLE}>
-                <Trans>Success rate</Trans>
-              </Text>
+              <Text style={GROUP_HEADING_STYLE}>Success rate</Text>
               <Text
                 style={{
                   ...styles.veryLargeText,
@@ -388,9 +384,7 @@ export function MonteCarlo() {
               </Text>
             </View>
             <View style={{ gap: 4 }}>
-              <Text style={GROUP_HEADING_STYLE}>
-                <Trans>Median ending balance</Trans>
-              </Text>
+              <Text style={GROUP_HEADING_STYLE}>Median ending balance</Text>
               <Text style={{ ...styles.mediumText, fontWeight: 500 }}>
                 <FinancialText as="span">
                   {format(result.medianEndingBalance, 'financial')}
@@ -398,9 +392,7 @@ export function MonteCarlo() {
               </Text>
             </View>
             <View style={{ gap: 4 }}>
-              <Text style={GROUP_HEADING_STYLE}>
-                <Trans>Median total withdrawn</Trans>
-              </Text>
+              <Text style={GROUP_HEADING_STYLE}>Median total withdrawn</Text>
               <Text style={{ ...styles.mediumText, fontWeight: 500 }}>
                 <FinancialText as="span">
                   {format(result.medianTotalWithdrawn, 'financial')}
@@ -409,7 +401,7 @@ export function MonteCarlo() {
             </View>
             <View style={{ gap: 4 }}>
               <Text style={GROUP_HEADING_STYLE}>
-                <Trans>Chance of running out of money</Trans>
+                Chance of running out of money
               </Text>
               <Text style={{ ...styles.mediumText, fontWeight: 500 }}>
                 <FinancialText as="span">{`${depletionPercent}%`}</FinancialText>
@@ -418,31 +410,18 @@ export function MonteCarlo() {
             {result.medianDepletionYear != null && (
               <View style={{ gap: 4 }}>
                 <Text style={GROUP_HEADING_STYLE}>
-                  <Trans>Typical failure runs out at</Trans>
+                  Typical failure runs out at
                 </Text>
                 <Text style={{ ...styles.mediumText, fontWeight: 500 }}>
-                  {t('Age {{age}}', {
-                    // Ages here are the failure year itself, matching the
-                    // drill-in's failure row
-                    age: config.currentAge + result.medianDepletionYear - 1,
-                  })}
+                  {`Age ${config.currentAge + result.medianDepletionYear - 1}`}
                 </Text>
               </View>
             )}
           </View>
           <View style={{ marginTop: 10, gap: 5 }}>
-            <Text style={GROUP_HEADING_STYLE}>
-              <Trans>Summary</Trans>
-            </Text>
+            <Text style={GROUP_HEADING_STYLE}>Summary</Text>
             <Text>
-              {t(
-                'In {{successPercent}}% of {{simulationCount}} simulated scenarios, your pot lasted until age {{endAge}}.',
-                {
-                  successPercent,
-                  simulationCount: result.simulationCount,
-                  endAge,
-                },
-              )}
+              {`In ${successPercent}% of ${result.simulationCount} simulated scenarios, your pot lasted until age ${endAge}.`}
             </Text>
           </View>
         </View>
@@ -472,32 +451,30 @@ export function MonteCarlo() {
               style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}
             >
               <Text style={{ ...styles.mediumText, fontWeight: 600 }}>
-                {resultsView === 'chart' ? (
-                  <Trans>Portfolio performance</Trans>
-                ) : resultsView === 'cashflow' ? (
-                  <Trans>Cashflow</Trans>
-                ) : (
-                  <Trans>Simulation runs</Trans>
-                )}
+                {resultsView === 'chart'
+                  ? 'Portfolio performance'
+                  : resultsView === 'cashflow'
+                    ? 'Cashflow'
+                    : 'Simulation runs'}
               </Text>
               <View style={{ flexDirection: 'row', gap: 5 }}>
                 <ModeButton
                   selected={resultsView === 'chart'}
                   onSelect={() => setResultsView('chart')}
                 >
-                  <Trans>Chart</Trans>
+                  Chart
                 </ModeButton>
                 <ModeButton
                   selected={resultsView === 'cashflow'}
                   onSelect={() => setResultsView('cashflow')}
                 >
-                  <Trans>Cashflow</Trans>
+                  Cashflow
                 </ModeButton>
                 <ModeButton
                   selected={resultsView === 'runs'}
                   onSelect={() => setResultsView('runs')}
                 >
-                  <Trans>Runs</Trans>
+                  Runs
                 </ModeButton>
               </View>
             </View>
@@ -506,12 +483,12 @@ export function MonteCarlo() {
                 value={graphView}
                 onChange={value => setGraphView(value as MonteCarloGraphView)}
                 options={[
-                  ['all', t('All scenarios')],
-                  ['single-worst', t('Single worst run')],
-                  ['worst-case', t('Worst-case scenario (5th percentile)')],
-                  ['pessimistic', t('Pessimistic scenario (30th percentile)')],
-                  ['median', t('Median scenario (50th percentile)')],
-                  ['optimistic', t('Optimistic scenario (70th percentile)')],
+                  ['all', 'All scenarios'],
+                  ['single-worst', 'Single worst run'],
+                  ['worst-case', 'Worst-case scenario (5th percentile)'],
+                  ['pessimistic', 'Pessimistic scenario (30th percentile)'],
+                  ['median', 'Median scenario (50th percentile)'],
+                  ['optimistic', 'Optimistic scenario (70th percentile)'],
                 ]}
                 style={{ width: 280 }}
               />
@@ -520,7 +497,7 @@ export function MonteCarlo() {
               <Select
                 value={String(cashflowPercentile)}
                 onChange={value => setCashflowPercentile(Number(value))}
-                options={getRunPercentileOptions(t)}
+                options={getRunPercentileOptions()}
                 style={{ width: 200 }}
               />
             )}
@@ -536,17 +513,14 @@ export function MonteCarlo() {
                   }}
                 >
                   {graphView === 'single-worst'
-                    ? t(
-                        'The unluckiest of all {{simulationCount}} simulated runs - the one that ran out of money earliest.',
-                        { simulationCount: result.simulationCount },
-                      )
+                    ? `The unluckiest of all ${result.simulationCount} simulated runs - the one that ran out of money earliest.`
                     : graphView === 'worst-case'
-                      ? t('95% of scenarios stayed above this line.')
+                      ? '95% of scenarios stayed above this line.'
                       : graphView === 'pessimistic'
-                        ? t('70% of scenarios stayed above this line.')
+                        ? '70% of scenarios stayed above this line.'
                         : graphView === 'median'
-                          ? t('Half of scenarios stayed above this line.')
-                          : t('30% of scenarios stayed above this line.')}
+                          ? 'Half of scenarios stayed above this line.'
+                          : '30% of scenarios stayed above this line.'}
                 </Text>
               )}
               <MonteCarloGraph
@@ -567,11 +541,9 @@ export function MonteCarlo() {
                     flexShrink: 0,
                   }}
                 >
-                  <Trans>
-                    Money flowing in and out each year of this simulated run:
-                    withdrawals and income above zero; planned spending, tax,
-                    contributions and money saved into the surplus pot below.
-                  </Trans>
+                  Money flowing in and out each year of this simulated run:
+                  withdrawals and income above zero; planned spending, tax,
+                  contributions and money saved into the surplus pot below.
                 </Text>
                 <MonteCarloCashflowGraph
                   rows={runDetailRows}
@@ -632,19 +604,12 @@ export function MonteCarlo() {
               marginBottom: 5,
             }}
           >
-            <Trans>When did the pot run out?</Trans>
+            When did the pot run out?
           </Text>
           {hasFailures ? (
             <>
               <Text style={{ color: theme.pageText, marginBottom: 10 }}>
-                {t(
-                  'Only the {{failedCount}} of {{simulationCount}} scenarios that ran out of money are shown here - the other {{survivedCount}} kept a positive balance for the full horizon.',
-                  {
-                    failedCount,
-                    simulationCount: result.simulationCount,
-                    survivedCount: result.simulationCount - failedCount,
-                  },
-                )}
+                {`Only the ${failedCount} of ${result.simulationCount} scenarios that ran out of money are shown here - the other ${result.simulationCount - failedCount} kept a positive balance for the full horizon.`}
               </Text>
               <View style={{ height: 200, flexShrink: 0 }}>
                 <MonteCarloHistogram
@@ -657,32 +622,20 @@ export function MonteCarlo() {
               </View>
               <View style={{ marginTop: 10, flexShrink: 0 }}>
                 <Text style={{ color: theme.pageText }}>
-                  {t(
-                    'Worst case: money ran out at age {{worst}}. Among failures, the typical depletion age was {{median}}; the luckiest failure lasted until age {{best}}.',
-                    {
-                      worst:
-                        config.currentAge +
-                        (result.earliestDepletionYear ?? 1) -
-                        1,
-                      median:
-                        config.currentAge +
-                        (result.medianDepletionYear ?? 1) -
-                        1,
-                      best:
-                        config.currentAge +
-                        (result.latestDepletionYear ?? 1) -
-                        1,
-                    },
-                  )}
+                  {`Worst case: money ran out at age ${
+                    config.currentAge + (result.earliestDepletionYear ?? 1) - 1
+                  }. Among failures, the typical depletion age was ${
+                    config.currentAge + (result.medianDepletionYear ?? 1) - 1
+                  }; the luckiest failure lasted until age ${
+                    config.currentAge + (result.latestDepletionYear ?? 1) - 1
+                  }.`}
                 </Text>
               </View>
             </>
           ) : (
             <Paragraph>
-              <Trans>
-                The pot survived the full time horizon in every simulated
-                scenario.
-              </Trans>
+              The pot survived the full time horizon in every simulated
+              scenario.
             </Paragraph>
           )}
         </View>
@@ -703,39 +656,31 @@ export function MonteCarlo() {
               marginBottom: 10,
             }}
           >
-            <Trans>How does this simulation work?</Trans>
+            How does this simulation work?
           </Text>
           <Paragraph>
-            <Trans>
-              Each scenario replays your retirement with a different sequence of
-              yearly investment returns. Every year, any income arrives and any
-              contributions are paid in at the start - some of them out of that
-              income; the income then pays for the year&apos;s spending first
-              and the withdrawal covers the rest; anything left unspent is saved
-              into the Surplus cash pot for later years when the plan keeps one,
-              and otherwise leaves the plan; and then each pot grows or shrinks
-              with that year&apos;s return. Pots with an access age stay
-              invested but can&apos;t fund withdrawals until you reach it - if
-              the accessible pots can&apos;t cover what a year&apos;s spending
-              still needs, the plan counts as having run out, even if locked
-              pots still hold money. The shaded bands show the range of outcomes
-              across all scenarios: the darker band covers the middle half, and
-              the lighter band covers 80% of them.
-            </Trans>
+            Each scenario replays your retirement with a different sequence of
+            yearly investment returns. Every year, any income arrives and any
+            contributions are paid in at the start - some of them out of that
+            income; the income then pays for the year&apos;s spending first and
+            the withdrawal covers the rest; anything left unspent is saved into
+            the Surplus cash pot for later years when the plan keeps one, and
+            otherwise leaves the plan; and then each pot grows or shrinks with
+            that year&apos;s return. Pots with an access age stay invested but
+            can&apos;t fund withdrawals until you reach it - if the accessible
+            pots can&apos;t cover what a year&apos;s spending still needs, the
+            plan counts as having run out, even if locked pots still hold money.
+            The shaded bands show the range of outcomes across all scenarios:
+            the darker band covers the middle half, and the lighter band covers
+            80% of them.
           </Paragraph>
           <Paragraph>
             {config.returnModel === 'normal' ? (
-              <Trans>
-                Keep in mind this is a simplified model: returns are drawn
-                independently each year from a normal distribution, which
-                ignores sequence-of-returns clustering and fat tails, and fees
-                and taxes are modeled only as accurately as the rates you enter.
-                Treat the results as a rough guide, not a guarantee.
-              </Trans>
+              'Keep in mind this is a simplified model: returns are drawn independently each year from a normal distribution, which ignores sequence-of-returns clustering and fat tails, and fees and taxes are modeled only as accurately as the rates you enter. Treat the results as a rough guide, not a guarantee.'
             ) : config.returnModel === 'historical-bootstrap' ? (
-              <Trans>
-                Returns are actual US market years ({{ firstYear }}&ndash;
-                {{ lastYear }}, S&amp;P 500 / 10-year Treasuries / T-bills,
+              <>
+                Returns are actual US market years ({firstYear}&ndash;
+                {lastYear}, S&amp;P 500 / 10-year Treasuries / T-bills,
                 Damodaran data) drawn in random order for each pot&apos;s
                 allocation mix. Each sampled year brings its own actual US
                 inflation with it, so high-inflation markets stay
@@ -744,19 +689,18 @@ export function MonteCarlo() {
                 accurate as the rates you enter, and US history has been
                 unusually good, so results may be optimistic for globally
                 diversified portfolios.
-              </Trans>
+              </>
             ) : (
-              <Trans>
-                Each scenario replays actual US market history ({{ firstYear }}
-                &ndash;{{ lastYear }}, S&amp;P 500 / 10-year Treasuries /
-                T-bills, Damodaran data) starting from a different year,
-                wrapping around the end of the data. Each replayed year brings
-                its own actual US inflation with it. This preserves real crashes
-                and recoveries, but there are only as many scenarios as start
-                years, fees and taxes are only as accurate as the rates you
-                enter, and US history may be optimistic for globally diversified
-                portfolios.
-              </Trans>
+              <>
+                Each scenario replays actual US market history ({firstYear}
+                &ndash;{lastYear}, S&amp;P 500 / 10-year Treasuries / T-bills,
+                Damodaran data) starting from a different year, wrapping around
+                the end of the data. Each replayed year brings its own actual US
+                inflation with it. This preserves real crashes and recoveries,
+                but there are only as many scenarios as start years, fees and
+                taxes are only as accurate as the rates you enter, and US
+                history may be optimistic for globally diversified portfolios.
+              </>
             )}
           </Paragraph>
         </View>

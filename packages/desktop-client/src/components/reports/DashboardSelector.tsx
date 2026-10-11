@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import { Dialog, DialogTrigger } from 'react-aria-components';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgExpandArrow } from '@actual-app/components/icons/v0';
@@ -21,7 +20,6 @@ export function DashboardSelector({
   dashboards,
   currentDashboard,
 }: DashboardSelectorProps) {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const triggerRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -29,7 +27,7 @@ export function DashboardSelector({
   const createDashboardPageMutation = useCreateDashboardPageMutation();
 
   const handleAddDashboard = async () => {
-    const defaultName = t('New dashboard');
+    const defaultName = 'New dashboard';
     createDashboardPageMutation.mutate(
       { name: defaultName },
       {
@@ -110,7 +108,7 @@ export function DashboardSelector({
                 Menu.line,
                 {
                   name: 'add-new',
-                  text: t('Add new dashboard'),
+                  text: 'Add new dashboard',
                 },
               ]}
             />

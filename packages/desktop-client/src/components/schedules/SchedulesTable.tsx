@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React, { useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgDotsHorizontalTriple } from '@actual-app/components/icons/v1';
@@ -69,7 +68,6 @@ export function ScheduleAmountCell({
   amount: ScheduleEntity['_amount'];
   op: ScheduleEntity['_amountOp'];
 }) {
-  const { t } = useTranslation();
   const format = useFormat();
 
   const num = getScheduledAmount(amount);
@@ -78,14 +76,9 @@ export function ScheduleAmountCell({
   const isBetween = op === 'isbetween';
   let cellText = '';
   if (isApprox) {
-    cellText = t('Approximately {{currencyAmount}}', {
-      currencyAmount,
-    });
+    cellText = `Approximately ${currencyAmount}`;
   } else if (isBetween && typeof amount != 'number') {
-    cellText = t('{{currency1}} to {{currency2}}', {
-      currency1: format(Math.abs(amount.num1 || 0), 'financial'),
-      currency2: format(Math.abs(amount.num2 || 0), 'financial'),
-    });
+    cellText = `${format(Math.abs(amount.num1 || 0), 'financial')} to ${format(Math.abs(amount.num2 || 0), 'financial')}`;
   } else {
     cellText = currencyAmount;
   }
@@ -157,8 +150,6 @@ function ScheduleRow({
   SchedulesTableProps,
   'onSelect' | 'onAction' | 'minimal' | 'statuses'
 >) {
-  const { t } = useTranslation();
-
   const rowRef = useRef(null);
   const buttonRef = useRef(null);
 
@@ -169,35 +160,35 @@ function ScheduleRow({
       ? [
           {
             name: 'post-transaction',
-            text: t('Post transaction'),
+            text: 'Post transaction',
             onClick: () => onAction('post-transaction', schedule.id),
           },
           {
             name: 'post-transaction-today',
-            text: t('Post transaction today'),
+            text: 'Post transaction today',
             onClick: () => onAction('post-transaction-today', schedule.id),
           },
           {
             name: 'restart',
-            text: t('Restart'),
+            text: 'Restart',
             onClick: () => onAction('restart', schedule.id),
             hidden: status !== 'completed',
           },
           {
             name: 'skip',
-            text: t('Skip next scheduled date'),
+            text: 'Skip next scheduled date',
             onClick: () => onAction('skip', schedule.id),
             hidden: status === 'completed',
           },
           {
             name: 'complete',
-            text: t('Complete'),
+            text: 'Complete',
             onClick: () => onAction('complete', schedule.id),
             hidden: status === 'completed',
           },
           {
             name: 'delete',
-            text: t('Delete'),
+            text: 'Delete',
             onClick: () => onAction('delete', schedule.id),
           },
         ]
@@ -226,7 +217,7 @@ function ScheduleRow({
           }
           title={schedule.name ? schedule.name : ''}
         >
-          {schedule.name ? schedule.name : t('None')}
+          {schedule.name ? schedule.name : 'None'}
         </Text>
       </Field>
       <Field width="flex" name="payee">
@@ -259,7 +250,7 @@ function ScheduleRow({
             <Button
               ref={buttonRef}
               variant="bare"
-              aria-label={t('Menu')}
+              aria-label="Menu"
               onPress={() => {
                 if (rowRef.current) {
                   const rect = buttonRef.current?.getBoundingClientRect();
@@ -300,7 +291,6 @@ export function SchedulesTable({
   onAction,
   tableStyle,
 }: SchedulesTableProps) {
-  const { t } = useTranslation();
   const format = useFormat();
 
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
@@ -384,7 +374,7 @@ export function SchedulesTable({
               color: theme.tableText,
             }}
           >
-            <Trans>Show completed schedules</Trans>
+            Show completed schedules
           </Field>
         </Row>
       );
@@ -400,27 +390,17 @@ export function SchedulesTable({
   return (
     <View style={{ ...styles.tableContainer, ...tableStyle }}>
       <TableHeader height={ROW_HEIGHT} inset={15}>
-        <Field width="flex">
-          <Trans>Name</Trans>
-        </Field>
-        <Field width="flex">
-          <Trans>Payee</Trans>
-        </Field>
-        <Field width="flex">
-          <Trans>Account</Trans>
-        </Field>
-        <Field width={110}>
-          <Trans>Next date</Trans>
-        </Field>
-        <Field width={120}>
-          <Trans>Status</Trans>
-        </Field>
+        <Field width="flex">Name</Field>
+        <Field width="flex">Payee</Field>
+        <Field width="flex">Account</Field>
+        <Field width={110}>Next date</Field>
+        <Field width={120}>Status</Field>
         <Field width={100} style={{ textAlign: 'right' }}>
-          <Trans>Amount</Trans>
+          Amount
         </Field>
         {!minimal && (
           <Field width={80} style={{ textAlign: 'center' }}>
-            <Trans>Recurring</Trans>
+            Recurring
           </Field>
         )}
         {!minimal && <Field width={40} />}
@@ -432,7 +412,7 @@ export function SchedulesTable({
         style={{ flex: 1, backgroundColor: 'transparent', ...style }}
         items={items as ScheduleEntity[]}
         renderItem={renderItem}
-        renderEmpty={filter ? t('No matching schedules') : t('No schedules')}
+        renderEmpty={filter ? 'No matching schedules' : 'No schedules'}
       />
     </View>
   );

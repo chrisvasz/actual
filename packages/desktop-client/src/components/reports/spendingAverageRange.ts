@@ -122,53 +122,45 @@ export function resolveSpendingAverageRange({
   };
 }
 
-type Translate = (
-  key: string,
-  options?: Record<string, string | number>,
-) => string;
-
 export function getSpendingAverageRangeLabel(
   averageRange: SpendingAverageRange | undefined,
-  t: Translate,
 ): string {
   const normalizedRange = normalizeSpendingAverageRange(averageRange);
 
   switch (normalizedRange.mode) {
     case 'last-n-months':
-      return t('Last {{count}} months', { count: normalizedRange.months });
+      return `Last ${normalizedRange.months} months`;
     case 'year-to-date':
-      return t('YTD');
+      return 'YTD';
     case 'all-time':
-      return t('All time');
+      return 'All time';
     default:
-      return t('Last 3 months');
+      return 'Last 3 months';
   }
 }
 
 export function getSpendingAverageSummaryLabel({
   averageRange,
   isCurrentMonth,
-  t,
 }: {
   averageRange?: SpendingAverageRange;
   isCurrentMonth: boolean;
-  t: Translate;
 }): string {
-  const rangeLabel = getSpendingAverageRangeLabel(averageRange, t);
+  const rangeLabel = getSpendingAverageRangeLabel(averageRange);
 
   return isCurrentMonth
-    ? t('Spent Average MTD ({{rangeLabel}}):', { rangeLabel })
-    : t('Spent Average ({{rangeLabel}}):', { rangeLabel });
+    ? `Spent Average MTD (${rangeLabel}):`
+    : `Spent Average (${rangeLabel}):`;
 }
 
-export function getSpendingAverageRangeOptions(
-  t: Translate,
-): Array<readonly [SpendingAverageRangeKey, string]> {
+export function getSpendingAverageRangeOptions(): Array<
+  readonly [SpendingAverageRangeKey, string]
+> {
   return [
-    ['last-3-months', t('Last 3 months')],
-    ['last-6-months', t('Last 6 months')],
-    ['last-12-months', t('Last 12 months')],
-    ['year-to-date', t('YTD')],
-    ['all-time', t('All time')],
+    ['last-3-months', 'Last 3 months'],
+    ['last-6-months', 'Last 6 months'],
+    ['last-12-months', 'Last 12 months'],
+    ['year-to-date', 'YTD'],
+    ['all-time', 'All time'],
   ];
 }

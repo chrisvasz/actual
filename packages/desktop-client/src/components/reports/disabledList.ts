@@ -1,24 +1,23 @@
 import type { sortByOpType } from '@actual-app/core/types/models';
-import { t } from 'i18next';
 
 const intervalOptions = [
   {
-    description: t('Daily'),
+    description: 'Daily',
     key: 'Daily',
     defaultRange: 'This month',
   },
   {
-    description: t('Weekly'),
+    description: 'Weekly',
     key: 'Weekly',
     defaultRange: 'Last 3 months',
   },
   {
-    description: t('Monthly'),
+    description: 'Monthly',
     key: 'Monthly',
     defaultRange: 'Last 6 months',
   },
   {
-    description: t('Yearly'),
+    description: 'Yearly',
     key: 'Yearly',
     defaultRange: 'Year to date',
   },
@@ -26,43 +25,43 @@ const intervalOptions = [
 
 const currentIntervalOptions = [
   {
-    description: t('This week'),
+    description: 'This week',
     disableInclude: true,
   },
   {
-    description: t('This month'),
+    description: 'This month',
     disableInclude: true,
   },
   {
-    description: t('Last month'),
+    description: 'Last month',
     disableInclude: true,
   },
   {
-    description: t('Current quarter'),
+    description: 'Current quarter',
     disableInclude: true,
   },
   {
-    description: t('Previous quarter'),
+    description: 'Previous quarter',
     disableInclude: true,
   },
   {
-    description: t('Last 30 days'),
+    description: 'Last 30 days',
     disableInclude: true,
   },
   {
-    description: t('Year to date'),
+    description: 'Year to date',
     disableInclude: true,
   },
   {
-    description: t('Last year'),
+    description: 'Last year',
     disableInclude: true,
   },
   {
-    description: t('Prior year to date'),
+    description: 'Prior year to date',
     disableInclude: true,
   },
   {
-    description: t('All time'),
+    description: 'All time',
     disableInclude: true,
   },
 ];

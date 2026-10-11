@@ -1,5 +1,3 @@
-import { Trans } from 'react-i18next';
-
 import { Button } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
@@ -30,12 +28,10 @@ export function AccountEmptyMessage({ onAdd }: AccountEmptyMessageProps) {
         }}
       >
         <Text style={{ textAlign: 'center', lineHeight: '1.4em' }}>
-          <Trans>
-            <strong>Let's add your first account.</strong> Accounts hold your
-            transactions, like everyday spending, savings, credit cards, or
-            cash. You can connect to your bank to import transactions
-            automatically, or add them yourself.
-          </Trans>
+          <strong>Let's add your first account.</strong> Accounts hold your
+          transactions, like everyday spending, savings, credit cards, or cash.
+          You can connect to your bank to import transactions automatically, or
+          add them yourself.
         </Text>
 
         <Button
@@ -44,13 +40,13 @@ export function AccountEmptyMessage({ onAdd }: AccountEmptyMessageProps) {
           autoFocus
           onPress={onAdd}
         >
-          <Trans>Add account</Trans>
+          Add account
         </Button>
 
         <View
           style={{ marginTop: 20, fontSize: 13, color: theme.tableTextLight }}
         >
-          <Trans>You can add more accounts at any time from the sidebar.</Trans>
+          You can add more accounts at any time from the sidebar.
         </View>
       </View>
     </View>

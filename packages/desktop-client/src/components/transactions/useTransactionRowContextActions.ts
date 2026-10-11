@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import type { RefObject } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { q } from '@actual-app/core/shared/query';
 import {
@@ -45,7 +44,6 @@ export function useTransactionRowContextActions({
   onScheduleAction,
   onMakeAsNonSplitTransactions,
 }: TransactionRowContextMenuProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const selectedItems = useSelectedItems();
 
@@ -125,29 +123,29 @@ export function useTransactionRowContextActions({
   const scheduleActions: ContextMenuItem[] = [
     {
       name: 'view-schedule',
-      text: t('View Schedule'),
+      text: 'View Schedule',
       onClick: onViewSchedule,
       hidden: selectedIds.length !== 1,
     },
     {
       name: 'post-transaction',
-      text: t('Post transaction'),
+      text: 'Post transaction',
       onClick: () => onScheduleAction('post-transaction', selectedIds),
     },
     {
       name: 'post-transaction-today',
-      text: t('Post transaction today'),
+      text: 'Post transaction today',
       onClick: () => onScheduleAction('post-transaction-today', selectedIds),
     },
     {
       name: 'skip',
-      text: t('Skip next scheduled date'),
+      text: 'Skip next scheduled date',
       onClick: () => onScheduleAction('skip', selectedIds),
       hidden: !canBeSkipped,
     },
     {
       name: 'complete',
-      text: t('Mark as completed'),
+      text: 'Mark as completed',
       onClick: () => onScheduleAction('complete', selectedIds),
       hidden: !canBeCompleted,
     },
@@ -171,44 +169,42 @@ export function useTransactionRowContextActions({
     return [
       {
         name: 'duplicate',
-        text: t('Duplicate'),
+        text: 'Duplicate',
         onClick: () => onDuplicate(selectedIds),
         hidden: ambiguousDuplication,
       },
       {
         name: 'delete',
-        text: t('Delete'),
+        text: 'Delete',
         onClick: () => onDelete(selectedIds),
       },
       {
         name: 'view-schedule',
-        text: t('View Schedule'),
+        text: 'View Schedule',
         onClick: onViewSchedule,
         hidden: !(selectedIds.length === 1 && linked),
       },
       {
         name: 'unlink-schedule',
-        text: t('Unlink schedule'),
+        text: 'Unlink schedule',
         onClick: () => onUnlinkSchedule(selectedIds),
         hidden: !linked,
       },
       {
         name: 'link-schedule',
-        text: t('Link schedule'),
+        text: 'Link schedule',
         onClick: () => onLinkSchedule(selectedIds),
         hidden: linked,
       },
       {
         name: 'create-rule',
-        text: t('Create rule'),
+        text: 'Create rule',
         onClick: () => onCreateRule(selectedIds),
         hidden: linked,
       },
       {
         name: 'unsplit-transactions',
-        text: t('Unsplit {{count}} transactions', {
-          count: selectedIds.length,
-        }),
+        text: `Unsplit ${selectedIds.length} ${selectedIds.length === 1 ? 'transaction' : 'transactions'}`,
         onClick: () => onMakeAsNonSplitTransactions(selectedIds),
         hidden: !canUnsplitTransactions,
       },

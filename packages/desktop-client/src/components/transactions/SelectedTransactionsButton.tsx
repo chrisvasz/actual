@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Menu } from '@actual-app/components/menu';
 import { validForMerge } from '@actual-app/core/shared/merge';
@@ -67,7 +66,6 @@ export function SelectedTransactionsButton({
   onMakeAsNonSplitTransactions,
   onMergeTransactions,
 }: SelectedTransactionsButtonProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const selectedItems = useSelectedItems();
   const selectedIds = useMemo(() => [...selectedItems], [selectedItems]);
@@ -297,67 +295,67 @@ export function SelectedTransactionsButton({
   return (
     <SelectedItemsButton
       id="transactions"
-      name={count => t('{{count}} transactions', { count })}
+      name={count => `${count} ${count === 1 ? 'transaction' : 'transactions'}`}
       // @ts-expect-error fix me
       items={[
         ...(!types.trans
           ? [
               {
                 name: 'view-schedule',
-                text: t('View schedule'),
+                text: 'View schedule',
                 key: 'S',
               } as const,
               {
                 name: 'post-transaction',
-                text: t('Post transaction'),
+                text: 'Post transaction',
               } as const,
               {
                 name: 'post-transaction-today',
-                text: t('Post transaction today'),
+                text: 'Post transaction today',
               } as const,
               canBeSkipped &&
                 ({
                   name: 'skip',
-                  text: t('Skip next scheduled date'),
+                  text: 'Skip next scheduled date',
                 } as const),
               canBeCompleted &&
-                ({ name: 'complete', text: t('Mark as completed') } as const),
+                ({ name: 'complete', text: 'Mark as completed' } as const),
             ]
           : [
-              { name: 'show', text: t('Show'), key: 'F' } as const,
+              { name: 'show', text: 'Show', key: 'F' } as const,
               {
                 name: 'duplicate',
-                text: t('Duplicate'),
+                text: 'Duplicate',
                 key: 'U',
                 disabled: ambiguousDuplication,
               } as const,
-              { name: 'delete', text: t('Delete'), key: 'D' } as const,
+              { name: 'delete', text: 'Delete', key: 'D' } as const,
               ...(linked
                 ? [
                     {
                       name: 'view-schedule',
-                      text: t('View schedule'),
+                      text: 'View schedule',
                       key: 'S',
                       disabled: selectedIds.length > 1,
                     } as const,
                     {
                       name: 'unlink-schedule',
-                      text: t('Unlink schedule'),
+                      text: 'Unlink schedule',
                     } as const,
                   ]
                 : [
                     {
                       name: 'link-schedule',
-                      text: t('Link schedule'),
+                      text: 'Link schedule',
                       key: 'S',
                     } as const,
                     {
                       name: 'create-rule',
-                      text: t('Create rule'),
+                      text: 'Create rule',
                     } as const,
                     {
                       name: 'run-rules',
-                      text: t('Run Rules'),
+                      text: 'Run Rules',
                     } as const,
                   ]),
 
@@ -365,7 +363,7 @@ export function SelectedTransactionsButton({
                 ? [
                     {
                       name: 'set-transfer',
-                      text: t('Make transfer'),
+                      text: 'Make transfer',
                       key: 'R',
                       disabled: !canBeTransfer,
                     } as const,
@@ -375,7 +373,7 @@ export function SelectedTransactionsButton({
                 ? [
                     {
                       name: 'make-as-split-transaction',
-                      text: t('Make as split transaction'),
+                      text: 'Make as split transaction',
                     } as const,
                   ]
                 : []),
@@ -383,9 +381,7 @@ export function SelectedTransactionsButton({
                 ? [
                     {
                       name: 'unsplit-transactions',
-                      text: t('Unsplit {{count}} transactions', {
-                        count: selectedIds.length,
-                      }),
+                      text: `Unsplit ${selectedIds.length} ${selectedIds.length === 1 ? 'transaction' : 'transactions'}`,
                     } as const,
                   ]
                 : []),
@@ -393,20 +389,20 @@ export function SelectedTransactionsButton({
                 ? [
                     {
                       name: 'merge-transactions',
-                      text: t('Merge'),
+                      text: 'Merge',
                       key: 'G',
                     } as const,
                   ]
                 : []),
               Menu.line,
-              { type: Menu.label, name: t('Edit field'), text: '' } as const,
-              { name: 'date', text: t('Date'), key: 'E' } as const,
-              { name: 'account', text: t('Account'), key: 'A' } as const,
-              { name: 'payee', text: t('Payee'), key: 'P' } as const,
-              { name: 'notes', text: t('Notes'), key: 'N' } as const,
-              { name: 'category', text: t('Category'), key: 'C' } as const,
-              { name: 'amount', text: t('Amount'), key: 'M' } as const,
-              { name: 'cleared', text: t('Cleared'), key: 'L' } as const,
+              { type: Menu.label, name: 'Edit field', text: '' } as const,
+              { name: 'date', text: 'Date', key: 'E' } as const,
+              { name: 'account', text: 'Account', key: 'A' } as const,
+              { name: 'payee', text: 'Payee', key: 'P' } as const,
+              { name: 'notes', text: 'Notes', key: 'N' } as const,
+              { name: 'category', text: 'Category', key: 'C' } as const,
+              { name: 'amount', text: 'Amount', key: 'M' } as const,
+              { name: 'cleared', text: 'Cleared', key: 'L' } as const,
             ]),
       ]}
       onSelect={name => {

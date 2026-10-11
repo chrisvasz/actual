@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -17,8 +16,6 @@ import { popModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 
 export function PostsOfflineNotification() {
-  const { t, i18n } = useTranslation();
-
   const location = useLocation();
   const dispatch = useDispatch();
 
@@ -38,57 +35,52 @@ export function PostsOfflineNotification() {
       <DisplayId id={id} type="payees" />
     </Text>
   ));
-  const payeeNamesList = useFormatList(payeesList, i18n.language);
+  const payeeNamesList = useFormatList(payeesList);
 
   return (
     <Modal name="schedule-posts-offline-notification">
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Post transactions?')}
+            title="Post transactions?"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <Paragraph>
             <Text>
-              {payees.length > 0 ? (
-                <Trans count={payees.length}>
+              {payees.length === 1 ? (
+                <>
+                  The payee <span>{payeeNamesList}</span> has a schedule that is
+                  due today.
+                </>
+              ) : payees.length > 1 ? (
+                <>
                   The payees <span>{payeeNamesList}</span> have schedules that
                   are due today.
-                </Trans>
+                </>
               ) : (
-                t('There are payees that have schedules that are due today.', {
-                  count: payees.length,
-                })
+                'There are payees that have schedules that are due today.'
               )}{' '}
-              <Trans>
-                Usually we automatically post transactions for these, but you
-                are offline or syncing failed. In order to avoid duplicate
-                transactions, we let you choose whether or not to create
-                transactions for these schedules.
-              </Trans>
+              Usually we automatically post transactions for these, but you are
+              offline or syncing failed. In order to avoid duplicate
+              transactions, we let you choose whether or not to create
+              transactions for these schedules.
             </Text>
           </Paragraph>
           <Paragraph>
-            <Trans>
-              Be aware that other devices may have already created these
-              transactions. If you have multiple devices, make sure you only do
-              this on one device or you will have duplicate transactions.
-            </Trans>
+            Be aware that other devices may have already created these
+            transactions. If you have multiple devices, make sure you only do
+            this on one device or you will have duplicate transactions.
           </Paragraph>
           <Paragraph>
-            <Trans>
-              You can always manually post a transaction later for a due
-              schedule by selecting the schedule and clicking "Post transaction
-              today" in the action menu.
-            </Trans>
+            You can always manually post a transaction later for a due schedule
+            by selecting the schedule and clicking "Post transaction today" in
+            the action menu.
           </Paragraph>
           <SpaceBetween
             gap={10}
             style={{ marginTop: 20, justifyContent: 'flex-end' }}
           >
-            <Button onPress={() => state.close()}>
-              <Trans>Decide later</Trans>
-            </Button>
+            <Button onPress={() => state.close()}>Decide later</Button>
             <Button
               variant="primary"
               autoFocus
@@ -97,7 +89,7 @@ export function PostsOfflineNotification() {
                 state.close();
               }}
             >
-              <Trans>Post transactions</Trans>
+              Post transactions
             </Button>
           </SpaceBetween>
         </>

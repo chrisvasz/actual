@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -41,7 +40,6 @@ export function CrossoverCard({
   meta = {},
   onMetaChange,
 }: CrossoverCardProps) {
-  const { t } = useTranslation();
   const { data: categoriesData } = useCategories();
   const categories = categoriesData ?? { grouped: [], list: [] };
   const { isNarrowWidth } = useResponsive();
@@ -128,7 +126,7 @@ export function CrossoverCard({
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
-              name={meta?.name || t('Crossover Point')}
+              name={meta?.name || 'Crossover Point'}
               isEditing={nameMenuOpen}
               onChange={newName => {
                 onMetaChange({
@@ -151,10 +149,8 @@ export function CrossoverCard({
                 }}
               >
                 {yearsToRetire != null
-                  ? t('{{years}} years', {
-                      years: format(yearsToRetire, 'number'),
-                    })
-                  : t('N/A')}
+                  ? `${format(yearsToRetire, 'number')} years`
+                  : 'N/A'}
               </Block>
               <Block
                 style={{
@@ -162,7 +158,7 @@ export function CrossoverCard({
                   color: theme.pageTextSubdued,
                 }}
               >
-                <Trans>Years to Retire</Trans>
+                Years to Retire
               </Block>
             </View>
           )}

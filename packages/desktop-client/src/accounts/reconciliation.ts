@@ -10,7 +10,6 @@ import type {
   AccountEntity,
   TransactionEntity,
 } from '@actual-app/core/types/models';
-import { t } from 'i18next';
 
 import { aqlQuery } from '#queries/aqlQuery';
 
@@ -121,7 +120,7 @@ export async function createReconciliationTransaction(
       reconciled: false,
       amount: diff,
       date,
-      notes: t('Reconciliation balance adjustment'),
+      notes: 'Reconciliation balance adjustment',
     },
   ]);
 

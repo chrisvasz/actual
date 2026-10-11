@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Form } from 'react-aria-components';
-import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { InitialFocus } from '@actual-app/components/initial-focus';
@@ -35,9 +34,7 @@ export function HoldMenu({ onSubmit, onClose }: HoldMenuProps) {
       }}
     >
       <View style={{ padding: 10 }}>
-        <View style={{ marginBottom: 5 }}>
-          <Trans>Hold this amount:</Trans>
-        </View>
+        <View style={{ marginBottom: 5 }}>Hold this amount:</View>
         <View>
           <InitialFocus>
             <FinancialInput value={amount} onChangeValue={setAmount} />
@@ -58,7 +55,7 @@ export function HoldMenu({ onSubmit, onClose }: HoldMenuProps) {
               paddingBottom: 3,
             }}
           >
-            <Trans>Hold</Trans>
+            Hold
           </Button>
         </View>
       </View>

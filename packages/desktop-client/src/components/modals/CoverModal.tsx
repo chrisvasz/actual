@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { InitialFocus } from '@actual-app/components/initial-focus';
@@ -31,7 +30,6 @@ export function CoverModal({
   showToBeBudgeted = true,
   onSubmit,
 }: CoverModalProps) {
-  const { t } = useTranslation();
   const [hideFraction] = useSyncedPref('hideFraction');
 
   const { data: { grouped: originalCategoryGroups } = { grouped: [] } } =
@@ -97,7 +95,7 @@ export function CoverModal({
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View>
-            <FieldLabel title={t('Cover this amount:')} />
+            <FieldLabel title="Cover this amount:" />
             <InitialFocus>
               <AmountInput
                 value={amount}
@@ -120,7 +118,7 @@ export function CoverModal({
           </View>
 
           <View>
-            <FieldLabel title={t('From:')} />
+            <FieldLabel title="From:" />
             <TapField value={fromCategory?.name} onPress={openCategoryModal} />
           </View>
 
@@ -143,7 +141,7 @@ export function CoverModal({
                 state.close();
               }}
             >
-              <Trans>Transfer</Trans>
+              Transfer
             </Button>
           </View>
         </>

@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -32,7 +31,6 @@ import { ExperimentalFeatures } from './Experimental';
 import { ExportBudget } from './Export';
 import { FormatSettings } from './Format';
 import { HelpSettings } from './Help';
-import { LanguageSettings } from './LanguageSettings';
 import { RepairTransactions } from './RepairTransactions';
 import { ResetSync } from './Reset';
 import { ServerSettings } from './Server';
@@ -53,10 +51,8 @@ function About() {
   return (
     <Setting>
       <Text>
-        <Trans>
-          <strong>Actual</strong> is a super fast privacy-focused app for
-          managing your finances.
-        </Trans>
+        <strong>Actual</strong> is a super fast privacy-focused app for managing
+        your finances.
       </Text>
       <View
         style={{
@@ -74,14 +70,8 @@ function About() {
         })}
         data-vrt-mask
       >
-        <Text>
-          <Trans>
-            Client version: {{ version: `v${window.Actual?.ACTUAL_VERSION}` }}
-          </Trans>
-        </Text>
-        <Text>
-          <Trans>Server version: {{ version }}</Trans>
-        </Text>
+        <Text>Client version: {`v${window.Actual?.ACTUAL_VERSION}`}</Text>
+        <Text>Server version: {version}</Text>
 
         {notifyWhenUpdateIsAvailable && versionInfo?.isOutdated ? (
           <Link
@@ -89,13 +79,11 @@ function About() {
             to="https://actualbudget.org/docs/releases"
             linkColor="purple"
           >
-            <Trans>New version available: {versionInfo.latestVersion}</Trans>
+            New version available: {versionInfo.latestVersion}
           </Link>
         ) : (
           <Text style={{ color: theme.noticeText, fontWeight: 600 }}>
-            {notifyWhenUpdateIsAvailable ? (
-              <Trans>You're up to date!</Trans>
-            ) : null}
+            {notifyWhenUpdateIsAvailable ? <>You're up to date!</> : null}
           </Text>
         )}
         <Text>
@@ -104,13 +92,13 @@ function About() {
             to="https://actualbudget.org/docs/releases"
             linkColor="purple"
           >
-            <Trans>Release Notes</Trans>
+            Release Notes
           </Link>
           {isNewsFeedEnabled && (
             <>
               {' · '}
               <Link variant="internal" to="/notifications">
-                <Trans>Notifications</Trans>
+                Notifications
               </Link>
             </>
           )}
@@ -126,7 +114,7 @@ function About() {
             }
           />
           <label htmlFor="settings-notifyWhenUpdateIsAvailable">
-            <Trans>Check for new versions of Actual</Trans>
+            Check for new versions of Actual
           </label>
         </Text>
         <Text style={{ display: 'flex' }}>
@@ -136,9 +124,7 @@ function About() {
             onChange={e => setShowNewsFeedPref(e.currentTarget.checked)}
           />
           <label htmlFor="settings-showNewsFeed">
-            <Trans>
-              Show in-app notifications (release notes and announcements)
-            </Trans>
+            Show in-app notifications (release notes and announcements)
           </label>
         </Text>
       </View>
@@ -153,27 +139,20 @@ function IDName({ children }: { children: ReactNode }) {
 function AdvancedAbout() {
   const [budgetId] = useMetadataPref('id');
   const [groupId] = useMetadataPref('groupId');
-  const { t } = useTranslation();
 
   return (
     <Setting>
       <Text>
-        <Trans>
-          <strong>IDs</strong> are the names Actual uses to identify your budget
-          internally. There are several different IDs associated with your
-          budget. The Budget ID is used to identify your budget file. The Sync
-          ID is used to access the budget on the server.
-        </Trans>
+        <strong>IDs</strong> are the names Actual uses to identify your budget
+        internally. There are several different IDs associated with your budget.
+        The Budget ID is used to identify your budget file. The Sync ID is used
+        to access the budget on the server.
       </Text>
       <Text>
-        <Trans>
-          <IDName>Budget ID:</IDName> {{ budgetId }}
-        </Trans>
+        <IDName>Budget ID:</IDName> {budgetId}
       </Text>
       <Text style={{ color: theme.pageText }}>
-        <Trans>
-          <IDName>Sync ID:</IDName> {{ syncId: groupId || t('(none)') }}
-        </Trans>
+        <IDName>Sync ID:</IDName> {groupId || '(none)'}
       </Text>
       {/* low priority todo: eliminate some or all of these, or decide when/if to show them */}
       {/* <Text>
@@ -187,7 +166,6 @@ function AdvancedAbout() {
 }
 
 export function Settings() {
-  const { t } = useTranslation();
   const [floatingSidebar] = useGlobalPref('floatingSidebar');
   const [budgetName] = useMetadataPref('budgetName');
   const dispatch = useDispatch();
@@ -216,7 +194,7 @@ export function Settings() {
 
   return (
     <Page
-      header={t('Settings')}
+      header="Settings"
       style={{
         marginInline: floatingSidebar && !isNarrowWidth ? 'auto' : 0,
       }}
@@ -242,7 +220,7 @@ export function Settings() {
           >
             {/* The only spot to close a budget on mobile */}
             <FormField style={{ flex: 1 }}>
-              <FormLabel title={t('Budget name')} />
+              <FormLabel title="Budget name" />
               <Input
                 value={budgetName}
                 disabled
@@ -250,7 +228,7 @@ export function Settings() {
               />
             </FormField>
             <Button onPress={onCloseBudget} style={{ flexShrink: 0 }}>
-              <Trans>Switch file</Trans>
+              Switch file
             </Button>
           </View>
         )}
@@ -261,7 +239,6 @@ export function Settings() {
         <ThemeSettings />
         <FormatSettings />
         {isCurrencyExperimentalEnabled && <CurrencySettings />}
-        <LanguageSettings />
         <AuthSettings />
         <EncryptionSettings />
         <ExportBudget />

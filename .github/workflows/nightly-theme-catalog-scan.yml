@@ -2,7 +2,7 @@ name: Nightly theme catalog scan
 
 on:
   schedule:
-    # 05:15 UTC daily — runs after the i18n extract job (04:00).
+    # 05:15 UTC daily.
     - cron: '15 5 * * *'
   workflow_dispatch:
 
@@ -22,8 +22,6 @@ jobs:
           persist-credentials: false
       - name: Set up environment
         uses: ./.github/actions/setup
-        with:
-          download-translations: 'false'
       - name: Validate themes
         run: yarn workspace @actual-app/web validate:theme-catalog
 

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ComponentType, ReactNode, SVGProps } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import {
   SvgCog,
@@ -91,7 +90,6 @@ function BalanceRow<
 }
 
 export function CommandBar() {
-  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
@@ -100,37 +98,37 @@ export function CommandBar() {
 
   const navigationItems = useMemo(
     () => [
-      { id: 'budget', name: t('Budget'), path: '/budget', Icon: SvgWallet },
+      { id: 'budget', name: 'Budget', path: '/budget', Icon: SvgWallet },
       {
         id: 'reports-nav',
-        name: t('Reports'),
+        name: 'Reports',
         path: '/reports',
         Icon: SvgReports,
       },
       {
         id: 'schedules',
-        name: t('Schedules'),
+        name: 'Schedules',
         path: '/schedules',
         Icon: SvgCalendar3,
       },
-      { id: 'payees', name: t('Payees'), path: '/payees', Icon: SvgStoreFront },
-      { id: 'rules', name: t('Rules'), path: '/rules', Icon: SvgTuning },
-      { id: 'tags', name: t('Tags'), path: '/tags', Icon: SvgTag },
-      { id: 'settings', name: t('Settings'), path: '/settings', Icon: SvgCog },
+      { id: 'payees', name: 'Payees', path: '/payees', Icon: SvgStoreFront },
+      { id: 'rules', name: 'Rules', path: '/rules', Icon: SvgTuning },
+      { id: 'tags', name: 'Tags', path: '/tags', Icon: SvgTag },
+      { id: 'settings', name: 'Settings', path: '/settings', Icon: SvgCog },
       {
         id: 'accounts',
-        name: t('All Accounts'),
+        name: 'All Accounts',
         path: '/accounts',
         content: (
           <BalanceRow<'account', 'accounts-balance-cleared'>
-            label={t('All Accounts')}
+            label="All Accounts"
             binding={allAccountBalanceCleared()}
           />
         ),
         Icon: SvgLibrary,
       },
     ],
-    [t],
+    [],
   );
 
   useEffect(() => {
@@ -172,7 +170,7 @@ export function CommandBar() {
   const sections: SearchSection[] = [
     {
       key: 'navigation',
-      heading: t('Navigation'),
+      heading: 'Navigation',
       items: navigationItems,
       onSelect: ({ id }) => {
         const item = navigationItems.find(item => item.id === id);
@@ -181,14 +179,14 @@ export function CommandBar() {
     },
     {
       key: 'accounts',
-      heading: t('Accounts'),
+      heading: 'Accounts',
       items: [
         {
           id: 'onbudget',
-          name: t('On Budget'),
+          name: 'On Budget',
           content: (
             <BalanceRow<'account', 'onbudget-accounts-balance-cleared'>
-              label={t('On Budget')}
+              label="On Budget"
               binding={onBudgetAccountBalanceCleared()}
             />
           ),
@@ -196,10 +194,10 @@ export function CommandBar() {
         },
         {
           id: 'offbudget',
-          name: t('Off Budget'),
+          name: 'Off Budget',
           content: (
             <BalanceRow<'account', 'offbudget-accounts-balance-cleared'>
-              label={t('Off Budget')}
+              label="Off Budget"
               binding={offBudgetAccountBalanceCleared()}
             />
           ),
@@ -220,7 +218,7 @@ export function CommandBar() {
     },
     {
       key: 'reports',
-      heading: t('Reports'),
+      heading: 'Reports',
       items: dashboardPages.map(dashboardPage => ({
         ...dashboardPage,
         Icon: SvgReports,
@@ -229,7 +227,7 @@ export function CommandBar() {
     },
     {
       key: 'reports-custom',
-      heading: t('Custom Reports'),
+      heading: 'Custom Reports',
       items: customReports.map(report => ({
         ...report,
         Icon: SvgNotesPaperText,
@@ -252,8 +250,8 @@ export function CommandBar() {
       vimBindings
       open={open}
       onOpenChange={setOpen}
-      label={t('Command Bar')}
-      aria-label={t('Command Bar')}
+      label="Command Bar"
+      aria-label="Command Bar"
       shouldFilter={false}
       className={css({
         position: 'fixed',
@@ -273,7 +271,7 @@ export function CommandBar() {
     >
       <Command.Input
         autoFocus
-        placeholder={t('Search {{budgetName}}...', { budgetName })}
+        placeholder={`Search ${budgetName}...`}
         value={search}
         onValueChange={setSearch}
         className={css({
@@ -366,7 +364,7 @@ export function CommandBar() {
               color: 'var(--color-pageTextSubdued)',
             })}
           >
-            <Trans>No results found</Trans>
+            No results found
           </Command.Empty>
         )}
       </Command.List>

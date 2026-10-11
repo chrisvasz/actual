@@ -1,5 +1,4 @@
 import type { JSX, Ref } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { Input } from '@actual-app/components/input';
@@ -126,7 +125,6 @@ export const GenericInput = ({
 }: GenericInputProps) => {
   const dispatch = useDispatch();
   const { isNarrowWidth } = useResponsive();
-  const { t } = useTranslation();
   const { data: { grouped: categoryGroups } = { grouped: [] } } =
     useCategories();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
@@ -158,7 +156,7 @@ export const GenericInput = ({
               updateOnValueChange={isNarrowWidth}
               inputProps={{
                 ref,
-                ...(showPlaceholder ? { placeholder: t('nothing') } : null),
+                ...(showPlaceholder ? { placeholder: 'nothing' } : null),
                 onClick: () => {
                   if (!isNarrowWidth) {
                     return;
@@ -200,7 +198,7 @@ export const GenericInput = ({
                   updateOnValueChange={isNarrowWidth}
                   inputProps={{
                     ref,
-                    ...(showPlaceholder ? { placeholder: t('nothing') } : null),
+                    ...(showPlaceholder ? { placeholder: 'nothing' } : null),
                     onClick: () => {
                       if (!isNarrowWidth) {
                         return;
@@ -242,7 +240,7 @@ export const GenericInput = ({
               showHiddenCategories
               inputProps={{
                 ref,
-                ...(showPlaceholder ? { placeholder: t('nothing') } : null),
+                ...(showPlaceholder ? { placeholder: 'nothing' } : null),
                 onClick: () => {
                   if (!isNarrowWidth) {
                     return;
@@ -283,7 +281,7 @@ export const GenericInput = ({
               showHiddenCategories
               inputProps={{
                 ref,
-                ...(showPlaceholder ? { placeholder: t('nothing') } : null),
+                ...(showPlaceholder ? { placeholder: 'nothing' } : null),
                 onClick: () => {
                   if (!isNarrowWidth) {
                     return;
@@ -341,9 +339,7 @@ export const GenericInput = ({
               openOnFocus
               inputProps={{
                 ref,
-                ...(showSavedPlaceholder
-                  ? { placeholder: t('nothing') }
-                  : null),
+                ...(showSavedPlaceholder ? { placeholder: 'nothing' } : null),
               }}
             />
           );
@@ -355,9 +351,7 @@ export const GenericInput = ({
               openOnFocus
               inputProps={{
                 ref,
-                ...(showSavedPlaceholder
-                  ? { placeholder: t('nothing') }
-                  : null),
+                ...(showSavedPlaceholder ? { placeholder: 'nothing' } : null),
               }}
             />
           );
@@ -386,7 +380,7 @@ export const GenericInput = ({
             <Input
               ref={ref}
               value={props.value || ''}
-              placeholder={t('yyyy')}
+              placeholder="yyyy"
               onChangeValue={props.onChange}
             />
           );
@@ -473,7 +467,7 @@ export const GenericInput = ({
             <Input
               ref={ref}
               value={props.value || ''}
-              placeholder={t('nothing')}
+              placeholder="nothing"
               onChangeValue={newValue => props.onChange(Number(newValue))}
               style={inputStyle}
             />
@@ -497,7 +491,7 @@ export const GenericInput = ({
           <Input
             ref={ref}
             value={props.value || ''}
-            placeholder={t('nothing')}
+            placeholder="nothing"
             onChangeValue={props.onChange}
             style={inputStyle}
           />

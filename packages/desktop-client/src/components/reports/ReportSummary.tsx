@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
@@ -36,19 +35,18 @@ export function ReportSummary({
   intervalsCount,
 }: ReportSummaryProps) {
   const locale = useLocale();
-  const { t } = useTranslation();
   const format = useFormat();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
   const intervalFormat = getIntervalFormat(interval, dateFormat);
 
   const net =
     balanceTypeOp === 'netAssets'
-      ? t('DEPOSIT')
+      ? 'DEPOSIT'
       : balanceTypeOp === 'netDebts'
-        ? t('PAYMENT')
+        ? 'PAYMENT'
         : Math.abs(data.totalDebts) > Math.abs(data.totalAssets)
-          ? t('PAYMENT')
-          : t('DEPOSIT');
+          ? 'PAYMENT'
+          : 'DEPOSIT';
   const average = Math.round(data[balanceTypeOp] / intervalsCount);
   return (
     <View
@@ -76,7 +74,7 @@ export function ReportSummary({
           {monthUtils.format(startDate, intervalFormat, locale)}
           {monthUtils.format(startDate, intervalFormat, locale) !==
             monthUtils.format(endDate, intervalFormat, locale) &&
-            ` ${t('to')} ` + monthUtils.format(endDate, intervalFormat, locale)}
+            ` ${'to'} ` + monthUtils.format(endDate, intervalFormat, locale)}
         </Text>
       </View>
       <View
@@ -97,12 +95,12 @@ export function ReportSummary({
           }}
         >
           {balanceTypeOp === 'totalDebts'
-            ? t('TOTAL SPENDING')
+            ? 'TOTAL SPENDING'
             : balanceTypeOp === 'totalAssets'
-              ? t('TOTAL DEPOSITS')
+              ? 'TOTAL DEPOSITS'
               : balanceTypeOp === 'totalBudgeted'
-                ? t('TOTAL BUDGETED')
-                : t('NET {{net}}', { net })}
+                ? 'TOTAL BUDGETED'
+                : `NET ${net}`}
         </Text>
         <FinancialText
           style={{
@@ -114,9 +112,7 @@ export function ReportSummary({
         >
           {format(data[balanceTypeOp], 'financial')}
         </FinancialText>
-        <Text style={{ fontWeight: 600 }}>
-          <Trans>For this time period</Trans>
-        </Text>
+        <Text style={{ fontWeight: 600 }}>For this time period</Text>
       </View>
       <View
         style={{
@@ -136,12 +132,12 @@ export function ReportSummary({
           }}
         >
           {balanceTypeOp === 'totalDebts'
-            ? t('AVERAGE SPENDING')
+            ? 'AVERAGE SPENDING'
             : balanceTypeOp === 'totalAssets'
-              ? t('AVERAGE DEPOSIT')
+              ? 'AVERAGE DEPOSIT'
               : balanceTypeOp === 'totalBudgeted'
-                ? t('AVERAGE BUDGETED')
-                : t('AVERAGE NET')}
+                ? 'AVERAGE BUDGETED'
+                : 'AVERAGE NET'}
         </Text>
         <FinancialText
           style={{
@@ -154,14 +150,7 @@ export function ReportSummary({
           {!isNaN(average) && format(average, 'financial')}
         </FinancialText>
         <Text style={{ fontWeight: 600 }}>
-          <Trans>
-            Per{' '}
-            {{
-              interval: (
-                ReportOptions.intervalMap.get(interval) || ''
-              ).toLowerCase(),
-            }}
-          </Trans>
+          Per {(ReportOptions.intervalMap.get(interval) || '').toLowerCase()}
         </Text>
       </View>
     </View>

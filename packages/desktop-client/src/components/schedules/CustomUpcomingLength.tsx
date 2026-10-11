@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Input } from '@actual-app/components/input';
 import { Select } from '@actual-app/components/select';
@@ -13,13 +12,11 @@ export function CustomUpcomingLength({
   onChange,
   tempValue,
 }: CustomUpcomingLengthProps) {
-  const { t } = useTranslation();
-
   const options = [
-    { value: 'day', label: t('Days') },
-    { value: 'week', label: t('Weeks') },
-    { value: 'month', label: t('Months') },
-    { value: 'year', label: t('Years') },
+    { value: 'day', label: 'Days' },
+    { value: 'week', label: 'Weeks' },
+    { value: 'month', label: 'Months' },
+    { value: 'year', label: 'Years' },
   ];
 
   const timePeriod =

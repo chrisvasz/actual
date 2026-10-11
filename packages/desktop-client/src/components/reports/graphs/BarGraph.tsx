@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React, { useState } from 'react';
 import type { CSSProperties } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
 import { theme } from '@actual-app/components/theme';
@@ -76,8 +75,6 @@ const CustomTooltip = ({
   yAxis,
   format,
 }: CustomTooltipProps) => {
-  const { t } = useTranslation();
-
   if (active && payload && payload.length) {
     return (
       <div
@@ -100,7 +97,7 @@ const CustomTooltip = ({
               balanceTypeOp,
             ) && (
               <AlignedText
-                left={t('Assets:')}
+                left="Assets:"
                 right={
                   <FinancialText>
                     {format(payload[0].payload.totalAssets, 'financial')}
@@ -112,7 +109,7 @@ const CustomTooltip = ({
               balanceTypeOp,
             ) && (
               <AlignedText
-                left={t('Debts:')}
+                left="Debts:"
                 right={
                   <FinancialText>
                     {format(payload[0].payload.totalDebts, 'financial')}
@@ -122,7 +119,7 @@ const CustomTooltip = ({
             )}
             {['netAssets'].includes(balanceTypeOp) && (
               <AlignedText
-                left={t('Net Assets:')}
+                left="Net Assets:"
                 right={
                   <FinancialText>
                     {format(payload[0].payload.netAssets, 'financial')}
@@ -132,7 +129,7 @@ const CustomTooltip = ({
             )}
             {['netDebts'].includes(balanceTypeOp) && (
               <AlignedText
-                left={t('Net Debts:')}
+                left="Net Debts:"
                 right={
                   <FinancialText>
                     {format(payload[0].payload.netDebts, 'financial')}
@@ -142,9 +139,7 @@ const CustomTooltip = ({
             )}
             {['totalTotals', 'totalBudgeted'].includes(balanceTypeOp) && (
               <AlignedText
-                left={
-                  balanceTypeOp === 'totalBudgeted' ? t('Budgeted:') : t('Net:')
-                }
+                left={balanceTypeOp === 'totalBudgeted' ? 'Budgeted:' : 'Net:'}
                 right={
                   <FinancialText as="strong">
                     {format(

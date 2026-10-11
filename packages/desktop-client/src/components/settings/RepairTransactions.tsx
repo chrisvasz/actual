@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { ButtonWithLoading } from '@actual-app/components/button';
 import { Paragraph } from '@actual-app/components/paragraph';
@@ -14,8 +13,6 @@ import { Setting } from './UI';
 type Results = Awaited<ReturnType<Handlers['tools/fix-split-transactions']>>;
 
 function useRenderResults() {
-  const { t } = useTranslation();
-
   function renderResults(results: Results) {
     const {
       numBlankPayees,
@@ -37,41 +34,41 @@ function useRenderResults() {
       mismatchedSplits.length === 0 &&
       numParentTransactionsWithCategoryFixed === 0
     ) {
-      result.push(t('No split transactions found needing repair.'));
+      result.push('No split transactions found needing repair.');
     } else {
       if (numBlankPayees > 0) {
         result.push(
-          t('Fixed {{count}} splits with a blank payee.', {
-            count: numBlankPayees,
-          }),
+          numBlankPayees === 1
+            ? 'Fixed 1 split with a blank payee.'
+            : `Fixed ${numBlankPayees} splits with a blank payee.`,
         );
       }
       if (numCleared > 0) {
         result.push(
-          t('Fixed {{count}} splits with the wrong cleared flag.', {
-            count: numCleared,
-          }),
+          numCleared === 1
+            ? 'Fixed 1 split with the wrong cleared flag.'
+            : `Fixed ${numCleared} splits with the wrong cleared flag.`,
         );
       }
       if (numDeleted > 0) {
         result.push(
-          t("Fixed {{count}} splits that weren't properly deleted.", {
-            count: numDeleted,
-          }),
+          numDeleted === 1
+            ? "Fixed 1 split that wasn't properly deleted."
+            : `Fixed ${numDeleted} splits that weren't properly deleted.`,
         );
       }
       if (numNonParentErrorsFixed > 0) {
         result.push(
-          t('Fixed {{count}} non-split transactions with split errors.', {
-            count: numNonParentErrorsFixed,
-          }),
+          numNonParentErrorsFixed === 1
+            ? 'Fixed 1 non-split transaction with split errors.'
+            : `Fixed ${numNonParentErrorsFixed} non-split transactions with split errors.`,
         );
       }
       if (numTransfersFixed > 0) {
         result.push(
-          t('Fixed {{count}} transfers.', {
-            count: numTransfersFixed,
-          }),
+          numTransfersFixed === 1
+            ? 'Fixed 1 transfer.'
+            : `Fixed ${numTransfersFixed} transfers.`,
         );
       }
       if (mismatchedSplits.length > 0) {
@@ -80,17 +77,17 @@ function useRenderResults() {
           .join('\n');
 
         result.push(
-          t(
-            'Found {{count}} split transactions with mismatched amounts on the below dates. Please review them manually:',
-            { count: mismatchedSplits.length },
-          ) + `\n${mismatchedSplitInfo}`,
+          (mismatchedSplits.length === 1
+            ? 'Found 1 split transaction with mismatched amounts on the below date. Please review it manually:'
+            : `Found ${mismatchedSplits.length} split transactions with mismatched amounts on the below dates. Please review them manually:`) +
+            `\n${mismatchedSplitInfo}`,
         );
       }
       if (numParentTransactionsWithCategoryFixed > 0) {
         result.push(
-          t('Fixed {{count}} split transactions with non-null category.', {
-            count: numParentTransactionsWithCategoryFixed,
-          }),
+          numParentTransactionsWithCategoryFixed === 1
+            ? 'Fixed 1 split transaction with a non-null category.'
+            : `Fixed ${numParentTransactionsWithCategoryFixed} split transactions with non-null categories.`,
         );
       }
     }
@@ -138,51 +135,49 @@ export function RepairTransactions() {
           }}
         >
           <ButtonWithLoading isLoading={loading} onPress={onFix}>
-            <Trans>Repair transactions</Trans>
+            Repair transactions
           </ButtonWithLoading>
           {results && renderResults(results)}
         </View>
       }
     >
-      <Trans>
-        <Text>
-          <strong>Repair transactions</strong> if you are experiencing bugs
-          relating to split transactions or transfers, this tool may fix them.
-          Some examples of bugs include seeing blank payees on splits or
-          incorrect account balances. This tool does six things:
-        </Text>
-        <ul style={{ margin: 0, paddingLeft: '1.5em' }}>
-          <li style={{ marginBottom: '0.5em' }}>
-            Ensures that deleted split transactions are fully deleted. In
-            previous versions of the app, certain split transactions may appear
-            deleted but not all of them are actually deleted. This causes the
-            transactions list to look correct, but certain balances may be
-            incorrect when filtering.
-          </li>
-          <li>
-            Sync the payee and cleared flag of a split transaction to the main
-            or "parent" transaction, if appropriate. The payee will only be set
-            if it currently doesn't have one.
-          </li>
-          <li>
-            Checks that the sum of all child transactions adds up to the total
-            amount. If not, these will be flagged below to allow you to easily
-            locate and fix the amounts.
-          </li>
-          <li>
-            Checks for any non-split transactions with erroneous split errors
-            and removes the errors if found.
-          </li>
-          <li>
-            Check if you have any budget transfers that erroneously contain a
-            category, and remove the category.
-          </li>
-          <li>
-            Checks for any parent transactions with a category and removes the
-            category if found.
-          </li>
-        </ul>
-      </Trans>
+      <Text>
+        <strong>Repair transactions</strong> if you are experiencing bugs
+        relating to split transactions or transfers, this tool may fix them.
+        Some examples of bugs include seeing blank payees on splits or incorrect
+        account balances. This tool does six things:
+      </Text>
+      <ul style={{ margin: 0, paddingLeft: '1.5em' }}>
+        <li style={{ marginBottom: '0.5em' }}>
+          Ensures that deleted split transactions are fully deleted. In previous
+          versions of the app, certain split transactions may appear deleted but
+          not all of them are actually deleted. This causes the transactions
+          list to look correct, but certain balances may be incorrect when
+          filtering.
+        </li>
+        <li>
+          Sync the payee and cleared flag of a split transaction to the main or
+          "parent" transaction, if appropriate. The payee will only be set if it
+          currently doesn't have one.
+        </li>
+        <li>
+          Checks that the sum of all child transactions adds up to the total
+          amount. If not, these will be flagged below to allow you to easily
+          locate and fix the amounts.
+        </li>
+        <li>
+          Checks for any non-split transactions with erroneous split errors and
+          removes the errors if found.
+        </li>
+        <li>
+          Check if you have any budget transfers that erroneously contain a
+          category, and remove the category.
+        </li>
+        <li>
+          Checks for any parent transactions with a category and removes the
+          category if found.
+        </li>
+      </ul>
     </Setting>
   );
 }

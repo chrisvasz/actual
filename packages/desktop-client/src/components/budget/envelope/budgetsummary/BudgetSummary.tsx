@@ -1,5 +1,4 @@
 import React, { memo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgDotsHorizontalTriple } from '@actual-app/components/icons/v1';
@@ -59,7 +58,6 @@ export const BudgetSummary = memo(({ month }: BudgetSummaryProps) => {
     : SvgArrowButtonUp1;
 
   const displayMonth = monthUtils.format(month, "MMMM ''yy", locale);
-  const { t } = useTranslation();
 
   return (
     <View
@@ -104,9 +102,7 @@ export const BudgetSummary = memo(({ month }: BudgetSummaryProps) => {
             <Button
               variant="bare"
               aria-label={
-                collapsed
-                  ? t('Expand month summary')
-                  : t('Collapse month summary')
+                collapsed ? 'Expand month summary' : 'Collapse month summary'
               }
               className="hover-visible"
               onPress={onToggleSummaryCollapse}
@@ -161,7 +157,7 @@ export const BudgetSummary = memo(({ month }: BudgetSummaryProps) => {
               <Button
                 ref={triggerRef}
                 variant="bare"
-                aria-label={t('Menu')}
+                aria-label="Menu"
                 onPress={onMenuOpen}
               >
                 <SvgDotsHorizontalTriple
@@ -181,20 +177,14 @@ export const BudgetSummary = memo(({ month }: BudgetSummaryProps) => {
                     onBudgetAction(month, 'copy-last');
                     onMenuClose();
                     showUndoNotification({
-                      message: t(
-                        "{{displayMonth}} budgets have all been set to last month's budgeted amounts.",
-                        { displayMonth },
-                      ),
+                      message: `${displayMonth} budgets have all been set to last month's budgeted amounts.`,
                     });
                   }}
                   onSetBudgetsToZero={() => {
                     onBudgetAction(month, 'set-zero');
                     onMenuClose();
                     showUndoNotification({
-                      message: t(
-                        '{{displayMonth}} budgets have all been set to zero.',
-                        { displayMonth },
-                      ),
+                      message: `${displayMonth} budgets have all been set to zero.`,
                     });
                   }}
                   onSetMonthsAverage={numberOfMonths => {
@@ -203,12 +193,8 @@ export const BudgetSummary = memo(({ month }: BudgetSummaryProps) => {
                     showUndoNotification({
                       message:
                         numberOfMonths === 12
-                          ? t(
-                              `${displayMonth} budgets have all been set to yearly average.`,
-                            )
-                          : t(
-                              `${displayMonth} budgets have all been set to ${numberOfMonths} month average.`,
-                            ),
+                          ? `${displayMonth} budgets have all been set to yearly average.`
+                          : `${displayMonth} budgets have all been set to ${numberOfMonths} month average.`,
                     });
                   }}
                 />

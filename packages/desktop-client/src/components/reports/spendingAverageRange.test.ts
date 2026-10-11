@@ -6,15 +6,6 @@ import {
   spendingAverageRangeToKey,
 } from './spendingAverageRange';
 
-const t = (key: string, options?: Record<string, string | number>) =>
-  options
-    ? Object.entries(options).reduce(
-        (message, [optionKey, value]) =>
-          message.replace(`{{${optionKey}}}`, String(value)),
-        key,
-      )
-    : key;
-
 describe('spending average range metadata', () => {
   it('defaults missing metadata to the existing last 3 months behavior', () => {
     expect(spendingAverageRangeToKey()).toBe('last-3-months');
@@ -154,7 +145,6 @@ describe('getSpendingAverageSummaryLabel', () => {
       getSpendingAverageSummaryLabel({
         averageRange: { mode: 'all-time' },
         isCurrentMonth: true,
-        t,
       }),
     ).toBe('Spent Average MTD (All time):');
   });
@@ -164,7 +154,6 @@ describe('getSpendingAverageSummaryLabel', () => {
       getSpendingAverageSummaryLabel({
         averageRange: { mode: 'last-n-months', months: 12 },
         isCurrentMonth: false,
-        t,
       }),
     ).toBe('Spent Average (Last 12 months):');
   });

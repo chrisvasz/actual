@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -69,7 +68,6 @@ type FilterObject = ReturnType<typeof useRuleConditionFilters>;
 
 function SummaryInner({ widget }: SummaryInnerProps) {
   const locale = useLocale();
-  const { t } = useTranslation();
   const format = useFormat();
 
   const [start, setStart] = useState(
@@ -226,7 +224,7 @@ function SummaryInner({ widget }: SummaryInnerProps) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isNarrowWidth } = useResponsive();
-  const title = widget?.meta?.name || t('Summary');
+  const title = widget?.meta?.name || 'Summary';
 
   const updateDashboardWidgetMutation = useUpdateDashboardWidgetMutation();
 
@@ -236,14 +234,14 @@ function SummaryInner({ widget }: SummaryInnerProps) {
         addNotification({
           notification: {
             type: 'error',
-            message: t('Cannot save: No widget available.'),
+            message: 'Cannot save: No widget available.',
           },
         }),
       );
       return;
     }
 
-    const name = newName || t('Summary');
+    const name = newName || 'Summary';
     updateDashboardWidgetMutation.mutate({
       widget: {
         id: widget.id,
@@ -268,7 +266,7 @@ function SummaryInner({ widget }: SummaryInnerProps) {
         addNotification({
           notification: {
             type: 'error',
-            message: t('Cannot save: No widget available.'),
+            message: 'Cannot save: No widget available.',
           },
         }),
       );
@@ -298,7 +296,7 @@ function SummaryInner({ widget }: SummaryInnerProps) {
             addNotification({
               notification: {
                 type: 'message',
-                message: t('Dashboard widget successfully saved.'),
+                message: 'Dashboard widget successfully saved.',
               },
             }),
           );
@@ -364,7 +362,7 @@ function SummaryInner({ widget }: SummaryInnerProps) {
       >
         {widget && (
           <Button variant="primary" onPress={onSaveWidget}>
-            <Trans>Save widget</Trans>
+            Save widget
           </Button>
         )}
       </Header>
@@ -384,17 +382,15 @@ function SummaryInner({ widget }: SummaryInnerProps) {
             padding: 16,
           }}
         >
-          <span style={{ marginRight: 4 }}>
-            <Trans>Show as</Trans>
-          </span>
+          <span style={{ marginRight: 4 }}>Show as</span>
           <FieldSelect
             style={{ marginRight: 16 }}
             fields={[
-              ['sum', t('Sum')],
-              ['avgPerMonth', t('Average per month')],
-              ['avgPerYear', t('Average per year')],
-              ['avgPerTransact', t('Average per transaction')],
-              ['percentage', t('Percentage')],
+              ['sum', 'Sum'],
+              ['avgPerMonth', 'Average per month'],
+              ['avgPerYear', 'Average per year'],
+              ['avgPerTransact', 'Average per transaction'],
+              ['percentage', 'Percentage'],
             ]}
             value={content.type ?? 'sum'}
             onChange={(
@@ -428,7 +424,7 @@ function SummaryInner({ widget }: SummaryInnerProps) {
                 }));
               }}
             />{' '}
-            <Trans>All time divisor</Trans>
+            All time divisor
           </View>
         )}
       </View>
@@ -536,8 +532,6 @@ function Operator({
   toRange,
   showDivisorDateRange,
 }: OperatorProps) {
-  const { t } = useTranslation();
-
   return (
     <View>
       <SumWithRange
@@ -578,10 +572,10 @@ function Operator({
             style={{ fontSize: '32px', width: '100%', textAlign: 'center' }}
           >
             {type === 'avgPerMonth'
-              ? t('number of months')
+              ? 'number of months'
               : type === 'avgPerYear'
-                ? t('number of years')
-                : t('number of transactions')}
+                ? 'number of years'
+                : 'number of transactions'}
           </Text>
         </>
       )}
@@ -601,7 +595,6 @@ function SumWithRange({
   containerStyle,
   filterObject,
 }: SumWithRangeProps) {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
   const sigmaSize = isNarrowWidth ? 34 : 50;
   // The range labels hang outside the sigma column; `nowrap` keeps them off the glyph.
@@ -655,7 +648,7 @@ function SumWithRange({
               color: theme.pageTextPositive,
             }}
           >
-            {t('all transactions')}
+            all transactions
           </Text>
         ) : (
           <AppliedFilters

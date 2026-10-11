@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { send } from '@actual-app/core/platform/client/connection';
 import type { AccountGroupEntity } from '@actual-app/core/types/models';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -44,7 +42,6 @@ type CreateAccountGroupPayload = {
 export function useCreateAccountGroupMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ name }: CreateAccountGroupPayload) => {
@@ -55,7 +52,7 @@ export function useCreateAccountGroupMutation() {
       console.error('Error creating account group:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error creating the account group. Please try again.'),
+        'There was an error creating the account group. Please try again.',
         error,
       );
     },
@@ -70,7 +67,6 @@ type UpdateAccountGroupPayload = {
 export function useUpdateAccountGroupMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id, name }: UpdateAccountGroupPayload) => {
@@ -84,7 +80,7 @@ export function useUpdateAccountGroupMutation() {
       console.error('Error updating account group:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error updating the account group. Please try again.'),
+        'There was an error updating the account group. Please try again.',
         error,
       );
     },
@@ -98,7 +94,6 @@ type DeleteAccountGroupPayload = {
 export function useDeleteAccountGroupMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id }: DeleteAccountGroupPayload) => {
@@ -112,7 +107,7 @@ export function useDeleteAccountGroupMutation() {
       console.error('Error deleting account group:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error deleting the account group. Please try again.'),
+        'There was an error deleting the account group. Please try again.',
         error,
       );
     },
@@ -127,7 +122,6 @@ type MoveAccountGroupPayload = {
 export function useMoveAccountGroupMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id, targetId }: MoveAccountGroupPayload) => {
@@ -138,7 +132,7 @@ export function useMoveAccountGroupMutation() {
       console.error('Error moving account group:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error moving the account group. Please try again.'),
+        'There was an error moving the account group. Please try again.',
         error,
       );
     },

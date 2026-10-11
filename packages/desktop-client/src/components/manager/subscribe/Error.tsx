@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React from 'react';
-import { Trans } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -40,7 +39,7 @@ export function Error() {
         {getErrorMessage(error)}
       </Text>
       <Button onPress={onTryAgain} style={{ marginTop: 20 }}>
-        <Trans>Try again</Trans>
+        Try again
       </Button>
     </View>
   );

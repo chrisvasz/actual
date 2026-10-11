@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
@@ -73,7 +72,6 @@ type SpendingInternalProps = {
 function SpendingInternal({ widget }: SpendingInternalProps) {
   const locale = useLocale();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
   const format = useFormat();
 
   const {
@@ -188,7 +186,7 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
             addNotification({
               notification: {
                 type: 'message',
-                message: t('Dashboard widget successfully saved.'),
+                message: 'Dashboard widget successfully saved.',
               },
             }),
           );
@@ -218,8 +216,8 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
   const showCompare =
     compare === monthUtils.currentMonth() ||
     Math.abs(data.intervalData[27].compare) > 0;
-  const averageRangeLabel = getSpendingAverageRangeLabel(averageRange, t);
-  const averageRangeOptions = getSpendingAverageRangeOptions(t);
+  const averageRangeLabel = getSpendingAverageRangeLabel(averageRange);
+  const averageRangeOptions = getSpendingAverageRangeOptions();
   const comparisonValue =
     reportMode === 'single-month'
       ? compareTo
@@ -231,7 +229,7 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
       ? allIntervals.map(({ name, pretty }) => [name, pretty] as const)
       : reportMode === 'average'
         ? averageRangeOptions
-        : [['label', t('Budgeted')] as const];
+        : [['label', 'Budgeted'] as const];
   const onComparisonChange = (value: string) => {
     if (reportMode === 'single-month') {
       setCompareTo(value);
@@ -240,13 +238,13 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
     }
   };
 
-  const title = widget?.meta?.name || t('Monthly Spending');
+  const title = widget?.meta?.name || 'Monthly Spending';
   const onSaveWidgetName = async (newName: string) => {
     if (!widget) {
       throw new Error('No widget that could be saved.');
     }
 
-    const name = newName || t('Monthly Spending');
+    const name = newName || 'Monthly Spending';
     updateDashboardWidgetMutation.mutate({
       widget: {
         id: widget.id,
@@ -298,7 +296,7 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
               variant={isLive ? 'primary' : 'normal'}
               onPress={() => setIsLive(state => !state)}
             >
-              {isLive ? t('Live') : t('Static')}
+              {isLive ? 'Live' : 'Static'}
             </Button>
 
             <View
@@ -312,9 +310,7 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
             />
 
             <SpaceBetween gap={5}>
-              <Text>
-                <Trans>Compare</Trans>
-              </Text>
+              <Text>Compare</Text>
               <Select
                 value={compare}
                 onChange={setCompare}
@@ -324,9 +320,7 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                 style={{ width: 150 }}
                 popoverStyle={{ width: 150 }}
               />
-              <Text>
-                <Trans>to</Trans>
-              </Text>
+              <Text>to</Text>
               <Select
                 value={comparisonValue}
                 onChange={onComparisonChange}
@@ -357,7 +351,7 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                   setReportMode('single-month');
                 }}
               >
-                <Trans>Single month</Trans>
+                Single month
               </ModeButton>
               <ModeButton
                 selected={reportMode === 'budget'}
@@ -368,7 +362,7 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                   backgroundColor: 'inherit',
                 }}
               >
-                <Trans>Budgeted</Trans>
+                Budgeted
               </ModeButton>
               <ModeButton
                 selected={reportMode === 'average'}
@@ -379,7 +373,7 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                   backgroundColor: 'inherit',
                 }}
               >
-                <Trans>Average</Trans>
+                Average
               </ModeButton>
             </SpaceBetween>
 
@@ -411,11 +405,7 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
               {widget && (
                 <Tooltip
                   placement="top end"
-                  content={
-                    <Text>
-                      <Trans>Save compare and filter options</Trans>
-                    </Text>
-                  }
+                  content={<Text>Save compare and filter options</Text>}
                   style={{
                     ...styles.tooltip,
                     lineHeight: 1.5,
@@ -430,7 +420,7 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                     }}
                     onPress={onSaveWidget}
                   >
-                    <Trans>Save</Trans>
+                    Save
                   </Button>
                 </Tooltip>
               )}
@@ -505,7 +495,7 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                       reportMode === 'single-month'
                         ? monthUtils.format(compareTo, 'MMM yyyy', locale)
                         : reportMode === 'budget'
-                          ? t('Budgeted')
+                          ? 'Budgeted'
                           : averageRangeLabel
                     }
                     style={{ padding: 0, paddingBottom: 10 }}
@@ -525,20 +515,16 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                         left={
                           <Block>
                             {compare === monthUtils.currentMonth()
-                              ? t('Spent {{monthYearFormatted}} MTD', {
-                                  monthYearFormatted: monthUtils.format(
-                                    compare,
-                                    'MMM yyyy',
-                                    locale,
-                                  ),
-                                })
-                              : t('Spent {{monthYearFormatted}}', {
-                                  monthYearFormatted: monthUtils.format(
-                                    compare,
-                                    'MMM yyyy',
-                                    locale,
-                                  ),
-                                })}
+                              ? `Spent ${monthUtils.format(
+                                  compare,
+                                  'MMM yyyy',
+                                  locale,
+                                )} MTD`
+                              : `Spent ${monthUtils.format(
+                                  compare,
+                                  'MMM yyyy',
+                                  locale,
+                                )}`}
                             :
                           </Block>
                         }
@@ -558,20 +544,16 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                         left={
                           <Block>
                             {compareTo === monthUtils.currentMonth()
-                              ? t('Spent {{monthYearFormatted}} MTD:', {
-                                  monthYearFormatted: monthUtils.format(
-                                    compareTo,
-                                    'MMM yyyy',
-                                    locale,
-                                  ),
-                                })
-                              : t('Spent {{monthYearFormatted}}:', {
-                                  monthYearFormatted: monthUtils.format(
-                                    compareTo,
-                                    'MMM yyyy',
-                                    locale,
-                                  ),
-                                })}
+                              ? `Spent ${monthUtils.format(
+                                  compareTo,
+                                  'MMM yyyy',
+                                  locale,
+                                )} MTD:`
+                              : `Spent ${monthUtils.format(
+                                  compareTo,
+                                  'MMM yyyy',
+                                  locale,
+                                )}:`}
                           </Block>
                         }
                         right={
@@ -590,11 +572,9 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                       style={{ marginBottom: 5, minWidth: 210 }}
                       left={
                         <Block>
-                          {compare === monthUtils.currentMonth() ? (
-                            <Trans>Budgeted MTD</Trans>
-                          ) : (
-                            <Trans>Budgeted</Trans>
-                          )}
+                          {compare === monthUtils.currentMonth()
+                            ? 'Budgeted MTD'
+                            : 'Budgeted'}
                         </Block>
                       }
                       right={
@@ -618,7 +598,6 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                             averageRange,
                             isCurrentMonth:
                               compare === monthUtils.currentMonth(),
-                            t,
                           })}
                         </Block>
                       }
@@ -644,22 +623,19 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
                   compareTo={compareTo}
                 />
               ) : (
-                <LoadingIndicator message={t('Loading report...')} />
+                <LoadingIndicator message="Loading report..." />
               )}
               {showAverage && (
                 <View style={{ marginTop: 30 }}>
-                  <Trans>
-                    <Paragraph>
-                      <strong>
-                        How are "Average" and "Spent Average MTD" calculated?
-                      </strong>
-                    </Paragraph>
-                    <Paragraph>
-                      They are both the average cumulative spending by day for
-                      the selected average range before the selected "compare"
-                      month.
-                    </Paragraph>
-                  </Trans>
+                  <Paragraph>
+                    <strong>
+                      How are "Average" and "Spent Average MTD" calculated?
+                    </strong>
+                  </Paragraph>
+                  <Paragraph>
+                    They are both the average cumulative spending by day for the
+                    selected average range before the selected "compare" month.
+                  </Paragraph>
                 </View>
               )}
             </View>

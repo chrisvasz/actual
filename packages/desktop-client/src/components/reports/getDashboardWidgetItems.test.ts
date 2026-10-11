@@ -10,7 +10,6 @@ function getNames(items: ReturnType<typeof getDashboardWidgetItems>) {
 describe('getDashboardWidgetItems', () => {
   it('includes the balance forecast card only when the flag is enabled', () => {
     const disabled = getDashboardWidgetItems({
-      t: value => value,
       customReports: [],
       formulaMode: false,
       crossoverReportEnabled: false,
@@ -19,7 +18,6 @@ describe('getDashboardWidgetItems', () => {
     });
 
     const enabled = getDashboardWidgetItems({
-      t: value => value,
       customReports: [],
       formulaMode: false,
       crossoverReportEnabled: false,
@@ -33,7 +31,6 @@ describe('getDashboardWidgetItems', () => {
 
   it('keeps custom report entries after a divider', () => {
     const items = getDashboardWidgetItems({
-      t: value => value,
       customReports: [{ id: 'abc', name: 'Custom Budget Review' }],
       formulaMode: false,
       crossoverReportEnabled: false,

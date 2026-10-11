@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { send } from '@actual-app/core/platform/client/connection';
 import type {
   AccountEntity,
@@ -53,7 +51,6 @@ type CreateAccountPayload = {
 export function useCreateAccountMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ name, balance, offBudget }: CreateAccountPayload) => {
@@ -69,7 +66,7 @@ export function useCreateAccountMutation() {
       console.error('Error creating account:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error creating the account. Please try again.'),
+        'There was an error creating the account. Please try again.',
         error,
       );
     },
@@ -86,7 +83,6 @@ type CloseAccountPayload = {
 export function useCloseAccountMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -107,7 +103,7 @@ export function useCloseAccountMutation() {
       console.error('Error closing account:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error closing the account. Please try again.'),
+        'There was an error closing the account. Please try again.',
         error,
       );
     },
@@ -121,7 +117,6 @@ type ReopenAccountPayload = {
 export function useReopenAccountMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id }: ReopenAccountPayload) => {
@@ -132,7 +127,7 @@ export function useReopenAccountMutation() {
       console.error('Error re-opening account:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error re-opening the account. Please try again.'),
+        'There was an error re-opening the account. Please try again.',
         error,
       );
     },
@@ -146,7 +141,6 @@ type UpdateAccountPayload = {
 export function useUpdateAccountMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ account }: UpdateAccountPayload) => {
@@ -160,7 +154,7 @@ export function useUpdateAccountMutation() {
       console.error('Error updating account:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error updating the account. Please try again.'),
+        'There was an error updating the account. Please try again.',
         error,
       );
     },
@@ -176,7 +170,6 @@ type MoveAccountPayload = {
 export function useMoveAccountMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -194,7 +187,7 @@ export function useMoveAccountMutation() {
       console.error('Error moving account:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error moving the account. Please try again.'),
+        'There was an error moving the account. Please try again.',
         error,
       );
     },
@@ -210,7 +203,6 @@ type ImportPreviewTransactionsPayload = {
 export function useImportPreviewTransactionsMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -246,9 +238,7 @@ export function useImportPreviewTransactionsMutation() {
       console.error('Error importing preview transactions to account:', error);
       dispatchErrorNotification(
         dispatch,
-        t(
-          'There was an error importing preview transactions to the account. Please try again.',
-        ),
+        'There was an error importing preview transactions to the account. Please try again.',
         error,
       );
     },
@@ -265,7 +255,6 @@ type ImportTransactionsPayload = {
 export function useImportTransactionsMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -325,9 +314,7 @@ export function useImportTransactionsMutation() {
       console.error('Error importing transactions to account:', error);
       dispatchErrorNotification(
         dispatch,
-        t(
-          'There was an error importing transactions to the account. Please try again.',
-        ),
+        'There was an error importing transactions to the account. Please try again.',
         error,
       );
     },

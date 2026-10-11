@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { theme } from '@actual-app/components/theme';
 import type { NewRuleEntity, RuleEntity } from '@actual-app/core/types/models';
@@ -16,14 +15,12 @@ export function EditRuleModal({
   rule: defaultRule,
   onSave: originalOnSave,
 }: EditRuleModalProps) {
-  const { t } = useTranslation();
-
   return (
     <Modal name="edit-rule">
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Rule')}
+            title="Rule"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <RuleEditor

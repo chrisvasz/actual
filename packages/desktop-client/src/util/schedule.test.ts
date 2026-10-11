@@ -1,17 +1,6 @@
 import { enUS } from 'date-fns/locale';
-import i18next from 'i18next';
 
 import { getRecurringDescription } from '#util/schedule';
-
-// getRecurringDescription uses the full English sentence as the translation
-// key, so with no resources i18next echoes the key back with interpolation
-// applied — which is exactly what these assertions expect.
-void i18next.init({
-  lng: 'en',
-  interpolation: {
-    escapeValue: false,
-  },
-});
 
 describe('getRecurringDescription', () => {
   it('describes weekly interval', () => {

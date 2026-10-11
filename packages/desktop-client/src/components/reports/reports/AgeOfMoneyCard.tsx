@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -53,7 +52,6 @@ export function AgeOfMoneyCard({
   meta = {},
   onMetaChange,
 }: AgeOfMoneyCardProps) {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
 
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
@@ -91,7 +89,7 @@ export function AgeOfMoneyCard({
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
-              name={meta?.name || t('Age of Money')}
+              name={meta?.name || 'Age of Money'}
               isEditing={nameMenuOpen}
               onChange={newName => {
                 onMetaChange({
@@ -114,9 +112,7 @@ export function AgeOfMoneyCard({
                   color: getAgeColor(data.currentAge),
                 }}
               >
-                {data.currentAge !== null
-                  ? t('{{days}} days', { days: data.currentAge })
-                  : t('N/A')}
+                {data.currentAge !== null ? `${data.currentAge} days` : 'N/A'}
               </Block>
               {data.currentAge !== null && (
                 <Block
@@ -127,10 +123,10 @@ export function AgeOfMoneyCard({
                 >
                   {getTrendIndicator(data.trend)}{' '}
                   {data.trend === 'up'
-                    ? t('Improving')
+                    ? 'Improving'
                     : data.trend === 'down'
-                      ? t('Declining')
-                      : t('Stable')}
+                      ? 'Declining'
+                      : 'Stable'}
                 </Block>
               )}
               {data.insufficientData && (
@@ -141,7 +137,7 @@ export function AgeOfMoneyCard({
                     marginTop: 2,
                   }}
                 >
-                  <Trans>Incomplete data</Trans>
+                  Incomplete data
                 </Block>
               )}
             </View>

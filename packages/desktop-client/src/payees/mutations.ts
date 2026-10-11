@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { send } from '@actual-app/core/platform/client/connection';
 import type { PayeeEntity } from '@actual-app/core/types/models';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -43,7 +41,6 @@ type CreatePayeePayload = {
 export function useDeletePayeeLocationMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (locationId: string) => {
@@ -58,7 +55,7 @@ export function useDeletePayeeLocationMutation() {
       console.error('Error deleting payee location:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error forgetting the location. Please try again.'),
+        'There was an error forgetting the location. Please try again.',
         error,
       );
     },
@@ -68,7 +65,6 @@ export function useDeletePayeeLocationMutation() {
 export function useSavePayeeLocationMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (payeeId: PayeeEntity['id']) => {
@@ -84,7 +80,7 @@ export function useSavePayeeLocationMutation() {
       console.error('Error saving payee location:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error saving the location. Please try again.'),
+        'There was an error saving the location. Please try again.',
         error,
       );
     },
@@ -94,7 +90,6 @@ export function useSavePayeeLocationMutation() {
 export function useCreatePayeeMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ name }: CreatePayeePayload) => {
@@ -108,7 +103,7 @@ export function useCreatePayeeMutation() {
       console.error('Error creating payee:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error creating the payee. Please try again.'),
+        'There was an error creating the payee. Please try again.',
         error,
       );
     },

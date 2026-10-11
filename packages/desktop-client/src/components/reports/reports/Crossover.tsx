@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -72,7 +71,6 @@ type CrossoverInnerProps = { widget?: CrossoverWidget };
 
 function CrossoverInner({ widget }: CrossoverInnerProps) {
   const locale = useLocale();
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { data: accounts = [] } = useAccounts();
   const {
@@ -276,7 +274,7 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
         addNotification({
           notification: {
             type: 'error',
-            message: t('Save failed: No widget found to save.'),
+            message: 'Save failed: No widget found to save.',
           },
         }),
       );
@@ -309,7 +307,7 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
             addNotification({
               notification: {
                 type: 'message',
-                message: t('Dashboard widget successfully saved.'),
+                message: 'Dashboard widget successfully saved.',
               },
             }),
           );
@@ -392,21 +390,21 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
   const navigate = useNavigate();
   const { isNarrowWidth } = useResponsive();
 
-  const title = widget?.meta?.name || t('Crossover Point');
+  const title = widget?.meta?.name || 'Crossover Point';
   const onSaveWidgetName = async (newName: string) => {
     if (!widget) {
       dispatch(
         addNotification({
           notification: {
             type: 'error',
-            message: t('Save failed: No widget found to save.'),
+            message: 'Save failed: No widget found to save.',
           },
         }),
       );
       return;
     }
 
-    const name = newName || t('Crossover Point');
+    const name = newName || 'Crossover Point';
     updateDashboardWidgetMutation.mutate({
       widget: {
         id: widget.id,
@@ -458,7 +456,7 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
       >
         {widget && (
           <Button variant="primary" onPress={onSaveWidget}>
-            <Trans>Save widget</Trans>
+            Save widget
           </Button>
         )}
       </Header>
@@ -491,28 +489,24 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                     justifyContent: 'space-between',
                   }}
                 >
-                  <Text>
-                    <Trans>Expenses categories</Trans>
-                  </Text>
+                  <Text>Expenses categories</Text>
                   <Tooltip
                     content={
                       <View style={{ maxWidth: 300 }}>
                         <Text>
-                          <Trans>
-                            Used to estimate your future expenses.
-                            <br />
-                            <br />
-                            Select the budget categories that reflect your
-                            living expenses in retirement.
-                            <br />
-                            Ex: Food, Utilities, Entertainment, Medical
-                            <br />
-                            <br />
-                            Exclude categories that will not continue in
-                            retirement.
-                            <br />
-                            Ex: Retirement Savings
-                          </Trans>
+                          Used to estimate your future expenses.
+                          <br />
+                          <br />
+                          Select the budget categories that reflect your living
+                          expenses in retirement.
+                          <br />
+                          Ex: Food, Utilities, Entertainment, Medical
+                          <br />
+                          <br />
+                          Exclude categories that will not continue in
+                          retirement.
+                          <br />
+                          Ex: Retirement Savings
                         </Text>
                       </View>
                     }
@@ -548,9 +542,7 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                           height={15}
                           style={{ marginRight: 5 }}
                         />
-                        <Text>
-                          <Trans>Hide hidden</Trans>
-                        </Text>
+                        <Text>Hide hidden</Text>
                       </View>
                     ) : (
                       <View
@@ -572,7 +564,7 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                             textOverflow: 'ellipsis',
                           }}
                         >
-                          <Trans>Show hidden</Trans>
+                          Show hidden
                         </Text>
                       </View>
                     )}
@@ -599,27 +591,23 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                     justifyContent: 'space-between',
                   }}
                 >
-                  <Text>
-                    <Trans>Income accounts</Trans>
-                  </Text>
+                  <Text>Income accounts</Text>
                   <Tooltip
                     content={
                       <View style={{ maxWidth: 300 }}>
                         <Text>
-                          <Trans>
-                            Used to estimate your future income.
-                            <br />
-                            <br />
-                            Select the accounts that will be used to fund your
-                            retirement.
-                            <br />
-                            Ex: Retirement Accounts, Savings Accounts
-                            <br />
-                            <br />
-                            Exclude accounts that will not.
-                            <br />
-                            Ex: Mortgage Accounts, Child Education Accounts
-                          </Trans>
+                          Used to estimate your future income.
+                          <br />
+                          <br />
+                          Select the accounts that will be used to fund your
+                          retirement.
+                          <br />
+                          Ex: Retirement Accounts, Savings Accounts
+                          <br />
+                          <br />
+                          Exclude accounts that will not.
+                          <br />
+                          Ex: Mortgage Accounts, Child Education Accounts
                         </Text>
                       </View>
                     }
@@ -651,22 +639,20 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                       justifyContent: 'space-between',
                     }}
                   >
-                    <Text>{t('Safe withdrawal rate (%)')}</Text>
+                    <Text>Safe withdrawal rate (%)</Text>
                     <Tooltip
                       content={
                         <View style={{ maxWidth: 300 }}>
                           <Text>
-                            <Trans>
-                              The amount you plan to withdraw from your Income
-                              Accounts each year to fund your living expenses.
-                              <br />
-                              <Link
-                                variant="external"
-                                to="https://en.wikipedia.org/wiki/Retirement_spend-down#Withdrawal_rate"
-                              >
-                                More info.
-                              </Link>
-                            </Trans>
+                            The amount you plan to withdraw from your Income
+                            Accounts each year to fund your living expenses.
+                            <br />
+                            <Link
+                              variant="external"
+                              to="https://en.wikipedia.org/wiki/Retirement_spend-down#Withdrawal_rate"
+                            >
+                              More info.
+                            </Link>
                           </Text>
                         </View>
                       }
@@ -705,25 +691,23 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                       justifyContent: 'space-between',
                     }}
                   >
-                    <Text>{t('Expense Projection Type')}</Text>
+                    <Text>Expense Projection Type</Text>
                     <Tooltip
                       content={
                         <View style={{ maxWidth: 300 }}>
                           <Text>
-                            <Trans>
-                              How past expenses are projected into the future.
-                              <br />
-                              <br />
-                              Hampel Filtered Median: Filters out outliers
-                              before calculating the median expense.
-                              <br />
-                              <br />
-                              Median: Uses the median of all historical expenses
-                              without filtering.
-                              <br />
-                              <br />
-                              Mean: Uses the average of all historical expenses.
-                            </Trans>
+                            How past expenses are projected into the future.
+                            <br />
+                            <br />
+                            Hampel Filtered Median: Filters out outliers before
+                            calculating the median expense.
+                            <br />
+                            <br />
+                            Median: Uses the median of all historical expenses
+                            without filtering.
+                            <br />
+                            <br />
+                            Mean: Uses the average of all historical expenses.
                           </Text>
                         </View>
                       }
@@ -742,9 +726,9 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                     setProjectionType(value as 'hampel' | 'median' | 'mean')
                   }
                   options={[
-                    ['hampel', t('Hampel Filtered Median')],
-                    ['median', t('Median')],
-                    ['mean', t('Mean')],
+                    ['hampel', 'Hampel Filtered Median'],
+                    ['median', 'Median'],
+                    ['mean', 'Mean'],
                   ]}
                   style={{ width: 200, marginBottom: 12 }}
                 />
@@ -759,30 +743,27 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                       justifyContent: 'space-between',
                     }}
                   >
-                    <Text>{t('Target Income (% of expenses)')}</Text>
+                    <Text>Target Income (% of expenses)</Text>
                     <Tooltip
                       content={
                         <View style={{ maxWidth: 300 }}>
                           <Text>
-                            <Trans>
-                              Your target retirement income as a percentage of
-                              projected expenses.
-                              <br />
-                              <br />
-                              100% means you need retirement income equal to
-                              your current projected expenses.
-                              <br />
-                              Values above 100% mean you plan to spend more in
-                              retirement.
-                              <br />
-                              Values below 100% mean you plan to spend less in
-                              retirement.
-                              <br />
-                              <br />
-                              The graph shows both the projected expenses (solid
-                              red line) and your target income (dashed red
-                              line).
-                            </Trans>
+                            Your target retirement income as a percentage of
+                            projected expenses.
+                            <br />
+                            <br />
+                            100% means you need retirement income equal to your
+                            current projected expenses.
+                            <br />
+                            Values above 100% mean you plan to spend more in
+                            retirement.
+                            <br />
+                            Values below 100% mean you plan to spend less in
+                            retirement.
+                            <br />
+                            <br />
+                            The graph shows both the projected expenses (solid
+                            red line) and your target income (dashed red line).
                           </Text>
                         </View>
                       }
@@ -841,22 +822,20 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                     style={{ marginRight: 8 }}
                   />
                   <Text style={{ fontWeight: 600 }}>
-                    <Trans>Use custom growth projections</Trans>
+                    Use custom growth projections
                   </Text>
                   <Tooltip
                     content={
                       <View style={{ maxWidth: 300 }}>
                         <Text>
-                          <Trans>
-                            Enable this to specify custom monthly contribution
-                            amounts and investment returns that will be used to
-                            project your investments into the future.
-                            <br />
-                            <br />
-                            When disabled, uses historical performance from your
-                            Income Accounts (which includes both past
-                            contributions and investment growth).
-                          </Trans>
+                          Enable this to specify custom monthly contribution
+                          amounts and investment returns that will be used to
+                          project your investments into the future.
+                          <br />
+                          <br />
+                          When disabled, uses historical performance from your
+                          Income Accounts (which includes both past
+                          contributions and investment growth).
                         </Text>
                       </View>
                     }
@@ -891,16 +870,14 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                             justifyContent: 'space-between',
                           }}
                         >
-                          <Text>{t('Expected return (annual %)')}</Text>
+                          <Text>Expected return (annual %)</Text>
                           <Tooltip
                             content={
                               <View style={{ maxWidth: 300 }}>
                                 <Text>
-                                  <Trans>
-                                    The expected annual return rate for your
-                                    investments, used to project growth of
-                                    Income Accounts.
-                                  </Trans>
+                                  The expected annual return rate for your
+                                  investments, used to project growth of Income
+                                  Accounts.
                                 </Text>
                               </View>
                             }
@@ -952,19 +929,15 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                             justifyContent: 'space-between',
                           }}
                         >
-                          <Text>
-                            <Trans>Expected monthly contribution</Trans>
-                          </Text>
+                          <Text>Expected monthly contribution</Text>
                           <Tooltip
                             content={
                               <View style={{ maxWidth: 300 }}>
                                 <Text>
-                                  <Trans>
-                                    The amount you plan to contribute to your
-                                    Income Accounts each month. This amount is
-                                    added to your balance each month before
-                                    applying the investment return.
-                                  </Trans>
+                                  The amount you plan to contribute to your
+                                  Income Accounts each month. This amount is
+                                  added to your balance each month before
+                                  applying the investment return.
                                 </Text>
                               </View>
                             }
@@ -1016,10 +989,8 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                       marginLeft: 24,
                     }}
                   >
-                    <Trans>
-                      Using calculated historical return of{' '}
-                      {(historicalReturn * 100).toFixed(1)}%
-                    </Trans>
+                    Using calculated historical return of{' '}
+                    {(historicalReturn * 100).toFixed(1)}%
                   </div>
                 )}
               </View>
@@ -1052,12 +1023,10 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                 }}
               >
                 <span>
-                  <Trans>Years to Retire</Trans>:{' '}
+                  Years to Retire:{' '}
                   {yearsToRetire != null
-                    ? t('{{years}} years', {
-                        years: format(yearsToRetire, 'number'),
-                      })
-                    : t('N/A')}
+                    ? `${format(yearsToRetire, 'number')} years`
+                    : 'N/A'}
                 </span>
               </View>
               <View
@@ -1066,14 +1035,14 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                 }}
               >
                 <span>
-                  <Trans>Target Monthly Income</Trans>:{' '}
+                  Target Monthly Income:{' '}
                   {targetMonthlyIncome != null &&
                   !isNaN(targetMonthlyIncome) ? (
                     <FinancialText>
                       {format(targetMonthlyIncome, 'financial')}
                     </FinancialText>
                   ) : (
-                    t('N/A')
+                    'N/A'
                   )}
                 </span>
               </View>
@@ -1083,13 +1052,13 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
                 }}
               >
                 <span>
-                  <Trans>Target Life Savings</Trans>:{' '}
+                  Target Life Savings:{' '}
                   {targetNestEgg != null && !isNaN(targetNestEgg) ? (
                     <FinancialText>
                       {format(targetNestEgg, 'financial')}
                     </FinancialText>
                   ) : (
-                    t('N/A')
+                    'N/A'
                   )}
                 </span>
               </View>
@@ -1129,18 +1098,14 @@ function CrossoverInner({ widget }: CrossoverInnerProps) {
             }}
           >
             <Paragraph>
-              <strong>
-                <Trans>What is the Crossover Point?</Trans>
-              </strong>
+              <strong>What is the Crossover Point?</strong>
             </Paragraph>
             <Paragraph>
-              <Trans>
-                The crossover point is when your monthly investment income (from
-                selected accounts using the safe withdrawal rate) meets or
-                exceeds your total monthly expenses (from selected categories).
-                The chart projects into the future using your estimated return
-                until the lines cross.
-              </Trans>
+              The crossover point is when your monthly investment income (from
+              selected accounts using the safe withdrawal rate) meets or exceeds
+              your total monthly expenses (from selected categories). The chart
+              projects into the future using your estimated return until the
+              lines cross.
             </Paragraph>
           </View>
         </View>

@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { theme } from '@actual-app/components/theme';
@@ -24,8 +23,6 @@ import { SchedulesTable } from './SchedulesTable';
 import type { ScheduleItemAction } from './SchedulesTable';
 
 export function Schedules() {
-  const { t } = useTranslation();
-
   const dispatch = useDispatch();
   const [filter, setFilter] = useState('');
 
@@ -105,7 +102,7 @@ export function Schedules() {
 
   return (
     <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
-      <Page header={t('Schedules')}>
+      <Page header="Schedules">
         <View
           style={{
             flexDirection: 'row',
@@ -121,7 +118,7 @@ export function Schedules() {
             }}
           >
             <Search
-              placeholder={t('Filter schedules…')}
+              placeholder="Filter schedules…"
               value={filter}
               onChange={setFilter}
             />
@@ -154,15 +151,13 @@ export function Schedules() {
               gap: '1em',
             }}
           >
-            <Button onPress={onDiscover}>
-              <Trans>Find schedules</Trans>
-            </Button>
+            <Button onPress={onDiscover}>Find schedules</Button>
             <Button onPress={onChangeUpcomingLength}>
-              <Trans>Change upcoming length</Trans>
+              Change upcoming length
             </Button>
           </View>
           <Button variant="primary" onPress={onAdd}>
-            <Trans>Add new schedule</Trans>
+            Add new schedule
           </Button>
         </View>
       </Page>

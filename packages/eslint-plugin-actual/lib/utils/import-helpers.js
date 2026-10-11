@@ -6,7 +6,7 @@
  * Check if a specific import exists from a module
  * @param {import('eslint').SourceCode} sourceCode
  * @param {string} importName - The name to import (e.g., 't', 'Trans')
- * @param {string} moduleName - The module to import from (e.g., 'react-i18next')
+ * @param {string} moduleName - The module to import from (e.g., '@actual-app/core/platform/server/log')
  * @returns {boolean}
  */
 function hasImport(sourceCode, importName, moduleName) {
@@ -28,7 +28,7 @@ function hasImport(sourceCode, importName, moduleName) {
  * Get a fixer function to add an import
  * @param {import('eslint').SourceCode} sourceCode
  * @param {string} importName - The name to import (e.g., 't', 'Trans')
- * @param {string} moduleName - The module to import from (e.g., 'react-i18next')
+ * @param {string} moduleName - The module to import from (e.g., '@actual-app/core/platform/server/log')
  * @returns {(fixer: import('eslint').Rule.RuleFixer) => import('eslint').Rule.Fix}
  */
 function getImportFix(sourceCode, importName, moduleName) {
@@ -83,7 +83,7 @@ function getImportFix(sourceCode, importName, moduleName) {
  * @param {import('eslint').SourceCode} sourceCode
  * @param {import('eslint').Rule.RuleFixer} fixer
  * @param {string} importName - The name to import
- * @param {string} moduleName - The module to import from (e.g., 'react-i18next')
+ * @param {string} moduleName - The module to import from (e.g., '@actual-app/core/platform/server/log')
  */
 function ensureImport(fixes, sourceCode, fixer, importName, moduleName) {
   if (!hasImport(sourceCode, importName, moduleName)) {

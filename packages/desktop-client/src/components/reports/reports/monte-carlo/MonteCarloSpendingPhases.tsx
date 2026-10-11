@@ -1,5 +1,3 @@
-import { Trans, useTranslation } from 'react-i18next';
-
 import { Button } from '@actual-app/components/button';
 import { SvgDelete } from '@actual-app/components/icons/v0';
 import { SvgAdd } from '@actual-app/components/icons/v1';
@@ -46,8 +44,6 @@ export function MonteCarloSpendingPhases({
   targetAge,
   onPhasesChange,
 }: MonteCarloSpendingPhasesProps) {
-  const { t } = useTranslation();
-
   function updatePhase(
     phaseId: string,
     changes: Partial<MonteCarloSpendingPhase>,
@@ -87,20 +83,16 @@ export function MonteCarloSpendingPhases({
   return (
     <View style={{ gap: 10, marginBottom: 20 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-        <Text style={FIELD_LABEL_STYLE}>
-          <Trans>Spending phases</Trans>
-        </Text>
+        <Text style={FIELD_LABEL_STYLE}>Spending phases</Text>
         <MonteCarloHelpTooltip>
-          <Trans>
-            Your yearly spending doesn&apos;t have to stay the same for the
-            whole plan. Each phase sets the yearly amount from a given age until
-            the next phase begins - for example, more in your active early years
-            and less later on.
-            <br />
-            <br />
-            Amounts are in today&apos;s money; the inflation settings on the
-            Plan details tab are applied on top.
-          </Trans>
+          Your yearly spending doesn&apos;t have to stay the same for the whole
+          plan. Each phase sets the yearly amount from a given age until the
+          next phase begins - for example, more in your active early years and
+          less later on.
+          <br />
+          <br />
+          Amounts are in today&apos;s money; the inflation settings on the Plan
+          details tab are applied on top.
         </MonteCarloHelpTooltip>
       </View>
 
@@ -117,16 +109,16 @@ export function MonteCarloSpendingPhases({
         <View style={{ minWidth: 'fit-content' }}>
           <TableHeader>
             <Field width="flex" style={{ minWidth: PHASE_COLUMNS.name }}>
-              <Trans>Phase name</Trans>
+              Phase name
             </Field>
             <Field width="flex" style={{ minWidth: PHASE_COLUMNS.fromAge }}>
-              <Trans>From age</Trans>
+              From age
             </Field>
             <Field width="flex" style={{ minWidth: PHASE_COLUMNS.until }}>
-              <Trans>Until</Trans>
+              Until
             </Field>
             <Field width="flex" style={{ minWidth: PHASE_COLUMNS.spending }}>
-              <Trans>Yearly spending</Trans>
+              Yearly spending
             </Field>
             <Field width={PHASE_COLUMNS.remove} />
           </TableHeader>
@@ -152,7 +144,7 @@ export function MonteCarloSpendingPhases({
                     // Uncontrolled on purpose: committing on blur keeps typing
                     // snappy since every config change re-runs the simulation
                     defaultValue={phase.name}
-                    placeholder={t('Phase {{number}}', { number: index + 1 })}
+                    placeholder={`Phase ${index + 1}`}
                     onUpdate={newName => {
                       if (newName !== phase.name) {
                         updatePhase(phase.id, { name: newName });
@@ -168,12 +160,12 @@ export function MonteCarloSpendingPhases({
                 >
                   {index === 0 ? (
                     <Text style={{ color: theme.tableText }}>
-                      {t('Now ({{age}})', { age: currentAge })}
+                      {`Now (${currentAge})`}
                     </Text>
                   ) : (
                     <MonteCarloNumberInput
                       value={phase.fromAge}
-                      aria-label={t('From age')}
+                      aria-label="From age"
                       roundToInteger
                       min={currentAge + 1}
                       max={targetAge}
@@ -194,8 +186,8 @@ export function MonteCarloSpendingPhases({
                 >
                   <Text style={{ color: theme.tableText }}>
                     {nextPhase?.fromAge != null
-                      ? t('Age {{age}}', { age: nextPhase.fromAge - 1 })
-                      : t('Onwards')}
+                      ? `Age ${nextPhase.fromAge - 1}`
+                      : 'Onwards'}
                   </Text>
                 </Field>
 
@@ -225,7 +217,7 @@ export function MonteCarloSpendingPhases({
                   {phases.length > 1 && (
                     <Button
                       variant="bare"
-                      aria-label={t('Remove phase')}
+                      aria-label="Remove phase"
                       onPress={() => removePhase(phase.id)}
                       style={{ padding: 6 }}
                     >
@@ -242,7 +234,7 @@ export function MonteCarloSpendingPhases({
       <View style={{ flexDirection: 'row' }}>
         <Button onPress={addPhase}>
           <SvgAdd width={10} height={10} style={{ marginRight: 5 }} />
-          <Trans>Add phase</Trans>
+          Add phase
         </Button>
       </View>
     </View>

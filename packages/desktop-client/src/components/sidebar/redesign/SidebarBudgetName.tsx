@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgCheveronDown } from '@actual-app/components/icons/v1';
@@ -17,7 +16,6 @@ import { useNavigate } from '#hooks/useNavigate';
 import { useDispatch } from '#redux';
 
 export function SidebarBudgetName() {
-  const { t } = useTranslation();
   const [budgetName, setBudgetNamePref] = useMetadataPref('budgetName');
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -28,17 +26,17 @@ export function SidebarBudgetName() {
     items: [
       {
         name: 'rename',
-        text: t('Rename budget'),
+        text: 'Rename budget',
         onClick: () => setIsEditing(true),
       },
       {
         name: 'settings',
-        text: t('Settings'),
+        text: 'Settings',
         onClick: () => void navigate('/settings'),
       },
       {
         name: 'close',
-        text: t('Switch file'),
+        text: 'Switch file',
         onClick: () => void dispatch(closeBudget()),
       },
     ],
@@ -79,7 +77,7 @@ export function SidebarBudgetName() {
       }}
       onClick={handleContextMenu}
     >
-      <Text style={styles.ellipsisText}>{budgetName || t('Unnamed')}</Text>
+      <Text style={styles.ellipsisText}>{budgetName || 'Unnamed'}</Text>
       <SvgCheveronDown
         width={11}
         height={11}

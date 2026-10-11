@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { theme } from '@actual-app/components/theme';
@@ -32,7 +31,6 @@ export function CategoryGroupAutocompleteModal({
   clearOnSelect,
   onClose,
 }: CategoryGroupAutocompleteModalProps) {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
 
   const defaultAutocompleteProps = {
@@ -59,7 +57,7 @@ export function CategoryGroupAutocompleteModal({
             <ModalHeader
               title={
                 <ModalTitle
-                  title={title || t('Category group')}
+                  title={title || 'Category group'}
                   getStyle={() => ({ color: theme.menuAutoCompleteText })}
                 />
               }
@@ -74,7 +72,7 @@ export function CategoryGroupAutocompleteModal({
           <View>
             {!isNarrowWidth && (
               <SectionLabel
-                title={t('Category group')}
+                title="Category group"
                 style={{
                   alignSelf: 'center',
                   color: theme.menuAutoCompleteText,

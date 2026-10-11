@@ -1,5 +1,4 @@
 import React, { Suspense, useEffect, useEffectEvent, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useHref, useLocation } from 'react-router';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -55,7 +54,6 @@ export function FinancesApp() {
   useMetaThemeColor(theme.mobileViewTheme);
 
   const dispatch = useDispatch();
-  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const init = useEffectEvent(() => {
@@ -76,14 +74,12 @@ export function FinancesApp() {
         addNotification({
           notification: {
             type: 'message',
-            title: t('A new version of Actual is available!'),
-            message: t(
-              'Click the button below to reload and apply the update.',
-            ),
+            title: 'A new version of Actual is available!',
+            message: 'Click the button below to reload and apply the update.',
             sticky: true,
             id: 'update-reload-notification',
             button: {
-              title: t('Update now'),
+              title: 'Update now',
               action: async () => {
                 await global.Actual.applyAppUpdate();
               },

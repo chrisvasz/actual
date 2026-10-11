@@ -5,7 +5,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -68,7 +67,6 @@ type NetWorthInnerProps = {
 function NetWorthInner({ widget }: NetWorthInnerProps) {
   const locale = useLocale();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
   const format = useFormat();
 
   const getDefaultIntervalForMode = useCallback(
@@ -255,7 +253,7 @@ function NetWorthInner({ widget }: NetWorthInnerProps) {
             addNotification({
               notification: {
                 type: 'message',
-                message: t('Dashboard widget successfully saved.'),
+                message: 'Dashboard widget successfully saved.',
               },
             }),
           );
@@ -267,13 +265,13 @@ function NetWorthInner({ widget }: NetWorthInnerProps) {
   const navigate = useNavigate();
   const { isNarrowWidth } = useResponsive();
 
-  const title = widget?.meta?.name || t('Net Worth');
+  const title = widget?.meta?.name || 'Net Worth';
   const onSaveWidgetName = async (newName: string) => {
     if (!widget) {
       throw new Error('No widget that could be saved.');
     }
 
-    const name = newName || t('Net Worth');
+    const name = newName || 'Net Worth';
     updateDashboardWidgetMutation.mutate({
       widget: {
         id: widget.id,
@@ -341,7 +339,7 @@ function NetWorthInner({ widget }: NetWorthInnerProps) {
       >
         {widget && (
           <Button variant="primary" onPress={onSaveWidget}>
-            <Trans>Save widget</Trans>
+            Save widget
           </Button>
         )}
       </Header>
@@ -380,18 +378,14 @@ function NetWorthInner({ widget }: NetWorthInnerProps) {
 
         <View style={{ marginTop: 30, userSelect: 'none' }}>
           <Paragraph>
-            <strong>
-              <Trans>How is net worth calculated?</Trans>
-            </strong>
+            <strong>How is net worth calculated?</strong>
           </Paragraph>
           <Paragraph>
-            <Trans>
-              Net worth shows the balance of all accounts over time, including
-              all of your investments. Your "net worth" is considered to be the
-              amount you'd have if you sold all your assets and paid off as much
-              debt as possible. If you hover over the graph, you can also see
-              the amount of assets and debt individually.
-            </Trans>
+            Net worth shows the balance of all accounts over time, including all
+            of your investments. Your "net worth" is considered to be the amount
+            you'd have if you sold all your assets and paid off as much debt as
+            possible. If you hover over the graph, you can also see the amount
+            of assets and debt individually.
           </Paragraph>
         </View>
       </View>
@@ -407,8 +401,6 @@ function IntervalSelector({
   interval: 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
   onChange: (val: 'Daily' | 'Weekly' | 'Monthly' | 'Yearly') => void;
 }) {
-  const { t } = useTranslation();
-
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -422,7 +414,7 @@ function IntervalSelector({
         ref={triggerRef}
         variant="bare"
         onPress={() => setIsOpen(true)}
-        aria-label={t('Change interval')}
+        aria-label="Change interval"
       >
         <SvgCalendar style={{ width: 12, height: 12 }} />
         <span style={{ marginLeft: 5 }}>{currentLabel}</span>
@@ -456,14 +448,12 @@ function ModeSelector({
   mode: 'trend' | 'stacked';
   onChange: (val: 'trend' | 'stacked') => void;
 }) {
-  const { t } = useTranslation();
-
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   const options = [
-    { key: 'trend', description: t('Trend') },
-    { key: 'stacked', description: t('Stacked') },
+    { key: 'trend', description: 'Trend' },
+    { key: 'stacked', description: 'Stacked' },
   ];
 
   const currentLabel =
@@ -475,7 +465,7 @@ function ModeSelector({
         ref={triggerRef}
         variant="bare"
         onPress={() => setIsOpen(true)}
-        aria-label={t('Change mode')}
+        aria-label="Change mode"
       >
         <SvgChart style={{ width: 12, height: 12 }} />
         <span style={{ marginLeft: 5 }}>{currentLabel}</span>

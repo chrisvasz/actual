@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { ProgressBar } from 'react-aria-components';
-import { useTranslation } from 'react-i18next';
 
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
@@ -18,7 +17,6 @@ import { css } from '@emotion/css';
  * nothing until the import reports its first step.
  */
 export function ImportProgress() {
-  const { t } = useTranslation();
   const [progress, setProgress] = useState<
     ServerEvents['import-progress'] | null
   >(null);
@@ -43,12 +41,10 @@ export function ImportProgress() {
         marginTop: 20,
       }}
     >
-      <Text style={styles.tnum}>
-        {getStepText(t, step, stepProgress, batch)}
-      </Text>
+      <Text style={styles.tnum}>{getStepText(step, stepProgress, batch)}</Text>
       <ProgressBar
         value={percentage}
-        aria-label={t('Import progress')}
+        aria-label="Import progress"
         style={{ width: '100%' }}
       >
         <View
@@ -74,40 +70,35 @@ export function ImportProgress() {
 }
 
 function getStepText(
-  t: ReturnType<typeof useTranslation>['t'],
   step: ImportStep,
   progress: string,
   batch?: { amount: number; account: string },
 ): string {
   switch (step) {
     case 'accounts':
-      return t('Importing accounts{{progress}}...', { progress });
+      return `Importing accounts${progress}...`;
     case 'categories':
-      return t('Importing categories{{progress}}...', { progress });
+      return `Importing categories${progress}...`;
     case 'payees':
-      return t('Importing payees{{progress}}...', { progress });
+      return `Importing payees${progress}...`;
     case 'payee-locations':
-      return t('Importing payee locations{{progress}}...', { progress });
+      return `Importing payee locations${progress}...`;
     case 'tags':
-      return t('Importing tags{{progress}}...', { progress });
+      return `Importing tags${progress}...`;
     case 'transactions':
       // Transactions go in one batch per account, so the tick reports an
       // account that has already landed rather than one in flight.
       return batch
-        ? t('Imported {{count}} transactions for {{account}}{{progress}}...', {
-            count: batch.amount,
-            account: batch.account,
-            progress,
-          })
-        : t('Importing transactions{{progress}}...', { progress });
+        ? `Imported ${batch.amount} transactions for ${batch.account}${progress}...`
+        : `Importing transactions${progress}...`;
     case 'scheduled-transactions':
-      return t('Importing scheduled transactions{{progress}}...', { progress });
+      return `Importing scheduled transactions${progress}...`;
     case 'budgets':
       // The count is months, not individual budgeted amounts.
-      return t('Importing monthly budgets{{progress}}...', { progress });
+      return `Importing monthly budgets${progress}...`;
     // The union is exhaustive above; `default` is here for the lint rule.
     case 'finishing':
     default:
-      return t('Setting up...');
+      return 'Setting up...';
   }
 }

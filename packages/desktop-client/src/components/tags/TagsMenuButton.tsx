@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgDotsHorizontalTriple } from '@actual-app/components/icons/v1';
@@ -16,7 +15,6 @@ import { useSyncedPref } from '#hooks/useSyncedPref';
 import { useDiscoverTagsMutation } from '#tags';
 
 export function TagsMenuButton() {
-  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const { mutate: discoverTags } = useDiscoverTagsMutation();
   const [showHidden, setShowHidden] = useSyncedPref('show-hidden-tags');
@@ -27,7 +25,7 @@ export function TagsMenuButton() {
       <Button
         ref={triggerRef}
         variant="bare"
-        aria-label={t('Menu')}
+        aria-label="Menu"
         onClick={() => setOpen(true)}
       >
         <SvgDotsHorizontalTriple width={17} height={17} />
@@ -43,17 +41,17 @@ export function TagsMenuButton() {
             showHidden === 'true'
               ? {
                   name: 'set-dont-show-hidden',
-                  text: t("Don't show hidden tags"),
+                  text: "Don't show hidden tags",
                   icon: SvgViewHide,
                 }
               : {
                   name: 'set-show-hidden',
-                  text: t('Show hidden tags'),
+                  text: 'Show hidden tags',
                   icon: SvgViewShow,
                 },
             {
               name: 'discover-tags',
-              text: t('Discover new tags'),
+              text: 'Discover new tags',
               icon: SvgSearchAlternate,
             },
           ]}

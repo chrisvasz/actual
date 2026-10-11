@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { View } from '@actual-app/components/view';
@@ -25,7 +24,7 @@ export function IncomeHeader({ onShowNewGroup }: IncomeHeaderProps) {
         }}
       >
         <Button onPress={onShowNewGroup} style={{ fontSize: 12, margin: 10 }}>
-          <Trans>Add group</Trans>
+          Add group
         </Button>
       </View>
       <RenderMonths style={{ border: 0, justifyContent: 'flex-end' }}>

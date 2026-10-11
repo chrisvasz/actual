@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import type { CSSProperties } from 'react';
-import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import {
@@ -91,7 +90,7 @@ export function EnvelopeBudgetMenuModal({
                 fontWeight: 400,
               }}
             >
-              <Trans>Budgeted</Trans>
+              Budgeted
             </Text>
             <AmountInput
               value={integerToAmount(budgeted || 0)}
@@ -117,7 +116,7 @@ export function EnvelopeBudgetMenuModal({
                   style={{ paddingRight: 5 }}
                 />
               )}
-              <Trans>Actions</Trans>
+              Actions
             </Button>
           </View>
           {showMore && (

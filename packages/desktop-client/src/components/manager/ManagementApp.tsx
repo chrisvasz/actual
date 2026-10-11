@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { Trans } from 'react-i18next';
 import { Navigate, Route, Routes } from 'react-router';
 
 import { Text } from '@actual-app/components/text';
@@ -55,10 +54,7 @@ function Version() {
         },
       }}
     >
-      <Trans>
-        App: v{{ appVersion: window.Actual.ACTUAL_VERSION }} | Server:{' '}
-        {{ serverVersion: version }}
-      </Trans>
+      App: v{window.Actual.ACTUAL_VERSION} | Server: {version}
     </Text>
   );
 }

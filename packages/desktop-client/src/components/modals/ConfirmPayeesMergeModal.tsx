@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgArrowDown } from '@actual-app/components/icons/v1';
@@ -36,7 +35,6 @@ export function ConfirmPayeesMergeModal({
   targetPayeeId,
   onConfirm,
 }: ConfirmPayeesMergeModalProps) {
-  const { t } = useTranslation();
   const { data: allPayees = [] } = usePayees();
 
   const mergePayees = allPayees.filter(p => payeeIds.includes(p.id));
@@ -51,7 +49,7 @@ export function ConfirmPayeesMergeModal({
     <Modal name="confirm-payees-merge">
       {({ state }) => (
         <>
-          <ModalHeader title={t('Confirm Merge')} />
+          <ModalHeader title="Confirm Merge" />
 
           <View style={{ maxWidth: 500, marginTop: 20 }}>
             <View
@@ -85,15 +83,13 @@ export function ConfirmPayeesMergeModal({
             </View>
 
             <Information style={{ marginTop: 20 }}>
-              <Trans>
-                Merging will delete the selected payee(s) and transfer any
-                associated rules to the target payee.
-              </Trans>
+              Merging will delete the selected payee(s) and transfer any
+              associated rules to the target payee.
             </Information>
 
             <ModalButtons style={{ marginTop: 20 }} focusButton>
               <Button style={{ marginRight: 10 }} onPress={() => state.close()}>
-                <Trans>Cancel</Trans>
+                Cancel
               </Button>
               <Button
                 variant="primary"
@@ -103,7 +99,7 @@ export function ConfirmPayeesMergeModal({
                   state.close();
                 }}
               >
-                <Trans>Merge</Trans>
+                Merge
               </Button>
             </ModalButtons>
           </View>

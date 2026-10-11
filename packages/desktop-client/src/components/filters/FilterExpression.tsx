@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgDelete } from '@actual-app/components/icons/v0';
@@ -39,7 +38,6 @@ export function FilterExpression<T extends RuleConditionEntity>({
   onChange,
   onDelete,
 }: FilterExpressionProps<T>) {
-  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const triggerRef = useRef(null);
 
@@ -103,7 +101,7 @@ export function FilterExpression<T extends RuleConditionEntity>({
           )}
         </div>
       </Button>
-      <Button variant="bare" onPress={onDelete} aria-label={t('Delete filter')}>
+      <Button variant="bare" onPress={onDelete} aria-label="Delete filter">
         <SvgDelete
           style={{
             width: 8,

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { TreeItem, TreeItemContent } from 'react-aria-components';
-import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import { InitialFocus } from '@actual-app/components/initial-focus';
@@ -33,7 +32,6 @@ type AccountRowProps = {
 };
 
 export function AccountRow({ account, isClosed }: AccountRowProps) {
-  const { t } = useTranslation();
   const [balanceMode] = useSidebarBalanceMode();
   const dispatch = useDispatch();
   const location = useLocation();
@@ -56,24 +54,24 @@ export function AccountRow({ account, isClosed }: AccountRowProps) {
     items: [
       {
         name: 'account-rename',
-        text: t('Rename'),
+        text: 'Rename',
         onClick: () => setIsEditing(true),
       },
       isClosed
         ? {
             name: 'account-reopen',
-            text: t('Reopen'),
+            text: 'Reopen',
             onClick: () => reopenAccount.mutate({ id: account.id }),
           }
         : {
             name: 'account-close',
-            text: t('Close'),
+            text: 'Close',
             onClick: () =>
               dispatch(openAccountCloseModal({ accountId: account.id })),
           },
       {
         name: 'account-group',
-        text: t('Set account group'),
+        text: 'Set account group',
         onClick: () =>
           dispatch(
             pushModal({
@@ -138,7 +136,7 @@ export function AccountRow({ account, isClosed }: AccountRowProps) {
             {isEditing ? (
               <InitialFocus>
                 <Input
-                  aria-label={t('Account name')}
+                  aria-label="Account name"
                   style={{ flex: 1, padding: 0, fontSize: 13 }}
                   defaultValue={name}
                   onKeyDown={e => e.stopPropagation()}

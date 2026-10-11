@@ -6,7 +6,6 @@ import React, {
   useState,
 } from 'react';
 import type { Dispatch, Ref, SetStateAction } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { Button } from '@actual-app/components/button';
@@ -59,7 +58,6 @@ export function CalendarCard({
   onMetaChange,
   firstDayOfWeekIdx,
 }: CalendarCardProps) {
-  const { t } = useTranslation();
   const format = useFormat();
 
   const transactionDates = useTransactionDates();
@@ -167,7 +165,7 @@ export function CalendarCard({
         <View style={{ flexDirection: 'row', padding: 20, paddingBottom: 0 }}>
           <View style={{ flex: 1, marginBottom: -5 }}>
             <ReportCardName
-              name={meta?.name || t('Calendar')}
+              name={meta?.name || 'Calendar'}
               isEditing={nameMenuOpen}
               onChange={newName => {
                 onMetaChange({
@@ -204,7 +202,7 @@ export function CalendarCard({
                               marginRight: 4,
                             }}
                           >
-                            <Trans>Income:</Trans>
+                            Income:
                           </View>
                           <View style={{ color: theme.reportsNumberPositive }}>
                             {totalIncome !== 0 ? (
@@ -225,7 +223,7 @@ export function CalendarCard({
                               marginRight: 4,
                             }}
                           >
-                            <Trans>Expenses:</Trans>
+                            Expenses:
                           </View>
                           <View style={{ color: theme.reportsNumberNegative }}>
                             {totalExpense !== 0 ? (
@@ -330,7 +328,6 @@ function CalendarCardInner({
   isEditing,
   format,
 }: CalendarCardInnerProps) {
-  const { t } = useTranslation();
   const [monthNameVisible, setMonthNameVisible] = useState(true);
   const monthFormatSizeContainers = useRef<(HTMLSpanElement | null)[]>(
     new Array(5),
@@ -464,7 +461,7 @@ function CalendarCardInner({
               fontSize: '10px',
               marginRight: 10,
             }}
-            aria-label={t('Income')}
+            aria-label="Income"
           >
             {calendar.totalIncome !== 0 ? (
               <>
@@ -488,7 +485,7 @@ function CalendarCardInner({
               flexDirection: 'row',
               fontSize: '10px',
             }}
-            aria-label={t('Expenses')}
+            aria-label="Expenses"
           >
             {calendar.totalExpense !== 0 ? (
               <>

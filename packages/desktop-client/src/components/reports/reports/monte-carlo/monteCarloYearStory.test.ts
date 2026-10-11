@@ -1,16 +1,8 @@
-import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
 
 import { WITHDRAWAL_RULE_DEFAULTS } from './monteCarloSimulation';
 import type { MonteCarloRunDetailRow } from './monteCarloSimulation';
 import { buildMonteCarloYearStory } from './monteCarloYearStory';
-
-// Identity translation that fills in the placeholders, so the tests read
-// the English sentences the UI shows
-const translate = ((key: string, options?: Record<string, unknown>) =>
-  key.replace(/\{\{(\w+)\}\}/g, (_match, name: string) =>
-    String(options?.[name]),
-  )) as unknown as TFunction;
 
 const format = (amount: number) => amount.toFixed(2);
 
@@ -60,7 +52,6 @@ function story(
     surplusPotName: 'Surplus cash',
     hasSurplusPot: options.hasSurplusPot ?? false,
     format,
-    translate,
   });
 }
 

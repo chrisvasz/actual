@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -53,7 +52,6 @@ export function EditFieldModal({
   onSubmit,
   onClose,
 }: EditFieldModalProps) {
-  const { t } = useTranslation();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
   const noteInputRef = useRef<HTMLInputElement | null>(null);
   const noteReplaceInputRef = useRef<HTMLInputElement | null>(null);
@@ -71,7 +69,7 @@ export function EditFieldModal({
         if (typeof value === 'string') {
           const parsed = currencyToInteger(value);
           if (parsed === null) {
-            alert(t('Invalid amount value'));
+            alert('Invalid amount value');
             return;
           }
           value = parsed;
@@ -106,7 +104,7 @@ export function EditFieldModal({
   switch (name) {
     case 'date': {
       const today = currentDay();
-      label = t('Date');
+      label = 'Date';
       // Definite width — the embedded calendar's 100%-wide grid must not
       // size the modal (see DateSelect)
       width = tokens.breakpoint_small;
@@ -126,7 +124,7 @@ export function EditFieldModal({
     }
 
     case 'notes':
-      label = t('Notes');
+      label = 'Notes';
       width = tokens.breakpoint_small;
       editor = ({ close }) => (
         <>
@@ -173,7 +171,7 @@ export function EditFieldModal({
                   noteInputRef.current?.focus();
                 }}
               >
-                {t(noteAmendStrings[mode as NoteAmendMode])}
+                {noteAmendStrings[mode as NoteAmendMode]}
               </Button>
             ))}
           </View>
@@ -190,12 +188,12 @@ export function EditFieldModal({
                   }))
                 }
               >
-                {t('Use Regular Expressions')}
+                Use Regular Expressions
               </LabeledCheckbox>
               <Input
                 ref={noteInputRef}
                 autoFocus
-                placeholder={t('Find')}
+                placeholder="Find"
                 value={noteFindReplace.find}
                 onChange={({ currentTarget: { value } }) =>
                   setNoteFindReplace(current => ({ ...current, find: value }))
@@ -207,7 +205,7 @@ export function EditFieldModal({
               />
               <Input
                 ref={noteReplaceInputRef}
-                placeholder={t('Replace')}
+                placeholder="Replace"
                 value={noteFindReplace.replace}
                 onChange={({ currentTarget: { value } }) =>
                   setNoteFindReplace(current => ({
@@ -217,14 +215,14 @@ export function EditFieldModal({
                 }
                 onEnter={() => {
                   if (noteFindReplace.find === '') {
-                    alert(t('Find value required'));
+                    alert('Find value required');
                     return;
                   }
                   if (noteFindReplace.useRegex) {
                     try {
                       new RegExp(noteFindReplace.find, 'g');
                     } catch {
-                      alert(t('Invalid regular expression'));
+                      alert('Invalid regular expression');
                       return;
                     }
                   }
@@ -266,7 +264,7 @@ export function EditFieldModal({
       break;
 
     case 'amount':
-      label = t('Amount');
+      label = 'Amount';
       editor = ({ close }) => (
         <Input
           onEnter={value => {

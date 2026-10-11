@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -19,7 +18,6 @@ export const FLOATING_SIDEBAR_BUTTON_ATTR = 'data-floating-sidebar-button';
  * sidebar floats.
  */
 export function FloatingSidebarButton() {
-  const { t } = useTranslation();
   const sidebar = useSidebar();
   const { isNarrowWidth } = useResponsive();
 
@@ -38,7 +36,7 @@ export function FloatingSidebarButton() {
       }}
     >
       <Button
-        aria-label={t('Sidebar menu')}
+        aria-label="Sidebar menu"
         variant="bare"
         onHoverStart={e => {
           if (e.pointerType === 'mouse') {

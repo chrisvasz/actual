@@ -1,5 +1,3 @@
-import { Trans, useTranslation } from 'react-i18next';
-
 import { Button } from '@actual-app/components/button';
 import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
 import { Text } from '@actual-app/components/text';
@@ -36,7 +34,6 @@ type AccountGroupsModalProps = {
 };
 
 export function AccountGroupsModal({ accountId }: AccountGroupsModalProps) {
-  const { t } = useTranslation();
   const account = useAccount(accountId);
   const { data: groups = [], isPlaceholderData } = useAccountGroups();
 
@@ -61,7 +58,7 @@ export function AccountGroupsModal({ accountId }: AccountGroupsModalProps) {
       {({ state }) => (
         <>
           <ModalHeader
-            title={<ModalTitle title={t('Account group')} shrinkOnOverflow />}
+            title={<ModalTitle title="Account group" shrinkOnOverflow />}
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           {isPlaceholderData ? (
@@ -79,9 +76,7 @@ export function AccountGroupsModal({ accountId }: AccountGroupsModalProps) {
                   onPress={() => onSelect(null)}
                   style={{ flex: 1, justifyContent: 'flex-start' }}
                 >
-                  <Text style={{ fontStyle: 'italic' }}>
-                    <Trans>None</Trans>
-                  </Text>
+                  <Text style={{ fontStyle: 'italic' }}>None</Text>
                 </Button>
               </View>
               {groups.map((group, index) => (
@@ -114,10 +109,8 @@ export function AccountGroupsModal({ accountId }: AccountGroupsModalProps) {
                 <Text
                   style={{ color: theme.pageTextSubdued, padding: '5px 0' }}
                 >
-                  <Trans>
-                    No account groups yet. Add one below to start grouping your
-                    accounts.
-                  </Trans>
+                  No account groups yet. Add one below to start grouping your
+                  accounts.
                 </Text>
               )}
               <View style={{ marginTop: 10 }}>
@@ -126,7 +119,7 @@ export function AccountGroupsModal({ accountId }: AccountGroupsModalProps) {
                   groups={groups}
                   value={null}
                   inputProps={{
-                    placeholder: t('Find or create a group…'),
+                    placeholder: 'Find or create a group…',
                   }}
                   onSelect={async (groupId, rawValue) => {
                     if (groupId === NEW_ACCOUNT_GROUP_ID) {

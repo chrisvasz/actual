@@ -410,30 +410,26 @@ export function createMonteCarloSurplusPot(id: string): MonteCarloPot {
 export function getMonteCarloPotLabel(
   pots: MonteCarloPot[],
   potIndex: number,
-  translate: (key: string, options?: Record<string, unknown>) => string,
 ): string {
   const pot = pots[potIndex];
   if (pot.name) {
     return pot.name;
   }
   if (pot.isSurplus) {
-    return translate('Surplus cash');
+    return 'Surplus cash';
   }
   const ordinal = pots
     .slice(0, potIndex + 1)
     .filter(other => !other.isSurplus).length;
-  return translate('Pot {{number}}', { number: ordinal });
+  return `Pot ${ordinal}`;
 }
 
 /** Label for the surplus pot, whether or not the plan currently has one */
-export function getMonteCarloSurplusPotLabel(
-  pots: MonteCarloPot[],
-  translate: (key: string, options?: Record<string, unknown>) => string,
-): string {
+export function getMonteCarloSurplusPotLabel(pots: MonteCarloPot[]): string {
   const surplusPotIndex = pots.findIndex(pot => pot.isSurplus);
   return surplusPotIndex >= 0
-    ? getMonteCarloPotLabel(pots, surplusPotIndex, translate)
-    : translate('Surplus cash');
+    ? getMonteCarloPotLabel(pots, surplusPotIndex)
+    : 'Surplus cash';
 }
 
 /** One tax band: annual taxable income from `from` upward taxed at `rate` */

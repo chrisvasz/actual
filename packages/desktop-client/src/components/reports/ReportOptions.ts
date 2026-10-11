@@ -5,7 +5,6 @@ import type {
   CustomReportEntity,
   sortByOpType,
 } from '@actual-app/core/types/models';
-import { t } from 'i18next';
 
 const startDate = monthUtils.subMonths(monthUtils.currentMonth(), 5) + '-01';
 const endDate = monthUtils.currentDay();
@@ -35,33 +34,33 @@ export const defaultReport: CustomReportEntity = {
 };
 
 const balanceTypeOptions = [
-  { description: t('Payment'), key: 'Payment', format: 'totalDebts' as const },
-  { description: t('Deposit'), key: 'Deposit', format: 'totalAssets' as const },
-  { description: t('Net'), key: 'Net', format: 'totalTotals' as const },
+  { description: 'Payment', key: 'Payment', format: 'totalDebts' as const },
+  { description: 'Deposit', key: 'Deposit', format: 'totalAssets' as const },
+  { description: 'Net', key: 'Net', format: 'totalTotals' as const },
   {
-    description: t('Net Payment'),
+    description: 'Net Payment',
     key: 'Net Payment',
     format: 'netDebts' as const,
   },
   {
-    description: t('Net Deposit'),
+    description: 'Net Deposit',
     key: 'Net Deposit',
     format: 'netAssets' as const,
   },
   {
-    description: t('Budgeted'),
+    description: 'Budgeted',
     key: 'Budgeted',
     format: 'totalBudgeted' as const,
   },
 ];
 
 const groupByOptions = [
-  { description: t('Category'), key: 'Category' },
-  { description: t('Group'), key: 'Group' },
-  { description: t('Category+Group'), key: 'CategoryGroup' }, // new: two-ring donut support
-  { description: t('Payee'), key: 'Payee' },
-  { description: t('Account'), key: 'Account' },
-  { description: t('Interval'), key: 'Interval' },
+  { description: 'Category', key: 'Category' },
+  { description: 'Group', key: 'Group' },
+  { description: 'Category+Group', key: 'CategoryGroup' }, // new: two-ring donut support
+  { description: 'Payee', key: 'Payee' },
+  { description: 'Account', key: 'Account' },
+  { description: 'Interval', key: 'Interval' },
 ];
 
 const sortByOptions: {
@@ -69,10 +68,10 @@ const sortByOptions: {
   key: string;
   format: sortByOpType;
 }[] = [
-  { description: t('Ascending'), key: 'Ascending', format: 'asc' as const },
-  { description: t('Descending'), key: 'Descending', format: 'desc' as const },
-  { description: t('Name'), key: 'Name', format: 'name' as const },
-  { description: t('Budget'), key: 'Budget', format: 'budget' as const },
+  { description: 'Ascending', key: 'Ascending', format: 'asc' as const },
+  { description: 'Descending', key: 'Descending', format: 'desc' as const },
+  { description: 'Name', key: 'Name', format: 'name' as const },
+  { description: 'Budget', key: 'Budget', format: 'budget' as const },
 ];
 
 export type dateRangeProps = {
@@ -88,7 +87,7 @@ export type dateRangeProps = {
 
 const dateRangeOptions: dateRangeProps[] = [
   {
-    description: t('This week'),
+    description: 'This week',
     key: 'This week',
     name: 0,
     type: 'Week',
@@ -98,7 +97,7 @@ const dateRangeOptions: dateRangeProps[] = [
     Yearly: false,
   },
   {
-    description: t('Last week'),
+    description: 'Last week',
     key: 'Last week',
     name: 1,
     type: 'Week',
@@ -108,7 +107,7 @@ const dateRangeOptions: dateRangeProps[] = [
     Yearly: false,
   },
   {
-    description: t('This month'),
+    description: 'This month',
     key: 'This month',
     name: 0,
     type: 'Month',
@@ -118,7 +117,7 @@ const dateRangeOptions: dateRangeProps[] = [
     Yearly: false,
   },
   {
-    description: t('Last month'),
+    description: 'Last month',
     key: 'Last month',
     name: 1,
     type: 'Month',
@@ -128,7 +127,7 @@ const dateRangeOptions: dateRangeProps[] = [
     Yearly: false,
   },
   {
-    description: t('Current quarter'),
+    description: 'Current quarter',
     key: 'Current quarter',
     name: 'currentQuarter',
     type: 'Month',
@@ -138,7 +137,7 @@ const dateRangeOptions: dateRangeProps[] = [
     Yearly: false,
   },
   {
-    description: t('Previous quarter'),
+    description: 'Previous quarter',
     key: 'Previous quarter',
     name: 'previousQuarter',
     type: 'Month',
@@ -148,7 +147,7 @@ const dateRangeOptions: dateRangeProps[] = [
     Yearly: false,
   },
   {
-    description: t('Last 30 days'),
+    description: 'Last 30 days',
     key: 'Last 30 days',
     name: 'last30Days',
     type: 'Day',
@@ -158,7 +157,7 @@ const dateRangeOptions: dateRangeProps[] = [
     Yearly: false,
   },
   {
-    description: t('Last 3 months'),
+    description: 'Last 3 months',
     key: 'Last 3 months',
     name: 3,
     type: 'Month',
@@ -168,7 +167,7 @@ const dateRangeOptions: dateRangeProps[] = [
     Yearly: false,
   },
   {
-    description: t('Last 6 months'),
+    description: 'Last 6 months',
     key: 'Last 6 months',
     name: 6,
     type: 'Month',
@@ -178,7 +177,7 @@ const dateRangeOptions: dateRangeProps[] = [
     Yearly: false,
   },
   {
-    description: t('Last 12 months'),
+    description: 'Last 12 months',
     key: 'Last 12 months',
     name: 12,
     type: 'Month',
@@ -188,7 +187,7 @@ const dateRangeOptions: dateRangeProps[] = [
     Yearly: false,
   },
   {
-    description: t('Year to date'),
+    description: 'Year to date',
     key: 'Year to date',
     name: 'yearToDate',
     type: 'Month',
@@ -198,7 +197,7 @@ const dateRangeOptions: dateRangeProps[] = [
     Yearly: true,
   },
   {
-    description: t('Last year'),
+    description: 'Last year',
     key: 'Last year',
     name: 'lastYear',
     type: 'Month',
@@ -208,7 +207,7 @@ const dateRangeOptions: dateRangeProps[] = [
     Yearly: true,
   },
   {
-    description: t('Prior year to date'),
+    description: 'Prior year to date',
     key: 'Prior year to date',
     name: 'priorYearToDate',
     type: 'Month',
@@ -218,7 +217,7 @@ const dateRangeOptions: dateRangeProps[] = [
     Yearly: true,
   },
   {
-    description: t('All time'),
+    description: 'All time',
     key: 'All time',
     name: 'allTime',
     type: 'Month',
@@ -243,28 +242,28 @@ type intervalOptionsProps = {
 
 const intervalOptions: intervalOptionsProps[] = [
   {
-    description: t('Daily'),
+    description: 'Daily',
     key: 'Daily',
     name: 'Day',
     format: 'yy-MM-dd',
     range: 'dayRangeInclusive',
   },
   {
-    description: t('Weekly'),
+    description: 'Weekly',
     key: 'Weekly',
     name: 'Week',
     format: 'yy-MM-dd',
     range: 'weekRangeInclusive',
   },
   {
-    description: t('Monthly'),
+    description: 'Monthly',
     key: 'Monthly',
     name: 'Month',
     format: "MMM ''yy",
     range: 'rangeInclusive',
   },
   {
-    description: t('Yearly'),
+    description: 'Yearly',
     key: 'Yearly',
     name: 'Year',
     format: 'yyyy',
@@ -347,19 +346,19 @@ export type UncategorizedEntity = Pick<
 
 const uncategorizedCategory: UncategorizedEntity = {
   id: '',
-  name: t('Uncategorized'),
+  name: 'Uncategorized',
   uncategorized_id: 'other',
   hidden: false,
 };
 const transferCategory: UncategorizedEntity = {
   id: '',
-  name: t('Transfers'),
+  name: 'Transfers',
   uncategorized_id: 'transfer',
   hidden: false,
 };
 const offBudgetCategory: UncategorizedEntity = {
   id: '',
-  name: t('Off budget'),
+  name: 'Off budget',
   uncategorized_id: 'off_budget',
   hidden: false,
 };
@@ -373,7 +372,7 @@ type UncategorizedGroupEntity = Pick<
 };
 
 const uncategorizedGroup: UncategorizedGroupEntity = {
-  name: t('Uncategorized & Off budget'),
+  name: 'Uncategorized & Off budget',
   id: 'uncategorized',
   hidden: false,
   uncategorized_id: 'all',

@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -42,7 +41,6 @@ export function Notes({
   getStyle,
 }: NotesProps) {
   const { isNarrowWidth } = useResponsive();
-  const { t } = useTranslation();
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -67,7 +65,7 @@ export function Notes({
       value={notes || ''}
       onChange={e => onChange?.(e.target.value)}
       onBlur={e => onBlur?.(e.target.value)}
-      placeholder={t('Notes (markdown supported)')}
+      placeholder="Notes (markdown supported)"
     />
   ) : (
     <Text className={css([markdownStyles, getStyle?.(false)])}>

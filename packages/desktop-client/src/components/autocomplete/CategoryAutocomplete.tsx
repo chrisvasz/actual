@@ -8,7 +8,6 @@ import type {
   ReactNode,
   SVGProps,
 } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { SvgSplit } from '@actual-app/components/icons/v0';
@@ -71,7 +70,6 @@ function CategoryList({
   showHiddenItems,
   showBalances,
 }: CategoryListProps) {
-  const { t } = useTranslation();
   const splitTransactionIndex = items.findIndex(item => item.id === 'split');
   const splitTransaction =
     splitTransactionIndex === -1
@@ -123,7 +121,7 @@ function CategoryList({
             <Fragment key={item.id}>
               {showGroupHeader &&
                 renderCategoryItemGroupHeader({
-                  title: `${group.name}${group.hidden ? ` ${t('(hidden)')}` : ''}`,
+                  title: `${group.name}${group.hidden ? ` ${'(hidden)'}` : ''}`,
                   style: {
                     ...(showHiddenItems &&
                       group.hidden && { color: theme.pageTextSubdued }),
@@ -322,7 +320,7 @@ function SplitTransactionButton({
           <SvgSplit width={10} height={10} style={{ marginRight: 5 }} />
         )}
       </Text>
-      <Trans>Split Transaction</Trans>
+      Split Transaction
     </View>
   );
 }
@@ -351,7 +349,6 @@ function CategoryItem({
   showBalances,
   ...props
 }: CategoryItemProps) {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
   const narrowStyle = isNarrowWidth
     ? {
@@ -397,7 +394,7 @@ function CategoryItem({
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <TextOneLine>
           {item.name}
-          {item.hidden || item.group?.hidden ? ' ' + t('(hidden)') : ''}
+          {item.hidden || item.group?.hidden ? ' (hidden)' : ''}
         </TextOneLine>
         <TextOneLine
           style={{

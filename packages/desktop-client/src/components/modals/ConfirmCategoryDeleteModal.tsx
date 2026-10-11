@@ -1,13 +1,11 @@
 // @ts-strict-ignore
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next'; // Import useTranslation
 
 import { Block } from '@actual-app/components/block';
 import { Button } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import type { TransObjectLiteral } from '@actual-app/core/types/util';
 
 import { CategoryAutocomplete } from '#components/autocomplete/CategoryAutocomplete';
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
@@ -24,7 +22,6 @@ export function ConfirmCategoryDeleteModal({
   category: categoryId,
   onDelete,
 }: ConfirmCategoryDeleteModalProps) {
-  const { t } = useTranslation(); // Initialize translation hook
   const [transferCategory, setTransferCategory] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const {
@@ -69,59 +66,45 @@ export function ConfirmCategoryDeleteModal({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Confirm Delete')} // Use translation for title
+            title="Confirm Delete"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ lineHeight: 1.5 }}>
             {group ? (
               <Block>
                 {!isIncome ? (
-                  <Trans>
-                    Categories in the group{' '}
-                    <strong>
-                      {{ group: group.name } as TransObjectLiteral}
-                    </strong>{' '}
-                    are used by existing transactions.
-                  </Trans>
+                  <>
+                    Categories in the group <strong>{group.name}</strong> are
+                    used by existing transactions.
+                  </>
                 ) : (
-                  <Trans>
-                    Categories in the group{' '}
-                    <strong>
-                      {{ group: group.name } as TransObjectLiteral}
-                    </strong>{' '}
-                    are used by existing transactions or it has a positive
-                    leftover balance currently.
-                  </Trans>
+                  <>
+                    Categories in the group <strong>{group.name}</strong> are
+                    used by existing transactions or it has a positive leftover
+                    balance currently.
+                  </>
                 )}
-                <Trans>
-                  <strong>Are you sure you want to delete it?</strong> If so,
-                  you must select another category to transfer existing
-                  transactions and balance to.
-                </Trans>
+                <strong>Are you sure you want to delete it?</strong> If so, you
+                must select another category to transfer existing transactions
+                and balance to.
               </Block>
             ) : (
               <Block>
                 {!isIncome ? (
-                  <Trans>
-                    <strong>
-                      {{ category: category.name } as TransObjectLiteral}
-                    </strong>{' '}
-                    is used by existing transactions.
-                  </Trans>
+                  <>
+                    <strong>{category.name}</strong> is used by existing
+                    transactions.
+                  </>
                 ) : (
-                  <Trans>
-                    <strong>
-                      {{ category: category.name } as TransObjectLiteral}
-                    </strong>{' '}
-                    is used by existing transactions or it has a positive
-                    leftover balance currently.
-                  </Trans>
+                  <>
+                    <strong>{category.name}</strong> is used by existing
+                    transactions or it has a positive leftover balance
+                    currently.
+                  </>
                 )}
-                <Trans>
-                  <strong>Are you sure you want to delete it?</strong> If so,
-                  you must select another category to transfer existing
-                  transactions and balance to.
-                </Trans>
+                <strong>Are you sure you want to delete it?</strong> If so, you
+                must select another category to transfer existing transactions
+                and balance to.
               </Block>
             )}
 
@@ -135,9 +118,7 @@ export function ConfirmCategoryDeleteModal({
                 alignItems: 'center',
               }}
             >
-              <Text>
-                <Trans>Transfer to:</Trans>
-              </Text>
+              <Text>Transfer to:</Text>
 
               <View style={{ flex: 1, marginLeft: 10, marginRight: 30 }}>
                 <CategoryAutocomplete
@@ -158,7 +139,7 @@ export function ConfirmCategoryDeleteModal({
                   value={transferCategory}
                   focused
                   inputProps={{
-                    placeholder: t('Select category...'),
+                    placeholder: 'Select category...',
                   }}
                   onSelect={category => setTransferCategory(category)}
                   showHiddenCategories
@@ -176,7 +157,7 @@ export function ConfirmCategoryDeleteModal({
                   }
                 }}
               >
-                <Trans>Delete</Trans>
+                Delete
               </Button>
             </View>
           </View>

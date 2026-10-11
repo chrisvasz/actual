@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { spacing } from '@actual-app/components/tokens';
 import { View } from '@actual-app/components/view';
 
@@ -10,7 +8,6 @@ import { useSidebarAccountTree } from './useSidebarAccountTree';
 import { bucketKey, useSidebarCollapseState } from './useSidebarCollapseState';
 
 export function AccountsSection() {
-  const { t } = useTranslation();
   const tree = useSidebarAccountTree();
   const collapse = useSidebarCollapseState({ tree });
 
@@ -30,7 +27,7 @@ export function AccountsSection() {
         />
         {tree.onBudget.buckets.length > 0 && (
           <SideGroup
-            label={t('On budget')}
+            label="On budget"
             side="on"
             sideData={tree.onBudget}
             balanceTestId="sidebar-on-budget-balance"
@@ -42,7 +39,7 @@ export function AccountsSection() {
         )}
         {tree.offBudget.buckets.length > 0 && (
           <SideGroup
-            label={t('Off budget')}
+            label="Off budget"
             side="off"
             sideData={tree.offBudget}
             balanceTestId="sidebar-off-budget-balance"

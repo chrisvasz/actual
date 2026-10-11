@@ -1,6 +1,5 @@
 import React from 'react';
 import type { ComponentPropsWithoutRef, CSSProperties } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgPin } from '@actual-app/components/icons/v1';
@@ -19,12 +18,11 @@ export function ToggleButton({
   isFloating,
   onFloat,
 }: ToggleButtonProps) {
-  const { t } = useTranslation();
   return (
     <View className="float" style={{ ...style, flexShrink: 0 }}>
       <Button
         variant="bare"
-        aria-label={isFloating ? t('Pin sidebar') : t('Unpin sidebar')}
+        aria-label={isFloating ? 'Pin sidebar' : 'Unpin sidebar'}
         onPress={onFloat}
         style={{ color: theme.buttonMenuBorder }}
       >

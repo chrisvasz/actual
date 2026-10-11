@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
@@ -69,7 +68,6 @@ type CashFlowInnerProps = {
 function CashFlowInner({ widget }: CashFlowInnerProps) {
   const locale = useLocale();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
   const format = useFormat();
 
   const {
@@ -213,7 +211,7 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
             addNotification({
               notification: {
                 type: 'message',
-                message: t('Dashboard widget successfully saved.'),
+                message: 'Dashboard widget successfully saved.',
               },
             }),
           );
@@ -222,13 +220,13 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     );
   }
 
-  const title = widget?.meta?.name || t('Cash Flow');
+  const title = widget?.meta?.name || 'Cash Flow';
   const onSaveWidgetName = async (newName: string) => {
     if (!widget) {
       throw new Error('No widget that could be saved.');
     }
 
-    const name = newName || t('Cash Flow');
+    const name = newName || 'Cash Flow';
     updateDashboardWidgetMutation.mutate({
       widget: {
         id: widget.id,
@@ -294,12 +292,12 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
         onConditionsOpChange={onConditionsOpChange}
       >
         <Button onPress={() => setShowBalance(state => !state)}>
-          {showBalance ? t('Hide balance') : t('Show balance')}
+          {showBalance ? 'Hide balance' : 'Show balance'}
         </Button>
 
         {widget && (
           <Button variant="primary" onPress={onSaveWidget}>
-            <Trans>Save widget</Trans>
+            Save widget
           </Button>
         )}
       </Header>
@@ -321,11 +319,7 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
         >
           <AlignedText
             style={{ marginBottom: 5, minWidth: 160 }}
-            left={
-              <Block>
-                <Trans>Income:</Trans>
-              </Block>
-            }
+            left={<Block>Income:</Block>}
             right={
               <FinancialText style={{ fontWeight: 600 }}>
                 {format(totalIncome, 'financial')}
@@ -335,11 +329,7 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
 
           <AlignedText
             style={{ marginBottom: 5, minWidth: 160 }}
-            left={
-              <Block>
-                <Trans>Expenses:</Trans>
-              </Block>
-            }
+            left={<Block>Expenses:</Block>}
             right={
               <FinancialText style={{ fontWeight: 600 }}>
                 {format(totalExpenses, 'financial')}
@@ -349,11 +339,7 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
 
           <AlignedText
             style={{ marginBottom: 5, minWidth: 160 }}
-            left={
-              <Block>
-                <Trans>Transfers:</Trans>
-              </Block>
-            }
+            left={<Block>Transfers:</Block>}
             right={
               <FinancialText style={{ fontWeight: 600 }}>
                 {format(totalTransfers, 'financial')}
@@ -377,17 +363,15 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
             userSelect: 'none',
           }}
         >
-          <Trans>
-            <Paragraph>
-              <strong>How is cash flow calculated?</strong>
-            </Paragraph>
-            <Paragraph>
-              Cash flow shows the balance of your budgeted accounts over time,
-              and the amount of expenses/income each day or month. Your budgeted
-              accounts are considered to be "cash on hand," so this gives you a
-              picture of how available money fluctuates.
-            </Paragraph>
-          </Trans>
+          <Paragraph>
+            <strong>How is cash flow calculated?</strong>
+          </Paragraph>
+          <Paragraph>
+            Cash flow shows the balance of your budgeted accounts over time, and
+            the amount of expenses/income each day or month. Your budgeted
+            accounts are considered to be "cash on hand," so this gives you a
+            picture of how available money fluctuates.
+          </Paragraph>
         </View>
       </View>
     </Page>

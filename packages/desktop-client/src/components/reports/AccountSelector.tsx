@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import {
@@ -27,7 +26,6 @@ export function AccountSelector({
   selectedAccountIds,
   setSelectedAccountIds,
 }: AccountSelectorProps) {
-  const { t } = useTranslation();
   const [uncheckedHidden, setUncheckedHidden] = useState(false);
 
   // Group accounts by on-budget, off-budget, and closed
@@ -85,9 +83,7 @@ export function AccountSelector({
                   height={15}
                   style={{ marginRight: 5 }}
                 />
-                <Text>
-                  <Trans>Show unchecked</Trans>
-                </Text>
+                <Text>Show unchecked</Text>
               </View>
             ) : (
               <View
@@ -109,7 +105,7 @@ export function AccountSelector({
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  <Trans>Hide unchecked</Trans>
+                  Hide unchecked
                 </Text>
               </View>
             )}
@@ -119,7 +115,7 @@ export function AccountSelector({
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <GraphButton
             selected={allAccountsSelected}
-            title={t('Select All')}
+            title="Select All"
             onSelect={() => {
               setSelectedAccountIds(accounts.map(account => account.id));
             }}
@@ -129,7 +125,7 @@ export function AccountSelector({
           </GraphButton>
           <GraphButton
             selected={allAccountsUnselected}
-            title={t('Unselect All')}
+            title="Unselect All"
             onSelect={() => {
               setSelectedAccountIds([]);
             }}
@@ -195,7 +191,7 @@ export function AccountSelector({
                 htmlFor="onbudget_group"
                 style={{ userSelect: 'none', fontWeight: 'bold' }}
               >
-                <Trans>On Budget</Trans>
+                On Budget
               </label>
             </li>
             {groupedAccounts.onBudget.map(account => {
@@ -284,7 +280,7 @@ export function AccountSelector({
                 htmlFor="offbudget_group"
                 style={{ userSelect: 'none', fontWeight: 'bold' }}
               >
-                <Trans>Off Budget</Trans>
+                Off Budget
               </label>
             </li>
             {groupedAccounts.offBudget.map(account => {
@@ -372,7 +368,7 @@ export function AccountSelector({
                 htmlFor="closed_group"
                 style={{ userSelect: 'none', fontWeight: 'bold' }}
               >
-                <Trans>Closed</Trans>
+                Closed
               </label>
             </li>
             {groupedAccounts.closed.map(account => {

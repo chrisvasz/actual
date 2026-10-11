@@ -5,7 +5,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -68,7 +67,6 @@ type AgeOfMoneyInnerProps = {
 function AgeOfMoneyInner({ widget }: AgeOfMoneyInnerProps) {
   const locale = useLocale();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   const {
     conditions,
@@ -206,7 +204,7 @@ function AgeOfMoneyInner({ widget }: AgeOfMoneyInnerProps) {
       addNotification({
         notification: {
           type: 'message',
-          message: t('Dashboard widget successfully saved.'),
+          message: 'Dashboard widget successfully saved.',
         },
       }),
     );
@@ -220,20 +218,19 @@ function AgeOfMoneyInner({ widget }: AgeOfMoneyInnerProps) {
     mode,
     granularity,
     dispatch,
-    t,
   ]);
 
   const navigate = useNavigate();
   const { isNarrowWidth } = useResponsive();
 
-  const title = widget?.meta?.name || t('Age of Money');
+  const title = widget?.meta?.name || 'Age of Money';
   const onSaveWidgetName = useCallback(
     async (newName: string) => {
       if (!widget) {
         throw new Error('No widget that could be saved.');
       }
 
-      const name = newName || t('Age of Money');
+      const name = newName || 'Age of Money';
       await updateDashboardWidgetMutation.mutateAsync({
         widget: {
           id: widget.id,
@@ -244,7 +241,7 @@ function AgeOfMoneyInner({ widget }: AgeOfMoneyInnerProps) {
         },
       });
     },
-    [widget, updateDashboardWidgetMutation, t],
+    [widget, updateDashboardWidgetMutation],
   );
 
   if (!allMonths || !data) {
@@ -301,7 +298,7 @@ function AgeOfMoneyInner({ widget }: AgeOfMoneyInnerProps) {
       >
         {widget && (
           <Button variant="primary" onPress={onSaveWidget}>
-            <Trans>Save widget</Trans>
+            Save widget
           </Button>
         )}
       </Header>
@@ -329,24 +326,21 @@ function AgeOfMoneyInner({ widget }: AgeOfMoneyInnerProps) {
               color: getAgeColor(data.currentAge),
             }}
           >
-            {data.currentAge !== null
-              ? t('{{days}} days', { days: data.currentAge })
-              : t('N/A')}
+            {data.currentAge !== null ? `${data.currentAge} days` : 'N/A'}
           </View>
           <View style={{ color: theme.pageTextSubdued }}>
             {data.trend === 'up'
-              ? t('↑ Improving')
+              ? '↑ Improving'
               : data.trend === 'down'
-                ? t('↓ Declining')
-                : t('→ Stable')}
+                ? '↓ Declining'
+                : '→ Stable'}
           </View>
           {data.insufficientData && (
             <View
               style={{ color: theme.warningText, fontSize: 12, marginTop: 5 }}
             >
-              {t(
-                'Note: Some expenses could not be matched to income (spending exceeded income in this period)',
-              )}
+              Note: Some expenses could not be matched to income (spending
+              exceeded income in this period)
             </View>
           )}
         </View>
@@ -355,39 +349,29 @@ function AgeOfMoneyInner({ widget }: AgeOfMoneyInnerProps) {
 
         <View style={{ marginTop: 30, userSelect: 'none' }}>
           <Paragraph>
-            <strong>
-              <Trans>What is Age of Money?</Trans>
-            </strong>
+            <strong>What is Age of Money?</strong>
           </Paragraph>
           <Paragraph>
-            <Trans>
-              Age of Money shows how many days, on average, your money sits in
-              your budget before you spend it. It measures the gap between when
-              you earn money and when you spend it.
-            </Trans>
+            Age of Money shows how many days, on average, your money sits in
+            your budget before you spend it. It measures the gap between when
+            you earn money and when you spend it.
           </Paragraph>
           <Paragraph>
-            <Trans>
-              A higher Age of Money means you're spending older money, which
-              indicates you're living on last month's income rather than
-              paycheck-to-paycheck. An age of 30 days or more is considered
-              ideal—it means you're typically spending money you earned a month
-              ago.
-            </Trans>
+            A higher Age of Money means you're spending older money, which
+            indicates you're living on last month's income rather than
+            paycheck-to-paycheck. An age of 30 days or more is considered
+            ideal—it means you're typically spending money you earned a month
+            ago.
           </Paragraph>
           <Paragraph>
-            <strong>
-              <Trans>How is it calculated?</Trans>
-            </strong>
+            <strong>How is it calculated?</strong>
           </Paragraph>
           <Paragraph>
-            <Trans>
-              The calculation uses the FIFO (First In, First Out) method: when
-              you spend money, it's considered to come from your oldest income
-              first. The age is the difference in days between when you received
-              that income and when you spent it. The displayed value is the
-              average age of your last 10 expenses.
-            </Trans>
+            The calculation uses the FIFO (First In, First Out) method: when you
+            spend money, it's considered to come from your oldest income first.
+            The age is the difference in days between when you received that
+            income and when you spent it. The displayed value is the average age
+            of your last 10 expenses.
           </Paragraph>
         </View>
       </View>
@@ -402,15 +386,13 @@ function GranularitySelector({
   granularity: AgeOfMoneyGranularity;
   onChange: (val: AgeOfMoneyGranularity) => void;
 }) {
-  const { t } = useTranslation();
-
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   const options: Array<{ key: AgeOfMoneyGranularity; description: string }> = [
-    { key: 'daily', description: t('Daily') },
-    { key: 'weekly', description: t('Weekly') },
-    { key: 'monthly', description: t('Monthly') },
+    { key: 'daily', description: 'Daily' },
+    { key: 'weekly', description: 'Weekly' },
+    { key: 'monthly', description: 'Monthly' },
   ];
 
   const currentLabel =
@@ -422,7 +404,7 @@ function GranularitySelector({
         ref={triggerRef}
         variant="bare"
         onPress={() => setIsOpen(true)}
-        aria-label={t('Change granularity')}
+        aria-label="Change granularity"
       >
         <SvgCalendar style={{ width: 12, height: 12 }} />
         <span style={{ marginLeft: 5 }}>{currentLabel}</span>

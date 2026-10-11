@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgQuestion } from '@actual-app/components/icons/v1';
@@ -25,7 +24,6 @@ export function MonteCarloHelpTooltip({
   children,
   placement = 'bottom start',
 }: MonteCarloHelpTooltipProps) {
-  const { t } = useTranslation();
   const [isFocused, setIsFocused] = useState(false);
 
   return (
@@ -41,7 +39,7 @@ export function MonteCarloHelpTooltip({
     >
       <Button
         variant="bare"
-        aria-label={t('Help')}
+        aria-label="Help"
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         style={{ padding: 0, minHeight: 'auto' }}

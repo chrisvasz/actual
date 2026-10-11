@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import {
   SvgReports,
   SvgTag,
@@ -14,8 +12,6 @@ import { View } from '@actual-app/components/view';
 import { NavRow } from './NavRow';
 
 export function PrimaryNav() {
-  const { t } = useTranslation();
-
   return (
     <View
       style={{
@@ -23,12 +19,12 @@ export function PrimaryNav() {
         padding: `${spacing.xs}px ${spacing.sm}px 0`,
       }}
     >
-      <NavRow title={t('Budget')} Icon={SvgWallet} to="/budget" />
-      <NavRow title={t('Reports')} Icon={SvgReports} to="/reports" />
-      <NavRow title={t('Schedules')} Icon={SvgCalendar3} to="/schedules" />
-      <NavRow title={t('Payees')} Icon={SvgUserGroup} to="/payees" />
-      <NavRow title={t('Rules')} Icon={SvgTuning} to="/rules" />
-      <NavRow title={t('Tags')} Icon={SvgTag} to="/tags" />
+      <NavRow title="Budget" Icon={SvgWallet} to="/budget" />
+      <NavRow title="Reports" Icon={SvgReports} to="/reports" />
+      <NavRow title="Schedules" Icon={SvgCalendar3} to="/schedules" />
+      <NavRow title="Payees" Icon={SvgUserGroup} to="/payees" />
+      <NavRow title="Rules" Icon={SvgTuning} to="/rules" />
+      <NavRow title="Tags" Icon={SvgTag} to="/tags" />
     </View>
   );
 }

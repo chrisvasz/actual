@@ -1,5 +1,4 @@
 import type { RefObject } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { SvgAdd } from '@actual-app/components/icons/v1';
 import { theme } from '@actual-app/components/theme';
@@ -21,7 +20,6 @@ type NoteTagAutocompleteProps = {
 };
 
 export function NoteTagAutocomplete({ inputRef }: NoteTagAutocompleteProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   // Yes, there is a lot of ref usages in this component. Here's the motivation
   // 1. This component purely modifies HTML Input state, app state is handled elsewhere
@@ -74,7 +72,7 @@ export function NoteTagAutocomplete({ inputRef }: NoteTagAutocompleteProps) {
         addNotification({
           notification: {
             type: 'error',
-            message: t('Failed to add tag, check logs'),
+            message: 'Failed to add tag, check logs',
           },
         }),
       );
@@ -161,9 +159,7 @@ export function NoteTagAutocomplete({ inputRef }: NoteTagAutocompleteProps) {
             onClick={() => handleCreate(currentWordNoHash)}
           >
             <SvgAdd height={8} width={8} />
-            <span style={{ whiteSpace: 'nowrap' }}>
-              <Trans>Create tag</Trans>
-            </span>
+            <span style={{ whiteSpace: 'nowrap' }}>Create tag</span>
             <div
               style={{
                 borderWidth: 0,

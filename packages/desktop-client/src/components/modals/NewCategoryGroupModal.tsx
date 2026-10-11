@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { ModalHeader, ModalTitle } from '#components/common/Modal';
 import type { Modal } from '#modals/modalsSlice';
 
@@ -14,20 +12,17 @@ export function NewCategoryGroupModal({
   onValidate,
   onSubmit,
 }: NewCategoryGroupModalProps) {
-  const { t } = useTranslation();
   return (
     <SingleInputModal
       name="new-category-group"
       Header={props => (
         <ModalHeader
           {...props}
-          title={
-            <ModalTitle title={t('New Category Group')} shrinkOnOverflow />
-          }
+          title={<ModalTitle title="New Category Group" shrinkOnOverflow />}
         />
       )}
-      inputPlaceholder={t('Category group name')}
-      buttonText={t('Add')}
+      inputPlaceholder="Category group name"
+      buttonText="Add"
       onValidate={onValidate}
       onSubmit={onSubmit}
     />

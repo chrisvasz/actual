@@ -9,7 +9,6 @@ import type {
   ReactNode,
   SVGProps,
 } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -152,8 +151,6 @@ function PayeeList({
   footer,
   onForgetLocation,
 }: PayeeListProps) {
-  const { t } = useTranslation();
-
   // If the "new payee" item exists, create it as a special-cased item
   // with the value of the input so it always shows whatever the user
   // entered
@@ -241,7 +238,7 @@ function PayeeList({
           })}
 
         {nearbyPayees.length > 0 &&
-          renderPayeeItemGroupHeader({ title: t('Nearby Payees') })}
+          renderPayeeItemGroupHeader({ title: 'Nearby Payees' })}
         {nearbyPayees.map(item => (
           <Fragment key={item.id}>
             <NearbyPayeeItem
@@ -255,7 +252,7 @@ function PayeeList({
         ))}
 
         {favoritePayees.length > 0 &&
-          renderPayeeItemGroupHeader({ title: t('Favorite Payees') })}
+          renderPayeeItemGroupHeader({ title: 'Favorite Payees' })}
         {favoritePayees.map(item => (
           <Fragment key={item.id}>
             {renderPayeeItem({
@@ -267,8 +264,7 @@ function PayeeList({
           </Fragment>
         ))}
 
-        {payees.length > 0 &&
-          renderPayeeItemGroupHeader({ title: t('Payees') })}
+        {payees.length > 0 && renderPayeeItemGroupHeader({ title: 'Payees' })}
         {payees.map(item => (
           <Fragment key={item.id}>
             {renderPayeeItem({
@@ -281,7 +277,7 @@ function PayeeList({
         ))}
 
         {transferPayees.length > 0 &&
-          renderPayeeItemGroupHeader({ title: t('Transfer To/From') })}
+          renderPayeeItemGroupHeader({ title: 'Transfer To/From' })}
         {transferPayees.map(item => (
           <Fragment key={item.id}>
             {renderPayeeItem({
@@ -302,7 +298,7 @@ function PayeeList({
               textAlign: 'center',
             }}
           >
-            <Trans>More payees are available, search to find them</Trans>
+            More payees are available, search to find them
           </div>
         )}
       </View>
@@ -356,7 +352,6 @@ export function PayeeAutocomplete({
   importedPayee,
   ...props
 }: PayeeAutocompleteProps) {
-  const { t } = useTranslation();
   const { data: retrievedPayees = [] } = usePayees();
   const { isGranted } = useLocationPermission();
   const { data: retrievedNearbyPayees = [] } = useNearbyPayees({
@@ -542,7 +537,7 @@ export function PayeeAutocomplete({
           setRawPayee('');
           setPayeeFieldFocused(false);
         },
-        'aria-label': t('Payee'),
+        'aria-label': 'Payee',
         onFocus: () => setPayeeFieldFocused(true),
         onChangeValue: setRawPayee,
       }}
@@ -588,12 +583,12 @@ export function PayeeAutocomplete({
                     setFocusTransferPayees(!focusTransferPayees);
                   }}
                 >
-                  <Trans>Make transfer</Trans>
+                  Make transfer
                 </Button>
               )}
               {showManagePayees && (
                 <Button variant="menu" onPress={() => onManagePayees()}>
-                  <Trans>Manage payees</Trans>
+                  Manage payees
                 </Button>
               )}
               {importedPayee && (
@@ -635,7 +630,7 @@ function ImportedPayeeFooterItem({
           color: theme.menuAutoCompleteTextHeader,
         }}
       >
-        <Trans>Imported payee</Trans>
+        Imported payee
       </Text>
       <Text
         style={{
@@ -707,7 +702,7 @@ export function CreatePayeeButton({
           style={{ marginRight: 5, display: 'inline-block' }}
         />
       )}
-      <Trans>Create payee "{{ payeeName }}"</Trans>
+      Create payee "{payeeName}"
     </View>
   );
 }
@@ -936,7 +931,7 @@ function NearbyPayeeItem({
             borderRadius: 3,
           }}
         >
-          <Trans i18nKey="forget">Forget</Trans>
+          Forget
           <SvgLocation width={10} height={10} style={{ marginLeft: 4 }} />
         </Button>
       )}

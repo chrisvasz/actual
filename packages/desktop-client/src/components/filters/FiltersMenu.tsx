@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { ComponentProps } from 'react';
 import { FocusScope } from 'react-aria';
 import { Form } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Menu } from '@actual-app/components/menu';
@@ -94,7 +93,6 @@ function ConfigureField<T extends RuleConditionEntity>({
   dispatch,
   onApply,
 }: ConfigureFieldProps<T>) {
-  const { t } = useTranslation();
   const format = useFormat();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
   const accounts = useAccounts();
@@ -330,22 +328,22 @@ function ConfigureField<T extends RuleConditionEntity>({
     switch (field) {
       case 'amount':
         return [
-          ['amount', t('Amount')],
-          ['amount-inflow', t('Amount (inflow)')],
-          ['amount-outflow', t('Amount (outflow)')],
+          ['amount', 'Amount'],
+          ['amount-inflow', 'Amount (inflow)'],
+          ['amount-outflow', 'Amount (outflow)'],
         ];
 
       case 'date':
         return [
-          ['date', t('Date')],
-          ['month', t('Month')],
-          ['year', t('Year')],
+          ['date', 'Date'],
+          ['month', 'Month'],
+          ['year', 'Year'],
         ];
 
       case 'category':
         return [
-          ['category', t('Category')],
-          ['category_group', t('Category group')],
+          ['category', 'Category'],
+          ['category_group', 'Category group'],
         ];
 
       default:
@@ -390,7 +388,7 @@ function ConfigureField<T extends RuleConditionEntity>({
           marginBottom: 10,
         }}
       >
-        {field === 'saved' && t('Existing filters will be cleared')}
+        {field === 'saved' && 'Existing filters will be cleared'}
       </View>
 
       <SpaceBetween
@@ -555,7 +553,7 @@ function ConfigureField<T extends RuleConditionEntity>({
         >
           <View style={{ flex: 1 }} />
           <Button variant="primary" type="submit">
-            <Trans>Apply</Trans>
+            Apply
           </Button>
         </SpaceBetween>
       </Form>
@@ -605,7 +603,6 @@ export function FilterButton<T extends RuleConditionEntity>({
   exclude,
   include,
 }: FilterButtonProps<T>) {
-  const { t } = useTranslation();
   const filters = useTransactionFilters();
   const triggerRef = useRef<HTMLDivElement>(null);
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
@@ -674,7 +671,7 @@ export function FilterButton<T extends RuleConditionEntity>({
         if (isDateValid(date)) {
           cond.value = formatDate(date, 'yyyy-MM');
         } else {
-          alert(t('Invalid date format'));
+          alert('Invalid date format');
           return;
         }
       } else if (cond.options.year) {
@@ -683,7 +680,7 @@ export function FilterButton<T extends RuleConditionEntity>({
         if (isDateValid(date)) {
           cond.value = formatDate(date, 'yyyy');
         } else {
-          alert(t('Invalid date format'));
+          alert('Invalid date format');
           return;
         }
       }
@@ -739,11 +736,7 @@ export function FilterButton<T extends RuleConditionEntity>({
             lineHeight: 1.5,
             padding: '6px 10px',
           }}
-          content={
-            <Text>
-              <Trans>Filters</Trans>
-            </Text>
-          }
+          content={<Text>Filters</Text>}
           placement="bottom start"
           triggerProps={{
             isDisabled: !hover,
@@ -843,7 +836,6 @@ export function FilterEditor<T extends RuleConditionEntity>({
   onClose,
 }: FilterEditorProps<T>) {
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
-  const { t } = useTranslation();
 
   const [state, dispatch] = useReducer(
     (state: FilterReducerState<T>, action: FilterReducerAction) => {
@@ -884,7 +876,7 @@ export function FilterEditor<T extends RuleConditionEntity>({
             if (isDateValid(date)) {
               cond.value = formatDate(date, 'yyyy-MM');
             } else {
-              alert(t('Invalid date format'));
+              alert('Invalid date format');
               return;
             }
           } else if (cond.options.year) {
@@ -893,7 +885,7 @@ export function FilterEditor<T extends RuleConditionEntity>({
             if (isDateValid(date)) {
               cond.value = formatDate(date, 'yyyy');
             } else {
-              alert(t('Invalid date format'));
+              alert('Invalid date format');
               return;
             }
           }

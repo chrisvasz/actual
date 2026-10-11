@@ -155,17 +155,11 @@ describe('surplus pot defaults', () => {
   });
 
   it('numbers ordinary pots without counting the surplus pot', () => {
-    const translate = (key: string, options?: Record<string, unknown>) =>
-      key.replace('{{number}}', String(options?.number));
     const pots = MONTE_CARLO_DEFAULTS.pots;
-    expect(getMonteCarloPotLabel(pots, 0, translate)).toBe('Surplus cash');
-    expect(getMonteCarloPotLabel(pots, 1, translate)).toBe('Pot 1');
+    expect(getMonteCarloPotLabel(pots, 0)).toBe('Surplus cash');
+    expect(getMonteCarloPotLabel(pots, 1)).toBe('Pot 1');
     expect(
-      getMonteCarloPotLabel(
-        [...pots, { ...pots[1], name: 'ISA' }],
-        2,
-        translate,
-      ),
+      getMonteCarloPotLabel([...pots, { ...pots[1], name: 'ISA' }], 2),
     ).toBe('ISA');
   });
 });

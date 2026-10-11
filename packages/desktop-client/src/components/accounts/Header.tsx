@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { Dialog, DialogTrigger } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
@@ -35,7 +34,6 @@ import type {
 import { css } from '@emotion/css';
 import { format as formatDate, isSameYear } from 'date-fns';
 import type { Locale } from 'date-fns';
-import type { TFunction } from 'i18next';
 
 import { Link } from '#components/common/Link';
 import { Search } from '#components/common/Search';
@@ -176,7 +174,6 @@ export function AccountHeader({
   onMakeAsNonSplitTransactions,
   onMergeTransactions,
 }: AccountHeaderProps) {
-  const { t } = useTranslation();
   const locale = useLocale();
 
   const searchInput = useRef<HTMLInputElement>(null);
@@ -319,14 +316,14 @@ export function AccountHeader({
                 height={13}
                 style={{ marginRight: 4 }}
               />{' '}
-              <Trans>Import</Trans>
+              Import
             </Button>
           )}
 
           {!showEmptyMessage && (
             <Button variant="bare" onPress={onAddTransaction}>
               <SvgAdd width={10} height={10} style={{ marginRight: 3 }} />
-              <Trans>Add New</Trans>
+              Add New
             </Button>
           )}
           <View style={{ flexShrink: 0 }}>
@@ -352,7 +349,7 @@ export function AccountHeader({
                   height={13}
                   style={{ marginRight: 4 }}
                 />{' '}
-                <Trans>Reconcile</Trans>
+                Reconcile
               </Button>
               {account.last_reconciled && (
                 <Text
@@ -362,7 +359,7 @@ export function AccountHeader({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {formatLastReconciled(account.last_reconciled, locale, t)}
+                  {formatLastReconciled(account.last_reconciled, locale)}
                 </Text>
               )}
             </View>
@@ -370,7 +367,7 @@ export function AccountHeader({
           <View style={{ flex: 1 }} />
 
           <Search
-            placeholder={t('Search')}
+            placeholder="Search"
             value={search}
             onChange={onSearch}
             ref={searchInput}
@@ -402,8 +399,8 @@ export function AccountHeader({
             variant="bare"
             aria-label={
               splitsExpanded.state.mode === 'collapse'
-                ? t('Collapse split transactions')
-                : t('Expand split transactions')
+                ? 'Collapse split transactions'
+                : 'Expand split transactions'
             }
             style={{ padding: 6 }}
             onPress={onToggleSplits}
@@ -411,8 +408,8 @@ export function AccountHeader({
             <View
               title={
                 splitsExpanded.state.mode === 'collapse'
-                  ? t('Collapse split transactions')
-                  : t('Expand split transactions')
+                  ? 'Collapse split transactions'
+                  : 'Expand split transactions'
               }
             >
               {splitsExpanded.state.mode === 'collapse' ? (
@@ -425,7 +422,7 @@ export function AccountHeader({
           {account ? (
             <View style={{ flex: '0 0 auto' }}>
               <DialogTrigger>
-                <Button variant="bare" aria-label={t('Account menu')}>
+                <Button variant="bare" aria-label="Account menu">
                   <SvgDotsHorizontalTriple
                     width={15}
                     height={15}
@@ -449,7 +446,7 @@ export function AccountHeader({
           ) : (
             <View style={{ flex: '0 0 auto' }}>
               <DialogTrigger>
-                <Button variant="bare" aria-label={t('Account menu')}>
+                <Button variant="bare" aria-label="Account menu">
                   <SvgDotsHorizontalTriple
                     width={15}
                     height={15}
@@ -467,20 +464,20 @@ export function AccountHeader({
                           ? [
                               {
                                 name: 'remove-sorting',
-                                text: t('Remove all sorting'),
+                                text: 'Remove all sorting',
                               } as const,
                             ]
                           : []),
-                        { name: 'export', text: t('Export') },
+                        { name: 'export', text: 'Export' },
                         {
                           name: 'toggle-net-worth-chart',
                           text: showNetWorthChart
-                            ? t('Hide balance chart')
-                            : t('Show balance chart'),
+                            ? 'Hide balance chart'
+                            : 'Show balance chart',
                         },
                         {
                           name: 'manage-columns',
-                          text: t('Manage table columns'),
+                          text: 'Manage table columns',
                         },
                       ]}
                     />
@@ -532,7 +529,6 @@ function AccountNameField({
   saveNameError,
   onSaveName,
 }: AccountNameFieldProps) {
-  const { t } = useTranslation();
   const [editingName, setEditingName] = useState(false);
   const notes = useNotes(account ? `account-${account.id}` : '');
   const noteUrl = getNoteUrl(notes);
@@ -548,10 +544,7 @@ function AccountNameField({
     setEditingName(false);
   };
 
-  const displayName =
-    account && account.closed
-      ? t('Closed: {{ accountName }}', { accountName: name })
-      : name;
+  const displayName = account && account.closed ? `Closed: ${name}` : name;
 
   return (
     <View style={{ flexShrink: 0, alignItems: 'center' }}>
@@ -618,7 +611,7 @@ function AccountNameField({
               >
                 {displayName}
                 <SvgExternalLink
-                  aria-label={t('Opens in a new tab')}
+                  aria-label="Opens in a new tab"
                   style={{ width: 14, height: 14, flexShrink: 0 }}
                 />
               </Link>
@@ -637,7 +630,7 @@ function AccountNameField({
             {isNameEditable && (
               <Button
                 variant="bare"
-                aria-label={t('Edit account name')}
+                aria-label="Edit account name"
                 className="hover-visible"
                 onPress={() => setEditingName(true)}
               >
@@ -693,7 +686,6 @@ function AccountMenu({
   isSorted,
   onMenuSelect,
 }: AccountMenuProps) {
-  const { t } = useTranslation();
   const newSidebarUIEnabled = useFeatureFlag('newSidebarUI');
 
   return (
@@ -707,38 +699,36 @@ function AccountMenu({
           ? [
               {
                 name: 'remove-sorting',
-                text: t('Remove all sorting'),
+                text: 'Remove all sorting',
               } as const,
             ]
           : []),
         {
           name: 'toggle-net-worth-chart',
-          text: showNetWorthChart
-            ? t('Hide balance chart')
-            : t('Show balance chart'),
+          text: showNetWorthChart ? 'Hide balance chart' : 'Show balance chart',
         },
         {
           name: 'manage-columns',
-          text: t('Manage table columns'),
+          text: 'Manage table columns',
         },
         ...(newSidebarUIEnabled
           ? [
               {
                 name: 'account-group',
-                text: t('Set account group'),
+                text: 'Set account group',
               } as const,
             ]
           : []),
         {
           name: 'toggle-reconciled',
           text: showReconciled
-            ? t('Hide reconciled transactions')
-            : t('Show reconciled transactions'),
+            ? 'Hide reconciled transactions'
+            : 'Show reconciled transactions',
         },
-        { name: 'export', text: t('Export') },
+        { name: 'export', text: 'Export' },
         ...(account.closed
-          ? [{ name: 'reopen', text: t('Reopen account') } as const]
-          : [{ name: 'close', text: t('Close account') } as const]),
+          ? [{ name: 'reopen', text: 'Reopen account' } as const]
+          : [{ name: 'close', text: 'Close account' } as const]),
       ]}
     />
   );
@@ -747,9 +737,8 @@ function AccountMenu({
 function formatLastReconciled(
   lastReconciled: string,
   locale: Locale | undefined,
-  t: TFunction,
 ) {
   const date = new Date(parseInt(lastReconciled, 10));
   const pattern = isSameYear(date, new Date()) ? 'MMM d' : 'MMM d, yyyy';
-  return t('thru {{date}}', { date: formatDate(date, pattern, { locale }) });
+  return `thru ${formatDate(date, pattern, { locale })}`;
 }

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgDelete } from '@actual-app/components/icons/v0';
@@ -38,7 +37,6 @@ export function AccountGroupRow({
   onMoveUp,
   onMoveDown,
 }: AccountGroupRowProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const updateGroup = useUpdateAccountGroupMutation();
   const deleteGroup = useDeleteAccountGroupMutation();
@@ -62,10 +60,7 @@ export function AccountGroupRow({
         modal: {
           name: 'confirm-delete',
           options: {
-            message: t(
-              'Are you sure you want to delete the group "{{name}}"? Any accounts in it will be kept but left ungrouped.',
-              { name: group.name },
-            ),
+            message: `Are you sure you want to delete the group "${group.name}"? Any accounts in it will be kept but left ungrouped.`,
             onConfirm: () => deleteGroup.mutate({ id: group.id }),
           },
         },
@@ -106,14 +101,14 @@ export function AccountGroupRow({
         <>
           <Button
             variant="bare"
-            aria-label={t('Rename group')}
+            aria-label="Rename group"
             onPress={() => setIsEditing(true)}
           >
             <SvgPencil1 style={{ width: 11, height: 11 }} />
           </Button>
           <Button
             variant="bare"
-            aria-label={t('Move group up')}
+            aria-label="Move group up"
             isDisabled={!onMoveUp}
             onPress={() => onMoveUp?.()}
           >
@@ -121,17 +116,13 @@ export function AccountGroupRow({
           </Button>
           <Button
             variant="bare"
-            aria-label={t('Move group down')}
+            aria-label="Move group down"
             isDisabled={!onMoveDown}
             onPress={() => onMoveDown?.()}
           >
             <SvgArrowThinDown style={{ width: 11, height: 11 }} />
           </Button>
-          <Button
-            variant="bare"
-            aria-label={t('Delete group')}
-            onPress={onDelete}
-          >
+          <Button variant="bare" aria-label="Delete group" onPress={onDelete}>
             <SvgDelete style={{ width: 11, height: 11 }} />
           </Button>
         </>

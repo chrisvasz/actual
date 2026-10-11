@@ -1,6 +1,5 @@
 import React from 'react';
 import { GridListItem } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgMenu } from '@actual-app/components/icons/v1';
@@ -26,7 +25,6 @@ export function TransactionTableColumnListItem({
   label,
   onToggle,
 }: TransactionTableColumnListItemProps) {
-  const { t } = useTranslation();
   const isLocked = isTransactionTableColumnLocked(column.id);
 
   return (
@@ -58,9 +56,7 @@ export function TransactionTableColumnListItem({
       <Button
         slot="drag"
         variant="bare"
-        aria-label={t('Reorder {{ columnName }} column', {
-          columnName: label,
-        })}
+        aria-label={`Reorder ${label} column`}
         style={{
           cursor: 'grab',
           color: theme.pageTextSubdued,
@@ -85,7 +81,7 @@ export function TransactionTableColumnListItem({
             fontSize: 12,
           }}
         >
-          <Trans>Always shown</Trans>
+          Always shown
         </Text>
       ) : (
         <Toggle

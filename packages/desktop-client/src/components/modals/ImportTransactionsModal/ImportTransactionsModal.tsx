@@ -12,7 +12,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button, ButtonWithLoading } from '@actual-app/components/button';
 import { Input } from '@actual-app/components/input';
@@ -203,7 +202,6 @@ export function ImportTransactionsModal({
   accountId,
   onImported,
 }) {
-  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const dateFormat = useDateFormat() || ('MM/dd/yyyy' as const);
   const [prefs, savePrefs] = useSyncedPrefs();
@@ -665,10 +663,7 @@ export function ImportTransactionsModal({
           ? trans.date
           : parseDate(trans.date, parseDateFormat);
       if (date == null) {
-        errorMessage = t(
-          'Unable to parse date {{date}} with given date format',
-          { date: trans.date || t('(empty)') },
-        );
+        errorMessage = `Unable to parse date ${trans.date || '(empty)'} with given date format`;
         break;
       }
 
@@ -681,9 +676,7 @@ export function ImportTransactionsModal({
         multiplierAmount,
       );
       if (amount == null) {
-        errorMessage = t('Transaction on {{date}} has no amount', {
-          date: trans.date,
-        });
+        errorMessage = `Transaction on ${trans.date} has no amount`;
         break;
       }
 
@@ -915,10 +908,10 @@ export function ImportTransactionsModal({
   ]);
 
   const headers: ComponentProps<typeof TableHeader>['headers'] = [
-    { name: t('Date'), width: 200 },
-    { name: t('Payee'), width: 'flex' },
-    { name: t('Notes'), width: 'flex' },
-    { name: t('Category'), width: 'flex' },
+    { name: 'Date', width: 200 },
+    { name: 'Payee', width: 'flex' },
+    { name: 'Notes', width: 'flex' },
+    { name: 'Category', width: 'flex' },
   ];
 
   if (reconcile) {
@@ -926,25 +919,25 @@ export function ImportTransactionsModal({
   }
   if (inOutMode) {
     headers.push({
-      name: t('In/Out'),
+      name: 'In/Out',
       width: 90,
       style: { textAlign: 'left' },
     });
   }
   if (splitMode) {
     headers.push({
-      name: t('Outflow'),
+      name: 'Outflow',
       width: 90,
       style: { textAlign: 'right' },
     });
     headers.push({
-      name: t('Inflow'),
+      name: 'Inflow',
       width: 90,
       style: { textAlign: 'right' },
     });
   } else {
     headers.push({
-      name: t('Amount'),
+      name: 'Amount',
       width: 90,
       style: { textAlign: 'right' },
     });
@@ -961,21 +954,18 @@ export function ImportTransactionsModal({
     !!error?.parsed ||
     (loadingState === null && parsedTransactions.length === 0);
   const delimiterNames = {
-    ',': t('Comma'),
-    ';': t('Semicolon'),
-    '|': t('Pipe'),
-    '\t': t('Tab'),
-    '~': t('Tilde'),
+    ',': 'Comma',
+    ';': 'Semicolon',
+    '|': 'Pipe',
+    '\t': 'Tab',
+    '~': 'Tilde',
   };
   const fileFormatSummary = [
     delimiterNames[delimiter] ?? delimiter,
-    hasHeaderRow ? t('header row') : t('no header row'),
+    hasHeaderRow ? 'header row' : 'no header row',
     csvEncoding === 'auto' ? null : csvEncoding.toUpperCase(),
     skipStartLines + skipEndLines > 0
-      ? t('skip {{start}} start, {{end}} end lines', {
-          start: skipStartLines,
-          end: skipEndLines,
-        })
+      ? `skip ${skipStartLines} start, ${skipEndLines} end lines`
       : null,
   ]
     .filter(Boolean)
@@ -1028,7 +1018,7 @@ export function ImportTransactionsModal({
                 textOverflow: 'ellipsis',
               }}
             >
-              <Trans>Import transactions</Trans>
+              Import transactions
             </h1>
             <ButtonWithLoading
               variant="primary"
@@ -1039,18 +1029,13 @@ export function ImportTransactionsModal({
                 void onImport(() => state.close());
               }}
             >
-              <Trans count={importCount}>
-                Import {{ count: importCount }} transactions
-              </Trans>
+              Import {importCount} transactions
             </ButtonWithLoading>
           </View>
           {error && !error.parsed && (
             <View style={{ alignItems: 'center', marginBottom: 15 }}>
               <Text style={{ marginRight: 10, color: theme.errorText }}>
-                <strong>
-                  <Trans>Error:</Trans>
-                </strong>{' '}
-                {error.message}
+                <strong>Error:</strong> {error.message}
               </Text>
             </View>
           )}
@@ -1100,11 +1085,9 @@ export function ImportTransactionsModal({
                       }}
                     >
                       {startDate && parsedTransactions.length > 0 ? (
-                        <Trans>
-                          No transactions found since {{ sinceDate }}
-                        </Trans>
+                        <>No transactions found since {sinceDate}</>
                       ) : (
-                        <Trans>No transactions found</Trans>
+                        'No transactions found'
                       )}
                     </View>
                   );
@@ -1144,9 +1127,7 @@ export function ImportTransactionsModal({
                 <strong>Error:</strong> {error.message}
               </Text>
               {error.parsed && (
-                <Button onPress={() => onNewFile()}>
-                  <Trans>Select new file...</Trans>
-                </Button>
+                <Button onPress={() => onNewFile()}>Select new file...</Button>
               )}
             </View>
           )}
@@ -1162,9 +1143,9 @@ export function ImportTransactionsModal({
               flexShrink: 0,
             }}
           >
-            <OptionGroup title={t('Import options')}>
+            <OptionGroup title="Import options">
               <InlineLabel htmlFor="start-date-filter">
-                <Trans>Only import since:</Trans>
+                Only import since:
                 <Input
                   id="start-date-filter"
                   type="date"
@@ -1174,7 +1155,7 @@ export function ImportTransactionsModal({
                 />
                 {startDate && (
                   <Button variant="bare" onPress={() => setStartDate('')}>
-                    <Trans>Clear</Trans>
+                    Clear
                   </Button>
                 )}
               </InlineLabel>
@@ -1183,7 +1164,7 @@ export function ImportTransactionsModal({
                 checked={reconcile}
                 onChange={setReconcile}
               >
-                <Trans>Merge with existing transactions</Trans>
+                Merge with existing transactions
               </CheckboxToggle>
               {reconcile && (
                 <CheckboxToggle
@@ -1191,7 +1172,7 @@ export function ImportTransactionsModal({
                   checked={reimportDeleted}
                   onChange={setReimportDeleted}
                 >
-                  <Trans>Reimport deleted transactions</Trans>
+                  Reimport deleted transactions
                 </CheckboxToggle>
               )}
               <CheckboxToggle
@@ -1199,7 +1180,7 @@ export function ImportTransactionsModal({
                 checked={clearOnImport}
                 onChange={setClearOnImport}
               >
-                <Trans>Clear transactions on import</Trans>
+                Clear transactions on import
               </CheckboxToggle>
               {filetype !== 'csv' && (
                 <CheckboxToggle
@@ -1207,7 +1188,7 @@ export function ImportTransactionsModal({
                   checked={importNotes}
                   onChange={setImportNotes}
                 >
-                  <Trans>Import notes from file</Trans>
+                  Import notes from file
                 </CheckboxToggle>
               )}
               {swapPayeeAndMemo && (
@@ -1216,7 +1197,7 @@ export function ImportTransactionsModal({
                   checked={swapPayeeAndMemo.checked}
                   onChange={swapPayeeAndMemo.onChange}
                 >
-                  <Trans>Swap Payee and Memo</Trans>
+                  Swap Payee and Memo
                 </CheckboxToggle>
               )}
               {isOfxFile(filetype) && (
@@ -1225,22 +1206,22 @@ export function ImportTransactionsModal({
                   checked={fallbackMissingPayeeToMemo}
                   onChange={setFallbackMissingPayeeToMemo}
                 >
-                  <Trans>Use Memo as a fallback for empty Payees</Trans>
+                  Use Memo as a fallback for empty Payees
                 </CheckboxToggle>
               )}
             </OptionGroup>
 
             {(filetype === 'qif' || filetype === 'csv') && (
-              <OptionGroup title={t('Amount options')}>
+              <OptionGroup title="Amount options">
                 <CheckboxToggle
                   id="form_flip"
                   checked={flipAmount}
                   onChange={setFlipAmount}
                 >
-                  <Trans>Flip amount</Trans>
+                  Flip amount
                 </CheckboxToggle>
                 <InlineLabel htmlFor="multiply-amount">
-                  <Trans>Multiply by:</Trans>
+                  Multiply by:
                   <Input
                     id="multiply-amount"
                     value={multiplierAmount}
@@ -1252,13 +1233,13 @@ export function ImportTransactionsModal({
                 {filetype === 'csv' && (
                   <>
                     <InlineLabel htmlFor="csv-amount-format">
-                      <Trans>Amounts:</Trans>
+                      Amounts:
                       <Select
                         id="csv-amount-format"
                         options={[
-                          ['amount', t('One column')],
-                          ['split', t('Outflow + inflow columns')],
-                          ['inOut', t('Amount + in/out column')],
+                          ['amount', 'One column'],
+                          ['split', 'Outflow + inflow columns'],
+                          ['inOut', 'Amount + in/out column'],
                         ]}
                         value={
                           splitMode ? 'split' : inOutMode ? 'inOut' : 'amount'
@@ -1273,12 +1254,12 @@ export function ImportTransactionsModal({
                     </InlineLabel>
                     {inOutMode && (
                       <InlineLabel htmlFor="csv-out-value">
-                        <Trans>Outflow value:</Trans>
+                        Outflow value:
                         <Input
                           id="csv-out-value"
                           value={outValue}
                           onChangeValue={setOutValue}
-                          placeholder={t('e.g. Debit')}
+                          placeholder="e.g. Debit"
                           style={{ width: 100 }}
                         />
                       </InlineLabel>
@@ -1289,7 +1270,7 @@ export function ImportTransactionsModal({
             )}
 
             {filetype === 'csv' && (
-              <OptionGroup title={t('File format')}>
+              <OptionGroup title="File format">
                 {fileOptionsOpen ? (
                   <>
                     <CheckboxToggle
@@ -1297,11 +1278,11 @@ export function ImportTransactionsModal({
                       checked={hasHeaderRow}
                       onChange={setHasHeaderRow}
                     >
-                      <Trans>File has header row</Trans>
+                      File has header row
                     </CheckboxToggle>
                     <View style={{ flexDirection: 'row', gap: 10 }}>
                       <InlineLabel htmlFor="csv-delimiter-select">
-                        <Trans>Delimiter:</Trans>
+                        Delimiter:
                         <Select
                           id="csv-delimiter-select"
                           options={[
@@ -1319,17 +1300,17 @@ export function ImportTransactionsModal({
                         />
                       </InlineLabel>
                       <InlineLabel htmlFor="csv-encoding-select">
-                        <Trans>Encoding:</Trans>
+                        Encoding:
                         <Select
                           id="csv-encoding-select"
                           options={[
-                            ['auto', t('Auto (detect)')],
-                            ['utf-8', t('UTF-8')],
-                            ['utf-16le', t('UTF-16 LE')],
-                            ['utf-16be', t('UTF-16 BE')],
-                            ['windows-1252', t('Windows-1252')],
-                            ['windows-1250', t('Windows-1250')],
-                            ['iso-8859-2', t('ISO-8859-2')],
+                            ['auto', 'Auto (detect)'],
+                            ['utf-8', 'UTF-8'],
+                            ['utf-16le', 'UTF-16 LE'],
+                            ['utf-16be', 'UTF-16 BE'],
+                            ['windows-1252', 'Windows-1252'],
+                            ['windows-1250', 'Windows-1250'],
+                            ['iso-8859-2', 'ISO-8859-2'],
                           ]}
                           value={csvEncoding}
                           onChange={value => {
@@ -1341,7 +1322,7 @@ export function ImportTransactionsModal({
                     </View>
                     <View style={{ flexDirection: 'row', gap: 10 }}>
                       <InlineLabel htmlFor="csv-skip-start-lines">
-                        <Trans>Skip start lines:</Trans>
+                        Skip start lines:
                         <Input
                           id="csv-skip-start-lines"
                           type="number"
@@ -1357,7 +1338,7 @@ export function ImportTransactionsModal({
                         />
                       </InlineLabel>
                       <InlineLabel htmlFor="csv-skip-end-lines">
-                        <Trans>end lines:</Trans>
+                        end lines:
                         <Input
                           id="csv-skip-end-lines"
                           type="number"
@@ -1387,7 +1368,7 @@ export function ImportTransactionsModal({
                       variant="bare"
                       onPress={() => setShowFileOptions(true)}
                     >
-                      <Trans>Change</Trans>
+                      Change
                     </Button>
                   </View>
                 )}
