@@ -14,6 +14,10 @@ import { useNewsNotification } from '#hooks/useNewsNotification';
 import { ScrollProvider } from '#hooks/useScrollListener';
 import { addNotification } from '#notifications/notificationsSlice';
 import { payeeQueries } from '#payees/queries';
+import {
+  applyAppUpdate,
+  waitForUpdateReadyForDownload,
+} from '#platform/updates';
 import { useDispatch } from '#redux';
 
 import { AppShellEffects } from './AppShellEffects';
@@ -74,7 +78,7 @@ export function FinancesApp() {
     }, 100);
 
     async function run() {
-      await global.Actual.waitForUpdateReadyForDownload(); // This will only resolve when an update is ready
+      await waitForUpdateReadyForDownload(); // This will only resolve when an update is ready
       dispatch(
         addNotification({
           notification: {
@@ -88,7 +92,7 @@ export function FinancesApp() {
             button: {
               title: t('Update now'),
               action: async () => {
-                await global.Actual.applyAppUpdate();
+                await applyAppUpdate();
               },
             },
           },

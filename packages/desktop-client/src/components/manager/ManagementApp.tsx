@@ -22,6 +22,7 @@ import {
   useServerVersion,
 } from '#components/ServerContext';
 import { useMetaThemeColor } from '#hooks/useMetaThemeColor';
+import { ACTUAL_VERSION } from '#platform/version';
 import { useDispatch, useSelector } from '#redux';
 import { loggedIn } from '#users/usersSlice';
 
@@ -56,7 +57,7 @@ function Version() {
       }}
     >
       <Trans>
-        App: v{{ appVersion: window.Actual.ACTUAL_VERSION }} | Server:{' '}
+        App: v{{ appVersion: ACTUAL_VERSION }} | Server:{' '}
         {{ serverVersion: version }}
       </Trans>
     </Text>

@@ -23,6 +23,8 @@ import { useOnVisible } from '#hooks/useOnVisible';
 import { SpreadsheetProvider } from '#hooks/useSpreadsheet';
 import { setI18NextLanguage } from '#i18n';
 import { addNotification } from '#notifications/notificationsSlice';
+import { getServerSocket } from '#platform/backend';
+import { applyAppUpdate, isUpdateReadyForDownload } from '#platform/updates';
 import { loadGlobalPrefs } from '#prefs/prefsSlice';
 import { useDispatch, useSelector, useStore } from '#redux';
 import {
@@ -60,13 +62,13 @@ function AppInner() {
 
   useEffect(() => {
     const maybeUpdate = async <T,>(cb?: () => T): Promise<T | void> => {
-      if (global.Actual.isUpdateReadyForDownload()) {
+      if (isUpdateReadyForDownload()) {
         dispatch(
           setAppState({
             loadingText: t('Downloading and applying update...'),
           }),
         );
-        await global.Actual.applyAppUpdate();
+        await applyAppUpdate();
       }
       return cb?.();
     };
@@ -80,7 +82,7 @@ function AppInner() {
           ),
         }),
       );
-      await initConnection();
+      await initConnection(await getServerSocket());
 
       // Load global prefs and look up the last opened budget in parallel
       dispatch(

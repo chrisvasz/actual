@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { addNotification } from '#notifications/notificationsSlice';
+import { openURLInBrowser } from '#platform/links';
 import { useDispatch } from '#redux';
 
 /**
@@ -31,7 +32,7 @@ export function useSharedArrayBufferWarning() {
           button: {
             title: t('Learn more'),
             action: () =>
-              window.Actual.openURLInBrowser(
+              openURLInBrowser(
                 'https://actualbudget.org/docs/troubleshooting/shared-array-buffer',
               ),
           },

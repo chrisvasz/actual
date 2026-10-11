@@ -334,7 +334,7 @@ export function FatalError({ error: rawError }: FatalErrorProps) {
 
         <Paragraph>
           <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-            <Button onPress={() => window.Actual.relaunch()}>
+            <Button onPress={() => window.location.reload()}>
               <Trans>Restart app</Trans>
             </Button>
           </View>

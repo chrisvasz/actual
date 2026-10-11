@@ -9,6 +9,7 @@ import { send } from '@actual-app/core/platform/client/connection';
 import { format } from 'date-fns';
 
 import { useMetadataPref } from '#hooks/useMetadataPref';
+import { saveFile } from '#platform/files';
 
 import { Setting } from './UI';
 
@@ -36,10 +37,9 @@ export function ExportBudget() {
 
     if (response.data) {
       setWarnings(response.warnings ?? []);
-      void window.Actual.saveFile(
+      saveFile(
         response.data,
         `${format(new Date(), 'yyyy-MM-dd')}-${budgetName}.zip`,
-        t('Export budget'),
       );
     }
     setIsLoading(false);

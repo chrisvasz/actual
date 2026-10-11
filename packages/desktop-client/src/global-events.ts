@@ -4,6 +4,8 @@ import * as undo from '@actual-app/core/platform/client/undo';
 import type { QueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
 
+import { reloadBypassingServiceWorker } from '#platform/updates';
+
 import { accountQueries } from './accounts';
 import { setAppState } from './app/appSlice';
 import { categoryQueries } from './budget';
@@ -175,7 +177,7 @@ export function handleGlobalEvents(store: AppStore, queryClient: QueryClient) {
   });
 
   const unlistenApiFetchRedirected = listen('api-fetch-redirected', () => {
-    void window.Actual.reload();
+    void reloadBypassingServiceWorker();
   });
 
   return () => {

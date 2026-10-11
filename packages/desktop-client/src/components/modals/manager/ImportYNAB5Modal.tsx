@@ -14,6 +14,7 @@ import { Link } from '#components/common/Link';
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
 import { ImportProgress } from '#components/modals/manager/ImportProgress';
 import { useNavigate } from '#hooks/useNavigate';
+import { openFileDialog } from '#platform/files';
 import { useDispatch } from '#redux';
 
 export function ImportYNAB5Modal() {
@@ -42,8 +43,7 @@ export function ImportYNAB5Modal() {
   const [importing, setImporting] = useState(false);
 
   async function onImport() {
-    const res = await window.Actual.openFileDialog({
-      properties: ['openFile'],
+    const res = await openFileDialog({
       filters: [{ name: 'ynab', extensions: ['json'] }],
     });
     if (res) {

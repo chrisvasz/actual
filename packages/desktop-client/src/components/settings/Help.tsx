@@ -7,6 +7,7 @@ import { View } from '@actual-app/components/view';
 
 import { useTour } from '#components/tour/TourContext';
 import { pushModal } from '#modals/modalsSlice';
+import { openURLInBrowser } from '#platform/links';
 import { useDispatch } from '#redux';
 
 import { Setting } from './UI';
@@ -20,16 +21,12 @@ export function HelpSettings() {
       primaryAction={
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
           <Button
-            onPress={() =>
-              window.Actual.openURLInBrowser('https://actualbudget.org/docs')
-            }
+            onPress={() => openURLInBrowser('https://actualbudget.org/docs')}
           >
             <Trans>Documentation</Trans>
           </Button>
           <Button
-            onPress={() =>
-              window.Actual.openURLInBrowser('https://discord.gg/pRYNYr4W5A')
-            }
+            onPress={() => openURLInBrowser('https://discord.gg/pRYNYr4W5A')}
           >
             <Trans>Community support (Discord)</Trans>
           </Button>

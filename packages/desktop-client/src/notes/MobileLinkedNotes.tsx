@@ -6,6 +6,7 @@ import { theme } from '@actual-app/components/theme';
 import { css } from '@emotion/css';
 
 import { addNotification } from '#notifications/notificationsSlice';
+import { openURLInBrowser } from '#platform/links';
 import { useDispatch } from '#redux';
 
 import { normalizeUrl } from './linkParser';
@@ -46,7 +47,7 @@ export function MobileLinkedNotes({
     } else {
       // Open URL in browser
       const normalizedUrl = normalizeUrl(url);
-      window.Actual?.openURLInBrowser(normalizedUrl);
+      openURLInBrowser(normalizedUrl);
     }
   };
 

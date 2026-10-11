@@ -12,6 +12,7 @@ import { View } from '@actual-app/components/view';
 import { importBudget } from '#budgetfiles/budgetfilesSlice';
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
 import { useNavigate } from '#hooks/useNavigate';
+import { openFileDialog } from '#platform/files';
 import { useDispatch } from '#redux';
 
 export function ImportActualModal() {
@@ -51,8 +52,7 @@ export function ImportActualModal() {
   }
 
   async function onImport() {
-    const res = await window.Actual.openFileDialog({
-      properties: ['openFile'],
+    const res = await openFileDialog({
       filters: [{ name: 'actual', extensions: ['zip', 'blob'] }],
     });
     if (res) {

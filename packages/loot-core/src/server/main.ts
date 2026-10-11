@@ -30,13 +30,12 @@ import { app as notesApp } from './notes/app';
 import { app as payeesApp } from './payees/app';
 import { get } from './post';
 import { app as preferencesApp } from './preferences/app';
-import * as prefs from './prefs';
 import { app as reportsApp } from './reports/app';
 import { app as rulesApp } from './rules/app';
 import { app as schedulesApp } from './schedules/app';
 import { getServer, setServer } from './server-config';
 import { app as spreadsheetApp } from './spreadsheet/app';
-import { fullSync, setSyncingMode } from './sync';
+import { setSyncingMode } from './sync';
 import { app as syncApp } from './sync/app';
 import { app as tagsApp } from './tags/app';
 import { app as toolsApp } from './tools/app';
@@ -116,13 +115,6 @@ handlers['set-server-url'] = async function ({ url, validate = true }) {
   await asyncStorage.setItem('did-bootstrap', true);
   setServer(url);
   return {};
-};
-
-handlers['app-focused'] = async function () {
-  if (prefs.getPrefs() && prefs.getPrefs().id) {
-    // First we sync
-    void fullSync();
-  }
 };
 
 handlers = installAPI(handlers) as Handlers;

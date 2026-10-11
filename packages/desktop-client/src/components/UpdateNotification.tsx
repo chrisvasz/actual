@@ -8,6 +8,7 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
 import { setAppState, updateApp } from '#app/appSlice';
+import { openURLInBrowser } from '#platform/links';
 import { useDispatch, useSelector } from '#redux';
 
 import { Link } from './common/Link';
@@ -69,9 +70,7 @@ export function UpdateNotification() {
                   textDecoration: 'underline',
                 }}
                 onClick={() =>
-                  window.Actual.openURLInBrowser(
-                    'https://actualbudget.org/docs/releases',
-                  )
+                  openURLInBrowser('https://actualbudget.org/docs/releases')
                 }
               >
                 <Trans>notes</Trans>

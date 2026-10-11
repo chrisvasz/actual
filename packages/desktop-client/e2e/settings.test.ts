@@ -50,7 +50,7 @@ test.describe('Settings', () => {
     await page.route('**/test/theme/refs/heads/main/actual.css*', route =>
       route.fulfill({ body: ':root { --color-pageBackground: #eeeeee; }' }),
     );
-    await page.evaluate(() => window.Actual.setTheme('light'));
+    await page.evaluate(() => window.__setTheme('light'));
     await page.getByRole('button', { name: 'Light', exact: true }).click();
     await page
       .getByRole('button', { name: 'Custom theme', exact: true })

@@ -1,6 +1,6 @@
 import { execFile, spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
-import { createReadStream } from 'node:fs';
+import { createReadStream, readFileSync } from 'node:fs';
 import { cp, mkdir, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -262,6 +262,10 @@ export default defineConfig(async ({ mode, command }) => {
   // we read it from the checkout so dev builds show something useful.
   process.env.REACT_APP_COMMIT_SHA =
     process.env.COMMIT_SHA || process.env.GITHUB_SHA || (await readGitHead());
+
+  process.env.REACT_APP_VERSION = JSON.parse(
+    readFileSync(path.join(__dirname, 'package.json'), 'utf8'),
+  ).version;
 
   // Forward Netlify env variables
   if (process.env.REVIEW_ID) {

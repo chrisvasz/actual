@@ -29,6 +29,8 @@ vi.mock('@actual-app/core/shared/platform', async () => {
   return { ...actual, isPlaywright: false };
 });
 
+vi.mock('#platform/version', () => ({ ACTUAL_VERSION: '99.9.9' }));
+
 describe('useNewsNotification', () => {
   const fetchMock = vi.fn();
   let store: ReturnType<typeof createTestAppStore>;
@@ -53,7 +55,6 @@ describe('useNewsNotification', () => {
       status: 200,
       json: () => Promise.resolve(newsFeedFixture),
     });
-    window.Actual = { ...window.Actual, ACTUAL_VERSION: '99.9.9' };
   });
 
   afterEach(() => {

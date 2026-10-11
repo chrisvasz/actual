@@ -4,6 +4,7 @@ import { createAction, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
 import { pushModal } from '#modals/modalsSlice';
+import { applyAppUpdate } from '#platform/updates';
 import { loadPrefs } from '#prefs/prefsSlice';
 import { createAppAsyncThunk } from '#redux';
 import { getUploadError } from '#util/error';
@@ -39,7 +40,7 @@ export const resetApp = createAction(`${sliceName}/resetApp`);
 export const updateApp = createAppAsyncThunk(
   `${sliceName}/updateApp`,
   async (_, { dispatch }) => {
-    await global.Actual.applyAppUpdate();
+    await applyAppUpdate();
     dispatch(setAppState({ updateInfo: null }));
   },
 );

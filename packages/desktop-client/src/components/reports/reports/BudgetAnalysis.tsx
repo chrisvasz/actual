@@ -45,6 +45,7 @@ import { useNavigate } from '#hooks/useNavigate';
 import { useRuleConditionFilters } from '#hooks/useRuleConditionFilters';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 import { addNotification } from '#notifications/notificationsSlice';
+import { saveFile } from '#platform/files';
 import { useDispatch } from '#redux';
 import { useUpdateDashboardWidgetMutation } from '#reports/mutations';
 
@@ -346,11 +347,7 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
     const reportName = (widget?.meta?.name || t('Budget Analysis'))
       .replace(/[^a-z0-9]/gi, '-')
       .toLowerCase();
-    void window.Actual.saveFile(
-      csv,
-      `${reportName}-${start}-${end}.csv`,
-      t('Export budget analysis'),
-    );
+    saveFile(csv, `${reportName}-${start}-${end}.csv`);
   };
 
   if (!data || !allMonths) {

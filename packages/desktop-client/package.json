@@ -11,7 +11,6 @@
     "build"
   ],
   "imports": {
-    "#browser-preload": "./src/browser-preload.js",
     "#account-groups": "./src/account-groups/index.ts",
     "#accounts": "./src/accounts/index.ts",
     "#budget": "./src/budget/index.ts",
@@ -117,6 +116,7 @@
     "#transactions/*": "./src/transactions/*.ts",
     "#undo/*": "./src/undo/*.ts",
     "#users/*": "./src/users/*.ts",
+    "#platform/*": "./src/platform/*.ts",
     "#util/*": "./src/util/*.ts"
   },
   "scripts": {

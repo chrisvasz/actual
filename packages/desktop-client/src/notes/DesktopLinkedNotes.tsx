@@ -5,6 +5,7 @@ import { theme } from '@actual-app/components/theme';
 
 import { Link } from '#components/common/Link';
 import { addNotification } from '#notifications/notificationsSlice';
+import { openURLInBrowser } from '#platform/links';
 import { useDispatch } from '#redux';
 
 import { normalizeUrl } from './linkParser';
@@ -43,7 +44,7 @@ export function DesktopLinkedNotes({
     } else {
       // Open URL in browser
       const normalizedUrl = normalizeUrl(url);
-      window.Actual?.openURLInBrowser(normalizedUrl);
+      openURLInBrowser(normalizedUrl);
     }
   };
 

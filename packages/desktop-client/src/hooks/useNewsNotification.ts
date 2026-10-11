@@ -7,6 +7,7 @@ import {
   addNotification,
   removeNotification,
 } from '#notifications/notificationsSlice';
+import { ACTUAL_VERSION } from '#platform/version';
 import { useDispatch } from '#redux';
 
 import { useGlobalPref } from './useGlobalPref';
@@ -56,7 +57,7 @@ export function useNewsNotification() {
 
     const release = getReleaseToNotify(
       entries,
-      window.Actual.ACTUAL_VERSION,
+      ACTUAL_VERSION,
       lastSeenNewsDate,
     );
     if (!release) {

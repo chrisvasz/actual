@@ -69,17 +69,17 @@ export const expect = baseExpect.extend({
     const dataThemeLocator = page.locator('[data-theme]');
 
     // Check lightmode
-    await page.evaluate(() => window.Actual.setTheme('auto'));
+    await page.evaluate(() => window.__setTheme('auto'));
     await baseExpect(dataThemeLocator).toHaveAttribute('data-theme', 'auto');
     await baseExpect(target).toHaveScreenshot(config);
 
     // Switch to darkmode and check
-    await page.evaluate(() => window.Actual.setTheme('dark'));
+    await page.evaluate(() => window.__setTheme('dark'));
     await baseExpect(dataThemeLocator).toHaveAttribute('data-theme', 'dark');
     await baseExpect(target).toHaveScreenshot(config);
 
     // Switch to midnight theme and check
-    await page.evaluate(() => window.Actual.setTheme('midnight'));
+    await page.evaluate(() => window.__setTheme('midnight'));
     await baseExpect(dataThemeLocator).toHaveAttribute(
       'data-theme',
       'midnight',
@@ -87,7 +87,7 @@ export const expect = baseExpect.extend({
     await baseExpect(target).toHaveScreenshot(config);
 
     // Switch back to lightmode
-    await page.evaluate(() => window.Actual.setTheme('auto'));
+    await page.evaluate(() => window.__setTheme('auto'));
     return {
       message: () => 'pass',
       pass: true,

@@ -13,6 +13,7 @@ import { importBudget } from '#budgetfiles/budgetfilesSlice';
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
 import { ImportProgress } from '#components/modals/manager/ImportProgress';
 import { useNavigate } from '#hooks/useNavigate';
+import { openFileDialog } from '#platform/files';
 import { useDispatch } from '#redux';
 
 function getErrorMessage(error: string): string {
@@ -32,8 +33,7 @@ export function ImportYNAB4Modal() {
   const [importing, setImporting] = useState(false);
 
   async function onImport() {
-    const res = await window.Actual.openFileDialog({
-      properties: ['openFile'],
+    const res = await openFileDialog({
       filters: [{ name: 'ynab', extensions: ['zip'] }],
     });
     if (res) {

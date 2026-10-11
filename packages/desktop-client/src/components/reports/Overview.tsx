@@ -38,6 +38,7 @@ import {
   addNotification,
   removeNotification,
 } from '#notifications/notificationsSlice';
+import { openFileDialog, saveFile } from '#platform/files';
 import { useDispatch } from '#redux';
 import {
   useAddDashboardWidgetMutation,
@@ -49,8 +50,8 @@ import {
 } from '#reports/mutations';
 
 import { NON_DRAGGABLE_AREA_CLASS_NAME } from './constants';
-import { DashboardHeader } from './DashboardHeader';
 import './overview.scss';
+import { DashboardHeader } from './DashboardHeader';
 import { DashboardSelector } from './DashboardSelector';
 import { LoadingIndicator } from './LoadingIndicator';
 import { AgeOfMoneyCard } from './reports/AgeOfMoneyCard';
@@ -337,34 +338,13 @@ export function Overview({ dashboard }: OverviewProps) {
       }),
     } satisfies ExportImportDashboard;
 
-    void window.Actual.saveFile(
-      JSON.stringify(data, null, 2),
-      'dashboard.json',
-      t('Export Dashboard'),
-    );
+    saveFile(JSON.stringify(data, null, 2), 'dashboard.json');
   };
 
   const importDashboardPageMutation = useImportDashboardPageMutation();
 
   const onImport = async () => {
-    const openFileDialog = window.Actual.openFileDialog;
-
-    if (!openFileDialog) {
-      dispatch(
-        addNotification({
-          notification: {
-            type: 'error',
-            message: t(
-              'Fatal error occurred: unable to open import file dialog.',
-            ),
-          },
-        }),
-      );
-      return;
-    }
-
     const [filePath] = await openFileDialog({
-      properties: ['openFile'],
       filters: [
         {
           name: 'JSON files',

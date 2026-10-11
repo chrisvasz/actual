@@ -21,6 +21,7 @@ import { useServerVersion } from '#components/ServerContext';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useGlobalPref } from '#hooks/useGlobalPref';
 import { useMetadataPref } from '#hooks/useMetadataPref';
+import { ACTUAL_VERSION } from '#platform/version';
 import { loadPrefs, saveSyncedPrefs } from '#prefs/prefsSlice';
 import { useDispatch, useSelector } from '#redux';
 
@@ -76,9 +77,7 @@ function About() {
         data-vrt-mask
       >
         <Text>
-          <Trans>
-            Client version: {{ version: `v${window.Actual?.ACTUAL_VERSION}` }}
-          </Trans>
+          <Trans>Client version: {{ version: `v${ACTUAL_VERSION}` }}</Trans>
         </Text>
         <Text>
           <Trans>Server version: {{ version }}</Trans>

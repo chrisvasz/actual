@@ -1,6 +1,8 @@
 // @ts-strict-ignore
 import * as Platform from '@actual-app/core/shared/platform';
 
+import { ACTUAL_VERSION } from '#platform/version';
+
 function parseSemanticVersion(versionString): [number, number, number] {
   return versionString
     .replace('v', '')
@@ -36,7 +38,7 @@ export async function getLatestVersion(): Promise<string | 'unknown'> {
 }
 
 export function getIsOutdated(latestVersion: string): boolean {
-  const clientVersion = window.Actual.ACTUAL_VERSION;
+  const clientVersion = ACTUAL_VERSION;
   if (latestVersion === 'unknown') {
     return false;
   }

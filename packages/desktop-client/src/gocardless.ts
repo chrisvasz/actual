@@ -4,6 +4,8 @@ import type {
   GoCardlessToken,
 } from '@actual-app/core/types/models';
 
+import { openURLInBrowser } from '#platform/links';
+
 import { pushModal } from './modals/modalsSlice';
 import type { AppDispatch } from './redux/store';
 
@@ -33,7 +35,7 @@ function _authorize(
               return { error: 'unknown', message: resp.error_type };
             }
             const { link, requisitionId } = resp;
-            window.Actual.openURLInBrowser(link);
+            openURLInBrowser(link);
 
             return send('gocardless-poll-web-token', {
               requisitionId,

@@ -95,6 +95,7 @@ import type { ConfirmTransactionEditReason } from '#modals/modalsSlice';
 import { noteQueries } from '#notes/queries';
 import { addNotification } from '#notifications/notificationsSlice';
 import { payeeQueries, useCreatePayeeMutation } from '#payees';
+import { openFileDialog, saveFile } from '#platform/files';
 import * as queries from '#queries';
 import { aqlQuery } from '#queries/aqlQuery';
 import { useDispatch, useSelector } from '#redux';
@@ -830,7 +831,7 @@ class AccountInternal extends PureComponent<
     const account = this.props.accounts.find(acct => acct.id === accountId);
 
     if (account) {
-      const res = await window.Actual.openFileDialog({
+      const res = await openFileDialog({
         filters: [
           {
             name: t('Financial files'),
@@ -870,11 +871,7 @@ class AccountInternal extends PureComponent<
       accountName && accountName.replace(/[()]/g, '').replace(/\s+/g, '-');
     const filename = `${normalizedName || 'transactions'}.csv`;
 
-    void window.Actual.saveFile(
-      exportedTransactions,
-      filename,
-      t('Export transactions'),
-    );
+    saveFile(exportedTransactions, filename);
   };
 
   onTransactionsChange = (updatedTransaction: TransactionEntity) => {

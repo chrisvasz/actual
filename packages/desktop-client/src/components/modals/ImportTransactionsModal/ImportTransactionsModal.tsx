@@ -37,6 +37,7 @@ import { useCategories } from '#hooks/useCategories';
 import { useDateFormat } from '#hooks/useDateFormat';
 import { useSyncedPrefs } from '#hooks/useSyncedPrefs';
 import { payeeQueries } from '#payees';
+import { openFileDialog } from '#platform/files';
 
 import { FieldMappings } from './FieldMappings';
 import { Transaction } from './Transaction';
@@ -560,7 +561,7 @@ export function ImportTransactionsModal({
   }
 
   async function onNewFile() {
-    const res = await window.Actual.openFileDialog({
+    const res = await openFileDialog({
       filters: [
         {
           name: 'Financial Files',

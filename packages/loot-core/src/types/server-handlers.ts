@@ -22,6 +22,4 @@ export type ServerHandlers = {
     url: string;
     validate?: boolean;
   }) => Promise<{ error?: string }>;
-
-  'app-focused': () => Promise<void>;
 };
