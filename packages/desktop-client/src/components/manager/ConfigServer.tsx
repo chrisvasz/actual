@@ -93,7 +93,7 @@ export function ConfigServer() {
         />
       )}
       <>
-        <Title text={'Connect to a server'} />
+        <Title text="Connect to a server" />
         <Text
           style={{
             fontSize: 16,
@@ -101,11 +101,9 @@ export function ConfigServer() {
             lineHeight: 1.5,
           }}
         >
-          {currentUrl ? (
-            'Existing sessions will be logged out and you will log in to this server. We will validate that Actual is running at this URL.'
-          ) : (
-            'A sync server keeps your budget up to date across all your devices. It is completely optional: Actual works great on just this device too.'
-          )}
+          {currentUrl
+            ? 'Existing sessions will be logged out and you will log in to this server. We will validate that Actual is running at this URL.'
+            : 'A sync server keeps your budget up to date across all your devices. It is completely optional: Actual works great on just this device too.'}
         </Text>
         {!currentUrl && (
           <Text
@@ -116,18 +114,15 @@ export function ConfigServer() {
               marginTop: 10,
             }}
           >
-            
-              If you already run a server, enter its URL below. Otherwise you
-              can{' '}
-              <Link
-                variant="external"
-                to="https://actualbudget.org/docs/install/"
-                linkColor="purple"
-              >
-                learn how to set one up
-              </Link>{' '}
-              and connect it whenever you are ready.
-            
+            If you already run a server, enter its URL below. Otherwise you can{' '}
+            <Link
+              variant="external"
+              to="https://actualbudget.org/docs/install/"
+              linkColor="purple"
+            >
+              learn how to set one up
+            </Link>{' '}
+            and connect it whenever you are ready.
           </Text>
         )}
         {error && (
@@ -145,7 +140,7 @@ export function ConfigServer() {
         <View style={{ display: 'flex', flexDirection: 'row', marginTop: 30 }}>
           <BigInput
             autoFocus
-            placeholder={'https://example.com'}
+            placeholder="https://example.com"
             value={url || ''}
             onChangeValue={setUrl}
             style={{ flex: 1, marginRight: 10 }}

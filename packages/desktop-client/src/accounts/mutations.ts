@@ -1,4 +1,3 @@
-
 import { send } from '@actual-app/core/platform/client/connection';
 import type {
   AccountEntity,

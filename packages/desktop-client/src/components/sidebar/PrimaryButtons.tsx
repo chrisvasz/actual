@@ -34,11 +34,11 @@ export function PrimaryButtons() {
 
   return (
     <View style={{ flexShrink: 0 }}>
-      <Item title={'Budget'} Icon={SvgWallet} to="/budget" />
-      <Item title={'Reports'} Icon={SvgReports} to="/reports" />
-      <Item title={'Schedules'} Icon={SvgCalendar3} to="/schedules" />
+      <Item title="Budget" Icon={SvgWallet} to="/budget" />
+      <Item title="Reports" Icon={SvgReports} to="/reports" />
+      <Item title="Schedules" Icon={SvgCalendar3} to="/schedules" />
       <Item
-        title={'More'}
+        title="More"
         Icon={isOpen ? SvgCheveronDown : SvgCheveronRight}
         onClick={onToggle}
         style={{ marginBottom: isOpen ? 8 : 0 }}
@@ -47,25 +47,20 @@ export function PrimaryButtons() {
       {isOpen && (
         <>
           <SecondaryItem
-            title={'Payees'}
+            title="Payees"
             Icon={SvgStoreFront}
             to="/payees"
             indent={15}
           />
           <SecondaryItem
-            title={'Rules'}
+            title="Rules"
             Icon={SvgTuning}
             to="/rules"
             indent={15}
           />
+          <SecondaryItem title="Tags" Icon={SvgTag} to="/tags" indent={15} />
           <SecondaryItem
-            title={'Tags'}
-            Icon={SvgTag}
-            to="/tags"
-            indent={15}
-          />
-          <SecondaryItem
-            title={'Settings'}
+            title="Settings"
             Icon={SvgCog}
             to="/settings"
             indent={15}

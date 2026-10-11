@@ -243,7 +243,8 @@ export function KeyboardShortcutModal() {
           {
             id: 'filter-menu',
             shortcut: 'F',
-            description: 'Show filter dropdown when no transactions are selected',
+            description:
+              'Show filter dropdown when no transactions are selected',
           },
         ],
       },
@@ -265,7 +266,8 @@ export function KeyboardShortcutModal() {
           {
             id: 'toggle-selection-all-transactions',
             shortcut: 'Space',
-            description: 'Toggle transactions between current and most recently selected transaction',
+            description:
+              'Toggle transactions between current and most recently selected transaction',
             shift: true,
           },
           {
@@ -501,7 +503,7 @@ export function KeyboardShortcutModal() {
                     setSelectedCategoryId(null);
                   }
                 }}
-                placeholder={'Search shortcuts'}
+                placeholder="Search shortcuts"
                 width="100%"
                 style={{
                   backgroundColor: theme.tableBackground,
@@ -530,13 +532,11 @@ export function KeyboardShortcutModal() {
                   }}
                 >
                   <Text style={{ fontSize: 15 }}>
-                    
-                      {isSearching
-                        ? 'No matching shortcuts'
-                        : isInCategory
-                          ? 'No shortcuts in this category'
-                          : 'No matching shortcuts'}
-                    
+                    {isSearching
+                      ? 'No matching shortcuts'
+                      : isInCategory
+                        ? 'No shortcuts in this category'
+                        : 'No matching shortcuts'}
                   </Text>
                 </View>
               ) : showingShortcuts ? (
@@ -572,9 +572,7 @@ export function KeyboardShortcutModal() {
                       </Text>
                       <Text style={{ color: theme.pageTextLight }}>
                         {category.items.length}{' '}
-                        {category.items.length === 1
-                          ? 'shortcut'
-                          : 'shortcuts'}{' '}
+                        {category.items.length === 1 ? 'shortcut' : 'shortcuts'}{' '}
                         ›
                       </Text>
                     </View>

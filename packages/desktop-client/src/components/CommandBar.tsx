@@ -121,7 +121,7 @@ export function CommandBar() {
         path: '/accounts',
         content: (
           <BalanceRow<'account', 'accounts-balance-cleared'>
-            label={'All Accounts'}
+            label="All Accounts"
             binding={allAccountBalanceCleared()}
           />
         ),
@@ -186,7 +186,7 @@ export function CommandBar() {
           name: 'On Budget',
           content: (
             <BalanceRow<'account', 'onbudget-accounts-balance-cleared'>
-              label={'On Budget'}
+              label="On Budget"
               binding={onBudgetAccountBalanceCleared()}
             />
           ),
@@ -197,7 +197,7 @@ export function CommandBar() {
           name: 'Off Budget',
           content: (
             <BalanceRow<'account', 'offbudget-accounts-balance-cleared'>
-              label={'Off Budget'}
+              label="Off Budget"
               binding={offBudgetAccountBalanceCleared()}
             />
           ),
@@ -250,8 +250,8 @@ export function CommandBar() {
       vimBindings
       open={open}
       onOpenChange={setOpen}
-      label={'Command Bar'}
-      aria-label={'Command Bar'}
+      label="Command Bar"
+      aria-label="Command Bar"
       shouldFilter={false}
       className={css({
         position: 'fixed',

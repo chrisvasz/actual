@@ -359,7 +359,7 @@ export function AccountHeader({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {formatLastReconciled(account.last_reconciled, locale, t)}
+                  {formatLastReconciled(account.last_reconciled, locale)}
                 </Text>
               )}
             </View>
@@ -367,7 +367,7 @@ export function AccountHeader({
           <View style={{ flex: 1 }} />
 
           <Search
-            placeholder={'Search'}
+            placeholder="Search"
             value={search}
             onChange={onSearch}
             ref={searchInput}
@@ -422,7 +422,7 @@ export function AccountHeader({
           {account ? (
             <View style={{ flex: '0 0 auto' }}>
               <DialogTrigger>
-                <Button variant="bare" aria-label={'Account menu'}>
+                <Button variant="bare" aria-label="Account menu">
                   <SvgDotsHorizontalTriple
                     width={15}
                     height={15}
@@ -446,7 +446,7 @@ export function AccountHeader({
           ) : (
             <View style={{ flex: '0 0 auto' }}>
               <DialogTrigger>
-                <Button variant="bare" aria-label={'Account menu'}>
+                <Button variant="bare" aria-label="Account menu">
                   <SvgDotsHorizontalTriple
                     width={15}
                     height={15}
@@ -544,10 +544,7 @@ function AccountNameField({
     setEditingName(false);
   };
 
-  const displayName =
-    account && account.closed
-      ? `Closed: ${name}`
-      : name;
+  const displayName = account && account.closed ? `Closed: ${name}` : name;
 
   return (
     <View style={{ flexShrink: 0, alignItems: 'center' }}>
@@ -614,7 +611,7 @@ function AccountNameField({
               >
                 {displayName}
                 <SvgExternalLink
-                  aria-label={'Opens in a new tab'}
+                  aria-label="Opens in a new tab"
                   style={{ width: 14, height: 14, flexShrink: 0 }}
                 />
               </Link>
@@ -633,7 +630,7 @@ function AccountNameField({
             {isNameEditable && (
               <Button
                 variant="bare"
-                aria-label={'Edit account name'}
+                aria-label="Edit account name"
                 className="hover-visible"
                 onPress={() => setEditingName(true)}
               >
@@ -708,9 +705,7 @@ function AccountMenu({
           : []),
         {
           name: 'toggle-net-worth-chart',
-          text: showNetWorthChart
-            ? 'Hide balance chart'
-            : 'Show balance chart',
+          text: showNetWorthChart ? 'Hide balance chart' : 'Show balance chart',
         },
         {
           name: 'manage-columns',
@@ -742,7 +737,6 @@ function AccountMenu({
 function formatLastReconciled(
   lastReconciled: string,
   locale: Locale | undefined,
-  t: TFunction,
 ) {
   const date = new Date(parseInt(lastReconciled, 10));
   const pattern = isSameYear(date, new Date()) ? 'MMM d' : 'MMM d, yyyy';

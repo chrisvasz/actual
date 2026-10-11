@@ -295,7 +295,7 @@ export function SelectedTransactionsButton({
   return (
     <SelectedItemsButton
       id="transactions"
-      name={count => `${count} transactions`}
+      name={count => `${count} ${count === 1 ? 'transaction' : 'transactions'}`}
       // @ts-expect-error fix me
       items={[
         ...(!types.trans
@@ -381,7 +381,7 @@ export function SelectedTransactionsButton({
                 ? [
                     {
                       name: 'unsplit-transactions',
-                      text: `Unsplit ${selectedIds.length} transactions`,
+                      text: `Unsplit ${selectedIds.length} ${selectedIds.length === 1 ? 'transaction' : 'transactions'}`,
                     } as const,
                   ]
                 : []),

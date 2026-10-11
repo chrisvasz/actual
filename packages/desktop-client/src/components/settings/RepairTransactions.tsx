@@ -37,23 +37,39 @@ function useRenderResults() {
       result.push('No split transactions found needing repair.');
     } else {
       if (numBlankPayees > 0) {
-        result.push(`Fixed ${numBlankPayees} splits with a blank payee.`);
+        result.push(
+          numBlankPayees === 1
+            ? 'Fixed 1 split with a blank payee.'
+            : `Fixed ${numBlankPayees} splits with a blank payee.`,
+        );
       }
       if (numCleared > 0) {
-        result.push(`Fixed ${numCleared} splits with the wrong cleared flag.`);
+        result.push(
+          numCleared === 1
+            ? 'Fixed 1 split with the wrong cleared flag.'
+            : `Fixed ${numCleared} splits with the wrong cleared flag.`,
+        );
       }
       if (numDeleted > 0) {
         result.push(
-          `Fixed ${numDeleted} splits that weren't properly deleted.`,
+          numDeleted === 1
+            ? "Fixed 1 split that wasn't properly deleted."
+            : `Fixed ${numDeleted} splits that weren't properly deleted.`,
         );
       }
       if (numNonParentErrorsFixed > 0) {
         result.push(
-          `Fixed ${numNonParentErrorsFixed} non-split transactions with split errors.`,
+          numNonParentErrorsFixed === 1
+            ? 'Fixed 1 non-split transaction with split errors.'
+            : `Fixed ${numNonParentErrorsFixed} non-split transactions with split errors.`,
         );
       }
       if (numTransfersFixed > 0) {
-        result.push(`Fixed ${numTransfersFixed} transfers.`);
+        result.push(
+          numTransfersFixed === 1
+            ? 'Fixed 1 transfer.'
+            : `Fixed ${numTransfersFixed} transfers.`,
+        );
       }
       if (mismatchedSplits.length > 0) {
         const mismatchedSplitInfo = mismatchedSplits
@@ -61,13 +77,17 @@ function useRenderResults() {
           .join('\n');
 
         result.push(
-          `Found ${mismatchedSplits.length} split transactions with mismatched amounts on the below dates. Please review them manually:` +
+          (mismatchedSplits.length === 1
+            ? 'Found 1 split transaction with mismatched amounts on the below date. Please review it manually:'
+            : `Found ${mismatchedSplits.length} split transactions with mismatched amounts on the below dates. Please review them manually:`) +
             `\n${mismatchedSplitInfo}`,
         );
       }
       if (numParentTransactionsWithCategoryFixed > 0) {
         result.push(
-          `Fixed ${numParentTransactionsWithCategoryFixed} split transactions with non-null category.`,
+          numParentTransactionsWithCategoryFixed === 1
+            ? 'Fixed 1 split transaction with a non-null category.'
+            : `Fixed ${numParentTransactionsWithCategoryFixed} split transactions with non-null categories.`,
         );
       }
     }

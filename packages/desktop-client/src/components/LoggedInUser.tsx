@@ -221,7 +221,7 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
         userData?.displayName &&
         !hasSyncedPrefs && (
           <small>
-            ( logged in as: <span>{userData?.displayName}</span>)
+            (logged in as: <span>{userData?.displayName}</span>)
           </small>
         )}
       {!loading &&
@@ -230,7 +230,7 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
         userData?.displayName &&
         hasSyncedPrefs && (
           <small>
-            ( logged in as: <span>{userData?.displayName}</span>)
+            (logged in as: <span>{userData?.displayName}</span>)
           </small>
         )}
 

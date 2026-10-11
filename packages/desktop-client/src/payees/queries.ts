@@ -18,10 +18,7 @@ export const payeeQueries = {
   list: () =>
     queryOptions<PayeeEntity[]>({
       queryKey: [...payeeQueries.lists()],
-      queryFn: async () => {
-        const payees: PayeeEntity[] = (await send('payees-get')) ?? [];
-        return translatePayees(payees);
-      },
+      queryFn: async () => (await send('payees-get')) ?? [],
       placeholderData: [],
       // Manually invalidated when payees change via sync events
       staleTime: Infinity,
@@ -67,27 +64,16 @@ export const getActivePayees = memoizeOne(
   (payees: PayeeEntity[], accounts: AccountEntity[]) => {
     const accountsById = getAccountsById(accounts);
 
-    return translatePayees(
-      payees.filter(payee => {
-        if (payee.transfer_acct) {
-          const account = accountsById[payee.transfer_acct];
-          return account != null && !account.closed;
-        }
-        return true;
-      }),
-    );
+    return payees.filter(payee => {
+      if (payee.transfer_acct) {
+        const account = accountsById[payee.transfer_acct];
+        return account != null && !account.closed;
+      }
+      return true;
+    });
   },
 );
 
 export const getPayeesById = memoizeOne(
-  (payees: PayeeEntity[] | null | undefined) =>
-    groupById(translatePayees(payees || [])),
+  (payees: PayeeEntity[] | null | undefined) => groupById(payees || []),
 );
-
-function translatePayees(payees: PayeeEntity[]): PayeeEntity[] {
-  return payees.map(payee =>
-    payee.name === 'Starting Balance'
-      ? { ...payee, name: 'Starting Balance' }
-      : payee,
-  );
-}

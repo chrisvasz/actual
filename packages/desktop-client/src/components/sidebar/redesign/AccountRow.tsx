@@ -136,7 +136,7 @@ export function AccountRow({ account, isClosed }: AccountRowProps) {
             {isEditing ? (
               <InitialFocus>
                 <Input
-                  aria-label={'Account name'}
+                  aria-label="Account name"
                   style={{ flex: 1, padding: 0, fontSize: 13 }}
                   defaultValue={name}
                   onKeyDown={e => e.stopPropagation()}

@@ -83,7 +83,7 @@ export function CreateLocalAccountModal() {
       {({ state }) => (
         <>
           <ModalHeader
-            title={<ModalTitle title={'Add account'} shrinkOnOverflow />}
+            title={<ModalTitle title="Add account" shrinkOnOverflow />}
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View>
@@ -94,25 +94,23 @@ export function CreateLocalAccountModal() {
                 marginBottom: 15,
               }}
             >
-              
-                Once the account is created, you can also{' '}
-                <Link
-                  variant="external"
-                  linkColor="muted"
-                  to="https://actualbudget.org/docs/transactions/importing"
-                >
-                  import QIF/OFX/QFX files
-                </Link>{' '}
-                into it.
-              
+              Once the account is created, you can also{' '}
+              <Link
+                variant="external"
+                linkColor="muted"
+                to="https://actualbudget.org/docs/transactions/importing"
+              >
+                import QIF/OFX/QFX files
+              </Link>{' '}
+              into it.
             </Text>
             <Form onSubmit={onSubmit}>
-              <InlineField label={'Name'} width="100%">
+              <InlineField label="Name" width="100%">
                 <InitialFocus>
                   <Input
                     name="name"
                     value={name}
-                    placeholder={'e.g. Bank, Savings, Credit Card, Cash'}
+                    placeholder="e.g. Bank, Savings, Credit Card, Cash"
                     onChangeValue={setName}
                     onUpdate={value => {
                       const name = value.trim();
@@ -167,29 +165,25 @@ export function CreateLocalAccountModal() {
                     }}
                   >
                     <Text style={{ display: 'block' }}>
-                      
-                        Off-budget accounts (like investments, loans, or your
-                        house) are tracked but not part of your spending budget.
-                      
+                      Off-budget accounts (like investments, loans, or your
+                      house) are tracked but not part of your spending budget.
                     </Text>
                     <Text style={{ display: 'block' }}>
-                      
-                        This cannot be changed later. See{' '}
-                        <Link
-                          variant="external"
-                          linkColor="muted"
-                          to="https://actualbudget.org/docs/accounts/#off-budget-accounts"
-                        >
-                          Accounts Overview
-                        </Link>{' '}
-                        for more information.
-                      
+                      This cannot be changed later. See{' '}
+                      <Link
+                        variant="external"
+                        linkColor="muted"
+                        to="https://actualbudget.org/docs/accounts/#off-budget-accounts"
+                      >
+                        Accounts Overview
+                      </Link>{' '}
+                      for more information.
                     </Text>
                   </div>
                 </View>
               </View>
 
-              <InlineField label={'Balance'} width="100%">
+              <InlineField label="Balance" width="100%">
                 <Input
                   name="balance"
                   inputMode="decimal"
@@ -212,9 +206,7 @@ export function CreateLocalAccountModal() {
               )}
 
               <ModalButtons>
-                <Button onPress={() => state.close()}>
-                  Cancel
-                </Button>
+                <Button onPress={() => state.close()}>Cancel</Button>
                 <Button
                   type="submit"
                   variant="primary"

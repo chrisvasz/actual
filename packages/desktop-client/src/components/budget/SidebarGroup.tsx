@@ -52,7 +52,6 @@ export function SidebarGroup({
   onHideNewGroup,
   onToggleCollapse,
 }: SidebarGroupProps) {
-
   const temporary = group.id === 'new';
   const { valueOr: pendingNameOr, showUntil: showNameUntil } =
     usePendingValue<string>();
@@ -154,7 +153,7 @@ export function SidebarGroup({
           >
             <Button
               variant="bare"
-              aria-label={'Add category'}
+              aria-label="Add category"
               className={cx(
                 css({
                   color: theme.pageTextLight,

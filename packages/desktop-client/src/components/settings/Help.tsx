@@ -41,10 +41,8 @@ export function HelpSettings() {
       }
     >
       <Text>
-        
-          <strong>Help</strong> is a click away: read the docs or ask the
-          community.
-        
+        <strong>Help</strong> is a click away: read the docs or ask the
+        community.
       </Text>
     </Setting>
   );

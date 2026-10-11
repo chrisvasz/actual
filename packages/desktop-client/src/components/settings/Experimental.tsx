@@ -236,12 +236,10 @@ export function ExperimentalFeatures() {
       }
     >
       <Text>
-        
-          <strong>Experimental features.</strong> These features are not fully
-          tested and may not work as expected. THEY MAY CAUSE IRRECOVERABLE DATA
-          LOSS. They may do nothing at all. Only enable them if you know what
-          you are doing.
-        
+        <strong>Experimental features.</strong> These features are not fully
+        tested and may not work as expected. THEY MAY CAUSE IRRECOVERABLE DATA
+        LOSS. They may do nothing at all. Only enable them if you know what you
+        are doing.
       </Text>
     </Setting>
   );
