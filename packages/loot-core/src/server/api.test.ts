@@ -60,7 +60,7 @@ describe('API handlers', () => {
         { id, name: 'ISAs' },
       ]);
 
-      await db.insertAccount({ id: 'acct1', name: 'Marcus' });
+      db.insertAccount({ id: 'acct1', name: 'Marcus' });
       await handlers['api/account-update']({
         id: 'acct1',
         fields: { account_group_id: id },
@@ -84,19 +84,19 @@ describe('API handlers', () => {
       await sheet.loadSpreadsheet(db);
       await prefs.loadPrefs();
 
-      await db.insertCategoryGroup({
+      db.insertCategoryGroup({
         id: 'income-group',
         name: 'Income',
         is_income: 1,
       });
-      await db.insertCategory({
+      db.insertCategory({
         id: 'income-cat',
         name: 'Salary',
         cat_group: 'income-group',
         is_income: 1,
       });
 
-      await db.insertAccount({ id: 'acct1', name: 'Checking' });
+      db.insertAccount({ id: 'acct1', name: 'Checking' });
 
       handlers['get-budget-bounds'] = vi
         .fn()
@@ -109,7 +109,7 @@ describe('API handlers', () => {
 
     it('envelope budget: income group returns only received', async () => {
       await createBudget(['2026-02', '2026-03']);
-      await db.insertTransaction({
+      db.insertTransaction({
         id: 'tx1',
         date: '2026-03-15',
         account: 'acct1',

@@ -26,7 +26,7 @@ async function fixSplitTransactions(): Promise<{
 }> {
   // 1. Check for child transactions that have a blank payee, and set
   //    the payee to whatever the parent has
-  const blankPayeeRows = await db.all<
+  const blankPayeeRows = db.all<
     db.DbViewTransactionInternal & {
       parentPayee: db.DbViewTransactionInternal['payee'];
     }
@@ -46,7 +46,7 @@ async function fixSplitTransactions(): Promise<{
 
   // 2. Make sure the "cleared" flag is synced up with the parent
   // transactions
-  const clearedRows = await db.all<
+  const clearedRows = db.all<
     Pick<db.DbViewTransactionInternal, 'id'> &
       Pick<db.DbViewTransactionInternal, 'cleared'>
   >(`
@@ -65,7 +65,7 @@ async function fixSplitTransactions(): Promise<{
 
   // 3. Mark the `tombstone` field as true on any child transactions
   //    that have a dead parent
-  const deletedRows = await db.all<db.DbViewTransactionInternal>(`
+  const deletedRows = db.all<db.DbViewTransactionInternal>(`
     SELECT t.* FROM v_transactions_internal t
     LEFT JOIN v_transactions_internal p ON t.parent_id = p.id
     WHERE t.is_child = 1 AND t.tombstone = 0 AND (p.tombstone = 1 OR p.id IS NULL)
@@ -94,9 +94,7 @@ async function fixSplitTransactions(): Promise<{
   });
 
   // 5. Fix transfers that should not have categories
-  const brokenTransfers = await db.all<
-    Pick<db.DbViewTransactionInternal, 'id'>
-  >(`
+  const brokenTransfers = db.all<Pick<db.DbViewTransactionInternal, 'id'>>(`
     SELECT t1.id
     FROM v_transactions_internal t1
            JOIN accounts a1 ON t1.account = a1.id
@@ -115,7 +113,7 @@ async function fixSplitTransactions(): Promise<{
   });
 
   // 6. Remove transaction errors from non-parent transactions
-  const errorRows = await db.all<Pick<db.DbViewTransactionInternal, 'id'>>(`
+  const errorRows = db.all<Pick<db.DbViewTransactionInternal, 'id'>>(`
     SELECT id FROM v_transactions_internal WHERE error IS NOT NULL AND is_parent = 0
   `);
 
@@ -125,7 +123,7 @@ async function fixSplitTransactions(): Promise<{
   });
 
   // 7. Clear categories of parent transactions
-  const parentTransactionsWithCategory = await db.all<
+  const parentTransactionsWithCategory = db.all<
     Pick<db.DbViewTransactionInternal, 'id'>
   >(`
     SELECT id FROM transactions WHERE isParent = 1 AND category IS NOT NULL

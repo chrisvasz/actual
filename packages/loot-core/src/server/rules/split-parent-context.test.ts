@@ -74,7 +74,7 @@ describe('split parent formula context', () => {
       is_parent: true,
       subtransactions: [{ amount: -2550 }, { amount: -450 }],
     });
-    const finalized = await finalizeTransactionForRules(result);
+    const finalized = finalizeTransactionForRules(result);
     for (const transaction of [finalized, ...finalized.subtransactions]) {
       expect(
         Object.keys(transaction).filter(key => key.startsWith('parent_')),

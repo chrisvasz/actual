@@ -24,12 +24,12 @@ describe('Merging fails for invalid quantity', () => {
 
   it("fails when amounts don't match", async () => {
     await prepareDatabase();
-    const t1 = await db.insertTransaction({
+    const t1 = db.insertTransaction({
       account: 'one',
       date: '2025-01-01',
       amount: 10,
     });
-    const t2 = await db.insertTransaction({
+    const t2 = db.insertTransaction({
       account: 'one',
       date: '2025-01-01',
       amount: 12,
@@ -41,7 +41,7 @@ describe('Merging fails for invalid quantity', () => {
 
   it('fails when the same transaction is passed twice', async () => {
     await prepareDatabase();
-    const t1 = await db.insertTransaction({
+    const t1 = db.insertTransaction({
       account: 'one',
       date: '2025-01-01',
       amount: 10,
@@ -49,12 +49,12 @@ describe('Merging fails for invalid quantity', () => {
     await expect(() =>
       mergeTransactions([{ id: t1 }, { id: t1 }]),
     ).rejects.toThrow('Merging is only possible with 2 distinct transactions');
-    expect(await db.getTransaction(t1)).toBeTruthy();
+    expect(db.getTransaction(t1)).toBeTruthy();
   });
 
   it("fails when transaction id doesn't exist", async () => {
     await prepareDatabase();
-    const t1 = await db.insertTransaction({
+    const t1 = db.insertTransaction({
       account: 'one',
       date: '2025-01-01',
       amount: 10,
@@ -66,25 +66,25 @@ describe('Merging fails for invalid quantity', () => {
 });
 
 async function prepareDatabase() {
-  await db.insertCategoryGroup({ id: 'group1', name: 'group1', is_income: 0 });
-  await db.insertCategory({
+  db.insertCategoryGroup({ id: 'group1', name: 'group1', is_income: 0 });
+  db.insertCategory({
     id: '1',
     name: 'cat1',
     cat_group: 'group1',
     is_income: 0,
   });
-  await db.insertCategory({
+  db.insertCategory({
     id: '2',
     name: 'cat2',
     cat_group: 'group1',
     is_income: 0,
   });
-  await db.insertAccount({ id: 'one', name: 'one' });
-  await db.insertAccount({ id: 'two', name: 'two' });
-  await db.insertAccount({ id: 'three', name: 'three', offbudget: 1 });
-  await db.insertPayee({ id: 'payee1', name: 'one' });
-  await db.insertPayee({ id: 'payee2', name: 'two' });
-  await db.insertPayee({ id: 'payee3', name: 'three' });
+  db.insertAccount({ id: 'one', name: 'one' });
+  db.insertAccount({ id: 'two', name: 'two' });
+  db.insertAccount({ id: 'three', name: 'three', offbudget: 1 });
+  db.insertPayee({ id: 'payee1', name: 'one' });
+  db.insertPayee({ id: 'payee2', name: 'two' });
+  db.insertPayee({ id: 'payee3', name: 'three' });
 }
 
 function getAllTransactions() {
@@ -146,18 +146,18 @@ describe('Merging success', () => {
   } as db.DbViewTransaction;
 
   it('two banksynced transactions keeps older transaction', async () => {
-    const t1 = await db.insertTransaction({
+    const t1 = db.insertTransaction({
       ...transaction1,
       imported_id: 'imported_1',
     });
-    const t2 = await db.insertTransaction({
+    const t2 = db.insertTransaction({
       ...transaction2,
       imported_id: 'imported_2',
     });
 
     expect(await mergeTransactions([{ id: t1 }, { id: t2 }])).toBe(t1);
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(1);
     expect(transactions[0]).toMatchObject({
       ...dbTransaction1,
@@ -166,15 +166,15 @@ describe('Merging success', () => {
   });
 
   it('first banksynced, second manual keeps banksynced values', async () => {
-    const t1 = await db.insertTransaction({
+    const t1 = db.insertTransaction({
       ...transaction1,
       imported_id: 'imported_1',
     });
-    const t2 = await db.insertTransaction(transaction2);
+    const t2 = db.insertTransaction(transaction2);
 
     expect(await mergeTransactions([{ id: t1 }, { id: t2 }])).toBe(t1);
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(1);
     expect(transactions[0]).toMatchObject({
       ...dbTransaction1,
@@ -183,18 +183,18 @@ describe('Merging success', () => {
   });
 
   it('first file imported, second banksycned keeps banksynced values', async () => {
-    const t1 = await db.insertTransaction({
+    const t1 = db.insertTransaction({
       ...transaction1,
       imported_payee: 'payee',
     });
-    const t2 = await db.insertTransaction({
+    const t2 = db.insertTransaction({
       ...transaction2,
       imported_id: 'imported_2',
     });
 
     expect(await mergeTransactions([{ id: t1 }, { id: t2 }])).toBe(t2);
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(1);
     expect(transactions[0]).toMatchObject({
       ...dbTransaction2,
@@ -203,18 +203,18 @@ describe('Merging success', () => {
   });
 
   it('second file imported, first banksycned keeps banksynced values', async () => {
-    const t1 = await db.insertTransaction({
+    const t1 = db.insertTransaction({
       ...transaction1,
       imported_id: 'imported_1',
     });
-    const t2 = await db.insertTransaction({
+    const t2 = db.insertTransaction({
       ...transaction2,
       imported_payee: 'payee',
     });
 
     expect(await mergeTransactions([{ id: t1 }, { id: t2 }])).toBe(t1);
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(1);
     expect(transactions[0]).toMatchObject({
       ...dbTransaction1,
@@ -223,15 +223,15 @@ describe('Merging success', () => {
   });
 
   it('second file imported, first manual keeps file imported values', async () => {
-    const t1 = await db.insertTransaction(transaction1);
-    const t2 = await db.insertTransaction({
+    const t1 = db.insertTransaction(transaction1);
+    const t2 = db.insertTransaction({
       ...transaction2,
       imported_payee: 'payee',
     });
 
     expect(await mergeTransactions([{ id: t1 }, { id: t2 }])).toBe(t2);
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(1);
     expect(transactions[0]).toMatchObject({
       ...dbTransaction2,
@@ -240,15 +240,15 @@ describe('Merging success', () => {
   });
 
   it('first file imported, second manual keeps file imported values', async () => {
-    const t1 = await db.insertTransaction({
+    const t1 = db.insertTransaction({
       ...transaction1,
       imported_payee: 'payee',
     });
-    const t2 = await db.insertTransaction(transaction2);
+    const t2 = db.insertTransaction(transaction2);
 
     expect(await mergeTransactions([{ id: t1 }, { id: t2 }])).toBe(t1);
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(1);
     expect(transactions[0]).toMatchObject({
       ...dbTransaction1,
@@ -257,15 +257,15 @@ describe('Merging success', () => {
   });
 
   it('second banksynced, first manual keeps banksynced values', async () => {
-    const t1 = await db.insertTransaction(transaction1);
-    const t2 = await db.insertTransaction({
+    const t1 = db.insertTransaction(transaction1);
+    const t2 = db.insertTransaction({
       ...transaction2,
       imported_id: 'imported_2',
     });
 
     expect(await mergeTransactions([{ id: t1 }, { id: t2 }])).toBe(t2);
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(1);
     expect(transactions[0]).toMatchObject({
       ...dbTransaction2,
@@ -275,16 +275,16 @@ describe('Merging success', () => {
 
   it('missing values in keep are filled in with drop values', async () => {
     // only insert required fields, imported to be kept
-    const t1 = await db.insertTransaction({
+    const t1 = db.insertTransaction({
       account: 'one',
       amount: 5,
       date: '2025-01-01',
       imported_id: 'imported_1',
     });
-    const t2 = await db.insertTransaction(transaction2);
+    const t2 = db.insertTransaction(transaction2);
 
     expect(await mergeTransactions([{ id: t1 }, { id: t2 }])).toBe(t1);
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(1);
     expect(transactions[0]).toMatchObject({
       ...dbTransaction2,
@@ -298,61 +298,61 @@ describe('Merging success', () => {
   });
 
   it('preserves schedule link from dropped transaction when kept transaction has none', async () => {
-    const t1 = await db.insertTransaction({
+    const t1 = db.insertTransaction({
       account: 'one',
       amount: 5,
       date: '2025-01-01',
       imported_id: 'imported_1',
     });
-    const t2 = await db.insertTransaction({
+    const t2 = db.insertTransaction({
       ...transaction2,
       schedule: 'schedule-1',
     });
 
     expect(await mergeTransactions([{ id: t1 }, { id: t2 }])).toBe(t1);
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(1);
     expect(transactions[0].schedule).toBe('schedule-1');
   });
 
   it('preserves schedule link from kept transaction when both have schedules', async () => {
-    const t1 = await db.insertTransaction({
+    const t1 = db.insertTransaction({
       ...transaction1,
       imported_id: 'imported_1',
       schedule: 'schedule-keep',
     });
-    const t2 = await db.insertTransaction({
+    const t2 = db.insertTransaction({
       ...transaction2,
       schedule: 'schedule-drop',
     });
 
     expect(await mergeTransactions([{ id: t1 }, { id: t2 }])).toBe(t1);
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(1);
     expect(transactions[0].schedule).toBe('schedule-keep');
   });
 
   it('preserves schedule link when merging manual scheduled with banksynced', async () => {
     // Manual transaction linked to a schedule
-    const t1 = await db.insertTransaction({
+    const t1 = db.insertTransaction({
       ...transaction1,
       schedule: 'schedule-1',
     });
     // Bank-synced transaction (kept due to imported_id priority)
-    const t2 = await db.insertTransaction({
+    const t2 = db.insertTransaction({
       ...transaction2,
       imported_id: 'imported_2',
     });
 
     expect(await mergeTransactions([{ id: t1 }, { id: t2 }])).toBe(t2);
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(1);
     expect(transactions[0].schedule).toBe('schedule-1');
   });
 
   it('preserves split categories when merging split transaction with uncategorized imported transaction', async () => {
     // Create a manual transaction with splits
-    const manualParent = await db.insertTransaction({
+    const manualParent = db.insertTransaction({
       account: 'one',
       amount: 100,
       date: '2025-01-01',
@@ -360,7 +360,7 @@ describe('Merging success', () => {
       category: null,
     });
 
-    const _sub1 = await db.insertTransaction({
+    const _sub1 = db.insertTransaction({
       account: 'one',
       amount: 60,
       date: '2025-01-01',
@@ -370,7 +370,7 @@ describe('Merging success', () => {
       parent_id: manualParent,
     });
 
-    const _sub2 = await db.insertTransaction({
+    const _sub2 = db.insertTransaction({
       account: 'one',
       amount: 40,
       date: '2025-01-01',
@@ -381,7 +381,7 @@ describe('Merging success', () => {
     });
 
     // Create an uncategorized imported transaction
-    const imported = await db.insertTransaction({
+    const imported = db.insertTransaction({
       account: 'one',
       amount: 100,
       date: '2025-01-02',
@@ -397,13 +397,13 @@ describe('Merging success', () => {
     expect(keptId).toBe(imported);
 
     // Check that the kept transaction is now a parent
-    const keptTransaction = await db.getTransaction(imported);
+    const keptTransaction = db.getTransaction(imported);
     expect(keptTransaction?.is_parent).toBe(true);
     expect(keptTransaction?.category).toBeNull();
     expect(keptTransaction?.imported_id).toBe('imported_1');
 
     // Check that subtransactions were transferred and still exist
-    const allTransactions = await getAllTransactions();
+    const allTransactions = getAllTransactions();
     const childTransactions = allTransactions.filter(
       t => t.parent_id === imported,
     );
@@ -435,26 +435,26 @@ describe('Merging success', () => {
   });
 
   it('transfer link is preserved on drop', async () => {
-    const t1 = await db.insertTransaction({
+    const t1 = db.insertTransaction({
       ...transaction1,
       category: 'category_id',
       imported_id: 'import_1',
       imported_payee: 'payee_import_2',
     });
 
-    const t2 = await db.insertTransaction({
+    const t2 = db.insertTransaction({
       ...transaction2,
     });
-    const t2Transfer = await db.insertTransaction({
+    const t2Transfer = db.insertTransaction({
       ...transaction2,
       account: 'one',
       amount: -transaction2.amount,
       transfer_id: t2,
     });
-    await db.updateTransaction({ id: t2, transfer_id: t2Transfer });
+    db.updateTransaction({ id: t2, transfer_id: t2Transfer });
 
     expect(await mergeTransactions([{ id: t1 }, { id: t2 }])).toBe(t1);
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(2);
     const t1R = transactions.find(tx => tx.id === t1);
     const t2TransferR = transactions.find(tx => tx.id === t2Transfer);
@@ -468,37 +468,37 @@ describe('Merging success', () => {
 
   it('merging two transfers selects the best transaction in each account to preserve', async () => {
     // A -> B
-    const a = await db.insertTransaction({
+    const a = db.insertTransaction({
       ...transaction1,
       amount: -10,
       date: '2025-01-01', // A is earlier than C
     });
-    const b = await db.insertTransaction({
+    const b = db.insertTransaction({
       ...transaction2,
       amount: 10,
       date: '2025-01-05', // B is later than D
       transfer_id: a,
     });
-    await db.updateTransaction({ id: a, transfer_id: b });
+    db.updateTransaction({ id: a, transfer_id: b });
 
     // C -> D
-    const c = await db.insertTransaction({
+    const c = db.insertTransaction({
       ...transaction1,
       amount: -10,
       date: '2025-01-03', // C is later than A
     });
-    const d = await db.insertTransaction({
+    const d = db.insertTransaction({
       ...transaction2,
       amount: 10,
       date: '2025-01-02', // D is earlier than B
       transfer_id: c,
     });
-    await db.updateTransaction({ id: c, transfer_id: d });
+    db.updateTransaction({ id: c, transfer_id: d });
 
     // Merge A and C
     expect(await mergeTransactions([{ id: a }, { id: c }])).toBe(a);
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(2);
 
     expect(transactions[0].id).toBe(d); // 2025-01-02 is more recent than 2025-01-01

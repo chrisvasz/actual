@@ -19,8 +19,8 @@ beforeEach(async () => {
   vi.mocked(monthUtils.currentDay).mockReturnValue('2017-10-15');
   vi.mocked(monthUtils.currentMonth).mockReturnValue('2017-10');
   await global.emptyDatabase()();
-  await loadMappings();
-  await loadRules();
+  loadMappings();
+  loadRules();
 });
 
 function getAllTransactions() {
@@ -36,15 +36,15 @@ function getAllTransactions() {
 }
 
 async function prepareDatabase() {
-  await db.insertCategoryGroup({ id: 'group1', name: 'group1', is_income: 1 });
-  await db.insertCategory({
+  db.insertCategoryGroup({ id: 'group1', name: 'group1', is_income: 1 });
+  db.insertCategory({
     name: 'income',
     cat_group: 'group1',
     is_income: 1,
   });
 
-  const id = await db.insertAccount({ id: 'one', name: 'Checking' });
-  await db.insertPayee({
+  const id = db.insertAccount({ id: 'one', name: 'Checking' });
+  db.insertPayee({
     id: 'transfer-' + id,
     name: '',
     transfer_acct: id,
@@ -54,7 +54,7 @@ async function prepareDatabase() {
 }
 
 async function getAllPayees() {
-  return (await db.getPayees()).filter(p => p.transfer_acct == null);
+  return db.getPayees().filter(p => p.transfer_acct == null);
 }
 
 describe('Account sync', () => {
@@ -72,7 +72,7 @@ describe('Account sync', () => {
     payees = await getAllPayees();
     expect(payees.length).toBe(2);
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(2);
     expect(transactions.find(t => t.amount === 4133).payee).toBe(
       payees.find(p => p.name === 'Bakkerij').id,
@@ -97,7 +97,7 @@ describe('Account sync', () => {
     expect(payees.length).toBe(1);
     expect(payees[0].name).toBe('Nintendo Store New York Ny');
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions[0].imported_payee).toBe('Nintendo Store New York Ny');
   });
 
@@ -121,7 +121,7 @@ describe('Account sync', () => {
     expect(payees.length).toBe(1);
     expect(payees[0].name).toBe('Nintendo Store New York Ny');
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions[0].imported_payee).toBe('Nintendo Store New York Ny');
   });
 
@@ -146,7 +146,7 @@ describe('Account sync', () => {
     expect(payees.length).toBe(1);
     expect(payees[0].name).toBe('Nintendo Store New York NY');
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions[0].imported_payee).toBe('Nintendo Store New York NY');
   });
 
@@ -171,7 +171,7 @@ describe('Account sync', () => {
     expect(payees.length).toBe(1);
     expect(payees[0].name).toBe('Nintendo Store New York NY');
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions[0].imported_payee).toBe('Nintendo Store New York NY');
   });
 
@@ -202,7 +202,7 @@ describe('Account sync', () => {
   test('reconcile handles transactions with undefined fields', async () => {
     const { id: acctId } = await prepareDatabase();
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: 'one',
       account: acctId,
       amount: 2948,
@@ -214,7 +214,7 @@ describe('Account sync', () => {
       { date: '2020-01-01', amount: 2948 },
     ]);
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(2);
     expect(transactions).toMatchSnapshot();
 
@@ -235,15 +235,15 @@ describe('Account sync', () => {
       { date: '2020-01-01', imported_id: 'finid' },
     ]);
 
-    const transactions1 = await getAllTransactions();
+    const transactions1 = getAllTransactions();
     expect(transactions1.length).toBe(1);
 
-    await db.deleteTransaction(transactions1[0]);
+    db.deleteTransaction(transactions1[0]);
 
     await reconcileTransactions(acctId, [
       { date: '2020-01-01', imported_id: 'finid' },
     ]);
-    const transactions2 = await getAllTransactions();
+    const transactions2 = getAllTransactions();
     expect(transactions2.length).toBe(2);
     expect(transactions2).toMatchSnapshot();
   });
@@ -255,17 +255,17 @@ describe('Account sync', () => {
       { date: '2020-01-01', imported_id: 'finid-override' },
     ]);
 
-    const transactions1 = await getAllTransactions();
+    const transactions1 = getAllTransactions();
     expect(transactions1.length).toBe(1);
 
-    await db.deleteTransaction(transactions1[0]);
+    db.deleteTransaction(transactions1[0]);
 
     await reconcileTransactions(
       acctId,
       [{ date: '2020-01-01', imported_id: 'finid-override' }],
       { reimportDeleted: false },
     );
-    const transactions2 = await getAllTransactions();
+    const transactions2 = getAllTransactions();
     expect(transactions2.length).toBe(1);
   });
 
@@ -276,34 +276,34 @@ describe('Account sync', () => {
       { date: '2020-01-01', imported_id: 'finid-override2' },
     ]);
 
-    const transactions1 = await getAllTransactions();
+    const transactions1 = getAllTransactions();
     expect(transactions1.length).toBe(1);
 
-    await db.deleteTransaction(transactions1[0]);
+    db.deleteTransaction(transactions1[0]);
 
     await reconcileTransactions(
       acctId,
       [{ date: '2020-01-01', imported_id: 'finid-override2' }],
       { reimportDeleted: true },
     );
-    const transactions2 = await getAllTransactions();
+    const transactions2 = getAllTransactions();
     expect(transactions2.length).toBe(2);
   });
 
   test('reconcile run rules with inferred payee', async () => {
     const { id: acctId } = await prepareDatabase();
-    await db.insertCategoryGroup({
+    db.insertCategoryGroup({
       id: 'group2',
       name: 'group2',
     });
-    const catId = await db.insertCategory({
+    const catId = db.insertCategory({
       name: 'Food',
       cat_group: 'group2',
     });
 
-    const payeeId = await db.insertPayee({ name: 'bakkerij' });
+    const payeeId = db.insertPayee({ name: 'bakkerij' });
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'payee', value: payeeId }],
@@ -314,7 +314,7 @@ describe('Account sync', () => {
       { date: '2020-01-02', payee_name: 'Bakkerij', amount: 4133 },
     ]);
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     // Even though the payee was inferred from the string name (no
     // renaming rules ran), it should match the above rule and set the
     // category
@@ -335,7 +335,7 @@ describe('Account sync', () => {
       { date: '2020-01-02', payee_name: '     ', amount: 4133 },
     ]);
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     // Even though the payee was inferred from the string name (no
     // renaming rules ran), it should match the above rule and set the
     // category
@@ -352,9 +352,9 @@ describe('Account sync', () => {
   test('reconcile run rules dont create unnecessary payees', async () => {
     const { id: acctId } = await prepareDatabase();
 
-    const payeeId = await db.insertPayee({ name: 'bakkerij-renamed' });
+    const payeeId = db.insertPayee({ name: 'bakkerij-renamed' });
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'imported_payee', value: 'Bakkerij' }],
@@ -369,7 +369,7 @@ describe('Account sync', () => {
     expect(payees.length).toBe(1);
     expect(payees[0].id).toBe(payeeId);
 
-    const transactions = await getAllTransactions();
+    const transactions = getAllTransactions();
     expect(transactions.length).toBe(1);
     expect(transactions[0].payee).toBe(payeeId);
   });
@@ -390,8 +390,8 @@ describe('Account sync', () => {
         // to
       }
 
-      const payeeId1 = await db.insertPayee({ name: 'bakkerij2' });
-      const payeeId2 = await db.insertPayee({ name: 'bakkerij-renamed' });
+      const payeeId1 = db.insertPayee({ name: 'bakkerij2' });
+      const payeeId2 = db.insertPayee({ name: 'bakkerij-renamed' });
 
       // Insert a rule *before* payees are merged. Not that v2 would
       // fail if we inserted this rule after, because the rule would
@@ -401,7 +401,7 @@ describe('Account sync', () => {
       // case that we don't need to worry much about because the user
       // shouldn't be able able to create rules for a merged payee.
       // Unless they sync in a rule...
-      await insertRule({
+      insertRule({
         stage: null,
         conditionsOp: 'and',
         conditions: [{ op: 'is', field: 'imported_payee', value: 'Bakkerij' }],
@@ -409,12 +409,12 @@ describe('Account sync', () => {
       });
 
       if (version === 'v1') {
-        await db.mergePayees(payeeId2, [payeeId1]);
+        db.mergePayees(payeeId2, [payeeId1]);
       } else if (version === 'v2') {
-        await db.mergePayees(payeeId1, [payeeId2]);
+        db.mergePayees(payeeId1, [payeeId2]);
       }
 
-      await db.insertTransaction({
+      db.insertTransaction({
         id: 'one',
         account: acctId,
         amount: -2947,
@@ -423,7 +423,7 @@ describe('Account sync', () => {
       });
       // It will try to match to this one first, make sure it matches
       // the above transaction though
-      await db.insertTransaction({
+      db.insertTransaction({
         id: 'two',
         account: acctId,
         amount: -2947,
@@ -447,7 +447,7 @@ describe('Account sync', () => {
       expect(updated.length).toBe(1);
       expect(updated[0]).toBe('one');
 
-      const transactions = await getAllTransactions();
+      const transactions = getAllTransactions();
       expect(transactions.length).toBe(2);
       expect(transactions.find(t => t.id === 'one').imported_id).toBe(
         'imported1',
@@ -461,10 +461,10 @@ describe('Account sync', () => {
   test('addTransactions simply adds transactions', async () => {
     const { id: acctId } = await prepareDatabase();
 
-    const payeeId = await db.insertPayee({ name: 'bakkerij-renamed' });
+    const payeeId = db.insertPayee({ name: 'bakkerij-renamed' });
 
     // Make sure it still runs rules
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'imported_payee', value: 'Bakkerij' }],
@@ -502,7 +502,7 @@ describe('Account sync', () => {
 
     const getName = id => payees.find(p => p.id === id).name;
 
-    const allTransactions = await getAllTransactions();
+    const allTransactions = getAllTransactions();
     expect(allTransactions.length).toBe(4);
     expect(allTransactions.map(t => getName(t.payee))).toEqual([
       'bakkerij3',
@@ -534,7 +534,7 @@ describe('Account sync', () => {
     payees = await getAllPayees();
     expect(payees.length).toBe(1);
 
-    let transactions = await getAllTransactions();
+    let transactions = getAllTransactions();
     expect(transactions.length).toBe(1);
 
     // Add second transaction
@@ -553,7 +553,7 @@ describe('Account sync', () => {
     payees = await getAllPayees();
     expect(payees.length).toBe(1);
 
-    transactions = await getAllTransactions();
+    transactions = getAllTransactions();
     expect(transactions.length).toBe(2);
 
     expect(
@@ -594,7 +594,7 @@ describe('Account sync', () => {
       payees = await getAllPayees();
       expect(payees.length).toBe(1);
 
-      let transactions = await getAllTransactions();
+      let transactions = getAllTransactions();
       expect(transactions.length).toBe(1);
 
       // Import transaction similar to existing but with different date and no imported_id
@@ -609,7 +609,7 @@ describe('Account sync', () => {
       payees = await getAllPayees();
       expect(payees.length).toBe(1);
 
-      transactions = await getAllTransactions();
+      transactions = getAllTransactions();
       expect(transactions.length).toBe(1);
 
       expect(transactions[0].amount).toBe(-1239);
@@ -642,7 +642,7 @@ describe('Account sync', () => {
       payees = await getAllPayees();
       expect(payees.length).toBe(1);
 
-      let transactions = await getAllTransactions();
+      let transactions = getAllTransactions();
       expect(transactions.length).toBe(1);
 
       // Import transaction similar to existing but with different date and imported_id
@@ -661,7 +661,7 @@ describe('Account sync', () => {
       payees = await getAllPayees();
       expect(payees.length).toBe(1);
 
-      transactions = await getAllTransactions();
+      transactions = getAllTransactions();
       expect(transactions.length).toBe(1);
 
       expect(transactions[0].amount).toBe(-1239);

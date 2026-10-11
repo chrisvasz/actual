@@ -11,9 +11,9 @@ async function runMigrations() {
   await migrations.migrate(db.getDatabase());
 }
 
-async function updateViews() {
+function updateViews() {
   const hashKey = 'view-hash';
-  const row = await db.first<{ value: string }>(
+  const row = db.first<{ value: string }>(
     'SELECT value FROM __meta__ WHERE key = ?',
     [hashKey],
   );
@@ -33,5 +33,5 @@ async function updateViews() {
 
 export async function updateVersion() {
   await runMigrations();
-  await updateViews();
+  updateViews();
 }

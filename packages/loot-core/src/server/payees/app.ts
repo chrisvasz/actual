@@ -60,16 +60,16 @@ async function createPayee({ name }: { name: PayeeEntity['name'] }) {
 
 async function getCommonPayees(): Promise<PayeeEntity[]> {
   // TODO: Update to an AQL query. Server must return AQL entities not the raw DB data.
-  return (await db.getCommonPayees()).map(p => payeeModel.fromDb(p));
+  return db.getCommonPayees().map(p => payeeModel.fromDb(p));
 }
 
 async function getPayees(): Promise<PayeeEntity[]> {
   // TODO: Update to an AQL query. Server must return AQL entities not the raw DB data.
-  return (await db.getPayees()).map(p => payeeModel.fromDb(p));
+  return db.getPayees().map(p => payeeModel.fromDb(p));
 }
 
 async function getOrphanedPayees(): Promise<Array<Pick<PayeeEntity, 'id'>>> {
-  return await db.syncGetOrphanedPayees();
+  return db.syncGetOrphanedPayees();
 }
 
 async function getPayeeRuleCounts() {
@@ -97,7 +97,7 @@ async function mergePayees({
   targetId: PayeeEntity['id'];
   mergeIds: Array<PayeeEntity['id']>;
 }) {
-  await db.mergePayees(targetId, mergeIds);
+  db.mergePayees(targetId, mergeIds);
 }
 
 async function batchChangePayees({
@@ -105,25 +105,17 @@ async function batchChangePayees({
   deleted,
   updated,
 }: Partial<Diff<PayeeEntity>>): Promise<void> {
-  await batchMessages(async () => {
-    if (deleted) {
-      await Promise.all(
-        deleted.map(p => ({ id: p.id })).map(p => db.deletePayee(p)),
-      );
+  batchMessages(() => {
+    for (const p of deleted ?? []) {
+      db.deletePayee({ id: p.id });
     }
 
-    if (added) {
-      await Promise.all(
-        added.map(p => payeeModel.toDb(p)).map(p => db.insertPayee(p)),
-      );
+    for (const p of added ?? []) {
+      db.insertPayee(payeeModel.toDb(p));
     }
 
-    if (updated) {
-      await Promise.all(
-        updated
-          .map(p => payeeModel.toDb(p as PayeeEntity, { update: true }))
-          .map(p => db.updatePayee(p)),
-      );
+    for (const p of updated ?? []) {
+      db.updatePayee(payeeModel.toDb(p as PayeeEntity, { update: true }));
     }
   });
 }
@@ -133,7 +125,7 @@ async function checkOrphanedPayees({
 }: {
   ids: Array<PayeeEntity['id']>;
 }): Promise<Array<PayeeEntity['id']>> {
-  const orphaned = new Set(await db.getOrphanedPayees());
+  const orphaned = new Set(db.getOrphanedPayees());
   return ids.filter(id => orphaned.has(id));
 }
 
@@ -169,7 +161,7 @@ async function createPayeeLocation({
     );
   }
 
-  return await db.insertWithUUID('payee_locations', {
+  return db.insertWithUUID('payee_locations', {
     payee_id: payeeId,
     latitude,
     longitude,
@@ -200,7 +192,7 @@ async function deletePayeeLocation({
 }: {
   id: PayeeLocationEntity['id'];
 }): Promise<void> {
-  await db.delete_('payee_locations', id);
+  db.delete_('payee_locations', id);
 }
 
 // Type for the raw query result that combines PayeeEntity and PayeeLocationEntity fields

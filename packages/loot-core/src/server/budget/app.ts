@@ -17,7 +17,7 @@ import * as budget from './base';
 import { sortCategories } from './sort-categories';
 
 export type BudgetHandlers = {
-  'budget/budget-amount': typeof actions.setBudget;
+  'budget/budget-amount': typeof budgetAmount;
   'budget/copy-previous-month': typeof actions.copyPreviousMonth;
   'budget/copy-single-month': typeof actions.copySinglePreviousMonth;
   'budget/set-zero': typeof actions.setZero;
@@ -51,7 +51,7 @@ export type BudgetHandlers = {
 
 export const app = createApp<BudgetHandlers>();
 
-app.method('budget/budget-amount', mutator(undoable(actions.setBudget)));
+app.method('budget/budget-amount', mutator(undoable(budgetAmount)));
 app.method(
   'budget/copy-previous-month',
   mutator(undoable(actions.copyPreviousMonth)),
@@ -135,7 +135,7 @@ async function getBudgetBounds() {
 }
 
 async function envelopeBudgetMonth({ month }: { month: string }) {
-  const groups = await db.getCategoriesGrouped();
+  const groups = db.getCategoriesGrouped();
   const sheetName = monthUtils.sheetForMonth(month);
 
   function value(name: string) {
@@ -186,6 +186,12 @@ async function envelopeBudgetMonth({ month }: { month: string }) {
   return values;
 }
 
+async function budgetAmount(
+  args: Parameters<typeof actions.setBudget>[0],
+): Promise<void> {
+  actions.setBudget(args);
+}
+
 async function createCategory({
   name,
   groupId,
@@ -201,7 +207,7 @@ async function createCategory({
     throw APIError('Creating a category: groupId is required');
   }
 
-  return await db.insertCategory({
+  return db.insertCategory({
     name: name.trim(),
     cat_group: groupId,
     is_income: isIncome ? 1 : 0,
@@ -211,7 +217,7 @@ async function createCategory({
 
 async function updateCategory(category: CategoryEntity): Promise<void> {
   try {
-    await db.updateCategory(
+    db.updateCategory(
       categoryModel.toDb(
         { ...category, name: category.name.trim() },
         { update: true },
@@ -240,8 +246,8 @@ async function moveCategory({
   groupId: CategoryGroupEntity['id'];
   targetId: CategoryEntity['id'] | null;
 }): Promise<void> {
-  await batchMessages(async () => {
-    await db.moveCategory(id, groupId, targetId);
+  batchMessages(() => {
+    db.moveCategory(id, groupId, targetId);
   });
 }
 
@@ -252,8 +258,8 @@ async function deleteCategory({
   id: CategoryEntity['id'];
   transferId?: CategoryEntity['id'] | null;
 }): Promise<void> {
-  await batchMessages(async () => {
-    const row = await db.first<Pick<db.DbCategory, 'is_income'>>(
+  batchMessages(() => {
+    const row = db.first<Pick<db.DbCategory, 'is_income'>>(
       'SELECT is_income FROM categories WHERE id = ?',
       [id],
     );
@@ -263,10 +269,10 @@ async function deleteCategory({
 
     const transfer =
       transferId &&
-      (await db.first<Pick<db.DbCategory, 'is_income'>>(
+      db.first<Pick<db.DbCategory, 'is_income'>>(
         'SELECT is_income FROM categories WHERE id = ?',
         [transferId],
-      ));
+      );
 
     if (transferId && !transfer) {
       throw new Error(`Transfer category with id ${transferId} not found.`);
@@ -282,11 +288,11 @@ async function deleteCategory({
     // Update spreadsheet values if it's an expense category
     if (row.is_income === 0) {
       if (transferId) {
-        await budget.doTransfer([id], transferId);
+        budget.doTransfer([id], transferId);
       }
     }
 
-    await db.deleteCategory({ id }, transferId);
+    db.deleteCategory({ id }, transferId);
   });
 }
 
@@ -314,7 +320,7 @@ async function createCategoryGroup({
   isIncome?: CategoryGroupEntity['is_income'];
   hidden?: CategoryGroupEntity['hidden'];
 }): Promise<CategoryGroupEntity['id']> {
-  return await db.insertCategoryGroup({
+  return db.insertCategoryGroup({
     name,
     is_income: isIncome ? 1 : 0,
     hidden: hidden ? 1 : 0,
@@ -322,7 +328,7 @@ async function createCategoryGroup({
 }
 
 async function updateCategoryGroup(group: CategoryGroupEntity) {
-  await db.updateCategoryGroup(categoryGroupModel.toDb(group));
+  db.updateCategoryGroup(categoryGroupModel.toDb(group));
 }
 
 async function moveCategoryGroup({
@@ -332,8 +338,8 @@ async function moveCategoryGroup({
   id: CategoryGroupEntity['id'];
   targetId: CategoryGroupEntity['id'] | null;
 }): Promise<void> {
-  await batchMessages(async () => {
-    await db.moveCategoryGroup(id, targetId);
+  batchMessages(() => {
+    db.moveCategoryGroup(id, targetId);
   });
 }
 
@@ -344,19 +350,19 @@ async function deleteCategoryGroup({
   id: CategoryGroupEntity['id'];
   transferId?: CategoryGroupEntity['id'] | null;
 }): Promise<void> {
-  const groupCategories = await db.all<Pick<CategoryEntity, 'id'>>(
+  const groupCategories = db.all<Pick<CategoryEntity, 'id'>>(
     'SELECT id FROM categories WHERE cat_group = ? AND tombstone = 0',
     [id],
   );
 
-  await batchMessages(async () => {
+  batchMessages(() => {
     if (transferId) {
-      await budget.doTransfer(
+      budget.doTransfer(
         groupCategories.map(c => c.id),
         transferId,
       );
     }
-    await db.deleteCategoryGroup({ id }, transferId);
+    db.deleteCategoryGroup({ id }, transferId);
   });
 }
 

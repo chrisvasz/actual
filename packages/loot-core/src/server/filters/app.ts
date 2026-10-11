@@ -40,8 +40,8 @@ const filterModel = {
   },
 };
 
-async function filterNameExists(name, filterId, newItem) {
-  const idForName = await db.first<Pick<db.DbTransactionFilter, 'id'>>(
+function filterNameExists(name, filterId, newItem) {
+  const idForName = db.first<Pick<db.DbTransactionFilter, 'id'>>(
     'SELECT id from transaction_filters WHERE tombstone = 0 AND name = ?',
     [name],
   );
@@ -119,7 +119,7 @@ async function createFilter(filter): Promise<TransactionFilterEntity['id']> {
   };
 
   if (item.name) {
-    if (await filterNameExists(item.name, item.id, true)) {
+    if (filterNameExists(item.name, item.id, true)) {
       throw new Error('There is already a filter named ' + item.name);
     }
   } else {
@@ -139,7 +139,7 @@ async function createFilter(filter): Promise<TransactionFilterEntity['id']> {
   }
 
   // Create the filter here based on the info
-  await db.insertWithSchema('transaction_filters', filterModel.fromJS(item));
+  db.insertWithSchema('transaction_filters', filterModel.fromJS(item));
 
   return filterId;
 }
@@ -152,7 +152,7 @@ async function updateFilter(filter) {
     name: filter.state.name,
   };
   if (item.name) {
-    if (await filterNameExists(item.name, item.id, false)) {
+    if (filterNameExists(item.name, item.id, false)) {
       throw new Error('There is already a filter named ' + item.name);
     }
   } else {
@@ -171,11 +171,11 @@ async function updateFilter(filter) {
     throw new Error('Conditions are required');
   }
 
-  await db.updateWithSchema('transaction_filters', filterModel.fromJS(item));
+  db.updateWithSchema('transaction_filters', filterModel.fromJS(item));
 }
 
 async function deleteFilter(id: TransactionFilterEntity['id']) {
-  await db.delete_('transaction_filters', id);
+  db.delete_('transaction_filters', id);
 }
 
 export type FiltersHandlers = {

@@ -34,7 +34,7 @@ describe('formula preference bootstrap', () => {
     await ensureFormulaPreferencesLoaded();
     expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1,234.50');
 
-    await db.update('preferences', {
+    db.update('preferences', {
       id: 'numberFormat',
       value: 'dot-comma',
     });
@@ -57,7 +57,7 @@ describe('formula preference bootstrap', () => {
   });
 
   it('loads hidden fraction preference for formula number formatting', async () => {
-    await db.update('preferences', {
+    db.update('preferences', {
       id: 'hideFraction',
       value: 'true',
     });
@@ -103,7 +103,7 @@ describe('formula preference bootstrap', () => {
 
   it('keeps cached user preferences after unrelated synced preferences change', async () => {
     await ensureFormulaPreferencesLoaded();
-    await db.update('preferences', {
+    db.update('preferences', {
       id: 'numberFormat',
       value: 'dot-comma',
     });

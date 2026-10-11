@@ -4,11 +4,11 @@ import { app } from '#server/tags/app';
 
 beforeEach(async () => {
   await global.emptyDatabase()();
-  await loadMappings();
+  loadMappings();
 });
 
 async function insertTransaction(notes: string) {
-  return await db.insertTransaction({
+  return db.insertTransaction({
     account: 'account-1',
     date: '2024-01-01',
     amount: -1000,
@@ -17,7 +17,7 @@ async function insertTransaction(notes: string) {
 }
 
 async function getNotes(id: string) {
-  const transaction = await db.first<{ notes: string }>(
+  const transaction = db.first<{ notes: string }>(
     'SELECT notes FROM transactions WHERE id = ?',
     [id],
   );
@@ -27,11 +27,11 @@ async function getNotes(id: string) {
 describe('tags app', () => {
   describe('tags-rename', () => {
     beforeEach(async () => {
-      await db.insertAccount({ id: 'account-1', name: 'Account 1' });
+      db.insertAccount({ id: 'account-1', name: 'Account 1' });
     });
 
     it('renames the tag and rewrites it in transaction notes', async () => {
-      const id = await db.insertTag({
+      const id = db.insertTag({
         tag: 'Reimbursable',
         color: null,
         description: null,
@@ -41,7 +41,7 @@ describe('tags app', () => {
 
       await app.handlers['tags-rename']({ id, tag: '  ToBeReimbursed  ' });
 
-      expect(await db.getTags()).toEqual([
+      expect(db.getTags()).toEqual([
         expect.objectContaining({ id, tag: 'ToBeReimbursed' }),
       ]);
       expect(await getNotes(matching)).toBe('Lunch #ToBeReimbursed');
@@ -49,7 +49,7 @@ describe('tags app', () => {
     });
 
     it('rejects an invalid name', async () => {
-      const id = await db.insertTag({
+      const id = db.insertTag({
         tag: 'Food',
         color: null,
         description: null,
@@ -61,12 +61,12 @@ describe('tags app', () => {
     });
 
     it('rejects renaming onto an existing tag', async () => {
-      const id = await db.insertTag({
+      const id = db.insertTag({
         tag: 'Food',
         color: null,
         description: null,
       });
-      await db.insertTag({
+      db.insertTag({
         tag: 'Groceries',
         color: null,
         description: null,
@@ -78,12 +78,12 @@ describe('tags app', () => {
     });
 
     it('rejects renaming onto a deleted tag', async () => {
-      const id = await db.insertTag({
+      const id = db.insertTag({
         tag: 'Food',
         color: null,
         description: null,
       });
-      const deletedId = await db.insertTag({
+      const deletedId = db.insertTag({
         tag: 'Groceries',
         color: null,
         description: null,

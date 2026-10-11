@@ -43,7 +43,7 @@ async function updateAccount({
   Partial<
     Pick<AccountEntity, 'name' | 'last_reconciled' | 'account_group_id'>
   >) {
-  await db.update('accounts', {
+  db.update('accounts', {
     id,
     ...(name !== undefined && { name }),
     ...(last_reconciled && { last_reconciled }),
@@ -53,7 +53,7 @@ async function updateAccount({
 }
 
 async function getAccounts(): Promise<AccountEntity[]> {
-  const dbAccounts = await db.getAccounts();
+  const dbAccounts = db.getAccounts();
   return dbAccounts.map(
     dbAccount =>
       ({
@@ -76,7 +76,7 @@ async function getAccountBalance({
   id: string;
   cutoff: string | Date;
 }) {
-  const result = await db.first<{ balance: number }>(
+  const result = db.first<{ balance: number }>(
     'SELECT sum(amount) as balance FROM transactions WHERE acct = ? AND isParent = 0 AND tombstone = 0 AND date <= ?',
     [id, db.toDateRepr(dayFromDate(cutoff))],
   );
@@ -84,11 +84,11 @@ async function getAccountBalance({
 }
 
 async function getAccountProperties({ id }: { id: AccountEntity['id'] }) {
-  const balanceResult = await db.first<{ balance: number }>(
+  const balanceResult = db.first<{ balance: number }>(
     'SELECT sum(amount) as balance FROM transactions WHERE acct = ? AND isParent = 0 AND tombstone = 0',
     [id],
   );
-  const countResult = await db.first<{ count: number }>(
+  const countResult = db.first<{ count: number }>(
     'SELECT count(id) as count FROM transactions WHERE acct = ? AND tombstone = 0',
     [id],
   );
@@ -110,21 +110,21 @@ async function createAccount({
   offBudget?: boolean | undefined;
   closed?: boolean | undefined;
 }) {
-  const id: AccountEntity['id'] = await db.insertAccount({
+  const id: AccountEntity['id'] = db.insertAccount({
     name,
     offbudget: offBudget ? 1 : 0,
     closed: closed ? 1 : 0,
   });
 
-  await db.insertPayee({
+  db.insertPayee({
     name: '',
     transfer_acct: id,
   });
 
   if (balance != null && balance !== 0) {
-    const payee = await getStartingBalancePayee();
+    const payee = getStartingBalancePayee();
 
-    await db.insertTransaction({
+    db.insertTransaction({
       account: id,
       amount: amountToInteger(balance),
       category: offBudget ? null : payee.category,
@@ -150,7 +150,7 @@ async function closeAccount({
   forced?: boolean | undefined;
 }) {
   return withUndo(async () => {
-    const account = await db.first<db.DbAccount>(
+    const account = db.first<db.DbAccount>(
       'SELECT * FROM accounts WHERE id = ? AND tombstone = 0',
       [id],
     );
@@ -165,7 +165,7 @@ async function closeAccount({
 
     // If there are no transactions, we can simply delete the account
     if (numTransactions === 0) {
-      await db.deleteAccount({ id });
+      db.deleteAccount({ id });
     } else if (forced) {
       const rows = db.runQuery<
         Pick<db.DbViewTransaction, 'id' | 'transfer_id'>
@@ -175,7 +175,7 @@ async function closeAccount({
         true,
       );
 
-      const transferPayee = await db.first<Pick<db.DbPayee, 'id'>>(
+      const transferPayee = db.first<Pick<db.DbPayee, 'id'>>(
         'SELECT id FROM payees WHERE transfer_acct = ?',
         [id],
       );
@@ -184,7 +184,7 @@ async function closeAccount({
         throw new Error(`Transfer payee with account ID ${id} not found.`);
       }
 
-      await batchMessages(async () => {
+      batchMessages(() => {
         // TODO: what this should really do is send a special message that
         // automatically marks the tombstone value for all transactions
         // within an account... or something? This is problematic
@@ -193,18 +193,18 @@ async function closeAccount({
 
         rows.forEach(row => {
           if (row.transfer_id) {
-            void db.updateTransaction({
+            db.updateTransaction({
               id: row.transfer_id,
               payee: null,
               transfer_id: null,
             });
           }
 
-          void db.deleteTransaction({ id: row.id });
+          db.deleteTransaction({ id: row.id });
         });
 
-        void db.deleteAccount({ id });
-        void db.deleteTransferPayee({ id: transferPayee.id });
+        db.deleteAccount({ id });
+        db.deleteTransferPayee({ id: transferPayee.id });
       });
     } else {
       if (balance !== 0 && transferAccountId == null) {
@@ -215,12 +215,12 @@ async function closeAccount({
         throw APIError('transfer account can not be the account being closed');
       }
 
-      await db.update('accounts', { id, closed: 1 });
+      db.update('accounts', { id, closed: 1 });
 
       // If there is a balance we need to transfer it to the specified
       // account (and possibly categorize it)
       if (balance !== 0 && transferAccountId) {
-        const transferPayee = await db.first<Pick<db.DbPayee, 'id'>>(
+        const transferPayee = db.first<Pick<db.DbPayee, 'id'>>(
           'SELECT id FROM payees WHERE transfer_acct = ?',
           [transferAccountId],
         );
@@ -246,7 +246,7 @@ async function closeAccount({
 }
 
 async function reopenAccount({ id }: { id: AccountEntity['id'] }) {
-  await db.update('accounts', { id, closed: 0 });
+  db.update('accounts', { id, closed: 0 });
 }
 
 async function moveAccount({
@@ -258,7 +258,7 @@ async function moveAccount({
   targetId: AccountEntity['id'] | null;
   accountGroupId?: AccountGroupEntity['id'] | null;
 }) {
-  await db.moveAccount(id, targetId, accountGroupId);
+  db.moveAccount(id, targetId, accountGroupId);
 }
 
 export type ImportTransactionsResult = ReconcileTransactionsResult & {

@@ -65,7 +65,7 @@ export async function savePrefs(
       .filter(x => x);
 
     if (messages.length > 0) {
-      await sendMessages(messages);
+      sendMessages(messages);
     }
   }
 

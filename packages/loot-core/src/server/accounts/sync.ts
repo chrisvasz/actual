@@ -34,12 +34,12 @@ function makeSplitTransaction(trans, subtransactions) {
   return [parent, ...sub];
 }
 
-async function resolvePayee(trans, payeeName, payeesToCreate) {
+function resolvePayee(trans, payeeName, payeesToCreate) {
   if (trans.payee == null && payeeName) {
     // First check our registry of new payees (to avoid a db access)
     // then check the db for existing payees
     let payee = payeesToCreate.get(payeeName.toLowerCase());
-    payee = payee || (await db.getPayeeByName(payeeName));
+    payee = payee || db.getPayeeByName(payeeName);
 
     if (payee != null) {
       return payee.id;
@@ -132,7 +132,7 @@ async function normalizeTransactions(
     // when rules are run, they have the right data. Resolving payees
     // also simplifies the payee creation process
     trans.account = acctId;
-    trans.payee = await resolvePayee(trans, payee_name, payeesToCreate);
+    trans.payee = resolvePayee(trans, payee_name, payeesToCreate);
 
     trans.category = trans.category ?? null;
 
@@ -148,14 +148,14 @@ async function normalizeTransactions(
   return { normalized, payeesToCreate };
 }
 
-async function createNewPayees(payeesToCreate, addsAndUpdates) {
+function createNewPayees(payeesToCreate, addsAndUpdates) {
   const usedPayeeIds = new Set(addsAndUpdates.map(t => t.payee));
 
-  await batchMessages(async () => {
+  batchMessages(() => {
     for (const payee of payeesToCreate.values()) {
       // Only create the payee if it ended up being used
       if (usedPayeeIds.has(payee.id)) {
-        await db.insertPayee(payee);
+        db.insertPayee(payee);
       }
     }
   });
@@ -241,7 +241,7 @@ export async function reconcileTransactions(
       if (hasFieldsChanged(existing, updates, Object.keys(updates))) {
         updated.push({ id: existing.id, ...updates });
         if (!existingPayeeMap.has(existing.payee)) {
-          const payee = await db.getPayee(existing.payee);
+          const payee = db.getPayee(existing.payee);
           existingPayeeMap.set(existing.payee, payee?.name);
         }
         existing.payee_name = existingPayeeMap.get(existing.payee);
@@ -252,7 +252,7 @@ export async function reconcileTransactions(
       }
 
       if (existing.is_parent && existing.cleared !== updates.cleared) {
-        const children = await db.all<Pick<db.DbViewTransaction, 'id'>>(
+        const children = db.all<Pick<db.DbViewTransaction, 'id'>>(
           'SELECT id FROM v_transactions WHERE parent_id = ?',
           [existing.id],
         );
@@ -295,7 +295,7 @@ export async function reconcileTransactions(
   });
 
   if (!isPreview) {
-    await createNewPayees(payeesToCreate, [...added, ...updated]);
+    createNewPayees(payeesToCreate, [...added, ...updated]);
     await batchUpdateTransactions({ added, updated });
   }
 
@@ -335,7 +335,7 @@ export async function matchTransactions(
   );
 
   // The first pass runs the rules, and preps data for fuzzy matching
-  const accounts: db.DbAccount[] = await db.getAccounts();
+  const accounts: db.DbAccount[] = db.getAccounts();
   const accountsMap = new Map(accounts.map(account => [account.id, account]));
 
   const transactionsStep1 = [];
@@ -357,7 +357,7 @@ export async function matchTransactions(
       const table = reimportDeleted
         ? 'v_transactions'
         : 'v_transactions_internal';
-      match = await db.first<db.DbTransaction>(
+      match = db.first<db.DbTransaction>(
         `SELECT * FROM ${table} WHERE imported_id = ? AND account = ?`,
         [trans.imported_id, acctId],
       );
@@ -378,7 +378,7 @@ export async function matchTransactions(
       // strictIdChecking has the added behaviour of only matching on transactions with no import ID
       // if the transaction being imported has an import ID.
       if (strictIdChecking) {
-        fuzzyDataset = await db.all<
+        fuzzyDataset = db.all<
           Pick<
             db.DbViewTransaction,
             | 'id'
@@ -411,7 +411,7 @@ export async function matchTransactions(
           ],
         );
       } else {
-        fuzzyDataset = await db.all<
+        fuzzyDataset = db.all<
           Pick<
             db.DbViewTransaction,
             | 'id'
@@ -523,7 +523,7 @@ export async function addTransactions(
     { payeeNameNormalization: 'original' },
   );
 
-  const accounts: db.DbAccount[] = await db.getAccounts();
+  const accounts: db.DbAccount[] = db.getAccounts();
   const accountsMap = new Map(accounts.map(account => [account.id, account]));
 
   for (const { trans: originalTrans, subtransactions } of normalized) {
@@ -549,7 +549,7 @@ export async function addTransactions(
     }
   }
 
-  await createNewPayees(payeesToCreate, added);
+  createNewPayees(payeesToCreate, added);
 
   // Assign decreasing sort_order values to preserve import file order.
   // Transactions are displayed in sort_order DESC order, so first transaction
@@ -568,10 +568,8 @@ export async function addTransactions(
     });
     newTransactions = res.added.map(t => t.id);
   } else {
-    await batchMessages(async () => {
-      newTransactions = await Promise.all(
-        added.map(async trans => db.insertTransaction(trans)),
-      );
+    batchMessages(() => {
+      newTransactions = added.map(trans => db.insertTransaction(trans));
     });
   }
   return newTransactions;

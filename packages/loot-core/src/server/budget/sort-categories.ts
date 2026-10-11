@@ -9,7 +9,7 @@ export async function sortCategories({
   groupId: CategoryGroupEntity['id'];
   direction: 'asc' | 'desc';
 }): Promise<void> {
-  const groups = await db.getCategoriesGrouped();
+  const groups = db.getCategoriesGrouped();
   const group = groups.find(g => g.id === groupId);
   if (!group?.categories?.length) return;
 
@@ -20,8 +20,8 @@ export async function sortCategories({
   );
 
   for (let i = sorted.length - 1; i >= 0; i--) {
-    await batchMessages(async () => {
-      await db.moveCategory(
+    batchMessages(() => {
+      db.moveCategory(
         sorted[i].id,
         groupId,
         i === sorted.length - 1 ? null : sorted[i + 1].id,

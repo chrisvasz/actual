@@ -4,14 +4,14 @@ import * as db from './index';
 beforeEach(global.emptyDatabase());
 
 async function insertTransactions(transactions) {
-  await db.insertAccount({ id: 'foo', name: 'bar' });
+  db.insertAccount({ id: 'foo', name: 'bar' });
   return Promise.all(
     transactions.map(transaction => db.insertTransaction(transaction)),
   );
 }
 
 async function getTransactions(latestDate) {
-  const rows = await db.getTransactions('foo');
+  const rows = db.getTransactions('foo');
   return rows
     .filter(t => t.date <= latestDate)
     .map(row => ({
@@ -31,15 +31,15 @@ async function getTransactions(latestDate) {
 
 describe('Database', () => {
   test('all and first accept null params', async () => {
-    await db.insertAccount({ id: 'foo', name: 'bar' });
+    db.insertAccount({ id: 'foo', name: 'bar' });
 
-    const rows = await db.all<{ id: string }>(
+    const rows = db.all<{ id: string }>(
       'SELECT id FROM accounts WHERE official_name IS ?',
       [null],
     );
     expect(rows).toEqual([{ id: 'foo' }]);
 
-    const row = await db.first<{ id: string }>(
+    const row = db.first<{ id: string }>(
       'SELECT id FROM accounts WHERE official_name IS ?',
       [null],
     );
@@ -47,27 +47,27 @@ describe('Database', () => {
   });
 
   test('inserting a category works', async () => {
-    await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-    await db.insertCategory({
+    db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+    db.insertCategory({
       name: 'foo',
       cat_group: 'group1',
     });
-    expect((await db.getCategories()).length).toBe(1);
+    expect(db.getCategories().length).toBe(1);
   });
 
   test('using a deleted category name works', async () => {
-    await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-    const id = await db.insertCategory({
+    db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+    const id = db.insertCategory({
       name: 'foo',
       cat_group: 'group1',
     });
-    await db.deleteCategory({ id });
-    expect((await db.getCategories()).length).toBe(0);
-    await db.insertCategory({
+    db.deleteCategory({ id });
+    expect(db.getCategories().length).toBe(0);
+    db.insertCategory({
       name: 'foo',
       cat_group: 'group1',
     });
-    expect((await db.getCategories()).length).toBe(1);
+    expect(db.getCategories().length).toBe(1);
   });
 
   test('transactions are sorted by date', async () => {
@@ -141,33 +141,33 @@ describe('Database', () => {
   });
 
   test('schedules can be reordered', async () => {
-    await db.insertWithUUID('schedules', { id: 'sched1', sort_order: 30 });
-    await db.insertWithUUID('schedules', { id: 'sched2', sort_order: 20 });
-    await db.insertWithUUID('schedules', { id: 'sched3', sort_order: 10 });
+    db.insertWithUUID('schedules', { id: 'sched1', sort_order: 30 });
+    db.insertWithUUID('schedules', { id: 'sched2', sort_order: 20 });
+    db.insertWithUUID('schedules', { id: 'sched3', sort_order: 10 });
 
     // Move sched3 (currently last) to be right after sched1 (currently first)
-    await db.moveSchedule('sched3', 'sched1');
+    db.moveSchedule('sched3', 'sched1');
 
-    const rows = await db.all<{ id: string; sort_order: number }>(
+    const rows = db.all<{ id: string; sort_order: number }>(
       'SELECT id, sort_order FROM schedules ORDER BY sort_order DESC, id',
     );
     expect(rows.map(r => r.id)).toEqual(['sched1', 'sched3', 'sched2']);
   });
 
   test('moving a schedule to the top uses a null targetId', async () => {
-    await db.insertWithUUID('schedules', { id: 'sched1', sort_order: 30 });
-    await db.insertWithUUID('schedules', { id: 'sched2', sort_order: 20 });
+    db.insertWithUUID('schedules', { id: 'sched1', sort_order: 30 });
+    db.insertWithUUID('schedules', { id: 'sched2', sort_order: 20 });
 
-    await db.moveSchedule('sched2', null);
+    db.moveSchedule('sched2', null);
 
-    const rows = await db.all<{ id: string; sort_order: number }>(
+    const rows = db.all<{ id: string; sort_order: number }>(
       'SELECT id, sort_order FROM schedules ORDER BY sort_order DESC, id',
     );
     expect(rows.map(r => r.id)).toEqual(['sched2', 'sched1']);
   });
 
   test('moving a non-existent schedule throws', async () => {
-    await expect(db.moveSchedule('missing', null)).rejects.toThrow(
+    expect(() => db.moveSchedule('missing', null)).toThrow(
       'Schedule not found: missing',
     );
   });
@@ -247,13 +247,13 @@ describe('Database', () => {
   });
 
   test('parent transactions never have a category', async () => {
-    await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-    await db.insertCategory({
+    db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+    db.insertCategory({
       id: 'cat1',
       name: 'cat1',
       cat_group: 'group1',
     });
-    await db.insertCategory({
+    db.insertCategory({
       id: 'cat2',
       name: 'cat2',
       cat_group: 'group1',
@@ -292,7 +292,7 @@ describe('Database', () => {
       },
     ]);
 
-    const rows = await db.getTransactions('foo');
+    const rows = db.getTransactions('foo');
 
     expect(rows.find(t => t.id === 'parent1').category).toBe(null);
     expect(rows.find(t => t.id === 'child3').category).toBe('cat1');
@@ -339,9 +339,9 @@ describe('Database', () => {
       },
     ]);
 
-    await db.deleteTransaction({ id: 'parent1' });
+    db.deleteTransaction({ id: 'parent1' });
 
-    const rows = await db.getTransactions('foo');
+    const rows = db.getTransactions('foo');
     expect(rows.length).toBe(1);
     expect(rows[0].id).toBe('trans1');
   });

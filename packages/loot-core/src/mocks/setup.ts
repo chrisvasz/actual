@@ -147,7 +147,7 @@ global.emptyDatabase = function (avoidUpdate) {
 
     if (!avoidUpdate) {
       await updateVersion();
-      await db.loadClock();
+      db.loadClock();
     }
   };
 };

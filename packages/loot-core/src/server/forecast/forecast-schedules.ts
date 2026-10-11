@@ -245,7 +245,7 @@ export async function buildFutureScheduleOccurrences(
         if (payeesById.has(sourceTransaction.payee)) {
           transferPayee = payeesById.get(sourceTransaction.payee) ?? null;
         } else {
-          transferPayee = await db.getPayee(sourceTransaction.payee);
+          transferPayee = db.getPayee(sourceTransaction.payee);
           payeesById.set(sourceTransaction.payee, transferPayee);
         }
       }

@@ -21,7 +21,7 @@ export async function mergeTransactions(
         JSON.stringify(transactions),
     );
   }
-  const [a, b] = await mapAndValidateTransactions(txIds[0], txIds[1]);
+  const [a, b] = mapAndValidateTransactions(txIds[0], txIds[1]);
   const aTransferId = a.transfer_id;
   const bTransferId = b.transfer_id;
 
@@ -30,16 +30,16 @@ export async function mergeTransactions(
 
   const transferAccount = aTransferId ? a.payee : b.payee;
 
-  await setTransfers([a.id, b.id, aTransferId, bTransferId], null);
+  setTransfers([a.id, b.id, aTransferId, bTransferId], null);
   const transferId = await mergeTransfers(aTransferId, bTransferId);
   const keptTxId = await mergeTransactionsNoTransfer(a, b);
   if (transferId) {
-    await db.updateTransaction({
+    db.updateTransaction({
       id: keptTxId,
       transfer_id: transferId,
       payee: transferAccount,
     });
-    await db.updateTransaction({ id: transferId, transfer_id: keptTxId });
+    db.updateTransaction({ id: transferId, transfer_id: keptTxId });
   }
 
   // transfers to an off-budget account have a category. Transfers to on-budget do not, so
@@ -52,10 +52,10 @@ export async function mergeTransactions(
   // We don't have to worry about the transfer transactions in the other account because
   // either there is one transaction or there are two transfers, which does not enter this error state
   if (transferAccount && !(aTransferId && bTransferId)) {
-    const payee = await db.getPayee(transferAccount);
-    const account = await db.getAccount(payee?.transfer_acct ?? '');
+    const payee = db.getPayee(transferAccount);
+    const account = db.getAccount(payee?.transfer_acct ?? '');
     if (account && !account.offbudget) {
-      await db.updateTransaction({ id: keptTxId, category: null });
+      db.updateTransaction({ id: keptTxId, category: null });
     }
   }
 
@@ -66,13 +66,11 @@ function setTransfers(
   txIds: (TransactionEntity['id'] | undefined)[],
   transfer_id: string | null | undefined,
 ) {
-  return Promise.all(
-    txIds
-      .filter(Boolean)
-      .map(txId =>
-        db.updateTransaction({ id: txId, transfer_id: transfer_id ?? null }),
-      ),
-  );
+  for (const txId of txIds) {
+    if (txId) {
+      db.updateTransaction({ id: txId, transfer_id: transfer_id ?? null });
+    }
+  }
 }
 
 async function mergeTransfers(
@@ -84,21 +82,21 @@ async function mergeTransfers(
   if (!bTransferId) return aTransferId;
 
   // clear transfers and merge
-  const [aTransfer, bTransfer] = await mapAndValidateTransactions(
+  const [aTransfer, bTransfer] = mapAndValidateTransactions(
     aTransferId,
     bTransferId,
   );
-  await setTransfers([aTransfer.id, bTransfer.id], null);
+  setTransfers([aTransfer.id, bTransfer.id], null);
   return mergeTransactionsNoTransfer(aTransfer, bTransfer);
 }
 
-async function mapAndValidateTransactions(
+function mapAndValidateTransactions(
   aId: TransactionEntity['id'],
   bId: TransactionEntity['id'],
-): Promise<TransactionEntity[]> {
+): TransactionEntity[] {
   // get most recent transactions
-  const a: TransactionEntity = await db.getTransaction(aId);
-  const b: TransactionEntity = await db.getTransaction(bId);
+  const a: TransactionEntity = db.getTransaction(aId);
+  const b: TransactionEntity = db.getTransaction(bId);
 
   const validForMergeError = validForMergeExplanation(a, b);
   if (validForMergeError) {
@@ -122,12 +120,12 @@ export async function mergeTransactionsNoTransfer(
 
   let rows: TransactionEntity[] = [];
   if (parents.length === 2) {
-    rows = await db.all<TransactionEntity>(
+    rows = db.all<TransactionEntity>(
       'SELECT * FROM v_transactions WHERE parent_id IN (?, ?)',
       parents,
     );
   } else if (parents.length === 1) {
-    rows = await db.all<TransactionEntity>(
+    rows = db.all<TransactionEntity>(
       'SELECT * FROM v_transactions WHERE parent_id = ?',
       parents,
     );
@@ -145,16 +143,14 @@ export async function mergeTransactionsNoTransfer(
   // If keep doesn't have subtransactions but drop does, transfer them
   if (!keepHasSubtransactions && dropHasSubtransactions) {
     // Update each subtransaction to point to the kept parent
-    await Promise.all(
-      dropSubtransactions.map(sub =>
-        db.updateTransaction({
-          id: sub.id,
-          parent_id: keep.id,
-        } as TransactionEntity),
-      ),
-    );
+    for (const sub of dropSubtransactions) {
+      db.updateTransaction({
+        id: sub.id,
+        parent_id: keep.id,
+      } as TransactionEntity);
+    }
     // Mark keep as a parent transaction
-    await db.updateTransaction({
+    db.updateTransaction({
       id: keep.id,
       is_parent: true,
       category: null, // Parent transactions with splits shouldn't have a category
@@ -166,7 +162,7 @@ export async function mergeTransactionsNoTransfer(
     } as unknown as TransactionEntity);
   } else {
     // Normal merge without subtransactions
-    await db.updateTransaction({
+    db.updateTransaction({
       id: keep.id,
       payee: keep.payee || drop.payee,
       category: keep.category || drop.category,

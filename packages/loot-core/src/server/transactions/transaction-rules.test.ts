@@ -25,7 +25,7 @@ import {
 beforeEach(async () => {
   await global.emptyDatabase()();
   resetState();
-  await loadMappings();
+  loadMappings();
 });
 
 async function getMatchingTransactions(conds) {
@@ -91,18 +91,18 @@ describe('Transaction rules', () => {
   });
 
   test('insert a rule into the database', async () => {
-    await loadRules();
-    await insertRule({
+    loadRules();
+    insertRule({
       stage: 'pre',
       conditionsOp: 'and',
       conditions: [],
       actions: [],
     });
-    expect((await db.all<db.DbRule>('SELECT * FROM rules')).length).toBe(1);
+    expect(db.all<db.DbRule>('SELECT * FROM rules').length).toBe(1);
     // Make sure it was projected
     expect(getRules().length).toBe(1);
 
-    await insertRule({
+    insertRule({
       stage: 'pre',
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'date', value: '2019-05' }],
@@ -111,16 +111,16 @@ describe('Transaction rules', () => {
         { op: 'set', field: 'category', value: 'food' },
       ],
     });
-    expect((await db.all<db.DbRule>('SELECT * FROM rules')).length).toBe(2);
+    expect(db.all<db.DbRule>('SELECT * FROM rules').length).toBe(2);
     expect(getRules().length).toBe(2);
 
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => null);
 
     // Try to insert an invalid rule (don't use `insertRule` because
     // that will validate the input)
-    await db.insertWithUUID('rules', { conditions: '{', actions: '}' });
+    db.insertWithUUID('rules', { conditions: '{', actions: '}' });
     // It will be in the database
-    expect((await db.all<db.DbRule>('SELECT * FROM rules')).length).toBe(3);
+    expect(db.all<db.DbRule>('SELECT * FROM rules').length).toBe(3);
     // But it will be ignored
     expect(getRules().length).toBe(2);
 
@@ -138,8 +138,8 @@ describe('Transaction rules', () => {
   });
 
   test('update a rule in the database', async () => {
-    await loadRules();
-    const id = await insertRule({
+    loadRules();
+    const id = insertRule({
       stage: 'pre',
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'imported_payee', value: 'kroger' }],
@@ -160,7 +160,7 @@ describe('Transaction rules', () => {
     expect(transaction.category).toBe('food');
 
     // Change the action
-    await updateRule({
+    updateRule({
       id,
       actions: [{ op: 'set', field: 'category', value: 'bars' }],
     });
@@ -176,7 +176,7 @@ describe('Transaction rules', () => {
     expect(transaction.category).toBe('bars');
 
     // If changing the condition, make sure the rule is re-indexed
-    await updateRule({
+    updateRule({
       id,
       conditions: [{ op: 'is', field: 'imported_payee', value: 'ABC' }],
     });
@@ -190,8 +190,8 @@ describe('Transaction rules', () => {
   });
 
   test('delete a rule in the database', async () => {
-    await loadRules();
-    const id = await insertRule({
+    loadRules();
+    const id = insertRule({
       stage: 'pre',
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'payee', value: 'kroger' }],
@@ -210,7 +210,7 @@ describe('Transaction rules', () => {
     expect(transaction.payee).toBe('Kroger');
     expect(transaction.category).toBe('food');
 
-    await deleteRule(id);
+    deleteRule(id);
     expect(getRules().length).toBe(0);
     transaction = await runRules({
       payee: 'Kroger',
@@ -222,11 +222,11 @@ describe('Transaction rules', () => {
   });
 
   test('payee rules match after a staged formula sets payee name', async () => {
-    await loadRules();
+    loadRules();
 
-    await db.insertPayee({ id: 'amazon_id', name: 'Amazon' });
+    db.insertPayee({ id: 'amazon_id', name: 'Amazon' });
 
-    await insertRule({
+    insertRule({
       stage: 'pre',
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'imported_payee', value: 'AMZN MKTP' }],
@@ -240,7 +240,7 @@ describe('Transaction rules', () => {
       ],
     });
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'payee', value: 'amazon_id' }],
@@ -258,15 +258,15 @@ describe('Transaction rules', () => {
   });
 
   test('loadRules loads all the rules', async () => {
-    await loadRules();
-    await insertRule({
+    loadRules();
+    insertRule({
       stage: 'pre',
       conditionsOp: 'and',
       conditions: [{ op: 'contains', field: 'imported_payee', value: 'lowes' }],
       actions: [{ op: 'set', field: 'payee', value: 'lowes' }],
     });
 
-    await insertRule({
+    insertRule({
       stage: 'post',
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'imported_payee', value: 'kroger' }],
@@ -276,7 +276,7 @@ describe('Transaction rules', () => {
     resetState();
 
     expect(getRules().length).toBe(0);
-    await loadRules();
+    loadRules();
     expect(getRules().length).toBe(2);
 
     let transaction = await runRules({
@@ -294,23 +294,23 @@ describe('Transaction rules', () => {
   });
 
   test('ids in rules are migrated as mapping changes', async () => {
-    await loadRules();
+    loadRules();
 
-    await db.insertPayee({ id: 'home_id', name: 'home' });
-    await db.insertPayee({ id: 'lowes_id', name: 'lowes' });
-    await db.insertCategoryGroup({ name: 'group' });
-    await db.insertCategory({
+    db.insertPayee({ id: 'home_id', name: 'home' });
+    db.insertPayee({ id: 'lowes_id', name: 'lowes' });
+    db.insertCategoryGroup({ name: 'group' });
+    db.insertCategory({
       id: 'food_id',
       name: 'food',
       cat_group: 'group',
     });
-    await db.insertCategory({
+    db.insertCategory({
       id: 'beer_id',
       name: 'beer',
       cat_group: 'group',
     });
 
-    await insertRule({
+    insertRule({
       id: 'one',
       stage: 'pre',
       conditionsOp: 'and',
@@ -318,7 +318,7 @@ describe('Transaction rules', () => {
       actions: [{ op: 'set', field: 'payee', value: 'lowes_id' }],
     });
 
-    await insertRule({
+    insertRule({
       id: 'two',
       stage: 'pre',
       conditionsOp: 'and',
@@ -334,15 +334,15 @@ describe('Transaction rules', () => {
 
     expect(rule1.actions[0].value).toBe('lowes_id');
     expect(rule2.conditions[0].value).toBe('lowes_id');
-    await db.mergePayees('home_id', ['lowes_id']);
+    db.mergePayees('home_id', ['lowes_id']);
     expect(rule1.actions[0].value).toBe('home_id');
     expect(rule2.conditions[0].value).toBe('home_id');
 
     expect(rule2.conditions[1].value).toBe('food_id');
-    await db.deleteCategory({ id: 'food_id' }, 'beer_id');
+    db.deleteCategory({ id: 'food_id' }, 'beer_id');
     expect(rule2.conditions[1].value).toBe('beer_id');
 
-    await loadRules();
+    loadRules();
 
     // Make sure mappings work when loading fresh
     rule1 = getRules().find(r => r.id === 'one');
@@ -353,8 +353,8 @@ describe('Transaction rules', () => {
   });
 
   test('await runRules runs all the rules in each phase', async () => {
-    await loadRules();
-    await insertRule({
+    loadRules();
+    insertRule({
       stage: 'post',
       conditionsOp: 'and',
       conditions: [
@@ -367,14 +367,14 @@ describe('Transaction rules', () => {
       actions: [{ op: 'set', field: 'notes', value: 'got it2' }],
     });
 
-    await insertRule({
+    insertRule({
       stage: 'pre',
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'imported_payee', value: '123 kroger' }],
       actions: [{ op: 'set', field: 'payee', value: 'kroger3' }],
     });
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [
@@ -383,7 +383,7 @@ describe('Transaction rules', () => {
       actions: [{ op: 'set', field: 'payee', value: 'kroger4' }],
     });
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'payee', value: 'kroger4' }],
@@ -406,14 +406,14 @@ describe('Transaction rules', () => {
   });
 
   test('category_group condition matches categories in that group (live)', async () => {
-    await loadRules();
-    const billsGroupId = await db.insertCategoryGroup({ name: 'Bills' });
-    const electricId = await db.insertCategory({
+    loadRules();
+    const billsGroupId = db.insertCategoryGroup({ name: 'Bills' });
+    const electricId = db.insertCategory({
       name: 'Electric',
       cat_group: billsGroupId,
     });
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'category_group', value: billsGroupId }],
@@ -431,15 +431,15 @@ describe('Transaction rules', () => {
   });
 
   test('category_group condition does not match an unrelated group (live)', async () => {
-    await loadRules();
-    const billsGroupId = await db.insertCategoryGroup({ name: 'Bills' });
-    const funGroupId = await db.insertCategoryGroup({ name: 'Fun' });
-    const moviesId = await db.insertCategory({
+    loadRules();
+    const billsGroupId = db.insertCategoryGroup({ name: 'Bills' });
+    const funGroupId = db.insertCategoryGroup({ name: 'Fun' });
+    const moviesId = db.insertCategory({
       name: 'Movies',
       cat_group: funGroupId,
     });
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'category_group', value: billsGroupId }],
@@ -457,17 +457,17 @@ describe('Transaction rules', () => {
   });
 
   test('category_group condition observes a category set earlier in the same rule chain (live)', async () => {
-    await loadRules();
-    const billsGroupId = await db.insertCategoryGroup({ name: 'Bills' });
-    const electricId = await db.insertCategory({
+    loadRules();
+    const billsGroupId = db.insertCategoryGroup({ name: 'Bills' });
+    const electricId = db.insertCategory({
       name: 'Electric',
       cat_group: billsGroupId,
     });
-    await db.insertPayee({ id: 'power_co_id', name: 'Power Co' });
+    db.insertPayee({ id: 'power_co_id', name: 'Power Co' });
 
     // Runs first (pre stage): sets category based on payee. Nothing
     // about category_group is checked here.
-    await insertRule({
+    insertRule({
       stage: 'pre',
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'payee', value: 'power_co_id' }],
@@ -477,7 +477,7 @@ describe('Transaction rules', () => {
     // Runs after (post stage): checks category_group. This should see
     // the category the *first* rule just set, not whatever the
     // transaction started with.
-    await insertRule({
+    insertRule({
       stage: 'post',
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'category_group', value: billsGroupId }],
@@ -496,20 +496,20 @@ describe('Transaction rules', () => {
   });
 
   test('transactions can be queried by rule', async () => {
-    await loadRules();
-    const account = await db.insertAccount({ name: 'bank' });
-    const categoryGroupId = await db.insertCategoryGroup({ name: 'general' });
-    const foodCategoryId = await db.insertCategory({
+    loadRules();
+    const account = db.insertAccount({ name: 'bank' });
+    const categoryGroupId = db.insertCategoryGroup({ name: 'general' });
+    const foodCategoryId = db.insertCategory({
       name: 'food',
       cat_group: categoryGroupId,
     });
-    const krogerId = await db.insertPayee({ name: 'kroger' });
-    const lowesId = await db.insertPayee({
+    const krogerId = db.insertPayee({ name: 'kroger' });
+    const lowesId = db.insertPayee({
       name: 'lowes',
       category: foodCategoryId,
     });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '1',
       date: '2020-10-01',
       account,
@@ -518,7 +518,7 @@ describe('Transaction rules', () => {
       notes: 'barr',
       amount: 353,
     });
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '2',
       date: '2020-10-15',
       account,
@@ -526,7 +526,7 @@ describe('Transaction rules', () => {
       notes: 'fooo',
       amount: 453,
     });
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '3',
       date: '2020-10-15',
       account,
@@ -534,7 +534,7 @@ describe('Transaction rules', () => {
       notes: 'FooO',
       amount: -322,
     });
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '4',
       date: '2020-10-16',
       account,
@@ -542,7 +542,7 @@ describe('Transaction rules', () => {
       notes: null,
       amount: 101,
     });
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '5',
       date: '2020-10-16',
       account,
@@ -638,11 +638,11 @@ describe('Transaction rules', () => {
   });
 
   test('transactions can be queried by hasTags', async () => {
-    await loadRules();
-    const account = await db.insertAccount({ name: 'bank' });
-    const payeeId = await db.insertPayee({ name: 'payee' });
+    loadRules();
+    const account = db.insertAccount({ name: 'bank' });
+    const payeeId = db.insertPayee({ name: 'payee' });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '1',
       date: '2020-10-01',
       account,
@@ -651,7 +651,7 @@ describe('Transaction rules', () => {
       amount: 123,
     });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '2',
       date: '2020-10-01',
       account,
@@ -668,11 +668,11 @@ describe('Transaction rules', () => {
   });
 
   test('transactions can be queried by hasTags if no "#" is included', async () => {
-    await loadRules();
-    const account = await db.insertAccount({ name: 'bank' });
-    const payeeId = await db.insertPayee({ name: 'payee' });
+    loadRules();
+    const account = db.insertAccount({ name: 'bank' });
+    const payeeId = db.insertPayee({ name: 'payee' });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '1',
       date: '2020-10-01',
       account,
@@ -681,7 +681,7 @@ describe('Transaction rules', () => {
       amount: 123,
     });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '2',
       date: '2020-10-01',
       account,
@@ -698,11 +698,11 @@ describe('Transaction rules', () => {
   });
 
   test('transactions can be queried by hasTags with multiple tags present', async () => {
-    await loadRules();
-    const account = await db.insertAccount({ name: 'bank' });
-    const payeeId = await db.insertPayee({ name: 'payee' });
+    loadRules();
+    const account = db.insertAccount({ name: 'bank' });
+    const payeeId = db.insertPayee({ name: 'payee' });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '1',
       date: '2020-10-01',
       account,
@@ -711,7 +711,7 @@ describe('Transaction rules', () => {
       amount: 123,
     });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '2',
       date: '2020-10-01',
       account,
@@ -728,11 +728,11 @@ describe('Transaction rules', () => {
   });
 
   test('transactions can be queried by hasTags when tag starts with dollar', async () => {
-    await loadRules();
-    const account = await db.insertAccount({ name: 'bank' });
-    const payeeId = await db.insertPayee({ name: 'payee' });
+    loadRules();
+    const account = db.insertAccount({ name: 'bank' });
+    const payeeId = db.insertPayee({ name: 'payee' });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '1',
       date: '2020-10-01',
       account,
@@ -741,7 +741,7 @@ describe('Transaction rules', () => {
       amount: 123,
     });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '2',
       date: '2020-10-01',
       account,
@@ -758,11 +758,11 @@ describe('Transaction rules', () => {
   });
 
   test('transactions can be queried by hasAnyTag with two tags returns everything', async () => {
-    await loadRules();
-    const account = await db.insertAccount({ name: 'bank' });
-    const payeeId = await db.insertPayee({ name: 'payee' });
+    loadRules();
+    const account = db.insertAccount({ name: 'bank' });
+    const payeeId = db.insertPayee({ name: 'payee' });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '1',
       date: '2020-10-01',
       account,
@@ -771,7 +771,7 @@ describe('Transaction rules', () => {
       amount: 123,
     });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '2',
       date: '2020-10-01',
       account,
@@ -780,7 +780,7 @@ describe('Transaction rules', () => {
       amount: 123,
     });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '3',
       date: '2020-10-01',
       account,
@@ -797,11 +797,11 @@ describe('Transaction rules', () => {
   });
 
   test('transactions can be queried by hasAnyTag with one tag', async () => {
-    await loadRules();
-    const account = await db.insertAccount({ name: 'bank' });
-    const payeeId = await db.insertPayee({ name: 'payee' });
+    loadRules();
+    const account = db.insertAccount({ name: 'bank' });
+    const payeeId = db.insertPayee({ name: 'payee' });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '1',
       date: '2020-10-01',
       account,
@@ -810,7 +810,7 @@ describe('Transaction rules', () => {
       amount: 123,
     });
 
-    await db.insertTransaction({
+    db.insertTransaction({
       id: '2',
       date: '2020-10-01',
       account,
@@ -859,8 +859,8 @@ describe('Learning categories', () => {
     expectedRuleCount = 1,
     expectedPayee = 'foo',
   ) {
-    await db.insertTransaction(transaction);
-    await updateCategoryRules([transaction]);
+    db.insertTransaction(transaction);
+    updateCategoryRules([transaction]);
     expect(getRules().length).toBe(expectedRuleCount);
 
     if (expectedRuleCount > 0) {
@@ -873,14 +873,14 @@ describe('Learning categories', () => {
   }
 
   async function loadData() {
-    await loadRules();
-    await db.insertAccount({ id: 'acct', name: 'acct' });
-    await db.insertCategoryGroup({ id: 'catg', name: 'catg' });
-    await db.insertCategory({ id: 'food', name: 'food', cat_group: 'catg' });
-    await db.insertCategory({ id: 'beer', name: 'beer', cat_group: 'catg' });
-    await db.insertCategory({ id: 'fun', name: 'fun', cat_group: 'catg' });
-    await db.insertPayee({ id: 'foo', name: 'foo' });
-    await db.insertPayee({ id: 'bar', name: 'bar' });
+    loadRules();
+    db.insertAccount({ id: 'acct', name: 'acct' });
+    db.insertCategoryGroup({ id: 'catg', name: 'catg' });
+    db.insertCategory({ id: 'food', name: 'food', cat_group: 'catg' });
+    db.insertCategory({ id: 'beer', name: 'beer', cat_group: 'catg' });
+    db.insertCategory({ id: 'fun', name: 'fun', cat_group: 'catg' });
+    db.insertPayee({ id: 'foo', name: 'foo' });
+    db.insertPayee({ id: 'bar', name: 'bar' });
   }
 
   test('getProbableCategory estimates a category winner', () => {
@@ -992,7 +992,7 @@ describe('Learning categories', () => {
       0,
     );
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'payee', value: 'foo' }],
@@ -1017,7 +1017,7 @@ describe('Learning categories', () => {
   test('updates an existing rule', async () => {
     await loadData();
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'payee', value: 'foo' }],
@@ -1062,7 +1062,7 @@ describe('Learning categories', () => {
   test('works with multiple payees', async () => {
     await loadData();
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'payee', value: 'foo' }],
@@ -1109,19 +1109,19 @@ describe('Learning categories', () => {
   test('updates rules correctly even if multiple rules exist', async () => {
     await loadData();
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'payee', value: 'foo' }],
       actions: [{ op: 'set', field: 'category', value: 'unknown1' }],
     });
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'payee', value: 'foo' }],
       actions: [{ op: 'set', field: 'category', value: 'unknown2' }],
     });
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'payee', value: null }],
@@ -1134,10 +1134,10 @@ describe('Learning categories', () => {
       payee: 'foo',
       category: 'food',
     };
-    await db.insertTransaction({ ...trans, id: 'one' });
-    await db.insertTransaction({ ...trans, id: 'two' });
-    await db.insertTransaction({ ...trans, id: 'three' });
-    await updateCategoryRules([{ ...trans, id: 'three' }]);
+    db.insertTransaction({ ...trans, id: 'one' });
+    db.insertTransaction({ ...trans, id: 'two' });
+    db.insertTransaction({ ...trans, id: 'three' });
+    updateCategoryRules([{ ...trans, id: 'three' }]);
     expect(getRules()).toMatchSnapshot();
 
     trans = {
@@ -1146,10 +1146,10 @@ describe('Learning categories', () => {
       payee: 'foo',
       category: 'beer',
     };
-    await db.insertTransaction({ ...trans, id: 'four' });
-    await db.insertTransaction({ ...trans, id: 'five' });
-    await db.insertTransaction({ ...trans, id: 'six' });
-    await updateCategoryRules([{ ...trans, id: 'three' }]);
+    db.insertTransaction({ ...trans, id: 'four' });
+    db.insertTransaction({ ...trans, id: 'five' });
+    db.insertTransaction({ ...trans, id: 'six' });
+    updateCategoryRules([{ ...trans, id: 'three' }]);
     expect(getRules()).toMatchSnapshot();
 
     const rules = getRules();
@@ -1178,10 +1178,10 @@ describe('Learning categories', () => {
       payee: null,
       category: 'food',
     };
-    await db.insertTransaction({ ...trans, id: 'one' });
-    await db.insertTransaction({ ...trans, id: 'two' });
-    await db.insertTransaction({ ...trans, id: 'three' });
-    await updateCategoryRules([{ ...trans, id: 'three' }]);
+    db.insertTransaction({ ...trans, id: 'one' });
+    db.insertTransaction({ ...trans, id: 'two' });
+    db.insertTransaction({ ...trans, id: 'three' });
+    updateCategoryRules([{ ...trans, id: 'three' }]);
     expect(getRules().length).toBe(0);
   });
 
@@ -1189,7 +1189,7 @@ describe('Learning categories', () => {
     await loadData();
 
     expect(getRules().length).toBe(0);
-    await db.insertPayee({
+    db.insertPayee({
       id: 'supermarket_id',
       name: 'supermarket',
       learn_categories: 0,
@@ -1201,23 +1201,23 @@ describe('Learning categories', () => {
       payee: 'supermarket_id',
       category: 'food',
     };
-    await db.insertTransaction({ ...trans, id: 'one' });
-    await db.insertTransaction({ ...trans, id: 'two' });
-    await db.insertTransaction({ ...trans, id: 'three' });
-    await updateCategoryRules([{ ...trans, id: 'three' }]);
+    db.insertTransaction({ ...trans, id: 'one' });
+    db.insertTransaction({ ...trans, id: 'two' });
+    db.insertTransaction({ ...trans, id: 'three' });
+    updateCategoryRules([{ ...trans, id: 'three' }]);
     expect(getRules().length).toBe(0);
   });
 
   test('adding transaction with `null` payee never changes rules', async () => {
     await loadData();
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'payee', value: 'foo' }],
       actions: [{ op: 'set', field: 'category', value: 'unknown1' }],
     });
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'oneOf', field: 'payee', value: ['foo', 'bar'] }],
@@ -1231,10 +1231,10 @@ describe('Learning categories', () => {
       payee: null,
       category: 'food',
     };
-    await db.insertTransaction({ ...trans, id: 'one' });
-    await db.insertTransaction({ ...trans, id: 'two' });
-    await db.insertTransaction({ ...trans, id: 'three' });
-    await updateCategoryRules([{ ...trans, id: 'three' }]);
+    db.insertTransaction({ ...trans, id: 'one' });
+    db.insertTransaction({ ...trans, id: 'two' });
+    db.insertTransaction({ ...trans, id: 'three' });
+    updateCategoryRules([{ ...trans, id: 'three' }]);
 
     // This should not have changed the category! This is tested
     // because this was a bug when rules were released
@@ -1245,7 +1245,7 @@ describe('Learning categories', () => {
   });
 
   test('rules are saved with internal field names', async () => {
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'is', field: 'imported_payee', value: 'foo' }],
@@ -1259,7 +1259,7 @@ describe('Learning categories', () => {
 
     // Internally, it should still be stored with the internal names
     // so that it's backwards compatible
-    const rawRule = await db.first<db.DbRule>('SELECT * FROM rules');
+    const rawRule = db.first<db.DbRule>('SELECT * FROM rules');
     const parsedRule = {
       ...rawRule,
       conditions: JSON.parse(rawRule.conditions),
@@ -1268,7 +1268,7 @@ describe('Learning categories', () => {
     expect(parsedRule.conditions[0].field).toBe('imported_description');
     expect(parsedRule.actions[0].field).toBe('description');
 
-    await loadRules();
+    loadRules();
 
     // Make sure reloading everything from the db still uses the new
     // public names
@@ -1278,7 +1278,7 @@ describe('Learning categories', () => {
   });
 
   test('rules with public field names are loaded correctly', async () => {
-    await db.insertWithUUID('rules', {
+    db.insertWithUUID('rules', {
       stage: null,
       conditions_op: 'and',
       conditions: JSON.stringify([
@@ -1287,12 +1287,12 @@ describe('Learning categories', () => {
       actions: JSON.stringify([{ op: 'set', field: 'payee', value: 'payee1' }]),
     });
 
-    await loadRules();
+    loadRules();
 
     // This rule internally has been stored with the public names.
     // Making this work now allows us to switch to it by default in
     // the future
-    const rawRule = await db.first<db.DbRule>('SELECT * FROM rules');
+    const rawRule = db.first<db.DbRule>('SELECT * FROM rules');
     const parsedRule = {
       ...rawRule,
       conditions: JSON.parse(rawRule.conditions),
@@ -1355,20 +1355,20 @@ describe('Running balance for rules', () => {
   });
 
   test('a template that uses the balance still sees the running balance', async () => {
-    await loadRules();
-    const account = await db.insertAccount({ name: 'bank' });
-    await db.insertTransaction({
+    loadRules();
+    const account = db.insertAccount({ name: 'bank' });
+    db.insertTransaction({
       account,
       date: '2020-01-01',
       amount: 1000,
     });
-    await db.insertTransaction({
+    db.insertTransaction({
       account,
       date: '2020-01-02',
       amount: 2500,
     });
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [
@@ -1398,15 +1398,15 @@ describe('Running balance for rules', () => {
   });
 
   test('a rule that uses the balance but does not match runs no query', async () => {
-    await loadRules();
-    const account = await db.insertAccount({ name: 'bank' });
-    await db.insertTransaction({
+    loadRules();
+    const account = db.insertAccount({ name: 'bank' });
+    db.insertTransaction({
       account,
       date: '2020-01-01',
       amount: 1000,
     });
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [
@@ -1435,15 +1435,15 @@ describe('Running balance for rules', () => {
   });
 
   test('rules that do not use the balance still apply normally', async () => {
-    await loadRules();
-    const account = await db.insertAccount({ name: 'bank' });
-    await db.insertTransaction({
+    loadRules();
+    const account = db.insertAccount({ name: 'bank' });
+    db.insertTransaction({
       account,
       date: '2020-01-01',
       amount: 1000,
     });
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [

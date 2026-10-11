@@ -12,41 +12,41 @@ import {
 beforeEach(async () => {
   await global.emptyDatabase()();
   resetState();
-  await loadMappings();
-  await loadRules();
+  loadMappings();
+  loadRules();
 });
 
 describe('payees app', () => {
   describe('payees-get-orphaned', () => {
     it('returns only payees with no transactions or live rules', async () => {
-      await db.insertAccount({ id: 'acct', name: 'Account' });
-      const orphanId = await db.insertPayee({ name: 'Orphan' });
-      const usedId = await db.insertPayee({ name: 'Used' });
-      const ruleOnlyId = await db.insertPayee({ name: 'Rule only' });
-      const deletedRuleId = await db.insertPayee({ name: 'Deleted rule' });
-      const oneOfId = await db.insertPayee({ name: 'One of' });
+      db.insertAccount({ id: 'acct', name: 'Account' });
+      const orphanId = db.insertPayee({ name: 'Orphan' });
+      const usedId = db.insertPayee({ name: 'Used' });
+      const ruleOnlyId = db.insertPayee({ name: 'Rule only' });
+      const deletedRuleId = db.insertPayee({ name: 'Deleted rule' });
+      const oneOfId = db.insertPayee({ name: 'One of' });
 
-      await db.insertTransaction({
+      db.insertTransaction({
         account: 'acct',
         date: '2020-01-01',
         amount: -100,
         payee: usedId,
       });
-      await insertRule({
+      insertRule({
         stage: 'pre',
         conditionsOp: 'and',
         conditions: [{ op: 'is', field: 'payee', value: ruleOnlyId }],
         actions: [{ op: 'set', field: 'category', value: null }],
       });
 
-      await insertRule({
+      insertRule({
         stage: 'pre',
         conditionsOp: 'and',
         conditions: [{ op: 'oneOf', field: 'payee', value: [oneOfId] }],
         actions: [{ op: 'set', field: 'category', value: null }],
       });
       // A rule with an empty payee must not hide every other payee
-      await insertRule({
+      insertRule({
         stage: 'pre',
         conditionsOp: 'and',
         conditions: [
@@ -55,13 +55,13 @@ describe('payees app', () => {
         ],
         actions: [{ op: 'set', field: 'category', value: null }],
       });
-      const deletedId = await insertRule({
+      const deletedId = insertRule({
         stage: 'pre',
         conditionsOp: 'and',
         conditions: [{ op: 'is', field: 'payee', value: deletedRuleId }],
         actions: [{ op: 'set', field: 'category', value: null }],
       });
-      await deleteRule(deletedId);
+      deleteRule(deletedId);
 
       const orphaned = await app.handlers['payees-get-orphaned']();
 
@@ -73,12 +73,12 @@ describe('payees app', () => {
 
   describe('payees-get-rule-counts', () => {
     it('counts payee rules but excludes rules linked to completed schedules', async () => {
-      const activePayeeId = await db.insertPayee({ name: 'Active Payee' });
-      const completedPayeeId = await db.insertPayee({
+      const activePayeeId = db.insertPayee({ name: 'Active Payee' });
+      const completedPayeeId = db.insertPayee({
         name: 'Completed Payee',
       });
 
-      await insertRule({
+      insertRule({
         stage: 'pre',
         conditionsOp: 'and',
         conditions: [{ op: 'is', field: 'payee', value: activePayeeId }],

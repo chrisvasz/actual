@@ -16,11 +16,11 @@ import { undo, withUndo } from './undo';
 beforeEach(global.emptyDatabase());
 
 async function insertTransactions() {
-  await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-  await db.insertCategory({ id: 'cat1', name: 'cat1', cat_group: 'group1' });
-  await db.insertCategory({ id: 'cat2', name: 'cat2', cat_group: 'group1' });
+  db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+  db.insertCategory({ id: 'cat1', name: 'cat1', cat_group: 'group1' });
+  db.insertCategory({ id: 'cat2', name: 'cat2', cat_group: 'group1' });
 
-  await db.insertTransaction(
+  db.insertTransaction(
     generateTransaction({
       id: 'trans1',
       amount: -3200,
@@ -29,7 +29,7 @@ async function insertTransactions() {
       date: '2017-01-08',
     })[0],
   );
-  await db.insertTransaction(
+  db.insertTransaction(
     generateTransaction({
       id: 'trans2',
       amount: -2800,
@@ -38,7 +38,7 @@ async function insertTransactions() {
       date: '2017-01-10',
     })[0],
   );
-  await db.insertTransaction(
+  db.insertTransaction(
     generateTransaction({
       id: 'trans3',
       amount: -9832,
@@ -58,8 +58,8 @@ describe('Spreadsheet', () => {
 
     await sheet.loadSpreadsheet(db);
 
-    expect(await db.all('SELECT * FROM kvcache')).toEqual([]);
-    expect(await db.all('SELECT * FROM kvcache_key')).toEqual([]);
+    expect(db.all('SELECT * FROM kvcache')).toEqual([]);
+    expect(db.all('SELECT * FROM kvcache_key')).toEqual([]);
   });
 
   describe('with an old cache.sqlite next to the budget', () => {
@@ -118,7 +118,7 @@ describe('Spreadsheet', () => {
       });
     });
 
-    await db.deleteCategory({ id: 'cat1' }, 'cat2');
+    db.deleteCategory({ id: 'cat1' }, 'cat2');
 
     return new Promise(resolve => {
       spreadsheet.onFinish(() => {
@@ -132,7 +132,7 @@ describe('Spreadsheet', () => {
     const spreadsheet = await sheet.loadSpreadsheet(db);
     await insertTransactions();
 
-    await db.deleteCategory({ id: 'cat1' }, 'cat2');
+    db.deleteCategory({ id: 'cat1' }, 'cat2');
 
     spreadsheet.startTransaction();
     spreadsheet.set(
@@ -148,7 +148,7 @@ describe('Spreadsheet', () => {
       });
     });
 
-    await db.updateTransaction({ id: 'trans1', amount: 50000 });
+    db.updateTransaction({ id: 'trans1', amount: 50000 });
 
     await new Promise(resolve => {
       spreadsheet.onFinish(() => {
@@ -179,7 +179,7 @@ describe('Query cells', () => {
   }
 
   beforeEach(async () => {
-    await db.insertAccount({ id: '1', name: 'checking', offbudget: 0 });
+    db.insertAccount({ id: '1', name: 'checking', offbudget: 0 });
   });
 
   test('binding the same query again does not recompute it', async () => {
@@ -219,7 +219,7 @@ describe('Query cells', () => {
     await sheet.waitOnSpreadsheet();
 
     // Reloading (as opening or switching budgets does) starts from a new sheet
-    await db.updateTransaction({ id: 'trans1', amount: -1000 });
+    db.updateTransaction({ id: 'trans1', amount: -1000 });
     const reloaded = await sheet.reloadSpreadsheet(db);
     expect(reloaded.getValue('account!balance')).toBe(null);
 
@@ -242,7 +242,7 @@ describe('Query cells', () => {
 
     expect(await rebindAndRead()).toBe(-15832);
 
-    await db.insertTransaction(
+    db.insertTransaction(
       generateTransaction({
         id: 'trans4',
         amount: -1000,
@@ -252,17 +252,19 @@ describe('Query cells', () => {
     );
     expect(await rebindAndRead()).toBe(-16832);
 
-    await withUndo(() => db.updateTransaction({ id: 'trans4', amount: -5000 }));
+    await withUndo(async () =>
+      db.updateTransaction({ id: 'trans4', amount: -5000 }),
+    );
     expect(await rebindAndRead()).toBe(-20832);
 
     await undo();
     expect(await rebindAndRead()).toBe(-16832);
 
-    await db.deleteTransaction({ id: 'trans4' });
+    db.deleteTransaction({ id: 'trans4' });
     expect(await rebindAndRead()).toBe(-15832);
 
     // A change that arrives from another device
-    await applyMessages([
+    applyMessages([
       {
         dataset: 'transactions',
         row: 'trans1',

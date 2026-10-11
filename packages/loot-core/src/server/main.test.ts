@@ -68,9 +68,7 @@ describe('Budgets', () => {
 
     // Grab the clock to compare later
     await db.openDatabase('test-budget');
-    const row = await db.first<db.DbClockMessage>(
-      'SELECT * FROM messages_clock',
-    );
+    const row = db.first<db.DbClockMessage>('SELECT * FROM messages_clock');
 
     const { error } = await runHandler(handlers['load-budget'], {
       id: 'test-budget',
@@ -107,20 +105,20 @@ describe('Budgets', () => {
 describe('Accounts', () => {
   test('Transfers are properly updated', async () => {
     await runMutator(async () => {
-      await db.insertAccount({ id: 'one', name: 'one' });
-      await db.insertAccount({ id: 'two', name: 'two' });
-      await db.insertAccount({ id: 'three', name: 'three' });
-      await db.insertPayee({
+      db.insertAccount({ id: 'one', name: 'one' });
+      db.insertAccount({ id: 'two', name: 'two' });
+      db.insertAccount({ id: 'three', name: 'three' });
+      db.insertPayee({
         id: 'transfer-one',
         name: '',
         transfer_acct: 'one',
       });
-      await db.insertPayee({
+      db.insertPayee({
         id: 'transfer-two',
         name: '',
         transfer_acct: 'two',
       });
-      await db.insertPayee({
+      db.insertPayee({
         id: 'transfer-three',
         name: '',
         transfer_acct: 'three',
@@ -136,22 +134,22 @@ describe('Accounts', () => {
       date: '2017-01-01',
     });
     const differ = expectSnapshotWithDiffer(
-      await db.all<db.DbTransaction>('SELECT * FROM transactions'),
+      db.all<db.DbTransaction>('SELECT * FROM transactions'),
     );
 
     await runHandler(handlers['transaction-update'], {
-      ...(await db.getTransaction(id)),
+      ...db.getTransaction(id),
       payee: 'transfer-three',
       date: '2017-01-03',
     });
     differ.expectToMatchDiff(
-      await db.all<db.DbTransaction>('SELECT * FROM transactions'),
+      db.all<db.DbTransaction>('SELECT * FROM transactions'),
     );
 
-    const transaction = await db.getTransaction(id);
+    const transaction = db.getTransaction(id);
     await runHandler(handlers['transaction-delete'], transaction);
     differ.expectToMatchDiff(
-      await db.all<db.DbTransaction>('SELECT * FROM transactions'),
+      db.all<db.DbTransaction>('SELECT * FROM transactions'),
     );
   });
 });
@@ -161,14 +159,14 @@ describe('Budget', () => {
     const spreadsheet = await sheet.loadSpreadsheet(db);
 
     await runMutator(async () => {
-      await db.insertCategoryGroup({
+      db.insertCategoryGroup({
         id: 'incomeGroup',
         name: 'incomeGroup',
         is_income: 1,
       });
-      await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-      await db.insertCategory({ name: 'foo', cat_group: 'group1' });
-      await db.insertCategory({ name: 'bar', cat_group: 'group1' });
+      db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+      db.insertCategory({ name: 'foo', cat_group: 'group1' });
+      db.insertCategory({ name: 'bar', cat_group: 'group1' });
     });
 
     let bounds = await runHandler(handlers['get-budget-bounds']);
@@ -225,7 +223,7 @@ describe('Budget', () => {
 
     let categories;
     await captureChangedCells(async () => {
-      await runMutator(() =>
+      await runMutator(async () =>
         db.insertCategoryGroup({ id: 'group1', name: 'group1' }),
       );
       categories = [
@@ -266,7 +264,7 @@ describe('Budget', () => {
     // Test updates
     changed = await captureChangedCells(async () => {
       await runHandler(handlers['transaction-update'], {
-        ...(await db.getTransaction(trans.id)),
+        ...db.getTransaction(trans.id),
         amount: 7000,
       });
     });
@@ -288,18 +286,18 @@ describe('Categories', () => {
     await sheet.loadSpreadsheet(db);
 
     await runMutator(async () => {
-      await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-      await db.insertCategory({ id: 'foo', name: 'foo', cat_group: 'group1' });
-      await db.insertCategory({ id: 'bar', name: 'bar', cat_group: 'group1' });
+      db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+      db.insertCategory({ id: 'foo', name: 'foo', cat_group: 'group1' });
+      db.insertCategory({ id: 'bar', name: 'bar', cat_group: 'group1' });
     });
 
-    let categories = await db.getCategories();
+    let categories = db.getCategories();
     expect(categories.length).toBe(2);
     expect(categories.find(cat => cat.name === 'foo')).not.toBeNull();
     expect(categories.find(cat => cat.name === 'bar')).not.toBeNull();
     await runHandler(handlers['category-delete'], { id: 'foo' });
 
-    categories = await db.getCategories();
+    categories = db.getCategories();
     expect(categories.length).toBe(1);
     expect(categories.find(cat => cat.name === 'bar')).not.toBeNull();
   });
@@ -308,29 +306,29 @@ describe('Categories', () => {
     await sheet.loadSpreadsheet(db);
 
     const transId = await runMutator(async () => {
-      await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-      await db.insertCategoryGroup({ id: 'group1b', name: 'group1b' });
-      await db.insertCategoryGroup({
+      db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+      db.insertCategoryGroup({ id: 'group1b', name: 'group1b' });
+      db.insertCategoryGroup({
         id: 'group2',
         name: 'group2',
         is_income: 1,
       });
-      await db.insertCategory({ id: 'foo', name: 'foo', cat_group: 'group1' });
-      await db.insertCategory({ id: 'bar', name: 'bar', cat_group: 'group1b' });
-      await db.insertCategory({
+      db.insertCategory({ id: 'foo', name: 'foo', cat_group: 'group1' });
+      db.insertCategory({ id: 'bar', name: 'bar', cat_group: 'group1b' });
+      db.insertCategory({
         id: 'income1',
         name: 'income1',
         is_income: 1,
         cat_group: 'group2',
       });
-      await db.insertCategory({
+      db.insertCategory({
         id: 'income2',
         name: 'income2',
         is_income: 1,
         cat_group: 'group2',
       });
 
-      return await db.insertTransaction({
+      return db.insertTransaction({
         date: '2017-01-01',
         account: 'acct',
         amount: 4500,
@@ -342,16 +340,17 @@ describe('Categories', () => {
 
     // Set a budget value for the category `foo` of 1000
     const sheetName = monthUtils.sheetForMonth('2018-01');
-    await budgetActions.setBudget({
+    budgetActions.setBudget({
       category: 'foo',
       month: '2018-01',
       amount: 1000,
     });
+    await sheet.waitOnSpreadsheet();
     expect(sheet.getCellValue(sheetName, 'group-budget-group1')).toBe(1000);
     expect(sheet.getCellValue(sheetName, 'group-budget-group1b')).toBe(0);
 
     // Make sure the transaction has a category of `foo`
-    let trans = await db.getTransaction(transId);
+    let trans = db.getTransaction(transId);
     expect(trans.category).toBe('foo');
 
     await runHandler(handlers['category-delete'], {
@@ -360,7 +359,7 @@ describe('Categories', () => {
     });
 
     // Make sure the transaction has been updated
-    trans = await db.getTransaction(transId);
+    trans = db.getTransaction(transId);
     expect(trans.category).toBe('bar');
 
     // Make sure the budget value was transferred
@@ -376,7 +375,7 @@ describe('Categories', () => {
       }),
     ).rejects.toThrow('Cannot transfer between income and expense categories.');
 
-    let categories = await db.getCategories();
+    let categories = db.getCategories();
     expect(categories.find(cat => cat.id === 'income1')).toBeDefined();
 
     // Make sure you can delete income categories
@@ -385,7 +384,7 @@ describe('Categories', () => {
       transferId: 'income2',
     });
 
-    categories = await db.getCategories();
+    categories = db.getCategories();
     expect(categories.find(cat => cat.id === 'income1')).not.toBeDefined();
   });
 
@@ -393,18 +392,18 @@ describe('Categories', () => {
     await sheet.loadSpreadsheet(db);
 
     await runMutator(async () => {
-      await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-      await db.insertCategoryGroup({
+      db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+      db.insertCategoryGroup({
         id: 'group2',
         name: 'income',
         is_income: 1,
       });
-      await db.insertCategory({ id: 'foo', name: 'foo', cat_group: 'group1' });
-      await db.insertCategory({ id: 'bar', name: 'bar', cat_group: 'group1' });
-      await db.insertAccount({ id: 'acct', name: 'acct' });
+      db.insertCategory({ id: 'foo', name: 'foo', cat_group: 'group1' });
+      db.insertCategory({ id: 'bar', name: 'bar', cat_group: 'group1' });
+      db.insertAccount({ id: 'acct', name: 'acct' });
 
       // A deposit straight into the category, like a refund
-      await db.insertTransaction({
+      db.insertTransaction({
         date: '2017-01-01',
         account: 'acct',
         amount: 10000,
@@ -416,12 +415,12 @@ describe('Categories', () => {
 
     // Move 1000 from `foo` to `bar`, which leaves `foo` with a negative
     // budgeted amount
-    await budgetActions.setBudget({
+    budgetActions.setBudget({
       category: 'foo',
       month: '2017-01',
       amount: -1000,
     });
-    await budgetActions.setBudget({
+    budgetActions.setBudget({
       category: 'bar',
       month: '2017-01',
       amount: 1000,

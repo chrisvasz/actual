@@ -17,19 +17,19 @@ function getAllTransactions() {
 }
 
 async function prepareDatabase() {
-  await db.insertCategoryGroup({ id: 'group1', name: 'group1', is_income: 0 });
-  await db.insertCategory({
+  db.insertCategoryGroup({ id: 'group1', name: 'group1', is_income: 0 });
+  db.insertCategory({
     id: '1',
     name: 'cat1',
     cat_group: 'group1',
     is_income: 0,
   });
-  await db.insertAccount({ id: 'one', name: 'one' });
-  await db.insertAccount({ id: 'two', name: 'two' });
-  await db.insertAccount({ id: 'three', name: 'three', offbudget: 1 });
-  await db.insertPayee({ name: '', transfer_acct: 'one' });
-  await db.insertPayee({ name: '', transfer_acct: 'two' });
-  await db.insertPayee({
+  db.insertAccount({ id: 'one', name: 'one' });
+  db.insertAccount({ id: 'two', name: 'two' });
+  db.insertAccount({ id: 'three', name: 'three', offbudget: 1 });
+  db.insertPayee({ name: '', transfer_acct: 'one' });
+  db.insertPayee({ name: '', transfer_acct: 'two' });
+  db.insertPayee({
     name: '',
     transfer_acct: 'three',
   });
@@ -56,18 +56,18 @@ describe('Transfer', () => {
     let transaction: Transaction = {
       account: 'one',
       amount: 5000,
-      payee: await db.insertPayee({ name: 'Non-transfer' }),
+      payee: db.insertPayee({ name: 'Non-transfer' }),
       date: '2017-01-01',
     };
-    await db.insertTransaction(transaction);
+    db.insertTransaction(transaction);
     await transfer.onInsert(transaction);
 
-    const differ = expectSnapshotWithDiffer(await getAllTransactions());
+    const differ = expectSnapshotWithDiffer(getAllTransactions());
 
-    const transferTwo = await db.first<db.DbPayee>(
+    const transferTwo = db.first<db.DbPayee>(
       "SELECT * FROM payees WHERE transfer_acct = 'two'",
     );
-    const transferThree = await db.first<db.DbPayee>(
+    const transferThree = db.first<db.DbPayee>(
       "SELECT * FROM payees WHERE transfer_acct = 'three'",
     );
 
@@ -77,12 +77,12 @@ describe('Transfer', () => {
       payee: transferTwo.id,
       date: '2017-01-01',
     };
-    transaction.id = await db.insertTransaction(transaction);
+    transaction.id = db.insertTransaction(transaction);
     await transfer.onInsert(transaction);
-    differ.expectToMatchDiff(await getAllTransactions());
+    differ.expectToMatchDiff(getAllTransactions());
 
     // Fill the transaction out
-    transaction = await db.getTransaction(transaction.id);
+    transaction = db.getTransaction(transaction.id);
     expect(transaction.transfer_id).toBeDefined();
 
     transaction = {
@@ -90,28 +90,28 @@ describe('Transfer', () => {
       date: '2017-01-05',
       notes: 'This is a note',
     };
-    await db.updateTransaction(transaction);
+    db.updateTransaction(transaction);
     await transfer.onUpdate(transaction);
-    differ.expectToMatchDiff(await getAllTransactions());
+    differ.expectToMatchDiff(getAllTransactions());
 
     transaction = {
       ...transaction,
       payee: transferThree.id,
     };
-    await db.updateTransaction(transaction);
+    db.updateTransaction(transaction);
     await transfer.onUpdate(transaction);
-    differ.expectToMatchDiff(await getAllTransactions());
+    differ.expectToMatchDiff(getAllTransactions());
 
     transaction = {
       ...transaction,
-      payee: await db.insertPayee({ name: 'Not transferred anymore' }),
+      payee: db.insertPayee({ name: 'Not transferred anymore' }),
     };
-    await db.updateTransaction(transaction);
+    db.updateTransaction(transaction);
     await transfer.onUpdate(transaction);
-    differ.expectToMatchDiff(await getAllTransactions());
+    differ.expectToMatchDiff(getAllTransactions());
 
     // Make sure it's not a linked transaction anymore
-    transaction = await db.getTransaction(transaction.id);
+    transaction = db.getTransaction(transaction.id);
     expect(transaction.transfer_id).toBeNull();
 
     // Re-transfer it
@@ -119,56 +119,56 @@ describe('Transfer', () => {
       ...transaction,
       payee: transferTwo.id,
     };
-    await db.updateTransaction(transaction);
+    db.updateTransaction(transaction);
     await transfer.onUpdate(transaction);
-    differ.expectToMatchDiff(await getAllTransactions());
+    differ.expectToMatchDiff(getAllTransactions());
 
-    transaction = await db.getTransaction(transaction.id);
+    transaction = db.getTransaction(transaction.id);
     expect(transaction.transfer_id).toBeDefined();
 
-    await db.deleteTransaction(transaction);
-    await transfer.onDelete(transaction);
-    differ.expectToMatchDiff(await getAllTransactions());
+    db.deleteTransaction(transaction);
+    transfer.onDelete(transaction);
+    differ.expectToMatchDiff(getAllTransactions());
   });
 
   test('transfers are properly de-categorized', async () => {
     await prepareDatabase();
 
-    const transferTwo = await db.first<db.DbPayee>(
+    const transferTwo = db.first<db.DbPayee>(
       "SELECT * FROM payees WHERE transfer_acct = 'two'",
     );
-    const transferThree = await db.first<db.DbPayee>(
+    const transferThree = db.first<db.DbPayee>(
       "SELECT * FROM payees WHERE transfer_acct = 'three'",
     );
 
     let transaction: Transaction = {
       account: 'one',
       amount: 5000,
-      payee: await db.insertPayee({ name: 'Non-transfer' }),
+      payee: db.insertPayee({ name: 'Non-transfer' }),
       date: '2017-01-01',
       category: '1',
     };
-    transaction.id = await db.insertTransaction(transaction);
+    transaction.id = db.insertTransaction(transaction);
     await transfer.onInsert(transaction);
 
-    const differ = expectSnapshotWithDiffer(await getAllTransactions());
+    const differ = expectSnapshotWithDiffer(getAllTransactions());
 
     transaction = {
-      ...(await db.getTransaction(transaction.id)),
+      ...db.getTransaction(transaction.id),
       payee: transferThree.id,
       notes: 'hi',
     };
-    await db.updateTransaction(transaction);
+    db.updateTransaction(transaction);
     await transfer.onUpdate(transaction);
-    differ.expectToMatchDiff(await getAllTransactions());
+    differ.expectToMatchDiff(getAllTransactions());
 
     transaction = {
-      ...(await db.getTransaction(transaction.id)),
+      ...db.getTransaction(transaction.id),
       payee: transferTwo.id,
     };
-    await db.updateTransaction(transaction);
+    db.updateTransaction(transaction);
     await transfer.onUpdate(transaction);
-    differ.expectToMatchDiff(await getAllTransactions());
+    differ.expectToMatchDiff(getAllTransactions());
   });
 
   test('split transfers are retained on child transactions', async () => {
@@ -178,10 +178,12 @@ describe('Transfer', () => {
     // and `is_child` set to true
     await prepareDatabase();
 
-    const [transferOne, transferTwo] = await Promise.all([
-      db.first<db.DbPayee>("SELECT * FROM payees WHERE transfer_acct = 'one'"),
-      db.first<db.DbPayee>("SELECT * FROM payees WHERE transfer_acct = 'two'"),
-    ]);
+    const transferOne = db.first<db.DbPayee>(
+      "SELECT * FROM payees WHERE transfer_acct = 'one'",
+    );
+    const transferTwo = db.first<db.DbPayee>(
+      "SELECT * FROM payees WHERE transfer_acct = 'two'",
+    );
 
     let parent: Transaction = {
       account: 'one',
@@ -189,16 +191,16 @@ describe('Transfer', () => {
       payee: transferTwo.id,
       date: '2017-01-01',
     };
-    parent.id = await db.insertTransaction(parent);
+    parent.id = db.insertTransaction(parent);
     await transfer.onInsert(parent);
-    parent = await db.getTransaction(parent.id);
+    parent = db.getTransaction(parent.id);
 
-    const differ = expectSnapshotWithDiffer(await getAllTransactions());
+    const differ = expectSnapshotWithDiffer(getAllTransactions());
 
     // mark the txn as parent
-    await db.updateTransaction({ id: parent.id, is_parent: true });
+    db.updateTransaction({ id: parent.id, is_parent: true });
     await transfer.onUpdate(parent);
-    differ.expectToMatchDiff(await getAllTransactions());
+    differ.expectToMatchDiff(getAllTransactions());
 
     // add a child txn
     let child: Transaction = {
@@ -209,12 +211,12 @@ describe('Transfer', () => {
       is_child: true,
       parent_id: parent.id,
     };
-    child.id = await db.insertTransaction(child);
+    child.id = db.insertTransaction(child);
     await transfer.onInsert(child);
-    differ.expectToMatchDiff(await getAllTransactions());
+    differ.expectToMatchDiff(getAllTransactions());
 
     // ensure that the child txn has the correct transfer acct payee
-    child = await db.getTransaction(child.id);
+    child = db.getTransaction(child.id);
     expect(child.transfer_id).not.toBe(parent.transfer_id);
     expect(child.payee).toBe(transferOne.id);
   });

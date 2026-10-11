@@ -48,7 +48,7 @@ function getCrdtRows(): db.DbCrdtMessage[] {
 }
 
 async function getAmount(row: string): Promise<number | undefined> {
-  const result = await db.first<{ amount: number }>(
+  const result = db.first<{ amount: number }>(
     'SELECT amount FROM transactions WHERE id = ?',
     [row],
   );
@@ -58,7 +58,7 @@ async function getAmount(row: string): Promise<number | undefined> {
 // `applyMessages` only returns nothing in import mode, which these
 // tests never use
 async function applyAll(messages: Message[]): Promise<Message[]> {
-  const applied = await applyMessages(messages);
+  const applied = applyMessages(messages);
   if (applied == null) {
     throw new Error('applyMessages returned nothing');
   }
@@ -77,7 +77,7 @@ describe('compareMessages', () => {
     const middle = sendTimestamp();
     const latest = sendTimestamp();
 
-    await applyMessages([amountMessage('t1', 100, middle)]);
+    applyMessages([amountMessage('t1', 100, middle)]);
 
     const applied = await applyAll([
       amountMessage('t1', 50, earliest),
@@ -95,7 +95,7 @@ describe('compareMessages', () => {
     const first = sendTimestamp();
     const second = sendTimestamp();
 
-    await applyMessages([amountMessage('t1', 100, first)]);
+    applyMessages([amountMessage('t1', 100, first)]);
 
     const applied = await applyAll([
       amountMessage('t1', 100, first),
@@ -115,7 +115,7 @@ describe('compareMessages', () => {
     const loggedTimestamps = rows.map(() => sendTimestamp());
     const lateTimestamps = rows.map(() => sendTimestamp());
 
-    await applyMessages(
+    applyMessages(
       rows.map((row, index) =>
         amountMessage(row, 1000, loggedTimestamps[index]),
       ),
@@ -147,7 +147,7 @@ describe('compareMessages', () => {
   it('rolls back the whole batch when one message fails to apply', async () => {
     const merkleBefore = JSON.stringify(getClock().merkle);
 
-    await expect(
+    expect(() =>
       applyMessages([
         amountMessage('t1', 100, sendTimestamp()),
         {
@@ -158,7 +158,7 @@ describe('compareMessages', () => {
           timestamp: sendTimestamp(),
         },
       ]),
-    ).rejects.toMatchObject({ reason: 'invalid-schema' });
+    ).toThrow(expect.objectContaining({ reason: 'invalid-schema' }));
 
     expect(getCrdtRows().length).toBe(0);
     expect(await getAmount('t1')).toBeUndefined();
@@ -166,13 +166,13 @@ describe('compareMessages', () => {
   });
 
   it('keeps the envelope budget when a tracking budget type arrives via sync', async () => {
-    await db.insertCategoryGroup({
+    db.insertCategoryGroup({
       id: 'income-group',
       name: 'Income',
       is_income: 1,
     });
-    await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-    await db.insertCategory({ id: 'cat1', name: 'cat1', cat_group: 'group1' });
+    db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+    db.insertCategory({ id: 'cat1', name: 'cat1', cat_group: 'group1' });
     await sheet.loadSpreadsheet(db);
     await budget.createBudget(['2024-01']);
 

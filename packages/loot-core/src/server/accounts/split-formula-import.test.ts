@@ -7,30 +7,30 @@ import { reconcileTransactions } from './sync';
 
 beforeEach(async () => {
   await global.emptyDatabase()();
-  await loadMappings();
-  await loadRules();
+  loadMappings();
+  loadRules();
 });
 
 test('import keeps one parent, matches its schedule and transfers only the formula split', async () => {
-  await db.insertAccount({ id: 'source', name: 'Source', offbudget: 0 });
-  await db.insertAccount({
+  db.insertAccount({ id: 'source', name: 'Source', offbudget: 0 });
+  db.insertAccount({
     id: 'destination',
     name: 'Destination',
     offbudget: 1,
   });
-  await db.insertPayee({
+  db.insertPayee({
     id: 'transfer-source',
     name: '',
     transfer_acct: 'source',
   });
-  await db.insertPayee({
+  db.insertPayee({
     id: 'transfer-destination',
     name: '',
     transfer_acct: 'destination',
   });
-  await db.insertPayee({ id: 'bank', name: 'Bank' });
-  await db.insertCategoryGroup({ id: 'group', name: 'Expenses', is_income: 0 });
-  await db.insertCategory({
+  db.insertPayee({ id: 'bank', name: 'Bank' });
+  db.insertCategoryGroup({ id: 'group', name: 'Expenses', is_income: 0 });
+  db.insertCategory({
     id: 'category',
     name: 'Payment',
     cat_group: 'group',
@@ -50,7 +50,7 @@ test('import keeps one parent, matches its schedule and transfers only the formu
       { field: 'notes', op: 'contains', value: 'ITEM:' },
     ],
   });
-  await insertRule({
+  insertRule({
     stage: 'pre',
     conditionsOp: 'and',
     conditions: [
@@ -108,7 +108,7 @@ test('import keeps one parent, matches its schedule and transfers only the formu
     db.all<db.DbViewTransactionInternal>(
       'SELECT * FROM v_transactions_internal',
     );
-  const rows = await read();
+  const rows = read();
   const parent = rows.find(row => row.is_parent);
   if (!parent) throw new Error('Missing split parent');
   expect(parent).toMatchObject({
@@ -151,7 +151,7 @@ test('import keeps one parent, matches its schedule and transfers only the formu
 
   // A repeated bank import must preserve identity and not create another transfer.
   await reconcileTransactions('source', [imported]);
-  const reimported = await read();
+  const reimported = read();
   expect(reimported.map(row => row.id).sort()).toEqual(
     rows.map(row => row.id).sort(),
   );

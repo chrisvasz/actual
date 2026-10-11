@@ -46,7 +46,7 @@ import { APIError, withErrorCode } from './errors';
 import { runMutator } from './mutators';
 import * as prefs from './prefs';
 import * as sheet from './sheet';
-import { batchMessages, setSyncingMode } from './sync';
+import { endMessageBatch, setSyncingMode, startMessageBatch } from './sync';
 
 let IMPORT_MODE = false;
 
@@ -63,7 +63,7 @@ function withMutation<Params extends Array<unknown>, ReturnType>(
         const latestTimestamp = getClock().timestamp.toString();
         const result = await handler(...args);
 
-        const rows = await db.all<Pick<db.DbCrdtMessage, 'dataset'>>(
+        const rows = db.all<Pick<db.DbCrdtMessage, 'dataset'>>(
           'SELECT DISTINCT dataset FROM messages_crdt WHERE timestamp > ?',
           [latestTimestamp],
         );
@@ -99,12 +99,12 @@ async function validateMonth(month) {
   }
 }
 
-async function validateExpenseCategory(debug, id) {
+function validateExpenseCategory(debug, id) {
   if (id == null) {
     throw APIError(`${debug}: category id is required`);
   }
 
-  const row = await db.first<Pick<db.DbCategory, 'is_income'>>(
+  const row = db.first<Pick<db.DbCategory, 'is_income'>>(
     'SELECT is_income FROM categories WHERE id = ?',
     [id],
   );
@@ -124,10 +124,10 @@ function checkFileOpen() {
   }
 }
 
-let batchPromise = null;
+let batchMode: 'transaction' | 'messages' | 'nested' | null = null;
 
 handlers['api/batch-budget-start'] = async function () {
-  if (batchPromise) {
+  if (batchMode) {
     throw APIError('Cannot start a batch process: batch already started');
   }
 
@@ -135,27 +135,25 @@ handlers['api/batch-budget-start'] = async function () {
   // transaction. Updating spreadsheet cells doesn't go through the
   // syncing layer in that case.
   if (IMPORT_MODE) {
-    void db.asyncTransaction(() => {
-      return new Promise((resolve, reject) => {
-        batchPromise = { resolve, reject };
-      });
-    });
+    db.beginTransaction();
+    batchMode = 'transaction';
   } else {
-    void batchMessages(() => {
-      return new Promise((resolve, reject) => {
-        batchPromise = { resolve, reject };
-      });
-    });
+    batchMode = startMessageBatch() ? 'messages' : 'nested';
   }
 };
 
 handlers['api/batch-budget-end'] = async function () {
-  if (!batchPromise) {
+  if (!batchMode) {
     throw APIError('Cannot end a batch process: no batch started');
   }
 
-  batchPromise.resolve();
-  batchPromise = null;
+  const mode = batchMode;
+  batchMode = null;
+  if (mode === 'transaction') {
+    db.commitTransaction();
+  } else if (mode === 'messages') {
+    endMessageBatch();
+  }
 };
 
 handlers['api/load-budget'] = async function ({ id }) {
@@ -425,7 +423,7 @@ handlers['api/budget-set-carryover'] = withMutation(async function ({
 }) {
   checkFileOpen();
   await validateMonth(month);
-  await validateExpenseCategory('budget-set-carryover', categoryId);
+  validateExpenseCategory('budget-set-carryover', categoryId);
   return handlers['budget/set-carryover']({
     startMonth: month,
     category: categoryId,

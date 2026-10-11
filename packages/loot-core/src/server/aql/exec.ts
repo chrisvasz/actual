@@ -40,7 +40,7 @@ export async function execQuery(
   outputTypes: OutputTypes,
 ) {
   const sql = defaultConstructQuery(queryState, compilerState, sqlPieces);
-  const data = await db.all<Record<string, unknown>>(sql, params);
+  const data = db.all<Record<string, unknown>>(sql, params);
   applyTypes(data, outputTypes);
   return data;
 }
