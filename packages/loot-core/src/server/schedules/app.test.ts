@@ -23,8 +23,8 @@ import {
 
 beforeEach(async () => {
   await global.emptyDatabase()();
-  await loadMappings();
-  await loadRules();
+  loadMappings();
+  loadRules();
 });
 
 describe('schedule app', () => {
@@ -171,7 +171,7 @@ describe('schedule app', () => {
         q('schedules').filter({ id }).calculate('rule'),
       );
 
-      await updateRule({
+      updateRule({
         id: ruleId,
         actions: [
           {
@@ -189,7 +189,7 @@ describe('schedule app', () => {
       );
       expect(parentActionMatches).toEqual([]);
 
-      await updateRule({
+      updateRule({
         id: ruleId,
         actions: [
           {
@@ -447,7 +447,7 @@ describe('schedule app', () => {
       );
 
       // Manually update the rule
-      await updateRule({
+      updateRule({
         id: ruleId,
         conditions: [
           {
@@ -643,7 +643,7 @@ describe('schedule app', () => {
       schedulesApp.startServices();
 
       try {
-        const accountId = await db.insertAccount({
+        const accountId = db.insertAccount({
           name: 'Checking',
           offbudget: 0,
           closed: 0,
@@ -674,11 +674,11 @@ describe('schedule app', () => {
             },
           ],
         });
-        const nextDateRow = await db.first<{
+        const nextDateRow = db.first<{
           id: string;
         }>('SELECT id FROM schedules_next_date WHERE schedule_id = ?', [id]);
 
-        await db.update('schedules_next_date', {
+        db.update('schedules_next_date', {
           id: nextDateRow.id,
           local_next_date: 20161205,
           local_next_date_ts: Date.now(),
@@ -718,7 +718,7 @@ describe('schedule app', () => {
       schedulesApp.startServices();
 
       try {
-        const accountId = await db.insertAccount({
+        const accountId = db.insertAccount({
           name: 'Checking',
           offbudget: 0,
           closed: 0,
@@ -749,18 +749,18 @@ describe('schedule app', () => {
             },
           ],
         });
-        const nextDateRow = await db.first<{
+        const nextDateRow = db.first<{
           id: string;
         }>('SELECT id FROM schedules_next_date WHERE schedule_id = ?', [id]);
 
-        await db.update('schedules_next_date', {
+        db.update('schedules_next_date', {
           id: nextDateRow.id,
           local_next_date: 20161205,
           local_next_date_ts: Date.now(),
           base_next_date: 20161205,
           base_next_date_ts: Date.now(),
         });
-        await db.insertTransaction({
+        db.insertTransaction({
           account: accountId,
           amount: -10000,
           date: '2016-12-05',
@@ -805,7 +805,7 @@ describe('schedule app', () => {
       schedulesApp.startServices();
 
       try {
-        const accountId = await db.insertAccount({
+        const accountId = db.insertAccount({
           name: 'Checking',
           offbudget: 0,
           closed: 0,
@@ -838,18 +838,18 @@ describe('schedule app', () => {
             },
           ],
         });
-        const nextDateRow = await db.first<{
+        const nextDateRow = db.first<{
           id: string;
         }>('SELECT id FROM schedules_next_date WHERE schedule_id = ?', [id]);
 
-        await db.update('schedules_next_date', {
+        db.update('schedules_next_date', {
           id: nextDateRow.id,
           local_next_date: 20161223,
           local_next_date_ts: Date.now(),
           base_next_date: 20161223,
           base_next_date_ts: Date.now(),
         });
-        await db.insertTransaction({
+        db.insertTransaction({
           account: accountId,
           amount: -10000,
           date: '2016-12-23',
@@ -888,7 +888,7 @@ describe('schedule app', () => {
       schedulesApp.startServices();
 
       try {
-        const accountId = await db.insertAccount({
+        const accountId = db.insertAccount({
           name: 'Checking',
           offbudget: 0,
           closed: 0,
@@ -914,7 +914,7 @@ describe('schedule app', () => {
             },
           ],
         });
-        await db.insertTransaction({
+        db.insertTransaction({
           account: accountId,
           amount: -10000,
           date: '2016-12-05',
@@ -945,7 +945,7 @@ describe('schedule app', () => {
       schedulesApp.startServices();
 
       try {
-        const accountId = await db.insertAccount({
+        const accountId = db.insertAccount({
           name: 'Checking',
           offbudget: 0,
           closed: 0,
@@ -993,7 +993,7 @@ describe('schedule app', () => {
       schedulesApp.startServices();
 
       try {
-        const accountId = await db.insertAccount({
+        const accountId = db.insertAccount({
           name: 'Checking',
           offbudget: 0,
           closed: 0,
@@ -1024,11 +1024,11 @@ describe('schedule app', () => {
             },
           ],
         });
-        const nextDateRow = await db.first<{
+        const nextDateRow = db.first<{
           id: string;
         }>('SELECT id FROM schedules_next_date WHERE schedule_id = ?', [id]);
 
-        await db.update('schedules_next_date', {
+        db.update('schedules_next_date', {
           id: nextDateRow.id,
           local_next_date: 20170101,
           local_next_date_ts: Date.now(),
@@ -1085,7 +1085,7 @@ describe('schedule app', () => {
       schedulesApp.startServices();
 
       try {
-        const accountId = await db.insertAccount({
+        const accountId = db.insertAccount({
           name: 'Checking',
           offbudget: 0,
           closed: 0,
@@ -1106,11 +1106,11 @@ describe('schedule app', () => {
         const { data: ruleId } = await aqlQuery(
           q('schedules').filter({ id }).calculate('rule'),
         );
-        const ruleRow = await db.first<Pick<db.DbRule, 'actions'>>(
+        const ruleRow = db.first<Pick<db.DbRule, 'actions'>>(
           'SELECT actions FROM rules WHERE id = ?',
           [ruleId],
         );
-        await updateRule({
+        updateRule({
           id: ruleId,
           actions: [
             { op: 'set', field: 'amount', value: -6000 },

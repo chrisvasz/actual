@@ -35,14 +35,14 @@ function aliveTransactions(arr) {
 }
 
 async function insertTransactions(transactions, payeeIds?: string[]) {
-  return batchMessages(async () => {
+  return batchMessages(() => {
     for (const trans of transactions) {
-      void db.insertTransaction(trans);
+      db.insertTransaction(trans);
     }
 
     if (payeeIds) {
       for (let i = 0; i < payeeIds.length; i++) {
-        await db.insertPayee({
+        db.insertPayee({
           id: payeeIds[i],
           name: 'payee' + (i + 1),
         });

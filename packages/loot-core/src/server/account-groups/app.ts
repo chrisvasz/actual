@@ -20,7 +20,7 @@ app.method('account-group-delete', mutator(undoable(deleteAccountGroup)));
 app.method('account-group-move', mutator(undoable(moveAccountGroup)));
 
 async function getAccountGroups(): Promise<AccountGroupEntity[]> {
-  const groups = await db.getAccountGroups();
+  const groups = db.getAccountGroups();
   return groups.map(group => ({
     id: group.id,
     name: group.name,
@@ -37,13 +37,13 @@ async function createAccountGroup({
 async function updateAccountGroup(
   group: Pick<AccountGroupEntity, 'id' | 'name'>,
 ): Promise<void> {
-  await db.updateAccountGroup(group);
+  db.updateAccountGroup(group);
 }
 
 async function deleteAccountGroup({
   id,
 }: Pick<AccountGroupEntity, 'id'>): Promise<AccountGroupEntity['id']> {
-  await db.deleteAccountGroup({ id });
+  db.deleteAccountGroup({ id });
   return id;
 }
 
@@ -54,5 +54,5 @@ async function moveAccountGroup({
   id: AccountGroupEntity['id'];
   targetId: AccountGroupEntity['id'] | null;
 }): Promise<void> {
-  await db.moveAccountGroup(id, targetId);
+  db.moveAccountGroup(id, targetId);
 }

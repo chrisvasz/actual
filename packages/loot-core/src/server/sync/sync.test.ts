@@ -16,6 +16,7 @@ import {
   receiveMessages,
   sendMessages,
   setSyncingMode,
+  waitForScheduledSyncs,
 } from './index';
 
 beforeEach(() => {
@@ -35,7 +36,7 @@ describe('Sync', () => {
     void prefs.savePrefs({ groupId: 'group' });
 
     let timestamp = Timestamp.send();
-    await sendMessages([
+    sendMessages([
       {
         dataset: 'transactions',
         row: 'foo',
@@ -44,11 +45,12 @@ describe('Sync', () => {
         timestamp,
       },
     ]);
+    await waitForScheduledSyncs();
 
     global.stepForwardInTime();
 
     timestamp = Timestamp.send();
-    await sendMessages([
+    sendMessages([
       {
         dataset: 'transactions',
         row: 'foo',
@@ -58,14 +60,16 @@ describe('Sync', () => {
       },
     ]);
 
+    await waitForScheduledSyncs();
+
     expect(getClock().timestamp.toString()).toEqual(timestamp.toString());
     expect(mockSyncServer.getClock().merkle).toEqual(getClock().merkle);
 
     expect(
-      await db.all<db.DbCrdtMessage>('SELECT * FROM messages_crdt'),
+      db.all<db.DbCrdtMessage>('SELECT * FROM messages_crdt'),
     ).toMatchSnapshot();
     expect(
-      await db.all<db.DbClockMessage>('SELECT * FROM messages_clock'),
+      db.all<db.DbClockMessage>('SELECT * FROM messages_clock'),
     ).toMatchSnapshot();
   });
 
@@ -75,7 +79,7 @@ describe('Sync', () => {
 
     global.stepForwardInTime(Date.parse('2018-11-13T13:20:00.000Z'));
 
-    await applyMessages([
+    applyMessages([
       global.stepForwardInTime() || {
         dataset: 'transactions',
         row: 'foo',
@@ -142,7 +146,7 @@ describe('Sync', () => {
       ),
     );
 
-    await applyMessages([
+    applyMessages([
       global.stepForwardInTime(Date.parse('1970-01-03T10:17:37.000Z')) || {
         dataset: 'transactions',
         row: 'foo',
@@ -227,6 +231,7 @@ async function asSecondClient(func) {
   });
 
   await func();
+  await waitForScheduledSyncs();
 
   await global.emptyDatabase()();
   void prefs.savePrefs({
@@ -250,9 +255,9 @@ describe('Sync projections', () => {
     let groupId, fooId, barId;
     await asSecondClient(async () => {
       await sheet.loadSpreadsheet(db);
-      groupId = await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-      fooId = await db.insertCategory({ name: 'foo', cat_group: 'group1' });
-      barId = await db.insertCategory({ name: 'bar', cat_group: 'group1' });
+      groupId = db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+      fooId = db.insertCategory({ name: 'foo', cat_group: 'group1' });
+      barId = db.insertCategory({ name: 'bar', cat_group: 'group1' });
     });
 
     await sheet.loadSpreadsheet(db);
@@ -278,9 +283,9 @@ describe('Sync projections', () => {
     let fooId;
     await asSecondClient(async () => {
       await sheet.loadSpreadsheet(db);
-      await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-      fooId = await db.insertCategory({ name: 'foo', cat_group: 'group1' });
-      await db.deleteCategory({ id: fooId });
+      db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+      fooId = db.insertCategory({ name: 'foo', cat_group: 'group1' });
+      db.deleteCategory({ id: fooId });
     });
 
     await sheet.loadSpreadsheet(db);
@@ -294,12 +299,12 @@ describe('Sync projections', () => {
     let fooId;
     await asSecondClient(async () => {
       await sheet.loadSpreadsheet(db);
-      await db.insertCategoryGroup({
+      db.insertCategoryGroup({
         id: 'group1',
         name: 'group1',
       });
-      fooId = await db.insertCategory({ name: 'foo', cat_group: 'group1' });
-      await db.deleteCategory({ id: fooId });
+      fooId = db.insertCategory({ name: 'foo', cat_group: 'group1' });
+      db.deleteCategory({ id: fooId });
     });
 
     await sheet.loadSpreadsheet(db);
@@ -309,14 +314,14 @@ describe('Sync projections', () => {
     const messages = mockSyncServer.getMessages();
 
     // Apply all but the last message (which deletes the category)
-    await applyMessages(messages.slice(0, -1));
-    expect((await db.getCategories()).length).toBe(1);
+    applyMessages(messages.slice(0, -1));
+    expect(db.getCategories().length).toBe(1);
     expectCellToExist('budget201701', 'sum-amount-' + fooId);
 
     // Apply the last message and make sure it deleted the appropriate
     // budget cells
-    await applyMessages([messages[messages.length - 1]]);
-    expect((await db.getCategories()).length).toBe(0);
+    applyMessages([messages[messages.length - 1]]);
+    expect(db.getCategories().length).toBe(0);
     expectCellNotToExist('budget201701', 'sum-amount-' + fooId, true);
   });
 
@@ -326,8 +331,8 @@ describe('Sync projections', () => {
     let groupId;
     await asSecondClient(async () => {
       await sheet.loadSpreadsheet(db);
-      groupId = await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-      await db.deleteCategoryGroup({ id: groupId });
+      groupId = db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+      db.deleteCategoryGroup({ id: groupId });
     });
 
     await sheet.loadSpreadsheet(db);
@@ -344,13 +349,13 @@ describe('Sync projections', () => {
     let groupId, fooId;
     await asSecondClient(async () => {
       await sheet.loadSpreadsheet(db);
-      groupId = await db.insertCategoryGroup({
+      groupId = db.insertCategoryGroup({
         id: 'group1',
         name: 'group1',
       });
-      fooId = await db.insertCategory({ name: 'foo', cat_group: 'group1' });
-      await db.deleteCategory({ id: fooId });
-      await db.deleteCategoryGroup({ id: groupId });
+      fooId = db.insertCategory({ name: 'foo', cat_group: 'group1' });
+      db.deleteCategory({ id: fooId });
+      db.deleteCategoryGroup({ id: groupId });
     });
 
     await sheet.loadSpreadsheet(db);
@@ -363,16 +368,16 @@ describe('Sync projections', () => {
     const secondMessages = messages.filter(m => m.column === 'tombstone');
 
     // Apply all the good messages
-    await applyMessages(firstMessages);
-    expect((await db.getCategories()).length).toBe(1);
-    expect((await db.getCategoriesGrouped()).length).toBe(1);
+    applyMessages(firstMessages);
+    expect(db.getCategories().length).toBe(1);
+    expect(db.getCategoriesGrouped().length).toBe(1);
     expectCellToExist('budget201701', 'sum-amount-' + fooId);
     expectCellToExist('budget201701', 'group-sum-amount-' + groupId);
 
     // Apply the messages that deletes it
-    await applyMessages(secondMessages);
-    expect((await db.getCategories()).length).toBe(0);
-    expect((await db.getCategoriesGrouped()).length).toBe(0);
+    applyMessages(secondMessages);
+    expect(db.getCategories().length).toBe(0);
+    expect(db.getCategoriesGrouped().length).toBe(0);
     expectCellNotToExist('budget201701', 'sum-amount-' + fooId, true);
     expectCellNotToExist('budget201701', 'group-sum-amount-' + groupId, true);
   });
@@ -381,10 +386,10 @@ describe('Sync projections', () => {
     let groupId, fooId;
     await asSecondClient(async () => {
       await sheet.loadSpreadsheet(db);
-      groupId = await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-      await db.insertCategoryGroup({ id: 'group2', name: 'group2' });
-      fooId = await db.insertCategory({ name: 'foo', cat_group: 'group1' });
-      await db.moveCategory(fooId, 'group2', null);
+      groupId = db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+      db.insertCategoryGroup({ id: 'group2', name: 'group2' });
+      fooId = db.insertCategory({ name: 'foo', cat_group: 'group1' });
+      db.moveCategory(fooId, 'group2', null);
     });
 
     await sheet.loadSpreadsheet(db);
@@ -397,13 +402,13 @@ describe('Sync projections', () => {
     const secondMessages = messages.slice(-2);
 
     // Apply all the good messages
-    await applyMessages(firstMessages);
-    const [cat] = await db.getCategories();
+    applyMessages(firstMessages);
+    const [cat] = db.getCategories();
     expect(cat.cat_group).toBe('group1');
     expectCellToExist('budget201701', 'group-sum-amount-' + groupId);
 
     // Apply the messages that deletes it
-    await applyMessages(secondMessages);
+    applyMessages(secondMessages);
   });
 });
 
@@ -457,7 +462,7 @@ describe('Sync account balance cells', () => {
     await sheet.waitOnSpreadsheet();
 
     const recompute = vi.spyOn(spreadsheet, 'recompute');
-    await applyMessages([
+    applyMessages([
       global.stepForwardInTime() || {
         dataset: 'transactions',
         row: 'foo',

@@ -110,7 +110,7 @@ async function addRule(
     return { error };
   }
 
-  const id = await rules.insertRule(rule);
+  const id = rules.insertRule(rule);
   return { id, ...rule };
 }
 
@@ -122,7 +122,7 @@ async function updateRule(
     return { error };
   }
 
-  await rules.updateRule(rule);
+  rules.updateRule(rule);
   return rule;
 }
 
@@ -135,9 +135,9 @@ async function deleteAllRules(
 ): Promise<{ someDeletionsFailed: boolean }> {
   let someDeletionsFailed = false;
 
-  await batchMessages(async () => {
+  batchMessages(() => {
     for (const id of ids) {
-      const res = await rules.deleteRule(id);
+      const res = rules.deleteRule(id);
       if (res === false) {
         someDeletionsFailed = true;
       }

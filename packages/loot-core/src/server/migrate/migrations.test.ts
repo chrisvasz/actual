@@ -129,7 +129,7 @@ describe('Migrations', () => {
 
       const applied = await getAppliedMigrations(db.getDatabase());
       expect(applied).toContain(1790000000002);
-      const desc = await db.first<{ name: string }>(
+      const desc = db.first<{ name: string }>(
         "SELECT name FROM sqlite_master WHERE name = 'interleave_b'",
       );
       expect(desc?.name).toBe('interleave_b');
@@ -163,14 +163,14 @@ describe('Migrations', () => {
     return withMigrationsDir(
       __dirname + '/../../mocks/migrations',
       async () => {
-        let desc = await db.first<{ sql: string }>(
+        let desc = db.first<{ sql: string }>(
           "SELECT * FROM sqlite_master WHERE name = 'poop'",
         );
         expect(desc).toBe(null);
 
         await migrate(db.getDatabase());
 
-        desc = await db.first<{ sql: string }>(
+        desc = db.first<{ sql: string }>(
           "SELECT * FROM sqlite_master WHERE name = 'poop'",
         );
         expect(desc).toBeDefined();

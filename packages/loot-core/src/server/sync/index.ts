@@ -22,7 +22,7 @@ import { getServer } from '#server/server-config';
 import * as sheet from '#server/sheet';
 import { resolveName } from '#server/spreadsheet/util';
 import * as undo from '#server/undo';
-import { once, sequential } from '#shared/async';
+import { once } from '#shared/async';
 import { isMissingSchemaError } from '#shared/errors';
 import { getIn, setIn } from '#shared/util';
 import type { MetadataPrefs } from '#types/prefs';
@@ -396,7 +396,10 @@ export type Message = {
   value: string | number | null | UnknownFormatValue;
 };
 
-async function _applyMessages(messages: Message[], deferUnknownSchema = false) {
+export function applyMessages(
+  messages: Message[],
+  deferUnknownSchema = false,
+): Message[] | undefined {
   if (checkSyncingMode('import')) {
     applyMessagesForImport(messages);
     return undefined;
@@ -609,8 +612,6 @@ async function _applyMessages(messages: Message[], deferUnknownSchema = false) {
     : messages.filter(msg => !deferredMessages.has(msg));
 }
 
-export const applyMessages = sequential(_applyMessages);
-
 export function receiveMessages(messages: Message[]): Promise<Message[]> {
   try {
     // Receiving the latest timestamp preserves the clock and drift check while
@@ -638,7 +639,7 @@ export function receiveMessages(messages: Message[]): Promise<Message[]> {
 
   // Inbound messages may come from a newer version of the app, so
   // unknown-schema errors defer instead of failing the batch
-  return runMutator(() => applyMessages(messages, true));
+  return runMutator(async () => applyMessages(messages, true));
 }
 
 async function errorHandler(e: Error) {
@@ -667,20 +668,57 @@ async function errorHandler(e: Error) {
   }
 }
 
-async function _sendMessages(messages: Message[]): Promise<void> {
+function _sendMessages(messages: Message[]): void {
   try {
-    await applyMessages(messages);
+    applyMessages(messages);
   } catch (e) {
     void errorHandler(e);
     throw e;
   }
 
-  await scheduleFullSync();
+  scheduleFullSync();
 }
 
 let IS_BATCHING = false;
 let _BATCHED: Message[] = [];
-export async function batchMessages(func: () => Promise<void>): Promise<void> {
+
+function takeBatched(): Message[] {
+  IS_BATCHING = false;
+  const batched = _BATCHED;
+  _BATCHED = [];
+  return batched;
+}
+
+export function batchMessages(func: () => void): void {
+  if (IS_BATCHING) {
+    func();
+    return;
+  }
+
+  IS_BATCHING = true;
+  let batched: Message[] = [];
+
+  try {
+    func();
+  } catch (e) {
+    void errorHandler(e);
+    throw e;
+  } finally {
+    batched = takeBatched();
+  }
+
+  if (batched.length > 0) {
+    _sendMessages(batched);
+  }
+}
+
+// Like `batchMessages`, for the few bodies that still await real async
+// work (AQL queries, rules). The batch stays open across those awaits,
+// so messages from any handler that runs meanwhile join it. Prefer
+// `batchMessages`.
+export async function batchMessagesAsync(
+  func: () => Promise<void>,
+): Promise<void> {
   if (IS_BATCHING) {
     await func();
     return;
@@ -695,21 +733,39 @@ export async function batchMessages(func: () => Promise<void>): Promise<void> {
     void errorHandler(e);
     throw e;
   } finally {
-    IS_BATCHING = false;
-    batched = _BATCHED;
-    _BATCHED = [];
+    batched = takeBatched();
   }
 
   if (batched.length > 0) {
-    await _sendMessages(batched);
+    _sendMessages(batched);
   }
 }
 
-export async function sendMessages(messages: Message[]) {
+// Batches messages until `endMessageBatch`, across any number of
+// handler calls. Only for the API's batch-budget-start/end, which spans
+// a caller's own async work; use `batchMessages` everywhere else.
+// Returns false when a batch is already open: the messages then join
+// it, and the caller must not end it
+export function startMessageBatch(): boolean {
+  if (IS_BATCHING) {
+    return false;
+  }
+  IS_BATCHING = true;
+  return true;
+}
+
+export function endMessageBatch(): void {
+  const batched = takeBatched();
+  if (batched.length > 0) {
+    _sendMessages(batched);
+  }
+}
+
+export function sendMessages(messages: Message[]): void {
   if (IS_BATCHING) {
     _BATCHED = _BATCHED.concat(messages);
   } else {
-    return _sendMessages(messages);
+    _sendMessages(messages);
   }
 }
 
@@ -729,22 +785,42 @@ export function clearFullSyncTimeout(): void {
 }
 
 let syncTimeout = null;
-export function scheduleFullSync(): Promise<
-  { messages: Message[] } | { error: unknown }
-> {
+
+// Tests sync right away instead of after a delay, one sync after
+// another. `waitForScheduledSyncs` waits for them to finish.
+let testSyncs: Promise<void> = Promise.resolve();
+const testSyncErrors: Error[] = [];
+
+export function scheduleFullSync(): void {
   clearFullSyncTimeout();
 
   if (checkSyncingMode('enabled') && !checkSyncingMode('offline')) {
     if (process.env.NODE_ENV === 'test') {
-      return fullSync().then(res => {
-        if (isError(res)) {
-          throw res.error;
+      testSyncs = testSyncs.then(async () => {
+        try {
+          const res = await fullSync();
+          if (isError(res)) {
+            testSyncErrors.push(
+              new Error(res.error.message, { cause: res.error }),
+            );
+          }
+        } catch (e) {
+          testSyncErrors.push(e instanceof Error ? e : new Error(String(e)));
         }
-        return res;
       });
     } else {
       syncTimeout = setTimeout(fullSync, FULL_SYNC_DELAY);
     }
+  }
+}
+
+// Test only: waits for the syncs `scheduleFullSync` started, and throws
+// the first error any of them hit
+export async function waitForScheduledSyncs(): Promise<void> {
+  await testSyncs;
+  const [failure] = testSyncErrors.splice(0);
+  if (failure) {
+    throw failure;
   }
 }
 
@@ -985,7 +1061,7 @@ async function _fullSync(
 
       if (rebuiltMerkle.trie.hash === res.merkle.hash) {
         // Rebuilding the merkle worked... but why?
-        const clocks = await db.all<db.DbClockMessage>(
+        const clocks = db.all<db.DbClockMessage>(
           'SELECT * FROM messages_clock',
         );
         if (clocks.length !== 1) {

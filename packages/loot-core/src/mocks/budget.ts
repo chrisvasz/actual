@@ -8,7 +8,11 @@ import * as budget from '#server/budget/base';
 import * as db from '#server/db';
 import { runHandler, runMutator } from '#server/mutators';
 import * as sheet from '#server/sheet';
-import { batchMessages, setSyncingMode } from '#server/sync';
+import {
+  batchMessages,
+  batchMessagesAsync,
+  setSyncingMode,
+} from '#server/sync';
 import * as monthUtils from '#shared/months';
 import { q } from '#shared/query';
 import type { Handlers } from '#types/handlers';
@@ -610,18 +614,14 @@ async function fillOther(handlers, account, payees, groups) {
 
 async function createBudget(accounts, payees, groups) {
   const primaryAccount = accounts.find(a => (a.name = 'Bank of America'));
-  const earliestDate = (
-    await db.first<Pick<db.DbViewTransaction, 'date'>>(
-      `SELECT t.date FROM v_transactions t LEFT JOIN accounts a ON t.account = a.id
+  const earliestDate = db.first<Pick<db.DbViewTransaction, 'date'>>(
+    `SELECT t.date FROM v_transactions t LEFT JOIN accounts a ON t.account = a.id
        WHERE a.offbudget = 0 AND t.is_child = 0 ORDER BY date ASC LIMIT 1`,
-    )
   ).date;
-  const earliestPrimaryDate = (
-    await db.first<Pick<db.DbViewTransaction, 'date'>>(
-      `SELECT t.date FROM v_transactions t LEFT JOIN accounts a ON t.account = a.id
+  const earliestPrimaryDate = db.first<Pick<db.DbViewTransaction, 'date'>>(
+    `SELECT t.date FROM v_transactions t LEFT JOIN accounts a ON t.account = a.id
        WHERE a.id = ? AND a.offbudget = 0 AND t.is_child = 0 ORDER BY date ASC LIMIT 1`,
-      [primaryAccount.id],
-    )
+    [primaryAccount.id],
   ).date;
 
   const start = monthUtils.monthFromDate(db.fromDateRepr(earliestDate));
@@ -648,30 +648,30 @@ async function createBudget(accounts, payees, groups) {
     ) as number;
 
     if (spent < 0) {
-      void setBudget(month, cat, -spent);
+      setBudget(month, cat, -spent);
     }
   }
 
-  await runMutator(() =>
-    batchMessages(async () => {
+  await runMutator(async () =>
+    batchMessages(() => {
       for (const month of months) {
         if (
           month >=
           monthUtils.monthFromDate(db.fromDateRepr(earliestPrimaryDate))
         ) {
-          void setBudget(month, category('Food'), 40000);
-          void setBudget(month, category('Restaurants'), 30000);
-          void setBudget(month, category('Entertainment'), 10000);
-          void setBudget(month, category('Clothing'), 3000);
-          void setBudget(month, category('General'), 50000);
-          void setBudget(month, category('Gift'), 7500);
-          void setBudget(month, category('Medical'), 10000);
+          setBudget(month, category('Food'), 40000);
+          setBudget(month, category('Restaurants'), 30000);
+          setBudget(month, category('Entertainment'), 10000);
+          setBudget(month, category('Clothing'), 3000);
+          setBudget(month, category('General'), 50000);
+          setBudget(month, category('Gift'), 7500);
+          setBudget(month, category('Medical'), 10000);
 
-          void setBudget(month, category('Cell'), 7500);
-          void setBudget(month, category('Internet'), 6000);
-          void setBudget(month, category('Mortgage'), 120000);
-          void setBudget(month, category('Water'), 9000);
-          void setBudget(month, category('Power'), 10000);
+          setBudget(month, category('Cell'), 7500);
+          setBudget(month, category('Internet'), 6000);
+          setBudget(month, category('Mortgage'), 120000);
+          setBudget(month, category('Water'), 9000);
+          setBudget(month, category('Power'), 10000);
         } else {
           setBudgetIfSpent(month, category('Food'));
           setBudgetIfSpent(month, category('Restaurants'));
@@ -693,8 +693,8 @@ async function createBudget(accounts, payees, groups) {
 
   await sheet.waitOnSpreadsheet();
 
-  await runMutator(() =>
-    batchMessages(async () => {
+  await runMutator(async () =>
+    batchMessages(() => {
       let prevSaved = 0;
       for (const month of months) {
         if (
@@ -710,12 +710,12 @@ async function createBudget(accounts, payees, groups) {
           const available = toBudget - prevSaved;
 
           if (available - 403000 > 0) {
-            void setBudget(month, category('Savings'), available - 403000);
-            void budgetActions.setBuffer(month, 403000);
+            setBudget(month, category('Savings'), available - 403000);
+            budgetActions.setBuffer(month, 403000);
 
             prevSaved += available - 403000;
           } else if (available > 0) {
-            void budgetActions.setBuffer(month, available);
+            budgetActions.setBuffer(month, available);
           }
         }
       }
@@ -789,7 +789,7 @@ export async function createTestBudget(handlers: Handlers) {
   const payees: PayeeEntity[] = [];
 
   await runMutator(() =>
-    batchMessages(async () => {
+    batchMessagesAsync(async () => {
       for (const newPayee of newPayees) {
         const id = await handlers['payee-create']({ name: newPayee.name });
         payees.push({
@@ -871,13 +871,13 @@ export async function createTestBudget(handlers: Handlers) {
   setSyncingMode('import');
 
   await runMutator(() =>
-    batchMessages(async () => {
+    batchMessagesAsync(async () => {
       await insertDemoTags(handlers);
     }),
   );
 
   await runMutator(() =>
-    batchMessages(async () => {
+    batchMessagesAsync(async () => {
       for (const account of accounts) {
         if (account.name === 'Bank of America') {
           await fillPrimaryChecking(handlers, account, payees, allGroups);
@@ -943,7 +943,7 @@ export async function createTestBudget(handlers: Handlers) {
 
   // Create some schedules
   await runMutator(() =>
-    batchMessages(async () => {
+    batchMessagesAsync(async () => {
       const account = accounts.find(acc => acc.name === 'Bank of America');
 
       await runHandler(handlers['schedule/create'], {

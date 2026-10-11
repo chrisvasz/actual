@@ -108,13 +108,13 @@ const exportModel = {
 
 async function createDashboardPage({ name }: { name: string }) {
   const id = uuidv4();
-  await db.insertWithSchema('dashboard_pages', { id, name });
+  db.insertWithSchema('dashboard_pages', { id, name });
 
   return id;
 }
 
 async function deleteDashboardPage(id: string) {
-  const res = await db.first<{ c: number }>(
+  const res = db.first<{ c: number }>(
     'SELECT count(*) as c FROM dashboard_pages WHERE tombstone = 0',
   );
 
@@ -122,22 +122,22 @@ async function deleteDashboardPage(id: string) {
     throw new Error('Cannot delete the last dashboard page');
   }
 
-  const deleting_widgets = await db.all<Pick<db.DbDashboard, 'id'>>(
+  const deleting_widgets = db.all<Pick<db.DbDashboard, 'id'>>(
     'SELECT id FROM dashboard WHERE dashboard_page_id = ? AND tombstone = 0',
     [id],
   );
 
-  await batchMessages(async () => {
-    await db.delete_('dashboard_pages', id);
+  batchMessages(() => {
+    db.delete_('dashboard_pages', id);
     // Tombstone all widgets for this dashboard
-    await Promise.all(
-      deleting_widgets.map(({ id }) => db.delete_('dashboard', id)),
-    );
+    for (const widget of deleting_widgets) {
+      db.delete_('dashboard', widget.id);
+    }
   });
 }
 
 async function renameDashboardPage({ id, name }: { id: string; name: string }) {
-  await db.updateWithSchema('dashboard_pages', { id, name });
+  db.updateWithSchema('dashboard_pages', { id, name });
 }
 
 async function updateDashboard(
@@ -152,52 +152,54 @@ async function updateDashboard(
     (dbWidgets as DashboardWidgetEntity[]).map(widget => [widget.id, widget]),
   );
 
-  await Promise.all(
-    widgets
-      // Perform an update query only if the widget actually has changes
-      .filter(widget => !isMatch(dbWidgetMap.get(widget.id) ?? {}, widget))
-      .map(widget => db.update('dashboard', widget)),
-  );
+  // Perform an update query only if the widget actually has changes
+  for (const widget of widgets) {
+    if (!isMatch(dbWidgetMap.get(widget.id) ?? {}, widget)) {
+      db.update('dashboard', widget);
+    }
+  }
 }
 
 async function updateDashboardWidget(
   widget: EverythingButIdOptional<Omit<DashboardWidgetEntity, 'tombstone'>>,
 ) {
-  await db.updateWithSchema('dashboard', widget);
+  db.updateWithSchema('dashboard', widget);
 }
 
 async function resetDashboard(id: string) {
-  await batchMessages(async () => {
-    const widgets = await db.selectWithSchema(
+  batchMessages(() => {
+    const widgets = db.selectWithSchema(
       'dashboard',
       'SELECT id FROM dashboard WHERE dashboard_page_id = ? AND tombstone = 0',
       [id],
     );
 
-    await Promise.all([
-      // Delete all widgets for this dashboard
-      ...widgets.map(({ id }) => db.delete_('dashboard', id)),
+    // Delete all widgets for this dashboard
+    for (const widget of widgets) {
+      db.delete_('dashboard', widget.id);
+    }
 
-      // Insert the default state
-      ...DEFAULT_DASHBOARD_STATE.map(widget =>
-        db.insertWithSchema('dashboard', { ...widget, dashboard_page_id: id }),
-      ),
-    ]);
+    // Insert the default state
+    for (const widget of DEFAULT_DASHBOARD_STATE) {
+      db.insertWithSchema('dashboard', { ...widget, dashboard_page_id: id });
+    }
   });
 }
 
-async function addDashboardWidget(
-  widget: WithOptional<
-    Omit<DashboardWidgetEntity, 'id' | 'tombstone'>,
-    'x' | 'y'
-  >,
-) {
+type NewDashboardWidget = WithOptional<
+  Omit<DashboardWidgetEntity, 'id' | 'tombstone'>,
+  'x' | 'y'
+>;
+
+async function addDashboardWidget(widget: NewDashboardWidget) {
+  insertDashboardWidget(widget);
+}
+
+function insertDashboardWidget(widget: NewDashboardWidget) {
   // If no x & y was provided - calculate it dynamically
   // The new widget should be the very last one in the list of all widgets
   if (!('x' in widget) && !('y' in widget)) {
-    const data = await db.first<
-      Pick<db.DbDashboard, 'x' | 'y' | 'width' | 'height'>
-    >(
+    const data = db.first<Pick<db.DbDashboard, 'x' | 'y' | 'width' | 'height'>>(
       'SELECT x, y, width, height FROM dashboard WHERE dashboard_page_id = ? AND tombstone = 0 ORDER BY y DESC, x DESC',
       [widget.dashboard_page_id],
     );
@@ -214,14 +216,14 @@ async function addDashboardWidget(
 
   const { dashboard_page_id, ...widgetWithoutDashboardPageId } = widget;
 
-  await db.insertWithSchema('dashboard', {
+  db.insertWithSchema('dashboard', {
     ...widgetWithoutDashboardPageId,
     dashboard_page_id,
   });
 }
 
 async function removeDashboardWidget(widgetId: string) {
-  await db.delete_('dashboard', widgetId);
+  db.delete_('dashboard', widgetId);
 }
 
 async function copyDashboardWidget({
@@ -232,7 +234,7 @@ async function copyDashboardWidget({
   targetDashboardPageId: string;
 }) {
   // Get the widget to copy
-  const widget = await db.first<db.DbDashboard>(
+  const widget = db.first<db.DbDashboard>(
     'SELECT * FROM dashboard WHERE id = ? AND tombstone = 0',
     [id],
   );
@@ -241,7 +243,7 @@ async function copyDashboardWidget({
     throw new Error(`Widget not found: ${id}`);
   }
 
-  await batchMessages(async () => {
+  batchMessages(() => {
     // Insert the widget to target dashboard
     if (isWidgetType(widget.type)) {
       const newWidget = {
@@ -251,7 +253,7 @@ async function copyDashboardWidget({
         meta: widget.meta ? JSON.parse(widget.meta) : {},
         dashboard_page_id: targetDashboardPageId,
       };
-      await addDashboardWidget(newWidget);
+      insertDashboardWidget(newWidget);
     } else {
       throw new Error(`Unsupported widget type: ${widget.type}`);
     }
@@ -275,63 +277,65 @@ async function importDashboard({
 
     exportModel.validate(parsedContent);
 
-    const customReportIds = await db.all<Pick<db.DbCustomReport, 'id'>>(
+    const customReportIds = db.all<Pick<db.DbCustomReport, 'id'>>(
       'SELECT id from custom_reports',
     );
     const customReportIdSet = new Set(customReportIds.map(({ id }) => id));
 
-    const existingWidgets = await db.selectWithSchema(
+    const existingWidgets = db.selectWithSchema(
       'dashboard',
       'SELECT id FROM dashboard WHERE dashboard_page_id = ? AND tombstone = 0',
       [dashboardPageId],
     );
 
-    await batchMessages(async () => {
-      await Promise.all([
-        // Delete all widgets
-        ...existingWidgets.map(({ id }) => db.delete_('dashboard', id)),
+    batchMessages(() => {
+      // Delete all widgets
+      for (const { id } of existingWidgets) {
+        db.delete_('dashboard', id);
+      }
 
-        // Insert new widgets
-        ...parsedContent.widgets.map(widget =>
-          db.insertWithSchema('dashboard', {
-            type: widget.type,
-            width: widget.width,
-            height: widget.height,
-            x: widget.x,
-            y: widget.y,
-            dashboard_page_id: dashboardPageId,
-            meta: isExportedCustomReportWidget(widget)
-              ? { id: widget.meta.id }
-              : widget.meta,
-          }),
-        ),
+      // Insert new widgets
+      for (const widget of parsedContent.widgets) {
+        db.insertWithSchema('dashboard', {
+          type: widget.type,
+          width: widget.width,
+          height: widget.height,
+          x: widget.x,
+          y: widget.y,
+          dashboard_page_id: dashboardPageId,
+          meta: isExportedCustomReportWidget(widget)
+            ? { id: widget.meta.id }
+            : widget.meta,
+        });
+      }
 
-        // Insert new custom reports
-        ...parsedContent.widgets
-          .filter(isExportedCustomReportWidget)
-          .filter(({ meta }) => !customReportIdSet.has(meta.id))
-          .map(({ meta }) =>
-            db.insertWithSchema('custom_reports', reportModel.fromJS(meta)),
-          ),
+      const reportWidgets = parsedContent.widgets.filter(
+        isExportedCustomReportWidget,
+      );
 
-        // Update existing reports
-        ...parsedContent.widgets
-          .filter(isExportedCustomReportWidget)
-          .filter(({ meta }) => customReportIdSet.has(meta.id))
-          .map(({ meta }) =>
-            db.updateWithSchema('custom_reports', {
-              // Replace `undefined` values with `null`
-              // (null clears the value in DB; undefined breaks the operation)
-              ...Object.fromEntries(
-                Object.entries(reportModel.fromJS(meta)).map(([key, value]) => [
-                  key,
-                  value ?? null,
-                ]),
-              ),
-              tombstone: false,
-            }),
-          ),
-      ]);
+      // Insert new custom reports
+      for (const { meta } of reportWidgets) {
+        if (!customReportIdSet.has(meta.id)) {
+          db.insertWithSchema('custom_reports', reportModel.fromJS(meta));
+        }
+      }
+
+      // Update existing reports
+      for (const { meta } of reportWidgets) {
+        if (customReportIdSet.has(meta.id)) {
+          db.updateWithSchema('custom_reports', {
+            // Replace `undefined` values with `null`
+            // (null clears the value in DB; undefined breaks the operation)
+            ...Object.fromEntries(
+              Object.entries(reportModel.fromJS(meta)).map(([key, value]) => [
+                key,
+                value ?? null,
+              ]),
+            ),
+            tombstone: false,
+          });
+        }
+      }
     });
 
     return { status: 'ok' as const };

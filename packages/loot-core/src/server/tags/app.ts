@@ -34,7 +34,7 @@ const collator = new Intl.Collator(undefined, {
   sensitivity: 'base',
 });
 async function getTags(): Promise<TagEntity[]> {
-  const tags = await db.getTags();
+  const tags = db.getTags();
   tags.sort((a, b) => collator.compare(a.tag, b.tag));
   return tags.map(tag => ({ ...tag, hidden: !!tag.hidden }));
 }
@@ -44,11 +44,11 @@ async function createTag({
   color = null,
   description = null,
 }: Omit<TagEntity, 'id'>): Promise<TagEntity> {
-  const allTags = await db.getAllTags();
+  const allTags = db.getAllTags();
 
   const { id: tagId = null } = allTags.find(t => t.tag === tag) || {};
   if (tagId) {
-    await db.updateTag({
+    db.updateTag({
       id: tagId,
       tag,
       color,
@@ -58,7 +58,7 @@ async function createTag({
     return { id: tagId, tag, color, description };
   }
 
-  const id = await db.insertTag({
+  const id = db.insertTag({
     tag: tag.trim(),
     color: color ? color.trim() : null,
     description,
@@ -68,34 +68,34 @@ async function createTag({
 }
 
 async function deleteTag(tag: Pick<TagEntity, 'id'>): Promise<TagEntity['id']> {
-  await db.deleteTag(tag);
+  db.deleteTag(tag);
   return tag.id;
 }
 
 async function deleteAllTags(
   ids: Array<TagEntity['id']>,
 ): Promise<Array<TagEntity['id']>> {
-  await batchMessages(async () => {
+  batchMessages(() => {
     for (const id of ids) {
-      await db.deleteTag({ id });
+      db.deleteTag({ id });
     }
   });
   return ids;
 }
 
 async function hideAllTags(ids: Array<TagEntity['id']>) {
-  await batchMessages(async () => {
+  batchMessages(() => {
     for (const id of ids) {
-      await db.updateTag({ id, hidden: 1 });
+      db.updateTag({ id, hidden: 1 });
     }
   });
   return ids;
 }
 
 async function unhideAllTags(ids: Array<TagEntity['id']>) {
-  await batchMessages(async () => {
+  batchMessages(() => {
     for (const id of ids) {
-      await db.updateTag({ id, hidden: 0 });
+      db.updateTag({ id, hidden: 0 });
     }
   });
   return ids;
@@ -105,7 +105,7 @@ async function updateTag(
   tag: Partial<TagEntity> & Pick<TagEntity, 'id'>,
 ): Promise<Partial<TagEntity>> {
   const { hidden, ...rest } = tag;
-  await db.updateTag({
+  db.updateTag({
     ...rest,
     ...(hidden !== undefined ? { hidden: hidden ? 1 : 0 } : {}),
   });
@@ -122,8 +122,8 @@ async function renameTag({
     throw new Error('Invalid tag name');
   }
 
-  const tags = await db.getTags();
-  const allTags = await db.getAllTags();
+  const tags = db.getTags();
+  const allTags = db.getAllTags();
   const existing = tags.find(t => t.id === id);
   if (!existing) {
     throw new Error('Tag not found');
@@ -135,13 +135,13 @@ async function renameTag({
     throw new Error('A tag with that name already exists');
   }
 
-  await batchMessages(async () => {
-    await db.updateTag({ id, tag: name });
+  batchMessages(() => {
+    db.updateTag({ id, tag: name });
 
-    for (const { id: transactionId, notes } of await db.findTags()) {
+    for (const { id: transactionId, notes } of db.findTags()) {
       const renamed = renameTagInNotes(notes, existing.tag, name);
       if (renamed !== notes) {
-        await db.updateTransaction({ id: transactionId, notes: renamed });
+        db.updateTransaction({ id: transactionId, notes: renamed });
       }
     }
   });
@@ -150,7 +150,7 @@ async function renameTag({
 }
 
 async function discoverTags(): Promise<TagEntity[]> {
-  const taggedNotes = await db.findTags();
+  const taggedNotes = db.findTags();
 
   const tags = await getTags();
   for (const { notes } of taggedNotes) {

@@ -24,15 +24,15 @@ function compileAndRunAqlQuery(query, options?: unknown) {
 
 async function insertTransactions(repeatTimes = 1) {
   let transactions = [];
-  const group = await db.insertCategoryGroup({ name: 'group' });
+  const group = db.insertCategoryGroup({ name: 'group' });
 
   for (let i = 0; i < repeatTimes; i++) {
-    const cat1 = await db.insertCategory({
+    const cat1 = db.insertCategory({
       id: 'cat' + i + 'a',
       name: 'cat' + i + 'a',
       cat_group: group,
     });
-    const cat2 = await db.insertCategory({
+    const cat2 = db.insertCategory({
       id: 'cat' + i + 'b',
       name: 'cat' + i + 'b',
       cat_group: group,
@@ -67,7 +67,7 @@ async function insertTransactions(repeatTimes = 1) {
   }
 
   for (const trans of transactions) {
-    await db.insertTransaction(trans);
+    db.insertTransaction(trans);
   }
 }
 
@@ -115,7 +115,7 @@ describe('compileAndRunQuery', () => {
 
   it('provides named parameters and converts types', async () => {
     const transId = uuidv4();
-    await db.insertTransaction({
+    db.insertTransaction({
       id: transId,
       account: 'acct',
       date: '2020-01-01',
@@ -167,22 +167,22 @@ describe('compileAndRunQuery', () => {
   });
 
   it('allows null as a parameter', async () => {
-    await db.insertCategoryGroup({ id: 'group', name: 'group' });
-    await db.insertCategory({ id: 'cat', name: 'cat', cat_group: 'group' });
-    await db.insertCategory({ id: 'cat2', name: 'cat2', cat_group: 'group' });
-    const transNoCat = await db.insertTransaction({
+    db.insertCategoryGroup({ id: 'group', name: 'group' });
+    db.insertCategory({ id: 'cat', name: 'cat', cat_group: 'group' });
+    db.insertCategory({ id: 'cat2', name: 'cat2', cat_group: 'group' });
+    const transNoCat = db.insertTransaction({
       account: 'acct',
       date: '2020-01-01',
       amount: -5001,
       category: null,
     });
-    const transCat = await db.insertTransaction({
+    const transCat = db.insertTransaction({
       account: 'acct',
       date: '2020-01-01',
       amount: -5001,
       category: 'cat',
     });
-    const transCat2 = await db.insertTransaction({
+    const transCat2 = db.insertTransaction({
       account: 'acct',
       date: '2020-01-02',
       amount: -5001,
@@ -244,7 +244,7 @@ describe('compileAndRunQuery', () => {
 
   it('parameters have the correct order', async () => {
     const transId = uuidv4();
-    await db.insertTransaction({
+    db.insertTransaction({
       id: transId,
       account: 'acct',
       date: '2020-01-01',
@@ -267,7 +267,7 @@ describe('compileAndRunQuery', () => {
   it('fetches all data required for $oneof', async () => {
     await insertTransactions();
 
-    const rows = await db.all<Pick<db.DbTransaction, 'id'>>(
+    const rows = db.all<Pick<db.DbTransaction, 'id'>>(
       'SELECT id FROM transactions WHERE amount < -50',
     );
     const ids = rows.slice(0, 3).map(row => row.id);

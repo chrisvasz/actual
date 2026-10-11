@@ -107,8 +107,8 @@ export function undoable<T extends HandlerFunctions>(
 }
 
 async function applyUndoAction(messages, meta, undoTag) {
-  await withMutatorContext({ undoListening: false }, () => {
-    return sendMessages(
+  await withMutatorContext({ undoListening: false }, async () => {
+    sendMessages(
       messages.map(msg => ({ ...msg, timestamp: Timestamp.send() })),
     );
   });

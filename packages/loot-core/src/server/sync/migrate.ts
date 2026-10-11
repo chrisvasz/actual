@@ -1,6 +1,8 @@
 // @ts-strict-ignore
 import { Timestamp } from '@actual-app/crdt';
 
+import { captureException } from '#platform/exceptions';
+
 import { addSyncListener, applyMessages } from './index';
 import type { Message } from './index';
 
@@ -28,7 +30,13 @@ function migrateParentIds(_oldValues, newValues) {
       });
 
       if (toApply.length > 0) {
-        void applyMessages(toApply);
+        // This runs inside another apply, after its transaction has
+        // committed, so don't let a failure here fail that apply
+        try {
+          applyMessages(toApply);
+        } catch (e) {
+          captureException(e);
+        }
       }
     }
   });

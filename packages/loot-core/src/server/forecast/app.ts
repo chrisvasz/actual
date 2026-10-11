@@ -88,11 +88,11 @@ export async function generateForecast({
 
   const accountIdsToQuery = accounts.map(account => account.id);
   const accountsById = new Map(accounts.map(account => [account.id, account]));
-  const [schedulesRaw, transactions, ruleAccounts] = await Promise.all([
+  const [schedulesRaw, transactions] = await Promise.all([
     getNormalizedSchedules(),
     getTransactions(accountIdsToQuery, filterInfo),
-    db.getAccounts(),
   ]);
+  const ruleAccounts = db.getAccounts();
   const schedules = includeUnassigned
     ? schedulesRaw
     : schedulesRaw.filter(

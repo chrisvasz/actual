@@ -76,7 +76,7 @@ async function moveTransaction({
   targetId: string | null;
 }) {
   // Fetch the transaction to validate it exists and verify account
-  const transaction = await db.getTransaction(id);
+  const transaction = db.getTransaction(id);
   if (!transaction) {
     throw new Error(`Transaction not found: ${id}`);
   }
@@ -92,7 +92,7 @@ async function moveTransaction({
   // Child transactions can be reordered within their parent's children
   // The db.moveTransaction handles the sibling-scoped reordering for children
 
-  await db.moveTransaction(id, accountId, targetId);
+  db.moveTransaction(id, accountId, targetId);
   return {};
 }
 

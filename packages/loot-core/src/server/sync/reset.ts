@@ -62,7 +62,7 @@ export async function resetSync(
       ANALYZE;
       VACUUM;
     `);
-    await db.loadClock();
+    db.loadClock();
   });
 
   if (discardedDeferredCount > 0) {

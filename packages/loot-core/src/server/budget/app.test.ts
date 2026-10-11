@@ -5,7 +5,7 @@ import type { CategoryEntity } from '#types/models';
 
 beforeEach(async () => {
   await global.emptyDatabase()();
-  await loadMappings();
+  loadMappings();
 });
 
 async function getGoal(id: string) {
@@ -20,8 +20,8 @@ async function getGoal(id: string) {
 describe('budget app', () => {
   describe('category-update', () => {
     it('clears a goal when its fields are set to null', async () => {
-      await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
-      const id = await db.insertCategory({ name: 'foo', cat_group: 'group1' });
+      db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+      const id = db.insertCategory({ name: 'foo', cat_group: 'group1' });
       const category: CategoryEntity = {
         id,
         name: 'foo',

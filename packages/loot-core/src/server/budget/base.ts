@@ -211,7 +211,7 @@ export function triggerBudgetChanges(oldValues, newValues) {
   }
 }
 
-export async function doTransfer(categoryIds, transferId) {
+export function doTransfer(categoryIds, transferId) {
   const { createdMonths: months } = sheet.get().meta();
 
   [...months].forEach(month => {
@@ -226,7 +226,7 @@ export async function doTransfer(categoryIds, transferId) {
       category: transferId,
     });
 
-    void budgetActions.setBudget({
+    budgetActions.setBudget({
       month,
       category: transferId,
       amount: totalValue + transferValue,
@@ -314,7 +314,7 @@ export async function createBudget(months) {
 }
 
 export async function createAllBudgets() {
-  const earliestTransaction = await db.first<db.DbTransaction>(
+  const earliestTransaction = db.first<db.DbTransaction>(
     'SELECT * FROM transactions WHERE isChild=0 AND date IS NOT NULL ORDER BY date ASC LIMIT 1',
   );
   const earliestDate =

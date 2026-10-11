@@ -74,7 +74,7 @@ describe('sync migrations', () => {
       tracer.event('applied', [...transactionsMap.keys()]);
     });
 
-    await db.insert('transactions', {
+    db.insert('transactions', {
       id: 'trans1/child1',
       isChild: 1,
       amount: 4500,
@@ -116,10 +116,10 @@ describe('sync migrations', () => {
             }
           });
 
-          await sendMessages(msgs);
+          sendMessages(msgs);
           await tracer.expect('applied');
 
-          const transactions = await db.all<db.DbTransaction>(
+          const transactions = db.all<db.DbTransaction>(
             'SELECT * FROM transactions',
             [],
           );

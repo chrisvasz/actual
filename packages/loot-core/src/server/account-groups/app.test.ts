@@ -5,7 +5,7 @@ import { loadMappings } from '#server/db/mappings';
 
 beforeEach(async () => {
   await global.emptyDatabase()();
-  await loadMappings();
+  loadMappings();
 });
 
 describe('account groups app', () => {
@@ -103,8 +103,8 @@ describe('account groups app', () => {
         name: 'Other',
       });
 
-      await db.insertAccount({ id: 'acct1', name: 'Amex' });
-      await db.insertAccount({ id: 'acct2', name: 'Checking' });
+      db.insertAccount({ id: 'acct1', name: 'Amex' });
+      db.insertAccount({ id: 'acct2', name: 'Checking' });
       await accountsApp.handlers['account-update']({
         id: 'acct1',
         name: 'Amex',
@@ -136,7 +136,7 @@ describe('account groups app', () => {
       const groupId = await app.handlers['account-group-create']({
         name: 'Savings',
       });
-      await db.insertAccount({ id: 'acct1', name: 'Marcus' });
+      db.insertAccount({ id: 'acct1', name: 'Marcus' });
 
       await accountsApp.handlers['account-update']({
         id: 'acct1',
@@ -169,9 +169,9 @@ describe('account groups app', () => {
       const groupId = await app.handlers['account-group-create']({
         name: 'Savings',
       });
-      await db.insertAccount({ id: 'acct1', name: 'Checking' });
-      await db.insertAccount({ id: 'acct2', name: 'Marcus' });
-      await db.insertAccount({ id: 'acct3', name: 'Premium Saver' });
+      db.insertAccount({ id: 'acct1', name: 'Checking' });
+      db.insertAccount({ id: 'acct2', name: 'Marcus' });
+      db.insertAccount({ id: 'acct3', name: 'Premium Saver' });
       await accountsApp.handlers['account-update']({
         id: 'acct3',
         account_group_id: groupId,

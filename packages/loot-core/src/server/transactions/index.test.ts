@@ -8,14 +8,14 @@ beforeEach(global.emptyDatabase());
 
 describe('batchUpdateTransactions', () => {
   it('returns the added, updated and deleted transactions separately', async () => {
-    await db.insertAccount({ id: 'one', name: 'one' });
-    await db.insertTransaction({
+    db.insertAccount({ id: 'one', name: 'one' });
+    db.insertTransaction({
       id: 'to-update',
       account: 'one',
       amount: 100,
       date: '2024-01-01',
     });
-    await db.insertTransaction({
+    db.insertTransaction({
       id: 'to-delete',
       account: 'one',
       amount: 200,
@@ -40,7 +40,7 @@ describe('batchUpdateTransactions', () => {
     ]);
     expect(result.errors).toEqual([]);
 
-    const remaining = await db.all<{ id: string; amount: number }>(
+    const remaining = db.all<{ id: string; amount: number }>(
       'SELECT id, amount FROM v_transactions_internal WHERE tombstone = 0 ORDER BY id',
     );
     expect(remaining).toEqual([
@@ -50,8 +50,8 @@ describe('batchUpdateTransactions', () => {
   });
 
   it('does not add any transactions when only editing a field', async () => {
-    await db.insertAccount({ id: 'one', name: 'one' });
-    await db.insertTransaction({
+    db.insertAccount({ id: 'one', name: 'one' });
+    db.insertTransaction({
       id: 't1',
       account: 'one',
       amount: 100,
@@ -66,7 +66,7 @@ describe('batchUpdateTransactions', () => {
     expect(result.added).toEqual([]);
     expect(result.deleted).toEqual([]);
     expect(result.updated.map(transaction => transaction?.id)).toEqual(['t1']);
-    const updated = await db.first<{ notes: string }>(
+    const updated = db.first<{ notes: string }>(
       'SELECT notes FROM transactions WHERE id = ?',
       ['t1'],
     );

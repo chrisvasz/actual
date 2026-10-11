@@ -187,10 +187,10 @@ export function makeRule(data) {
   return rule;
 }
 
-export async function loadRules() {
+export function loadRules() {
   resetState();
 
-  const rules = await db.all<db.DbRule>(`
+  const rules = db.all<db.DbRule>(`
     SELECT * FROM rules
       WHERE conditions IS NOT NULL AND actions IS NOT NULL AND tombstone = 0
   `);
@@ -221,20 +221,18 @@ export function getRules() {
   return [...allRules.values()];
 }
 
-export async function insertRule(
-  rule: Omit<RuleEntity, 'id'> & { id?: string },
-) {
+export function insertRule(rule: Omit<RuleEntity, 'id'> & { id?: string }) {
   rule = ruleModel.validate(rule);
   return db.insertWithUUID('rules', ruleModel.fromJS(rule));
 }
 
-export async function updateRule(rule) {
+export function updateRule(rule) {
   rule = ruleModel.validate(rule, { update: true });
   return db.update('rules', ruleModel.fromJS(rule));
 }
 
-export async function deleteRule(id: string) {
-  const schedule = await db.first<Pick<db.DbSchedule, 'id'>>(
+export function deleteRule(id: string) {
+  const schedule = db.first<Pick<db.DbSchedule, 'id'>>(
     'SELECT id FROM schedules WHERE rule = ?',
     [id],
   );
@@ -243,7 +241,7 @@ export async function deleteRule(id: string) {
     return false;
   }
 
-  await db.delete_('rules', id);
+  db.delete_('rules', id);
   return true;
 }
 
@@ -290,10 +288,8 @@ function onApplySync(oldValues, newValues) {
   }
 }
 
-export async function getRuleIdFromScheduleId(
-  scheduleId: string,
-): Promise<string | null> {
-  const row = await db.first<Pick<db.DbSchedule, 'rule'>>(
+export function getRuleIdFromScheduleId(scheduleId: string): string | null {
+  const row = db.first<Pick<db.DbSchedule, 'rule'>>(
     'SELECT rule FROM schedules WHERE id = ?',
     [scheduleId],
   );
@@ -301,10 +297,8 @@ export async function getRuleIdFromScheduleId(
   return row?.rule || null;
 }
 
-export async function getAllRuleIdsFromSchedules(
-  excluding: string,
-): Promise<string[]> {
-  const rows = await db.all<Pick<db.DbSchedule, 'rule'>>(
+export function getAllRuleIdsFromSchedules(excluding: string): string[] {
+  const rows = db.all<Pick<db.DbSchedule, 'rule'>>(
     'SELECT rule FROM schedules',
   );
 
@@ -327,7 +321,7 @@ export async function runRules(
   let accountsMap: Map<string, db.DbAccount> = null;
   if (accounts === null) {
     accountsMap = new Map(
-      (await db.getAccounts()).map(account => [account.id, account]),
+      db.getAccounts().map(account => [account.id, account]),
     );
   } else {
     accountsMap = accounts;
@@ -363,14 +357,13 @@ export async function runRules(
   let scheduleRuleID = '';
   // Check if a schedule is attached to this transaction and if so get the rule ID attached to that schedule.
   if (trans.schedule != null) {
-    const ruleId = await getRuleIdFromScheduleId(trans.schedule);
+    const ruleId = getRuleIdFromScheduleId(trans.schedule);
     if (ruleId != null) {
       scheduleRuleID = ruleId;
     }
   }
 
-  const RuleIdsLinkedToSchedules =
-    await getAllRuleIdsFromSchedules(scheduleRuleID);
+  const RuleIdsLinkedToSchedules = getAllRuleIdsFromSchedules(scheduleRuleID);
 
   const formulaStrings = rules.flatMap(rule =>
     collectFormulasFromActions(rule.actions),
@@ -389,8 +382,8 @@ export async function runRules(
         await ensureBalanceFor(rules[i]);
         const changes = rules[i].execActions(finalTrans);
         finalTrans = Object.assign({}, finalTrans, changes);
-        await resolvePayeeNameForRules(finalTrans);
-        lastCategoryIdForGroup = await refreshCategoryGroupIfChanged(
+        resolvePayeeNameForRules(finalTrans);
+        lastCategoryIdForGroup = refreshCategoryGroupIfChanged(
           finalTrans,
           lastCategoryIdForGroup,
         );
@@ -407,8 +400,8 @@ export async function runRules(
             rules[i].execActions(finalTrans),
           );
         }
-        await resolvePayeeNameForRules(finalTrans);
-        lastCategoryIdForGroup = await refreshCategoryGroupIfChanged(
+        resolvePayeeNameForRules(finalTrans);
+        lastCategoryIdForGroup = refreshCategoryGroupIfChanged(
           finalTrans,
           lastCategoryIdForGroup,
         );
@@ -423,15 +416,15 @@ export async function runRules(
           rules[i].execActions(finalTrans),
         );
       }
-      await resolvePayeeNameForRules(finalTrans);
-      lastCategoryIdForGroup = await refreshCategoryGroupIfChanged(
+      resolvePayeeNameForRules(finalTrans);
+      lastCategoryIdForGroup = refreshCategoryGroupIfChanged(
         finalTrans,
         lastCategoryIdForGroup,
       );
     }
   }
 
-  return await finalizeTransactionForRules(finalTrans);
+  return finalizeTransactionForRules(finalTrans);
 }
 
 function conditionSpecialCases(cond: Condition | null): Condition | null {
@@ -785,7 +778,7 @@ export async function applyActions(
     return null;
   }
 
-  const accounts: db.DbAccount[] = await db.getAccounts();
+  const accounts: db.DbAccount[] = db.getAccounts();
   const accountsMap = new Map(accounts.map(account => [account.id, account]));
   const includeBalance = actionsReferenceBalance(parsedActions);
   const transactionsForRules = await Promise.all(
@@ -810,7 +803,7 @@ export async function applyActions(
 
   const finalized: TransactionEntity[] = [];
   for (const trans of updated) {
-    finalized.push(await finalizeTransactionForRules(trans));
+    finalized.push(finalizeTransactionForRules(trans));
   }
 
   return batchUpdateTransactions({ updated: finalized });
@@ -882,7 +875,7 @@ function* getOneOfSetterRules(
   return null;
 }
 
-export async function updatePayeeRenameRule(fromNames: string[], to: string) {
+export function updatePayeeRenameRule(fromNames: string[], to: string) {
   const renameRule = getOneOfSetterRules('pre', 'imported_payee', 'payee', {
     actionValue: to,
   }).next().value;
@@ -905,7 +898,7 @@ export async function updatePayeeRenameRule(fromNames: string[], to: string) {
       ...renameRule,
       conditions: [{ ...condition, value: newValue }],
     };
-    await updateRule(rule);
+    updateRule(rule);
     return renameRule.id;
   } else {
     const rule = new Rule({
@@ -938,7 +931,7 @@ export function getProbableCategory(transactions) {
   return winner.score >= 3 ? winner.category : null;
 }
 
-export async function updateCategoryRules(transactions) {
+export function updateCategoryRules(transactions) {
   if (transactions.length === 0) {
     return;
   }
@@ -963,7 +956,7 @@ export async function updateCategoryRules(transactions) {
 
   // Also look 180 days in the future to get any future transactions
   // (this might change when we think about scheduled transactions)
-  const register = await db.all<db.DbViewTransaction>(
+  const register = db.all<db.DbViewTransaction>(
     `SELECT t.* FROM v_transactions t
      LEFT JOIN accounts a ON a.id = t.account
      LEFT JOIN payees p ON p.id = t.payee
@@ -991,7 +984,7 @@ export async function updateCategoryRules(transactions) {
     }
   }
 
-  await batchMessages(async () => {
+  batchMessages(() => {
     for (const [payeeId, category] of categoriesToSet.entries()) {
       const ruleSetters = [
         ...getIsSetterRules(null, 'payee', 'category', {
@@ -1009,7 +1002,7 @@ export async function updateCategoryRules(transactions) {
         for (const rule of ruleSetters) {
           const action = rule.actions[0];
           if (action.value !== category) {
-            await updateRule({
+            updateRule({
               ...rule,
               actions: [{ ...action, value: category }],
             });
@@ -1023,7 +1016,7 @@ export async function updateCategoryRules(transactions) {
           conditions: [{ op: 'is', field: 'payee', value: payeeId }],
           actions: [{ op: 'set', field: 'category', value: category }],
         });
-        await insertRule(newRule.serialize());
+        insertRule(newRule.serialize());
       }
     }
   });
@@ -1142,7 +1135,7 @@ export async function prepareTransactionForRules(
 ): Promise<TransactionForRules> {
   const r: TransactionForRules = { ...trans };
   if (trans.payee) {
-    const payee = await getPayee(trans.payee);
+    const payee = getPayee(trans.payee);
     if (payee) {
       r.payee_name = payee.name;
     }
@@ -1155,7 +1148,7 @@ export async function prepareTransactionForRules(
       r._account = accounts.get(trans.account);
       r._account_name = r._account?.name || '';
     } else {
-      r._account = await getAccount(trans.account);
+      r._account = getAccount(trans.account);
       r._account_name = r._account?.name || '';
     }
 
@@ -1168,7 +1161,7 @@ export async function prepareTransactionForRules(
   }
 
   if (trans.category) {
-    const category = await getCategory(trans.category);
+    const category = getCategory(trans.category);
     if (category) {
       r._category_name = category.name;
 
@@ -1187,16 +1180,16 @@ export async function prepareTransactionForRules(
   return r;
 }
 
-async function resolvePayeeNameForRules(
+function resolvePayeeNameForRules(
   trans: TransactionEntity | TransactionForRules,
-): Promise<void> {
+): void {
   if (!('payee_name' in trans) || trans.payee !== 'new') {
     return;
   }
 
   if (trans.payee_name) {
-    let payee_id = (await getPayeeByName(trans.payee_name))?.id;
-    payee_id ??= await insertPayee({
+    let payee_id = getPayeeByName(trans.payee_name)?.id;
+    payee_id ??= insertPayee({
       name: trans.payee_name,
     });
 
@@ -1216,17 +1209,17 @@ async function resolvePayeeNameForRules(
  * actually changed since the last check, to avoid a database lookup on
  * every rule when category was untouched.
  */
-async function refreshCategoryGroupIfChanged(
+function refreshCategoryGroupIfChanged(
   trans: TransactionForRules,
   lastCategoryId: string | null,
-): Promise<string | null> {
+): string | null {
   const currentCategoryId = trans.category ?? null;
   if (currentCategoryId === lastCategoryId) {
     return lastCategoryId;
   }
 
   if (currentCategoryId) {
-    const category = await getCategory(currentCategoryId);
+    const category = getCategory(currentCategoryId);
     trans.category_group = category?.cat_group;
   } else {
     delete trans.category_group;
@@ -1235,11 +1228,11 @@ async function refreshCategoryGroupIfChanged(
   return currentCategoryId;
 }
 
-export async function finalizeTransactionForRules(
+export function finalizeTransactionForRules(
   trans: TransactionEntity | TransactionForRules,
-): Promise<TransactionEntity> {
+): TransactionEntity {
   if ('payee_name' in trans) {
-    await resolvePayeeNameForRules(trans);
+    resolvePayeeNameForRules(trans);
     delete trans.payee_name;
   }
 

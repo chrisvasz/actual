@@ -34,17 +34,17 @@ try {
 beforeEach(async () => {
   // oxlint-disable-next-line typescript/no-explicit-any
   await (global as any).emptyDatabase()();
-  await loadMappings();
+  loadMappings();
 });
 
 describe('Formula Card - Integration Tests with Queries', () => {
   // Helper functions using db helper methods
   async function createTestAccount(name: string) {
-    return await db.insertAccount({ name });
+    return db.insertAccount({ name });
   }
 
   async function createCategoryGroup(name: string) {
-    return await db.insertCategoryGroup({ name });
+    return db.insertCategoryGroup({ name });
   }
 
   async function createTestCategory(
@@ -52,7 +52,7 @@ describe('Formula Card - Integration Tests with Queries', () => {
     groupId: string,
     isIncome = false,
   ) {
-    return await db.insertCategory({
+    return db.insertCategory({
       name,
       cat_group: groupId,
       is_income: isIncome ? 1 : 0,
@@ -66,7 +66,7 @@ describe('Formula Card - Integration Tests with Queries', () => {
     categoryId?: string;
     notes?: string;
   }) {
-    return await db.insertTransaction({
+    return db.insertTransaction({
       account: data.accountId,
       amount: data.amount,
       date: data.date,

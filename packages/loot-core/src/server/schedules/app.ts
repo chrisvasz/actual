@@ -13,7 +13,11 @@ import { toDateRepr } from '#server/models';
 import { mutator, runMutator } from '#server/mutators';
 import * as prefs from '#server/prefs';
 import { Rule } from '#server/rules';
-import { addSyncListener, batchMessages } from '#server/sync';
+import {
+  addSyncListener,
+  batchMessages,
+  batchMessagesAsync,
+} from '#server/sync';
 import {
   getRules,
   insertRule,
@@ -191,10 +195,10 @@ async function fixRuleForSchedule(id) {
   if (ruleId) {
     // Take the bad rule out of the system so it never causes problems
     // in the future
-    await db.delete_('rules', ruleId);
+    db.delete_('rules', ruleId);
   }
 
-  const newId = await insertRule({
+  const newId = insertRule({
     stage: null,
     conditionsOp: 'and',
     conditions: [
@@ -204,7 +208,7 @@ async function fixRuleForSchedule(id) {
     actions: [{ op: 'link-schedule', value: id }],
   });
 
-  await db.updateWithSchema('schedules', { id, rule: newId });
+  db.updateWithSchema('schedules', { id, rule: newId });
 
   return getRules().find(rule => rule.id === newId);
 }
@@ -243,14 +247,14 @@ export async function setNextDate({
     if (newNextDate != null && newNextDate !== nextDate) {
       // Our `update` functon requires the id of the item and we don't
       // have it, so we need to query it
-      const nd = await db.first<
+      const nd = db.first<
         Pick<db.DbScheduleNextDate, 'id' | 'base_next_date_ts'>
       >(
         'SELECT id, base_next_date_ts FROM schedules_next_date WHERE schedule_id = ?',
         [id],
       );
 
-      await db.update(
+      db.update(
         'schedules_next_date',
         reset
           ? {
@@ -270,8 +274,8 @@ export async function setNextDate({
 
 // Methods
 
-async function checkIfScheduleExists(name, scheduleId) {
-  const idForName = await db.first<Pick<db.DbSchedule, 'id'>>(
+function checkIfScheduleExists(name, scheduleId) {
+  const idForName = db.first<Pick<db.DbSchedule, 'id'>>(
     'SELECT id from schedules WHERE tombstone = 0 AND name = ?',
     [name],
   );
@@ -297,7 +301,7 @@ async function moveSchedule({
   id: string;
   targetId: string | null;
 }) {
-  await db.moveSchedule(id, targetId);
+  db.moveSchedule(id, targetId);
   return {};
 }
 
@@ -326,14 +330,14 @@ export async function createSchedule({
   };
   if (scheduleFields) {
     if (scheduleFields.name) {
-      if (await checkIfScheduleExists(scheduleFields.name, scheduleId)) {
+      if (checkIfScheduleExists(scheduleFields.name, scheduleId)) {
         throw new Error('Cannot create schedules with the same name');
       }
     }
   }
 
   // Create the rule here based on the info
-  const ruleId = await insertRule({
+  const ruleId = insertRule({
     stage: null,
     conditionsOp: 'and',
     conditions,
@@ -341,7 +345,7 @@ export async function createSchedule({
   });
 
   const now = Date.now();
-  await db.insertWithUUID('schedules_next_date', {
+  db.insertWithUUID('schedules_next_date', {
     schedule_id: scheduleId,
     local_next_date: nextDateRepr,
     local_next_date_ts: now,
@@ -349,7 +353,7 @@ export async function createSchedule({
     base_next_date_ts: now,
   });
 
-  await db.insertWithSchema('schedules', {
+  db.insertWithSchema('schedules', {
     ...scheduleFields,
     id: scheduleId,
     rule: ruleId,
@@ -377,7 +381,7 @@ export async function updateSchedule({
     scheduleFields.name = normalizeScheduleName(scheduleFields.name);
     if (
       scheduleFields.name &&
-      (await checkIfScheduleExists(scheduleFields.name, scheduleFields.id))
+      checkIfScheduleExists(scheduleFields.name, scheduleFields.id)
     ) {
       throw new Error('Cannot update schedules with the same name');
     }
@@ -405,14 +409,15 @@ export async function updateSchedule({
     }
   }
 
-  await batchMessages(async () => {
+  // setNextDate runs an AQL query, which is still async
+  await batchMessagesAsync(async () => {
     if (conditions) {
       const oldConditions = rule.serialize().conditions;
       const newConditions = updateConditions(oldConditions, conditions);
 
       const newActions = updateActions(newConditions, rule.serialize().actions);
 
-      await updateRule({
+      updateRule({
         id: rule.id,
         conditions: newConditions,
         ...(newActions ? { actions: newActions } : {}),
@@ -446,7 +451,7 @@ export async function updateSchedule({
       await setNextDate({ id: schedule.id, reset: true });
     }
 
-    await db.updateWithSchema('schedules', scheduleFields);
+    db.updateWithSchema('schedules', scheduleFields);
   });
 
   return scheduleFields.id;
@@ -457,9 +462,9 @@ export async function deleteSchedule({ id }) {
     q('schedules').filter({ id }).calculate('rule'),
   );
 
-  await batchMessages(async () => {
-    await db.delete_('rules', ruleId);
-    await db.delete_('schedules', id);
+  batchMessages(() => {
+    db.delete_('rules', ruleId);
+    db.delete_('schedules', id);
   });
 }
 

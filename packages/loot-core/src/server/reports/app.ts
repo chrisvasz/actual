@@ -101,12 +101,8 @@ async function getReports() {
   return sort(data.map(r => reportModel.toJS(r)));
 }
 
-async function reportNameExists(
-  name: string,
-  reportId: string,
-  newItem: boolean,
-) {
-  const idForName = await db.first<Pick<db.DbCustomReport, 'id'>>(
+function reportNameExists(name: string, reportId: string, newItem: boolean) {
+  const idForName = db.first<Pick<db.DbCustomReport, 'id'>>(
     'SELECT id from custom_reports WHERE tombstone = 0 AND name = ?',
     [name],
   );
@@ -141,13 +137,13 @@ async function createReport(report: CustomReportEntity) {
     throw new Error('Report name is required');
   }
 
-  const nameExists = await reportNameExists(item.name, item.id ?? '', true);
+  const nameExists = reportNameExists(item.name, item.id ?? '', true);
   if (nameExists) {
     throw new Error('There is already a report named ' + item.name);
   }
 
   // Create the report here based on the info
-  await db.insertWithSchema('custom_reports', reportModel.fromJS(item));
+  db.insertWithSchema('custom_reports', reportModel.fromJS(item));
 
   return reportId;
 }
@@ -161,16 +157,16 @@ async function updateReport(item: CustomReportEntity) {
     throw new Error('Report recall error');
   }
 
-  const nameExists = await reportNameExists(item.name, item.id, false);
+  const nameExists = reportNameExists(item.name, item.id, false);
   if (nameExists) {
     throw new Error('There is already a report named ' + item.name);
   }
 
-  await db.updateWithSchema('custom_reports', reportModel.fromJS(item));
+  db.updateWithSchema('custom_reports', reportModel.fromJS(item));
 }
 
 async function deleteReport(id: CustomReportEntity['id']) {
-  await db.delete_('custom_reports', id);
+  db.delete_('custom_reports', id);
 }
 
 export type ReportsHandlers = {

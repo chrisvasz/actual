@@ -53,7 +53,7 @@ async function saveSyncedPrefs({
     return;
   }
 
-  await db.update('preferences', {
+  db.update('preferences', {
     id,
     value,
   });
@@ -64,7 +64,7 @@ async function saveSyncedPrefs({
 }
 
 async function getSyncedPrefs(): Promise<SyncedPrefs> {
-  const prefs = await db.all<Pick<db.DbPreference, 'id' | 'value'>>(
+  const prefs = db.all<Pick<db.DbPreference, 'id' | 'value'>>(
     'SELECT id, value FROM preferences',
   );
 

@@ -146,7 +146,7 @@ async function getRemoteFiles() {
 }
 
 async function recomputeBudget() {
-  await sheet.loadUserBudgets(db);
+  sheet.loadUserBudgets(db);
   sheet.get().recomputeAll();
   await sheet.waitOnSpreadsheet();
 }
@@ -611,7 +611,7 @@ async function _loadBudget(id: Budget['id']): Promise<{
     captureException(e);
   }
 
-  await db.loadClock();
+  db.loadClock();
 
   if (prefs.getPrefs().resetClock) {
     // If we need to generate a fresh clock, we need to generate a new
@@ -644,8 +644,8 @@ async function _loadBudget(id: Budget['id']): Promise<{
   await budget.createAllBudgets();
 
   // Load all the in-memory state
-  await mappings.loadMappings();
-  await rules.loadRules();
+  mappings.loadMappings();
+  rules.loadRules();
   syncMigrations.listen();
   mainApp.startServices();
 

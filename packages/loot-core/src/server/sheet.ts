@@ -64,7 +64,7 @@ export async function loadSpreadsheet(
     sheet.addEventListener('change', onSheetChange);
   }
 
-  await loadUserBudgets(db);
+  loadUserBudgets(db);
 
   captureBreadcrumb({
     message: 'loaded spreadsheet',
@@ -89,10 +89,10 @@ export async function reloadSpreadsheet(db): Promise<Spreadsheet> {
   }
 }
 
-export async function loadUserBudgets(db: typeof DbModule): Promise<void> {
+export function loadUserBudgets(db: typeof DbModule): void {
   const sheet = globalSheet;
 
-  const budgets = await db.all<DbZeroBudget>(`
+  const budgets = db.all<DbZeroBudget>(`
       SELECT * FROM zero_budgets b
       LEFT JOIN categories c ON c.id = b.category
       WHERE c.tombstone = 0
@@ -113,7 +113,7 @@ export async function loadUserBudgets(db: typeof DbModule): Promise<void> {
   }
 
   // Load the buffered amounts
-  const budgetMonths = await db.all<DbZeroBudgetMonth>(
+  const budgetMonths = db.all<DbZeroBudgetMonth>(
     'SELECT * FROM zero_budget_months',
   );
   for (const budgetMonth of budgetMonths) {

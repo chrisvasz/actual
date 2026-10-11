@@ -184,27 +184,23 @@ export function transaction(
   }
 }
 
-// See the comment about this function in index.api.ts. You
-// shouldn't normally use this. I'd like to get rid of it.
-export async function asyncTransaction(db: Database, fn: () => Promise<void>) {
-  // Support nested transactions by "coalescing" them into the parent
-  // one if one is already started
+// Opens a transaction that stays open until `commitTransaction`, across
+// any number of handler calls. Only for bulk imports (the API's
+// batch-budget-start/end): any statement that runs in between is caught
+// up in it, and nested `transaction` calls become savepoints.
+export function beginTransaction(db: Database) {
   if (transactionDepth === 0) {
     db.exec('BEGIN TRANSACTION');
   }
   transactionDepth++;
+}
 
-  try {
-    await fn();
-  } finally {
-    transactionDepth--;
-    // We always commit because rollback is more dangerous - any
-    // queries that ran *in-between* this async function would be
-    // lost. Right now we are only using transactions for speed
-    // purposes unfortunately
-    if (transactionDepth === 0) {
-      db.exec('COMMIT');
-    }
+// Always commits: rolling back would also discard the statements other
+// handlers ran in between
+export function commitTransaction(db: Database) {
+  transactionDepth--;
+  if (transactionDepth === 0) {
+    db.exec('COMMIT');
   }
 }
 

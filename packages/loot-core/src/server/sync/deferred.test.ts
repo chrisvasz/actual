@@ -43,7 +43,7 @@ describe('Deferred sync messages (newer schema)', () => {
     replayPendingMessages();
 
     // ...and deferral must still store the message, not fail the batch
-    await applyMessages(
+    applyMessages(
       [
         {
           dataset: 'transactions',
@@ -59,7 +59,7 @@ describe('Deferred sync messages (newer schema)', () => {
   });
 
   it('defers messages for unknown columns without failing the batch', async () => {
-    await applyMessages(
+    applyMessages(
       [
         {
           dataset: 'transactions',
@@ -81,7 +81,7 @@ describe('Deferred sync messages (newer schema)', () => {
 
     // The known-column message must still create the row, even though
     // the unknown-column message for the same row came first
-    const row = await db.first<{ id: string; amount: number }>(
+    const row = db.first<{ id: string; amount: number }>(
       'SELECT * FROM transactions WHERE id = ?',
       ['t1'],
     );
@@ -105,7 +105,7 @@ describe('Deferred sync messages (newer schema)', () => {
   });
 
   it('does not defer local messages: unknown schema is a bug and must fail', async () => {
-    await expect(
+    expect(() =>
       applyMessages([
         {
           dataset: 'transactions',
@@ -115,13 +115,13 @@ describe('Deferred sync messages (newer schema)', () => {
           timestamp: sendTimestamp(),
         },
       ]),
-    ).rejects.toMatchObject({ reason: 'invalid-schema' });
+    ).toThrow(expect.objectContaining({ reason: 'invalid-schema' }));
 
     expect(getPending().length).toBe(0);
   });
 
   it('replays pending messages once the schema catches up, last write wins', async () => {
-    await applyMessages(
+    applyMessages(
       [
         {
           dataset: 'transactions',
@@ -176,13 +176,13 @@ describe('Deferred sync messages (newer schema)', () => {
     db.execQuery('ALTER TABLE transactions ADD COLUMN brand_new_column TEXT');
     replayPendingMessages();
 
-    const t1 = await db.first<{ brand_new_column: string }>(
+    const t1 = db.first<{ brand_new_column: string }>(
       'SELECT * FROM transactions WHERE id = ?',
       ['t1'],
     );
     expect(t1?.brand_new_column).toBe('new value');
 
-    const t2 = await db.first<{ brand_new_column: string }>(
+    const t2 = db.first<{ brand_new_column: string }>(
       'SELECT * FROM transactions WHERE id = ?',
       ['t2'],
     );
@@ -197,7 +197,7 @@ describe('Deferred sync messages (newer schema)', () => {
     db.execQuery('CREATE TABLE gadgets (id TEXT PRIMARY KEY, name TEXT)');
     replayPendingMessages();
 
-    const g1 = await db.first<{ name: string }>(
+    const g1 = db.first<{ name: string }>(
       'SELECT * FROM gadgets WHERE id = ?',
       ['g1'],
     );
@@ -207,7 +207,7 @@ describe('Deferred sync messages (newer schema)', () => {
   });
 
   it('drops a message that can never apply without blocking the rest', async () => {
-    await applyMessages(
+    applyMessages(
       [
         {
           dataset: 'gadgets',
@@ -236,7 +236,7 @@ describe('Deferred sync messages (newer schema)', () => {
     );
     replayPendingMessages();
 
-    const g2 = await db.first<{ size: number }>(
+    const g2 = db.first<{ size: number }>(
       'SELECT * FROM gadgets WHERE id = ?',
       ['g2'],
     );
@@ -245,7 +245,7 @@ describe('Deferred sync messages (newer schema)', () => {
   });
 
   it('defers an inbound message whose value uses a newer serialization format', async () => {
-    await applyMessages(
+    applyMessages(
       [
         {
           // Even though the column exists, the value can't be decoded —
@@ -275,7 +275,7 @@ describe('Deferred sync messages (newer schema)', () => {
   });
 
   it('applies dependency chains among deferred cells', async () => {
-    await applyMessages(
+    applyMessages(
       [
         {
           dataset: 'gadgets',
@@ -314,7 +314,7 @@ describe('Deferred sync messages (newer schema)', () => {
     `);
     replayPendingMessages();
 
-    const g1 = await db.first<{ a: string; b: string; c: string }>(
+    const g1 = db.first<{ a: string; b: string; c: string }>(
       'SELECT * FROM gadgets WHERE id = ?',
       ['g1'],
     );
@@ -325,7 +325,7 @@ describe('Deferred sync messages (newer schema)', () => {
   });
 
   it('does not replay a deferred value over a newer applied write', async () => {
-    await applyMessages(
+    applyMessages(
       [
         {
           dataset: 'transactions',
@@ -339,7 +339,7 @@ describe('Deferred sync messages (newer schema)', () => {
     );
     // A later, decodable write to the same cell applies through normal
     // sync while the undecodable one sits pending
-    await applyMessages(
+    applyMessages(
       [
         {
           dataset: 'transactions',
@@ -356,7 +356,7 @@ describe('Deferred sync messages (newer schema)', () => {
     replayPendingMessages();
 
     // Last write wins: the stale pending value is discarded, not applied
-    const t1 = await db.first<{ notes: string }>(
+    const t1 = db.first<{ notes: string }>(
       'SELECT * FROM transactions WHERE id = ?',
       ['t1'],
     );
@@ -365,7 +365,7 @@ describe('Deferred sync messages (newer schema)', () => {
   });
 
   it('keeps a message whose value uses a newer serialization format', async () => {
-    await applyMessages(
+    applyMessages(
       [
         {
           dataset: 'gadgets',
@@ -390,7 +390,7 @@ describe('Deferred sync messages (newer schema)', () => {
 
     // The known-format message applied; the newer-format one stays
     // pending for a future upgrade instead of aborting the replay
-    const g1 = await db.first<{ name: string }>(
+    const g1 = db.first<{ name: string }>(
       'SELECT * FROM gadgets WHERE id = ?',
       ['g1'],
     );
