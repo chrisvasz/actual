@@ -48,7 +48,6 @@ import { useFormat } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
 import { useNavigate } from '#hooks/useNavigate';
 import { useRuleConditionFilters } from '#hooks/useRuleConditionFilters';
-import { useSyncedPref } from '#hooks/useSyncedPref';
 import { addNotification } from '#notifications/notificationsSlice';
 import { useDispatch } from '#redux';
 import { useUpdateDashboardWidgetMutation } from '#reports/mutations';
@@ -76,9 +75,6 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const format = useFormat();
-  const [budgetTypePref] = useSyncedPref('budgetType');
-  const budgetType: 'envelope' | 'tracking' =
-    budgetTypePref === 'tracking' ? 'tracking' : 'envelope';
 
   const {
     conditions,
@@ -155,9 +151,8 @@ function SpendingInternal({ widget }: SpendingInternalProps) {
         compare,
         compareTo,
         averageRange,
-        budgetType,
       }),
-    [conditions, conditionsOp, compare, compareTo, averageRange, budgetType],
+    [conditions, conditionsOp, compare, compareTo, averageRange],
   );
 
   const data = useReport('default', getGraphData);

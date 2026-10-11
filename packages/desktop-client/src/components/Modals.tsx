@@ -71,10 +71,6 @@ import { PluggyAiInitialiseModal } from './modals/PluggyAiInitialiseModal';
 import { ScheduledTransactionMenuModal } from './modals/ScheduledTransactionMenuModal';
 import { SelectLinkedAccountsModal } from './modals/SelectLinkedAccountsModal';
 import { SimpleFinInitialiseModal } from './modals/SimpleFinInitialiseModal';
-import { TrackingBalanceMenuModal } from './modals/TrackingBalanceMenuModal';
-import { TrackingBudgetMenuModal } from './modals/TrackingBudgetMenuModal';
-import { TrackingBudgetMonthMenuModal } from './modals/TrackingBudgetMonthMenuModal';
-import { TrackingBudgetSummaryModal } from './modals/TrackingBudgetSummaryModal';
 import { TransactionTableColumnsModal } from './modals/TransactionTableColumnsModal';
 import { TransferModal } from './modals/TransferModal';
 import { TransferOwnership } from './modals/TransferOwnership';
@@ -243,9 +239,6 @@ export function Modals() {
             </SheetNameProvider>
           );
 
-        case 'tracking-budget-summary':
-          return <TrackingBudgetSummaryModal key={key} {...modal.options} />;
-
         case 'schedule-edit':
           return <ScheduleEditModal key={key} {...modal.options} />;
 
@@ -277,16 +270,6 @@ export function Modals() {
               name={monthUtils.sheetForMonth(modal.options.month)}
             >
               <EnvelopeBudgetMenuModal {...modal.options} />
-            </SheetNameProvider>
-          );
-
-        case 'tracking-budget-menu':
-          return (
-            <SheetNameProvider
-              key={key}
-              name={monthUtils.sheetForMonth(modal.options.month)}
-            >
-              <TrackingBudgetMenuModal {...modal.options} />
             </SheetNameProvider>
           );
 
@@ -336,16 +319,6 @@ export function Modals() {
             </SheetNameProvider>
           );
 
-        case 'tracking-balance-menu':
-          return (
-            <SheetNameProvider
-              key={key}
-              name={monthUtils.sheetForMonth(modal.options.month)}
-            >
-              <TrackingBalanceMenuModal {...modal.options} />
-            </SheetNameProvider>
-          );
-
         case 'transfer':
           return <TransferModal key={key} {...modal.options} />;
 
@@ -365,16 +338,6 @@ export function Modals() {
               name={monthUtils.sheetForMonth(modal.options.month)}
             >
               <EnvelopeBudgetMonthMenuModal {...modal.options} />
-            </SheetNameProvider>
-          );
-
-        case 'tracking-budget-month-menu':
-          return (
-            <SheetNameProvider
-              key={key}
-              name={monthUtils.sheetForMonth(modal.options.month)}
-            >
-              <TrackingBudgetMonthMenuModal {...modal.options} />
             </SheetNameProvider>
           );
 

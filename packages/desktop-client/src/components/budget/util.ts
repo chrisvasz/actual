@@ -8,12 +8,10 @@ import {
   currencyToAmount,
   integerToCurrency,
 } from '@actual-app/core/shared/util';
-import type { Handlers } from '@actual-app/core/types/handlers';
 import type {
   CategoryEntity,
   CategoryGroupEntity,
 } from '@actual-app/core/types/models';
-import type { SyncedPrefs } from '@actual-app/core/types/prefs';
 import { t } from 'i18next';
 
 import type { DropPosition } from '#components/sort';
@@ -178,16 +176,10 @@ export function getScrollbarWidth() {
 }
 
 export async function prewarmMonth(
-  budgetType: SyncedPrefs['budgetType'],
   spreadsheet: ReturnType<typeof useSpreadsheet>,
   month: string,
 ) {
-  const method: keyof Handlers =
-    budgetType === 'tracking'
-      ? 'tracking-budget-month'
-      : 'envelope-budget-month';
-
-  const values = await send(method, { month });
+  const values = await send('envelope-budget-month', { month });
 
   for (const value of values) {
     spreadsheet.prewarmCache(value.name, value);
@@ -195,7 +187,6 @@ export async function prewarmMonth(
 }
 
 export async function prewarmAllMonths(
-  budgetType: SyncedPrefs['budgetType'],
   spreadsheet: ReturnType<typeof useSpreadsheet>,
   bounds: { start: string; end: string },
   startMonth: string,
@@ -209,7 +200,5 @@ export async function prewarmAllMonths(
   );
   const months = monthUtils.rangeInclusive(bounds.start, bounds.end);
 
-  await Promise.all(
-    months.map(month => prewarmMonth(budgetType, spreadsheet, month)),
-  );
+  await Promise.all(months.map(month => prewarmMonth(spreadsheet, month)));
 }

@@ -641,13 +641,6 @@ async function _loadBudget(id: Budget['id']): Promise<{
     return { error: 'opening-budget' };
   }
 
-  // This is a bit leaky, but we need to set the initial budget type
-  const { value: budgetType = 'envelope' } =
-    (await db.first<Pick<db.DbPreference, 'value'>>(
-      'SELECT value from preferences WHERE id = ?',
-      ['budgetType'],
-    )) ?? {};
-  sheet.get().meta().budgetType = budgetType as prefs.BudgetType;
   await budget.createAllBudgets();
 
   // Load all the in-memory state

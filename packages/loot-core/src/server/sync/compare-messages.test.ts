@@ -165,34 +165,18 @@ describe('compareMessages', () => {
     expect(JSON.stringify(getClock().merkle)).toBe(merkleBefore);
   });
 
-  it('switches the budget type when the preference arrives via sync', async () => {
+  it('keeps the envelope budget when a tracking budget type arrives via sync', async () => {
     await db.insertCategoryGroup({
       id: 'income-group',
       name: 'Income',
       is_income: 1,
     });
-    await db.insertCategory({
-      id: 'income-cat',
-      name: 'Income',
-      cat_group: 'income-group',
-      is_income: 1,
-    });
-    await db.insertCategoryGroup({
-      id: 'group1',
-      name: 'group1',
-      is_income: 0,
-    });
-    await db.insertCategory({
-      id: 'cat1',
-      name: 'cat1',
-      cat_group: 'group1',
-      is_income: 0,
-    });
+    await db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+    await db.insertCategory({ id: 'cat1', name: 'cat1', cat_group: 'group1' });
     await sheet.loadSpreadsheet(db);
     await budget.createBudget(['2024-01']);
-    expect(sheet.get().meta().budgetType).toBe('envelope');
 
-    await applyMessages([
+    await applyAll([
       {
         dataset: 'preferences',
         row: 'budgetType',
@@ -200,14 +184,19 @@ describe('compareMessages', () => {
         value: 'tracking',
         timestamp: sendTimestamp(),
       },
+      ...Object.entries({ month: 202401, category: 'cat1', amount: 500 }).map(
+        ([column, value]) => ({
+          dataset: 'zero_budgets',
+          row: '202401-cat1',
+          column,
+          value,
+          timestamp: sendTimestamp(),
+        }),
+      ),
     ]);
     await sheet.waitOnSpreadsheet();
 
-    expect(sheet.get().meta().budgetType).toBe('tracking');
-    const preference = await db.first<{ value: string }>(
-      'SELECT value FROM preferences WHERE id = ?',
-      ['budgetType'],
-    );
-    expect(preference?.value).toBe('tracking');
+    expect(sheet.get().getCellValue('budget202401', 'budget-cat1')).toBe(500);
+    expect(sheet.get().getCellValue('budget202401', 'to-budget')).toBe(-500);
   });
 });

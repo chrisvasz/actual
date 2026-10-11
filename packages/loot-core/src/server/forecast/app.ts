@@ -1,7 +1,7 @@
 import { createApp } from '#server/app';
 import * as db from '#server/db';
 import type { RuleConditionEntity } from '#types/models';
-import type { ForecastResult, ForecastSource } from '#types/models/forecast';
+import type { ForecastResult } from '#types/models/forecast';
 
 import { resolveForecastAccounts } from './forecast-accounts';
 import type {
@@ -19,7 +19,6 @@ import {
   FORECAST_UNASSIGNED_ACCOUNT_ID,
   getNormalizedSchedules,
 } from './forecast-schedules';
-import { projectTrackingBudgetForecast } from './forecast-tracking-budget';
 
 export type ForecastRequestParams = {
   accountIds?: string[];
@@ -28,7 +27,6 @@ export type ForecastRequestParams = {
   startDate?: string;
   endDate?: string;
   includeAccountlessSchedules?: boolean;
-  source?: ForecastSource;
 };
 
 function createUnassignedForecastAccount(): AccountWithComputedBalance {
@@ -61,42 +59,9 @@ export async function generateForecast({
   startDate,
   endDate,
   includeAccountlessSchedules,
-  source = 'schedules',
 }: ForecastRequestParams): Promise<ForecastResult> {
   const includeUnassigned = includeAccountlessSchedules ?? false;
   const dateContext = buildForecastDateContext(startDate, endDate);
-
-  if (source === 'tracking-budget') {
-    const { value: budgetType = 'envelope' } =
-      (await db.first<Pick<db.DbPreference, 'value'>>(
-        `SELECT value FROM preferences WHERE id = ?`,
-        ['budgetType'],
-      )) ?? {};
-
-    if (budgetType !== 'tracking') {
-      throw new Error(
-        'Tracking budget forecasts require a Tracking Budget file.',
-      );
-    }
-
-    const accounts = await resolveForecastAccounts({
-      accountIds: undefined,
-      plainConditions: [],
-      resolvedConditionsOp: 'and',
-      canRestrictAccounts: false,
-    });
-    const { dataPoints, lowestBalance } = projectTrackingBudgetForecast({
-      accounts,
-      dateContext,
-    });
-
-    return {
-      dataPoints,
-      lowestBalance,
-      forecastStartDate: dateContext.forecastStartDate,
-      forecastEndDate: dateContext.forecastEndDate,
-    };
-  }
 
   const { filterInfo, plainConditions, resolvedConditionsOp } = buildFilterInfo(
     conditions,
@@ -177,7 +142,6 @@ export type ForecastHandlers = {
     startDate?: string;
     endDate?: string;
     includeAccountlessSchedules?: boolean;
-    source?: ForecastSource;
   }) => Promise<ForecastResult>;
 };
 

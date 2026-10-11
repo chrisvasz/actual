@@ -31,13 +31,11 @@ export type BudgetHandlers = {
   'budget/transfer-available': typeof actions.transferAvailable;
   'budget/cover-overbudgeted': typeof actions.coverOverbudgeted;
   'budget/transfer-category': typeof actions.transferCategory;
-  'budget/copy-until-year-end': typeof actions.copyUntilYearEnd;
   'budget/set-carryover': typeof actions.setCategoryCarryover;
   'budget/reset-income-carryover': typeof actions.resetIncomeCarryover;
   'get-categories': typeof getCategories;
   'get-budget-bounds': typeof getBudgetBounds;
   'envelope-budget-month': typeof envelopeBudgetMonth;
-  'tracking-budget-month': typeof trackingBudgetMonth;
   'category-create': typeof createCategory;
   'category-update': typeof updateCategory;
   'category-move': typeof moveCategory;
@@ -89,10 +87,6 @@ app.method(
   mutator(undoable(actions.transferCategory)),
 );
 app.method(
-  'budget/copy-until-year-end',
-  mutator(undoable(actions.copyUntilYearEnd)),
-);
-app.method(
   'budget/set-carryover',
   mutator(undoable(actions.setCategoryCarryover)),
 );
@@ -103,7 +97,6 @@ app.method(
 app.method('get-categories', getCategories);
 app.method('get-budget-bounds', getBudgetBounds);
 app.method('envelope-budget-month', envelopeBudgetMonth);
-app.method('tracking-budget-month', trackingBudgetMonth);
 app.method('category-create', mutator(undoable(createCategory)));
 app.method('category-update', mutator(undoable(updateCategory)));
 app.method('category-move', mutator(undoable(moveCategory)));
@@ -186,50 +179,6 @@ async function envelopeBudgetMonth({ month }: { month: string }) {
           value(`leftover-${cat.id}`),
           value(`carryover-${cat.id}`),
         ]);
-      }
-    }
-  }
-
-  return values;
-}
-
-async function trackingBudgetMonth({ month }: { month: string }) {
-  const groups = await db.getCategoriesGrouped();
-  const sheetName = monthUtils.sheetForMonth(month);
-
-  function value(name: string) {
-    const v = sheet.getCellValue(sheetName, name);
-    return { value: v === '' ? 0 : v, name: resolveName(sheetName, name) };
-  }
-
-  let values = [
-    value('total-budgeted'),
-    value('total-budget-income'),
-    value('total-saved'),
-    value('total-income'),
-    value('total-spent'),
-    value('real-saved'),
-    value('total-leftover'),
-  ];
-
-  for (const group of groups) {
-    values = values.concat([
-      value(`group-budget-${group.id}`),
-      value(`group-sum-amount-${group.id}`),
-      value(`group-leftover-${group.id}`),
-    ]);
-
-    const categories = group.categories ?? [];
-
-    for (const cat of categories) {
-      values = values.concat([
-        value(`budget-${cat.id}`),
-        value(`sum-amount-${cat.id}`),
-        value(`leftover-${cat.id}`),
-      ]);
-
-      if (!group.is_income) {
-        values.push(value(`carryover-${cat.id}`));
       }
     }
   }
@@ -331,7 +280,6 @@ async function deleteCategory({
     }
 
     // Update spreadsheet values if it's an expense category
-    // TODO: We should do this for income too if it's a tracking budget
     if (row.is_income === 0) {
       if (transferId) {
         await budget.doTransfer([id], transferId);

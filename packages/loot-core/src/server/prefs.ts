@@ -7,9 +7,6 @@ import type { MetadataPrefs } from '#types/prefs';
 import { sendMessages } from './sync';
 import type { Message } from './sync';
 
-export const BUDGET_TYPES = ['tracking', 'envelope'] as const;
-export type BudgetType = (typeof BUDGET_TYPES)[number];
-
 export const UPCOMING_SCHEDULED_TRANSACTION_LENGTHS = [
   '1',
   '7',

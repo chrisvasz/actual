@@ -22,7 +22,6 @@ export function getValidMonthBounds(
 
 type MonthsContextProps = {
   months: string[];
-  type: string;
 };
 
 export const MonthsContext = createContext<MonthsContextProps>(null);
@@ -31,7 +30,6 @@ type MonthsProviderProps = {
   startMonth: string | undefined;
   numMonths: number;
   monthBounds: MonthBounds;
-  type: string;
   children: ReactNode;
 };
 
@@ -39,7 +37,6 @@ export function MonthsProvider({
   startMonth,
   numMonths,
   monthBounds,
-  type,
   children,
 }: MonthsProviderProps) {
   const endMonth = monthUtils.addMonths(startMonth, numMonths - 1);
@@ -47,7 +44,7 @@ export function MonthsProvider({
   const months = monthUtils.rangeInclusive(bounds.start, bounds.end);
 
   return (
-    <MonthsContext.Provider value={{ months, type }}>
+    <MonthsContext.Provider value={{ months }}>
       {children}
     </MonthsContext.Provider>
   );

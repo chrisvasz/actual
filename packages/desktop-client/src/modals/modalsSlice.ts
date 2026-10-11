@@ -378,17 +378,6 @@ export type Modal =
       };
     }
   | {
-      name: 'tracking-budget-menu';
-      options: {
-        categoryId: CategoryEntity['id'];
-        month: string;
-        onUpdateBudget: (amount: number) => void;
-        onCopyLastMonthAverage: () => void;
-        onSetMonthsAverage: (numberOfMonths: number) => void;
-        onCopyUntilYearEnd: () => void;
-      };
-    }
-  | {
       name: 'category-group-menu';
       options: {
         groupId: CategoryGroupEntity['id'];
@@ -414,10 +403,6 @@ export type Modal =
         name: string;
         onSave: (id: NoteEntity['id'], contents: string) => void;
       };
-    }
-  | {
-      name: 'tracking-budget-summary';
-      options: { month: string };
     }
   | {
       name: 'envelope-budget-summary';
@@ -472,14 +457,6 @@ export type Modal =
         onHoldBuffer: () => void;
         onResetHoldBuffer: () => void;
         onBudgetAction: (month: string, action: string, arg?: unknown) => void;
-      };
-    }
-  | {
-      name: 'tracking-balance-menu';
-      options: {
-        categoryId: CategoryEntity['id'];
-        month: string;
-        onCarryover: (carryover: boolean) => void;
       };
     }
   | {
@@ -539,14 +516,6 @@ export type Modal =
     }
   | {
       name: 'envelope-budget-month-menu';
-      options: {
-        month: string;
-        onBudgetAction: (month: string, action: string, arg?: unknown) => void;
-        onEditNotes: (id: NoteEntity['id']) => void;
-      };
-    }
-  | {
-      name: 'tracking-budget-month-menu';
       options: {
         month: string;
         onBudgetAction: (month: string, action: string, arg?: unknown) => void;

@@ -44,7 +44,6 @@ export type createCustomSpreadsheetProps = {
   endDate: string;
   interval: string;
   categories: { list: CategoryEntity[]; grouped: CategoryGroupEntity[] };
-  budgetType?: SyncedPrefs['budgetType'];
   conditions: RuleConditionEntity[];
   conditionsOp: string;
   showEmpty: boolean;
@@ -67,7 +66,6 @@ export function createCustomSpreadsheet({
   endDate,
   interval,
   categories,
-  budgetType = 'envelope',
   conditions = [],
   conditionsOp,
   showEmpty,
@@ -131,7 +129,6 @@ export function createCustomSpreadsheet({
       conditionsOp,
       conditionsOpKey,
       filters,
-      budgetType,
     }));
 
     if (interval === 'Weekly' && balanceTypeOp !== 'totalBudgeted') {

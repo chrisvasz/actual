@@ -92,8 +92,7 @@ export function useTransactionDates(): {
 
 // What changes a report's result without being passed to it: the number and
 // date formatting behind `useFormat`, `useDateFormat` and the locale, which
-// spreadsheets bake into labels; the budget type, which decides the budget
-// cells some reports read; and today's date, which ranges are clamped to.
+// spreadsheets bake into labels; and today's date, which ranges are clamped to.
 function useReportEnvironment() {
   const language = useLanguage();
   const dateFormat = useDateFormat();
@@ -102,7 +101,6 @@ function useReportEnvironment() {
   const [currencyCode] = useSyncedPref('defaultCurrencyCode');
   const [symbolPosition] = useSyncedPref('currencySymbolPosition');
   const [symbolSpace] = useSyncedPref('currencySpaceBetweenAmountAndSymbol');
-  const [budgetType] = useSyncedPref('budgetType');
   return {
     language,
     dateFormat,
@@ -111,7 +109,6 @@ function useReportEnvironment() {
     currencyCode,
     symbolPosition,
     symbolSpace,
-    budgetType,
     today: monthUtils.currentDay(),
   };
 }

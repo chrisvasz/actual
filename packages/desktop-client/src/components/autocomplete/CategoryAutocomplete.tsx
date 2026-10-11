@@ -29,8 +29,7 @@ import { makeAmountFullStyle } from '#components/budget/util';
 import { FinancialText } from '#components/FinancialText';
 import { useCategories } from '#hooks/useCategories';
 import { useSheetValue } from '#hooks/useSheetValue';
-import { useSyncedPref } from '#hooks/useSyncedPref';
-import { envelopeBudget, trackingBudget } from '#spreadsheet/bindings';
+import { envelopeBudget } from '#spreadsheet/bindings';
 
 import { Autocomplete } from './Autocomplete';
 import { filterCategorySuggestions } from './filterCategorySuggestions';
@@ -361,16 +360,10 @@ function CategoryItem({
         borderTop: `1px solid ${theme.pillBorder}`,
       }
     : {};
-  const [budgetType = 'envelope'] = useSyncedPref('budgetType');
-
-  const balanceBinding =
-    budgetType === 'envelope'
-      ? envelopeBudget.catBalance(item.id)
-      : trackingBudget.catBalance(item.id);
-  const balance = useSheetValue<
-    'envelope-budget' | 'tracking-budget',
-    typeof balanceBinding
-  >(balanceBinding);
+  const balanceBinding = envelopeBudget.catBalance(item.id);
+  const balance = useSheetValue<'envelope-budget', typeof balanceBinding>(
+    balanceBinding,
+  );
 
   const isToBudgetItem = item.id === 'to-budget';
   const toBudget = useEnvelopeSheetValue(envelopeBudget.toBudget);

@@ -40,7 +40,6 @@ import {
 } from './api-models';
 import type { AmountOPType, APIScheduleEntity } from './api-models';
 import { aqlQuery } from './aql';
-import { isTrackingBudget } from './budget/actions';
 import * as cloudStorage from './cloud-storage';
 import type { RemoteFile } from './cloud-storage';
 import * as db from './db';
@@ -417,23 +416,6 @@ handlers['api/budget-month'] = async function ({ month }) {
 
     categoryGroups: groups.map(group => {
       if (group.is_income) {
-        if (isTrackingBudget()) {
-          return {
-            ...categoryGroupModel.toExternal(group),
-            budgeted: value(`group-budget-${group.id}`),
-            received: value(`group-sum-amount-${group.id}`),
-            balance: value(`group-leftover-${group.id}`),
-
-            categories: group.categories.map(cat => ({
-              ...categoryModel.toExternal(cat),
-              budgeted: value(`budget-${cat.id}`),
-              received: value(`sum-amount-${cat.id}`),
-              balance: value(`leftover-${cat.id}`),
-              carryover: value(`carryover-${cat.id}`),
-            })),
-          };
-        }
-
         return {
           ...categoryGroupModel.toExternal(group),
           received: value('total-income'),

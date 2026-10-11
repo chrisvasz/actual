@@ -24,7 +24,6 @@ import { createCustomSpreadsheet } from '#components/reports/spreadsheets/custom
 import { createGroupedSpreadsheet } from '#components/reports/spreadsheets/grouped-spreadsheet';
 import { useReportQuery } from '#components/reports/useReport';
 import { useDateFormat } from '#hooks/useDateFormat';
-import { useSyncedPref } from '#hooks/useSyncedPref';
 
 function ErrorFallback() {
   return (
@@ -88,7 +87,6 @@ export function GetCardData({
   enabled: boolean;
 }) {
   const { isNarrowWidth } = useResponsive();
-  const [budgetType = 'envelope'] = useSyncedPref('budgetType');
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
 
   let startDate = report.startDate;
@@ -133,7 +131,6 @@ export function GetCardData({
         endDate,
         interval: report.interval,
         categories,
-        budgetType,
         conditions: report.conditions ?? [],
         conditionsOp: report.conditionsOp,
         showEmpty: report.showEmpty,
@@ -145,7 +142,7 @@ export function GetCardData({
         firstDayOfWeekIdx,
         sortByOp: report.sortBy,
       }),
-    [report, categories, startDate, endDate, firstDayOfWeekIdx, budgetType],
+    [report, categories, startDate, endDate, firstDayOfWeekIdx],
     { name: 'custom_grouped', enabled },
   );
   const graphData = useReportQuery(
@@ -155,7 +152,6 @@ export function GetCardData({
         endDate,
         interval: report.interval,
         categories,
-        budgetType,
         conditions: report.conditions ?? [],
         conditionsOp: report.conditionsOp,
         showEmpty: report.showEmpty,
@@ -180,7 +176,6 @@ export function GetCardData({
       startDate,
       endDate,
       firstDayOfWeekIdx,
-      budgetType,
       // Load-bearing: without this the card keeps its old interval labels after
       // the date format preference changes, until something else invalidates it.
       dateFormat,

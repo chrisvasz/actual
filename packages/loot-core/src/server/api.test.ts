@@ -159,34 +159,6 @@ describe('API handlers', () => {
       expect(group?.categories?.[0]).not.toHaveProperty('budgeted');
       expect(group?.categories?.[0]).not.toHaveProperty('balance');
     });
-
-    it('tracking budget: income group returns budgeted, received, and balance', async () => {
-      sheet.get().meta().budgetType = 'tracking';
-      await db.update('preferences', { id: 'budgetType', value: 'tracking' });
-
-      await createBudget(['2026-02', '2026-03']);
-      sheet.get().set('budget202603!budget-income-cat', 6000);
-      await db.insertTransaction({
-        id: 'tx1',
-        date: '2026-03-15',
-        account: 'acct1',
-        amount: 5000,
-        category: 'income-cat',
-      });
-      await sheet.waitOnSpreadsheet();
-
-      const result = await handlers['api/budget-month']({ month: '2026-03' });
-      const group = result.categoryGroups.find(g => g.is_income);
-      assert(group, 'Expected income category group to exist');
-
-      expect(group).toHaveProperty('budgeted', 6000);
-      expect(group).toHaveProperty('received', 5000);
-      expect(group).toHaveProperty('balance', 1000);
-      expect(group?.categories?.[0]).toHaveProperty('budgeted', 6000);
-      expect(group?.categories?.[0]).toHaveProperty('received', 5000);
-      expect(group?.categories?.[0]).toHaveProperty('balance', 1000);
-      expect(group?.categories?.[0]).toHaveProperty('carryover', false);
-    });
   });
 
   describe('api/rule-create', () => {
