@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import { styles } from '@actual-app/components/styles';
-import * as Platform from '@actual-app/core/shared/platform';
 
 let hiddenScrollbars = false;
 
@@ -56,26 +55,24 @@ function onScrollbarChange() {
   styles.scrollbarWidth = hiddenScrollbars ? 0 : 13;
 }
 
-if (Platform.env === 'web') {
-  function testScrollbars() {
-    const el = document.createElement('div');
-    el.innerHTML =
-      '<div style="width:100px;height:100px;overflow:scroll;position:absolute;top:-9999px;"/>';
-    document.body.appendChild(el);
-    const testNode = el.childNodes[0] as HTMLDivElement;
-    if (testNode.offsetWidth === testNode.clientWidth) {
-      return true;
-    }
-    return false;
+function testScrollbars() {
+  const el = document.createElement('div');
+  el.innerHTML =
+    '<div style="width:100px;height:100px;overflow:scroll;position:absolute;top:-9999px;"/>';
+  document.body.appendChild(el);
+  const testNode = el.childNodes[0] as HTMLDivElement;
+  if (testNode.offsetWidth === testNode.clientWidth) {
+    return true;
   }
+  return false;
+}
 
+hiddenScrollbars = testScrollbars();
+onScrollbarChange();
+
+window.addEventListener('focus', () => {
   hiddenScrollbars = testScrollbars();
   onScrollbarChange();
-
-  window.addEventListener('focus', () => {
-    hiddenScrollbars = testScrollbars();
-    onScrollbarChange();
-  });
-}
+});
 
 export const hasHiddenScrollbars = () => hiddenScrollbars;

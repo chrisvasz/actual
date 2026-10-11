@@ -114,7 +114,7 @@ function AppInner() {
     }
 
     initAll().catch(showErrorBoundary);
-    // Removed cloudFileId & t from dependencies to prevent hard crash when closing budget in Electron
+    // Runs once on mount; cloudFileId & t are left out so closing a budget doesn't re-run init
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, showErrorBoundary]);
 

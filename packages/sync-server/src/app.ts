@@ -131,12 +131,11 @@ app.get('/metrics', (_req, res) => {
 // The web frontend.
 // Dev mode proxies to Vite, which injects inline preamble scripts and uses
 // a websocket for HMR. Loosen script-src and connect-src accordingly.
-// `'unsafe-eval'` was added for the old Electron app; it stays in both
-// branches until the browser build is confirmed not to need it.
+// Production only needs `'wasm-unsafe-eval'`, for compiling the SQLite WASM.
 const isDev = process.env.NODE_ENV === 'development';
 const scriptSrc = isDev
   ? "'self' 'unsafe-inline' 'unsafe-eval' blob:"
-  : "'self' 'unsafe-eval' blob:";
+  : "'self' 'wasm-unsafe-eval' blob:";
 const connectSrc = isDev ? "'self' ws: wss: http: https:" : 'http: https:';
 const csp = [
   "default-src 'self' blob:",
