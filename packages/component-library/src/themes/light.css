@@ -52,24 +52,19 @@
   --color-toBudgetZero: var(--color-pageTextPositive);
   --color-toBudgetNegative: var(--color-budgetNumberNegative);
 
-  --color-sidebarBackground: var(--palette-navy900);
+  --color-sidebarBackground: var(--palette-white);
   --color-sidebarItemBackgroundPending: var(--palette-orange200);
   --color-sidebarItemBackgroundPositive: var(--palette-green500);
-  --color-sidebarItemBackgroundFailed: var(--palette-red300);
-  --color-sidebarItemBackgroundHover: var(--palette-navy800);
-  --color-sidebarItemAccentSelected: var(--palette-purple200);
-  --color-sidebarItemBackgroundSelected: color-mix(
-    in srgb,
-    var(--color-sidebarItemAccentSelected) 22%,
-    transparent
-  );
-  --color-sidebarItemText: var(--palette-navy150);
+  --color-sidebarItemBackgroundFailed: var(--palette-red500);
+  --color-sidebarItemBackgroundHover: var(--palette-navy100);
+  --color-sidebarItemAccentSelected: var(--palette-purple500);
+  --color-sidebarItemBackgroundSelected: var(--palette-purple100);
+  --color-sidebarItemText: var(--palette-navy800);
   --color-sidebarItemTextUpdated: var(--color-sidebarItemText);
-  --color-sidebarItemTextSelected: var(--palette-purple200);
-  --color-sidebarBudgetName: var(--palette-navy150);
-  --color-sidebarHeaderText: var(--palette-white);
-  --color-sidebarTextSubdued: var(--palette-navy300);
-  --color-sidebarTextMuted: var(--palette-navy500);
+  --color-sidebarItemTextSelected: var(--palette-purple600);
+  --color-sidebarHeaderText: var(--palette-gray700);
+  --color-sidebarTextSubdued: var(--palette-navy600);
+  --color-sidebarTextMuted: var(--palette-navy400);
   --color-sidebarTextPositive: var(--color-sidebarItemBackgroundPositive);
   --color-sidebarTextFailed: var(--color-sidebarItemBackgroundFailed);
   --color-sidebarBackgroundFailedSubtle: color-mix(
@@ -78,6 +73,7 @@
     transparent
   );
   --color-sidebarBorder: var(--color-sidebarItemBackgroundHover);
+  --color-sidebarRightBorder: var(--palette-border);
   --color-sidebarControlBackground: var(--color-sidebarItemBackgroundHover);
   --color-sidebarBrand: var(--color-sidebarItemAccentSelected);
 

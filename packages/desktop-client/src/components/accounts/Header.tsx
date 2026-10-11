@@ -43,7 +43,6 @@ import type { SavedFilter } from '#components/filters/SavedFilterMenuButton';
 import { NotesButton } from '#components/NotesButton';
 import { SelectedTransactionsButton } from '#components/transactions/SelectedTransactionsButton';
 import { UncategorizedChip } from '#components/UncategorizedChip';
-import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useHotkeys } from '#hooks/useHotkeys';
 import { useLocale } from '#hooks/useLocale';
 import { useLocalPref } from '#hooks/useLocalPref';
@@ -686,8 +685,6 @@ function AccountMenu({
   isSorted,
   onMenuSelect,
 }: AccountMenuProps) {
-  const newSidebarUIEnabled = useFeatureFlag('newSidebarUI');
-
   return (
     <Menu
       slot="close"
@@ -711,14 +708,10 @@ function AccountMenu({
           name: 'manage-columns',
           text: 'Manage table columns',
         },
-        ...(newSidebarUIEnabled
-          ? [
-              {
-                name: 'account-group',
-                text: 'Set account group',
-              } as const,
-            ]
-          : []),
+        {
+          name: 'account-group',
+          text: 'Set account group',
+        },
         {
           name: 'toggle-reconciled',
           text: showReconciled

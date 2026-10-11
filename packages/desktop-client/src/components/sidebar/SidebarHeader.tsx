@@ -5,9 +5,8 @@ import { theme } from '@actual-app/components/theme';
 import { spacing } from '@actual-app/components/tokens';
 import { View } from '@actual-app/components/view';
 
-import { hasMacOSWindowButtons } from '#components/sidebar/SidebarShell';
-
 import { SidebarBudgetName } from './SidebarBudgetName';
+import { hasMacOSWindowButtons } from './SidebarShell';
 import { SyncStatusLine } from './SyncStatusLine';
 
 const MAC_WINDOW_BUTTONS_INSET = spacing.xl + spacing.md;

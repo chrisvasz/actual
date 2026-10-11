@@ -1273,10 +1273,10 @@ describe('API preferences: setPreference', () => {
 
   // apis: setPreference
   test('can set feature flag preferences', async () => {
-    await api.setPreference('flags.newSidebarUI', 'true');
+    await api.setPreference('flags.sankeyReport', 'true');
 
     const preferences = await api.getPreferences();
-    expect(preferences['flags.newSidebarUI']).toBe('true');
+    expect(preferences['flags.sankeyReport']).toBe('true');
   });
 
   // apis: setPreference

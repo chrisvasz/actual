@@ -1,22 +1,18 @@
-import React from 'react';
-
-import { SvgAdd } from '@actual-app/components/icons/v1';
+import { theme } from '@actual-app/components/theme';
+import { spacing } from '@actual-app/components/tokens';
 import { View } from '@actual-app/components/view';
 
 import { useGlobalPref } from '#hooks/useGlobalPref';
-import { replaceModal } from '#modals/modalsSlice';
-import { useDispatch } from '#redux';
 
-import { Accounts } from './Accounts';
-import { BudgetName } from './BudgetName';
-import { PrimaryButtons } from './PrimaryButtons';
-import { SecondaryButtons } from './SecondaryButtons';
+import { AccountsSection } from './AccountsSection';
+import { PrimaryNav } from './PrimaryNav';
+import { SidebarFooter } from './SidebarFooter';
+import { SidebarHeader } from './SidebarHeader';
 import { useSidebar } from './SidebarProvider';
 import { SidebarShell } from './SidebarShell';
 import { ToggleButton } from './ToggleButton';
 
 export function Sidebar() {
-  const dispatch = useDispatch();
   const sidebar = useSidebar();
   const [isFloating = false, setFloatingSidebarPref] =
     useGlobalPref('floatingSidebar');
@@ -25,39 +21,33 @@ export function Sidebar() {
     setFloatingSidebarPref(!isFloating);
   };
 
-  const onAddAccount = () => {
-    dispatch(replaceModal({ modal: { name: 'add-local-account' } }));
-  };
-
   return (
     <SidebarShell>
-      <BudgetName>
-        {!sidebar.alwaysFloats && (
-          <ToggleButton isFloating={isFloating} onFloat={onFloat} />
-        )}
-      </BudgetName>
-
       <View
-        style={{
-          flexGrow: 1,
-          '@media screen and (max-height: 480px)': {
-            overflowY: 'auto',
-          },
-        }}
+        role="navigation"
+        aria-label="Sidebar"
+        style={{ flex: 1, minHeight: 0 }}
       >
-        <PrimaryButtons />
+        <SidebarHeader>
+          {!sidebar.alwaysFloats && (
+            <ToggleButton isFloating={isFloating} onFloat={onFloat} />
+          )}
+        </SidebarHeader>
 
-        <Accounts />
+        <PrimaryNav />
 
-        <SecondaryButtons
-          buttons={[
-            {
-              title: 'Add account',
-              Icon: SvgAdd,
-              onClick: onAddAccount,
-            },
-          ]}
+        <View
+          style={{
+            height: 1,
+            margin: `${spacing.sm}px ${spacing.md}px`,
+            backgroundColor: theme.sidebarBorder,
+            flexShrink: 0,
+          }}
         />
+
+        <AccountsSection />
+
+        <SidebarFooter />
       </View>
     </SidebarShell>
   );
