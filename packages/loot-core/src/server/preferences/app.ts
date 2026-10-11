@@ -85,9 +85,6 @@ async function saveGlobalPrefs(prefs: GlobalPrefs) {
   if (prefs.floatingSidebar !== undefined) {
     await asyncStorage.setItem('floating-sidebar', '' + prefs.floatingSidebar);
   }
-  if (prefs.language !== undefined) {
-    await asyncStorage.setItem('language', prefs.language);
-  }
   if (prefs.theme !== undefined) {
     await asyncStorage.setItem('theme', prefs.theme);
   }
@@ -132,7 +129,6 @@ async function loadGlobalPrefs(): Promise<GlobalPrefs> {
     'floating-sidebar': floatingSidebar,
     'max-months': maxMonths,
     'encrypt-key': encryptKey,
-    language,
     theme,
     'preferred-dark-theme': preferredDarkTheme,
     'installed-custom-theme': installedCustomLightTheme,
@@ -145,7 +141,6 @@ async function loadGlobalPrefs(): Promise<GlobalPrefs> {
     'floating-sidebar',
     'max-months',
     'encrypt-key',
-    'language',
     'theme',
     'preferred-dark-theme',
     'installed-custom-theme',
@@ -159,7 +154,6 @@ async function loadGlobalPrefs(): Promise<GlobalPrefs> {
     floatingSidebar: floatingSidebar === 'true',
     maxMonths: stringToInteger(maxMonths || '') || 1,
     keyId: encryptKey && JSON.parse(encryptKey).id,
-    language,
     theme:
       theme === 'light' ||
       theme === 'dark' ||

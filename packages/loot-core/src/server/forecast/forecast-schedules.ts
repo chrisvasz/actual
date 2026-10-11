@@ -177,7 +177,7 @@ export function getFutureOccurrenceDates(
   return dates;
 }
 
-export async function buildFutureScheduleOccurrences(
+export function buildFutureScheduleOccurrences(
   schedules: ScheduleData[],
   endDateObj: Date,
   accountsById: Map<string, AccountWithComputedBalance>,
@@ -189,7 +189,7 @@ export async function buildFutureScheduleOccurrences(
   const transferPayeesByAccountId = getTransferPayeesByAccountIds([
     ...ruleAccountsById.keys(),
   ]);
-  const payeesById = new Map<string, Awaited<ReturnType<typeof db.getPayee>>>();
+  const payeesById = new Map<string, ReturnType<typeof db.getPayee>>();
   const simulatedTransactions: TransactionEntity[] = [];
   const occurrences: Array<{
     accountId: string;
