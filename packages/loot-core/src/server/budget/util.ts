@@ -1,25 +1,14 @@
-import { number } from '#server/spreadsheet/globals';
-// @ts-strict-ignore
-import { safeNumber } from '#shared/util';
-
-export { number } from '#server/spreadsheet/globals';
-
-export function sumAmounts(...amounts) {
-  return safeNumber(
-    amounts.reduce((total, amount) => {
-      return total + number(amount);
-    }, 0),
-  );
-}
-
-export function flatten2(arr) {
-  return Array.prototype.concat.apply([], arr);
-}
-
-export function unflatten2(arr) {
-  const res = [];
-  for (let i = 0; i < arr.length; i += 2) {
-    res.push([arr[i], arr[i + 1]]);
+// A stored or computed amount as a number; anything else counts as 0.
+export function number(v: unknown): number {
+  if (typeof v === 'number') {
+    return v;
+  } else if (typeof v === 'string') {
+    const parsed = parseFloat(v);
+    if (isNaN(parsed)) {
+      return 0;
+    }
+    return parsed;
   }
-  return res;
+
+  return 0;
 }

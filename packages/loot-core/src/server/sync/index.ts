@@ -11,7 +11,8 @@ import { captureException } from '#platform/exceptions';
 import * as asyncStorage from '#platform/server/asyncStorage';
 import * as connection from '#platform/server/connection';
 import { logger } from '#platform/server/log';
-import { triggerBudgetChanges } from '#server/budget/base';
+import { applyBudgetChanges, isBudgetStateLoaded } from '#server/budget/state';
+import { triggerQueryCells } from '#server/cells/query-cells';
 import * as db from '#server/db';
 import { PostError, SyncError } from '#server/errors';
 import { app } from '#server/main-app';
@@ -19,8 +20,6 @@ import { runMutator } from '#server/mutators';
 import { postBinary } from '#server/post';
 import * as prefs from '#server/prefs';
 import { getServer } from '#server/server-config';
-import * as sheet from '#server/sheet';
-import { resolveName } from '#server/spreadsheet/util';
 import * as undo from '#server/undo';
 import { once } from '#shared/async';
 import { isMissingSchemaError } from '#shared/errors';
@@ -182,8 +181,8 @@ function fetchAll(table: string, ids: string[]) {
     let sql;
     let column = `${quoteSqlId(table)}.id`;
 
-    // We have to provide *mapped* data so the spreadsheet works. The functions
-    // which trigger budget changes based on data changes assumes data has been
+    // We have to provide *mapped* data so the budget works. The functions
+    // which apply budget changes based on data changes assume data has been
     // mapped. The only mapped data that the budget is concerned about is
     // categories. This is kind of annoying, but we manually map it here
     if (table === 'transactions') {
@@ -545,44 +544,16 @@ export function applyMessages(
     connection.send('prefs-updated');
   }
 
-  // In testing, sometimes the spreadsheet isn't loaded, and that's ok
-  if (sheet.get()) {
-    // Need to clean up these APIs and make them consistent
-    sheet.startTransaction();
-    triggerBudgetChanges(oldData, newData);
-    sheet.get().triggerDatabaseChanges(oldData, newData);
-    sheet.endTransaction();
-
-    // Transfers insert the source row in one sync batch and the counterparty in
-    // a second. triggerDatabaseChanges should dirty aggregate query cells, but
-    // explicitly recompute global account totals so the second batch always
-    // refreshes sidebar "All accounts" / On budget / account group subtotals /
-    // etc. (see bindings.ts).
-    if (idsPerTable.transactions?.length) {
-      const s = sheet.get();
-      const globalAggregateCells = new Set(
-        [
-          'accounts-balance',
-          'accounts-balance-cleared',
-          'onbudget-accounts-balance-cleared',
-          'offbudget-accounts-balance-cleared',
-          'onbudget-accounts-balance',
-          'offbudget-accounts-balance',
-        ].map(cellName => resolveName('__global', cellName)),
-      );
-      const accountGroupCellPrefix = resolveName(
-        '__global',
-        'account-group-balance-',
-      );
-      const cellsToRecompute = [...s.getNodes().keys()].filter(
-        name =>
-          globalAggregateCells.has(name) ||
-          name.startsWith(accountGroupCellPrefix),
-      );
-      for (const name of cellsToRecompute) {
-        s.recompute(name);
-      }
-    }
+  // In testing, sometimes no budget is loaded, and that's ok
+  if (isBudgetStateLoaded()) {
+    applyBudgetChanges(oldData, newData);
+    triggerQueryCells(
+      new Set([
+        ...oldData.keys(),
+        ...newData.keys(),
+        ...Object.keys(idsPerTable),
+      ]),
+    );
   }
 
   _syncListeners.forEach(func => func(oldData, newData));
@@ -815,17 +786,13 @@ function getTablesFromMessages(messages: Message[]): string[] {
   }, []);
 }
 
-// This is different than `fullSync` because it waits for the
-// spreadsheet to finish any processing. This is useful if we want to
-// perform a full sync and wait for everything to finish, usually if
-// you're doing an initial sync before working with a file.
+// Like `fullSync`, but reports only the error, for an initial sync before
+// working with a file.
 export async function initialFullSync(): Promise<{
   error?: { message: string; reason: string; meta: unknown };
 }> {
   const result = await fullSync();
   if (isError(result)) {
-    // Make sure to wait for anything in the spreadsheet to process
-    await sheet.waitOnSpreadsheet();
     return result;
   }
   return {};

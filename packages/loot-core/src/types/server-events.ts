@@ -56,9 +56,10 @@ type SyncEvent = {
 
 type BackupUpdatedEvent = Backup[];
 
+// A cell bound to a query can hold any query result, e.g. a list of rows.
 type CellsChangedEvent = Array<{
   name: string;
-  value: string | number | boolean;
+  value: unknown;
 }>;
 
 type FallbackWriteErrorEvent = undefined;

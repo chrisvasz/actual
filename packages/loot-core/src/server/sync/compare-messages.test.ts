@@ -1,9 +1,12 @@
 import { getClock, Timestamp } from '@actual-app/crdt';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import * as budget from '#server/budget/base';
+import {
+  extendBudgetMonths,
+  getBudgetCellValue,
+  loadBudgetState,
+} from '#server/budget/state';
 import * as db from '#server/db';
-import * as sheet from '#server/sheet';
 
 import { applyMessages, setSyncingMode } from './index';
 import type { Message } from './index';
@@ -173,8 +176,8 @@ describe('compareMessages', () => {
     });
     db.insertCategoryGroup({ id: 'group1', name: 'group1' });
     db.insertCategory({ id: 'cat1', name: 'cat1', cat_group: 'group1' });
-    await sheet.loadSpreadsheet(db);
-    await budget.createBudget(['2024-01']);
+    await loadBudgetState();
+    extendBudgetMonths(['2024-01']);
 
     await applyAll([
       {
@@ -194,9 +197,8 @@ describe('compareMessages', () => {
         }),
       ),
     ]);
-    await sheet.waitOnSpreadsheet();
 
-    expect(sheet.get().getCellValue('budget202401', 'budget-cat1')).toBe(500);
-    expect(sheet.get().getCellValue('budget202401', 'to-budget')).toBe(-500);
+    expect(getBudgetCellValue('budget202401', 'budget-cat1')).toBe(500);
+    expect(getBudgetCellValue('budget202401', 'to-budget')).toBe(-500);
   });
 });

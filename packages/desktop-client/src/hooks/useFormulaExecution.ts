@@ -551,14 +551,14 @@ async function getCategoriesFromConditions(
 // Helper: Get month data from envelope-budget-month RPC
 async function getMonthBudgetData(
   month: string,
-): Promise<Array<{ name: string; value: string | number | boolean }>> {
+): Promise<Array<{ name: string; value: string | number | boolean | null }>> {
   const monthData = await send('envelope-budget-month', { month });
   return monthData || [];
 }
 
 // Helper: Extract value from month data by field pattern
 function getMonthDataValue(
-  monthData: Array<{ name: string; value: string | number | boolean }>,
+  monthData: Array<{ name: string; value: string | number | boolean | null }>,
   pattern: string,
   catId: string,
 ): string | number | boolean {

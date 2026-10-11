@@ -1,9 +1,14 @@
 // @ts-strict-ignore
 import { getClock, Timestamp } from '@actual-app/crdt';
 
+import {
+  extendBudgetMonths,
+  getBudgetCellValue,
+  loadBudgetState,
+} from '#server/budget/state';
+import { createQueryCell, getQueryCellValue } from '#server/cells/query-cells';
 import * as db from '#server/db';
 import * as prefs from '#server/prefs';
-import * as sheet from '#server/sheet';
 import * as mockSyncServer from '#server/tests/mockSyncServer';
 import { q } from '#shared/query';
 
@@ -219,12 +224,8 @@ describe('Sync', () => {
   });
 });
 
-function registerBudgetMonths(months) {
-  const createdMonths = new Set();
-  for (const month of months) {
-    createdMonths.add(month);
-  }
-  sheet.get().meta().createdMonths = months;
+function registerBudgetMonths(months: string[]) {
+  extendBudgetMonths(months);
 }
 
 async function asSecondClient(func) {
@@ -245,13 +246,13 @@ async function asSecondClient(func) {
 }
 
 function expectCellToExist(sheetName, name) {
-  const value = sheet.get().getCellValueLoose(sheetName, name);
+  const value = getBudgetCellValue(sheetName, name);
   expect(value).not.toBe(null);
 }
 
-function expectCellNotToExist(sheetName, name, voided?: boolean) {
-  const value = sheet.get().getCellValueLoose(sheetName, name);
-  expect(value).toBe(voided ? 0 : null);
+function expectCellNotToExist(sheetName, name) {
+  const value = getBudgetCellValue(sheetName, name);
+  expect(value).toBe(null);
 }
 
 describe('Message batches', () => {
@@ -311,13 +312,13 @@ describe('Sync projections', () => {
   test('synced categories should have budgets created', async () => {
     let groupId, fooId, barId;
     await asSecondClient(async () => {
-      await sheet.loadSpreadsheet(db);
+      await loadBudgetState();
       groupId = db.insertCategoryGroup({ id: 'group1', name: 'group1' });
       fooId = db.insertCategory({ name: 'foo', cat_group: 'group1' });
       barId = db.insertCategory({ name: 'bar', cat_group: 'group1' });
     });
 
-    await sheet.loadSpreadsheet(db);
+    await loadBudgetState();
     registerBudgetMonths(['2017-01', '2017-02']);
     expectCellNotToExist('budget201701', 'sum-amount-' + fooId);
     expectCellNotToExist('budget201701', 'sum-amount-' + barId);
@@ -339,13 +340,13 @@ describe('Sync projections', () => {
     // it in the same sync (should do nothing)
     let fooId;
     await asSecondClient(async () => {
-      await sheet.loadSpreadsheet(db);
+      await loadBudgetState();
       db.insertCategoryGroup({ id: 'group1', name: 'group1' });
       fooId = db.insertCategory({ name: 'foo', cat_group: 'group1' });
       db.deleteCategory({ id: fooId });
     });
 
-    await sheet.loadSpreadsheet(db);
+    await loadBudgetState();
     registerBudgetMonths(['2017-01', '2017-02']);
     expectCellNotToExist('budget201701', 'sum-amount-' + fooId);
     await fullSync();
@@ -355,7 +356,7 @@ describe('Sync projections', () => {
   test('synced categories should have budgets deleted', async () => {
     let fooId;
     await asSecondClient(async () => {
-      await sheet.loadSpreadsheet(db);
+      await loadBudgetState();
       db.insertCategoryGroup({
         id: 'group1',
         name: 'group1',
@@ -364,7 +365,7 @@ describe('Sync projections', () => {
       db.deleteCategory({ id: fooId });
     });
 
-    await sheet.loadSpreadsheet(db);
+    await loadBudgetState();
     registerBudgetMonths(['2017-01', '2017-02']);
 
     // Get all the messages. We'll apply them in two passes
@@ -379,7 +380,7 @@ describe('Sync projections', () => {
     // budget cells
     applyMessages([messages[messages.length - 1]]);
     expect(db.getCategories().length).toBe(0);
-    expectCellNotToExist('budget201701', 'sum-amount-' + fooId, true);
+    expectCellNotToExist('budget201701', 'sum-amount-' + fooId);
   });
 
   test('creating and deleting groups in same sync', async () => {
@@ -387,12 +388,12 @@ describe('Sync projections', () => {
     // it in the same sync (should do nothing)
     let groupId;
     await asSecondClient(async () => {
-      await sheet.loadSpreadsheet(db);
+      await loadBudgetState();
       groupId = db.insertCategoryGroup({ id: 'group1', name: 'group1' });
       db.deleteCategoryGroup({ id: groupId });
     });
 
-    await sheet.loadSpreadsheet(db);
+    await loadBudgetState();
     registerBudgetMonths(['2017-01', '2017-02']);
     expectCellNotToExist('budget201701', 'group-sum-amount-' + groupId);
     await fullSync();
@@ -405,7 +406,7 @@ describe('Sync projections', () => {
     // the same pass to make sure that works.
     let groupId, fooId;
     await asSecondClient(async () => {
-      await sheet.loadSpreadsheet(db);
+      await loadBudgetState();
       groupId = db.insertCategoryGroup({
         id: 'group1',
         name: 'group1',
@@ -415,7 +416,7 @@ describe('Sync projections', () => {
       db.deleteCategoryGroup({ id: groupId });
     });
 
-    await sheet.loadSpreadsheet(db);
+    await loadBudgetState();
     registerBudgetMonths(['2017-01', '2017-02']);
 
     // Get all the messages. We'll apply them in two passes
@@ -435,21 +436,21 @@ describe('Sync projections', () => {
     applyMessages(secondMessages);
     expect(db.getCategories().length).toBe(0);
     expect(db.getCategoriesGrouped().length).toBe(0);
-    expectCellNotToExist('budget201701', 'sum-amount-' + fooId, true);
-    expectCellNotToExist('budget201701', 'group-sum-amount-' + groupId, true);
+    expectCellNotToExist('budget201701', 'sum-amount-' + fooId);
+    expectCellNotToExist('budget201701', 'group-sum-amount-' + groupId);
   });
 
   test('categories should update the budget when moved', async () => {
     let groupId, fooId;
     await asSecondClient(async () => {
-      await sheet.loadSpreadsheet(db);
+      await loadBudgetState();
       groupId = db.insertCategoryGroup({ id: 'group1', name: 'group1' });
       db.insertCategoryGroup({ id: 'group2', name: 'group2' });
       fooId = db.insertCategory({ name: 'foo', cat_group: 'group1' });
       db.moveCategory(fooId, 'group2', null);
     });
 
-    await sheet.loadSpreadsheet(db);
+    await loadBudgetState();
     registerBudgetMonths(['2017-01', '2017-02']);
 
     // Get all the messages. We'll apply them in two passes
@@ -473,54 +474,56 @@ describe('Sync account balance cells', () => {
   test('recomputes account totals and group subtotals when transactions sync', async () => {
     void prefs.loadPrefs();
     void prefs.savePrefs({ groupId: 'group' });
-    await sheet.loadSpreadsheet(db);
+    await loadBudgetState();
 
-    const spreadsheet = sheet.get();
     function sumOf(filter: Record<string, unknown>) {
       return q('transactions')
         .filter(filter)
         .calculate({ $sum: '$amount' })
         .serialize();
     }
-    spreadsheet.createQuery(
-      '__global',
-      'accounts-balance',
-      sumOf({ 'account.closed': false }),
-    );
-    spreadsheet.createQuery(
-      '__global',
-      'accounts-balance-cleared',
-      sumOf({ 'account.closed': false, cleared: true }),
-    );
-    spreadsheet.createQuery(
-      '__global',
-      'onbudget-accounts-balance-cleared',
-      sumOf({ 'account.offbudget': false, cleared: true }),
-    );
-    spreadsheet.createQuery(
-      '__global',
-      'offbudget-accounts-balance-cleared',
-      sumOf({ 'account.offbudget': true, cleared: true }),
-    );
-    spreadsheet.createQuery(
-      '__global',
-      'account-group-balance-g1-on-cleared',
-      sumOf({
+    const queries = {
+      '__global!accounts-balance': sumOf({ 'account.closed': false }),
+      '__global!onbudget-accounts-balance': sumOf({
+        'account.offbudget': false,
+      }),
+      '__global!account-group-balance-g1-on': sumOf({
         'account.account_group_id': 'g1',
         'account.offbudget': false,
-        cleared: true,
       }),
+      '__global!balance-acct1': sumOf({ account: 'acct1' }),
+    };
+    db.runQuery("INSERT INTO account_groups (id, name) VALUES ('g1', 'g1')");
+    db.runQuery(
+      "INSERT INTO accounts (id, name, offbudget, account_group_id) VALUES ('acct1', 'acct1', 0, 'g1')",
     );
-    spreadsheet.createQuery(
-      '__global',
-      'balance-acct1',
-      sumOf({ account: 'acct1' }),
-    );
-    await sheet.waitOnSpreadsheet();
+    for (const [name, query] of Object.entries(queries)) {
+      createQueryCell(name, query);
+    }
+    for (const name of Object.keys(queries)) {
+      expect(getQueryCellValue(name)).toBe(0);
+    }
 
-    const recompute = vi.spyOn(spreadsheet, 'recompute');
+    // The transaction arrives in two batches, the way a synced transfer's
+    // fields can
     applyMessages([
-      global.stepForwardInTime() || {
+      {
+        dataset: 'transactions',
+        row: 'foo',
+        column: 'acct',
+        value: 'acct1',
+        timestamp: Timestamp.send(),
+      },
+      {
+        dataset: 'transactions',
+        row: 'foo',
+        column: 'date',
+        value: 20170101,
+        timestamp: Timestamp.send(),
+      },
+    ]);
+    applyMessages([
+      {
         dataset: 'transactions',
         row: 'foo',
         column: 'amount',
@@ -529,16 +532,8 @@ describe('Sync account balance cells', () => {
       },
     ]);
 
-    const recomputed = recompute.mock.calls.map(([name]) => name);
-    expect(recomputed).toEqual(
-      expect.arrayContaining([
-        '__global!accounts-balance',
-        '__global!accounts-balance-cleared',
-        '__global!onbudget-accounts-balance-cleared',
-        '__global!offbudget-accounts-balance-cleared',
-        '__global!account-group-balance-g1-on-cleared',
-      ]),
-    );
-    expect(recomputed).not.toContain('__global!balance-acct1');
+    for (const name of Object.keys(queries)) {
+      expect(getQueryCellValue(name)).toBe(3200);
+    }
   });
 });

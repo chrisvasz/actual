@@ -15,6 +15,7 @@ import { aqlQuery } from './aql';
 import { app as authApp } from './auth/app';
 import { app as budgetApp } from './budget/app';
 import { app as budgetFilesApp } from './budgetfiles/app';
+import { app as cellsApp } from './cells/app';
 import { app as dashboardApp } from './dashboard/app';
 import * as db from './db';
 import * as encryption from './encryption';
@@ -34,7 +35,6 @@ import { app as reportsApp } from './reports/app';
 import { app as rulesApp } from './rules/app';
 import { app as schedulesApp } from './schedules/app';
 import { getServer, setServer } from './server-config';
-import { app as spreadsheetApp } from './spreadsheet/app';
 import { fullSync, setSyncingMode } from './sync';
 import { app as syncApp } from './sync/app';
 import { app as tagsApp } from './tags/app';
@@ -145,7 +145,7 @@ app.combine(
   accountsApp,
   accountGroupsApp,
   payeesApp,
-  spreadsheetApp,
+  cellsApp,
   syncApp,
   budgetFilesApp,
   encryptionApp,

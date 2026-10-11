@@ -1,8 +1,8 @@
 // @ts-strict-ignore
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { extendBudgetMonths, loadBudgetState } from '#server/budget/state';
 import * as db from '#server/db';
-import * as sheet from '#server/sheet';
 
 import {
   coverOverbudgeted,
@@ -12,7 +12,6 @@ import {
   setCategoryCarryover,
   setNMonthAvg,
 } from './actions';
-import * as budget from './base';
 
 describe('set budget average', () => {
   let originalCurrentMonth: string | null;
@@ -31,7 +30,6 @@ describe('set budget average', () => {
 
   it('sets a single category average from complete months', async () => {
     await setNMonthAvg({ month: '2024-04', N: 3, category: 'cat1' });
-    await sheet.waitOnSpreadsheet();
 
     expect(await getSheetValue('budget202404', 'budget-cat1')).toBe(600);
   });
@@ -40,7 +38,6 @@ describe('set budget average', () => {
     setBudget({ category: 'cat1', month: '2023-12', amount: 1000 });
 
     await setNMonthAvg({ month: '2024-04', N: 3, category: 'cat1' });
-    await sheet.waitOnSpreadsheet();
 
     expect(await getSheetValue('budget202404', 'budget-cat1')).toBe(600);
   });
@@ -52,17 +49,14 @@ describe('set budget average', () => {
       account: 'account1',
       category: 'cat1',
     });
-    await sheet.waitOnSpreadsheet();
 
     await setNMonthAvg({ month: '2024-04', N: 3, category: 'cat1' });
-    await sheet.waitOnSpreadsheet();
 
     expect(await getSheetValue('budget202404', 'budget-cat1')).toBe(633);
   });
 
   it('sets a bulk 3 month average from complete months', async () => {
     await set3MonthAvg({ month: '2024-04' });
-    await sheet.waitOnSpreadsheet();
 
     expect(await getSheetValue('budget202404', 'budget-cat1')).toBe(600);
   });
@@ -71,7 +65,6 @@ describe('set budget average', () => {
     setBudget({ category: 'cat1', month: '2023-12', amount: 1000 });
 
     await set3MonthAvg({ month: '2024-04' });
-    await sheet.waitOnSpreadsheet();
 
     expect(await getSheetValue('budget202404', 'budget-cat1')).toBe(600);
   });
@@ -89,7 +82,6 @@ describe('coverOverbudgeted', () => {
       month: '2024-02',
       category: 'cat1',
     });
-    await sheet.waitOnSpreadsheet();
 
     const sheetName = 'budget202402';
     expect(await getSheetValue(sheetName, 'to-budget')).toBe(0);
@@ -104,7 +96,6 @@ describe('coverOverbudgeted', () => {
       month: '2024-02',
       category: 'cat3',
     });
-    await sheet.waitOnSpreadsheet();
 
     const sheetName = 'budget202402';
     expect(await getSheetValue(sheetName, 'to-budget')).toBe(-80);
@@ -151,15 +142,14 @@ async function prepareDatabase() {
   setBudget({ category: 'cat2', month: '2024-01', amount: -20 });
   setBudget({ category: 'cat3', month: '2024-01', amount: 10 });
 
-  await sheet.loadSpreadsheet(db);
-  await budget.createBudget(['2024-01', '2024-02']);
+  await loadBudgetState();
+  extendBudgetMonths(['2024-01', '2024-02']);
 
   await setCategoryCarryover({
     startMonth: '2024-01',
     category: 'cat2',
     flag: true,
   });
-  await sheet.waitOnSpreadsheet();
 }
 
 async function setupAverageDatabase() {
@@ -178,8 +168,8 @@ async function setupAverageDatabase() {
     is_income: 0,
   });
 
-  await sheet.loadSpreadsheet(db);
-  await budget.createBudget([
+  await loadBudgetState();
+  extendBudgetMonths([
     '2023-11',
     '2023-12',
     '2024-01',
@@ -218,6 +208,4 @@ async function setupAverageDatabase() {
     account: 'account1',
     category: 'cat1',
   });
-
-  await sheet.waitOnSpreadsheet();
 }
