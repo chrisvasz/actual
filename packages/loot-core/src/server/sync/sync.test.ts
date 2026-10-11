@@ -12,10 +12,14 @@ import { isError } from './utils';
 
 import {
   applyMessages,
+  batchMessages,
+  discardMessageBatch,
+  endMessageBatch,
   fullSync,
   receiveMessages,
   sendMessages,
   setSyncingMode,
+  startMessageBatch,
   waitForScheduledSyncs,
 } from './index';
 
@@ -249,6 +253,59 @@ function expectCellNotToExist(sheetName, name, voided?: boolean) {
   const value = sheet.get().getCellValueLoose(sheetName, name);
   expect(value).toBe(voided ? 0 : null);
 }
+
+describe('Message batches', () => {
+  function amountMessage(row: string, value: number) {
+    return {
+      dataset: 'transactions',
+      row,
+      column: 'amount',
+      value,
+      timestamp: Timestamp.send(),
+    };
+  }
+
+  function crdtRows() {
+    return db.all<db.DbCrdtMessage>('SELECT * FROM messages_crdt');
+  }
+
+  it('applies nothing from a discarded batch', async () => {
+    void prefs.loadPrefs();
+    void prefs.savePrefs({ groupId: 'group' });
+
+    const error = new Error('batch failed');
+    const run = async () => {
+      expect(startMessageBatch()).toBe(true);
+      try {
+        sendMessages([amountMessage('foo', 3200)]);
+        // A nested start joins the open batch
+        expect(startMessageBatch()).toBe(false);
+        sendMessages([amountMessage('bar', 4200)]);
+        await Promise.resolve();
+        throw error;
+      } catch (e) {
+        discardMessageBatch(e);
+        throw e;
+      }
+    };
+
+    await expect(run()).rejects.toBe(error);
+    expect(crdtRows()).toEqual([]);
+    expect(db.all('SELECT id FROM transactions')).toEqual([]);
+
+    // Batching state is reset, so later batches still apply
+    expect(startMessageBatch()).toBe(true);
+    sendMessages([amountMessage('baz', 100)]);
+    endMessageBatch();
+
+    batchMessages(() => {
+      sendMessages([amountMessage('qux', 200)]);
+    });
+
+    expect(crdtRows().map(row => row.row)).toEqual(['baz', 'qux']);
+    await waitForScheduledSyncs();
+  });
+});
 
 describe('Sync projections', () => {
   test('synced categories should have budgets created', async () => {

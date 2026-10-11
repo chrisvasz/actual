@@ -732,6 +732,14 @@ export function endMessageBatch(): void {
   }
 }
 
+// Ends a batch opened by `startMessageBatch` without applying it, for
+// when the work in it failed. Like `batchMessages`, reports the error
+// (the caller rethrows it) and drops everything queued since the start
+export function discardMessageBatch(error: Error): void {
+  takeBatched();
+  void errorHandler(error);
+}
+
 export function sendMessages(messages: Message[]): void {
   if (IS_BATCHING) {
     _BATCHED = _BATCHED.concat(messages);
