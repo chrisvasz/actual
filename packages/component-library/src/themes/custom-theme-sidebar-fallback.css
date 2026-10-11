@@ -1,0 +1,21 @@
+/* Navy sidebar defaults for custom light themes. The built-in light theme has
+   a white sidebar; a custom light theme or CSS override that styles any
+   --color-sidebar* token was designed against this navy sidebar, so ThemeStyle
+   injects this sheet before the custom CSS to fill the tokens it leaves unset. */
+:root {
+  --color-sidebarBackground: var(--palette-navy900);
+  --color-sidebarItemBackgroundFailed: var(--palette-red300);
+  --color-sidebarItemBackgroundHover: var(--palette-navy800);
+  --color-sidebarItemAccentSelected: var(--palette-purple200);
+  --color-sidebarItemBackgroundSelected: color-mix(
+    in srgb,
+    var(--color-sidebarItemAccentSelected) 22%,
+    transparent
+  );
+  --color-sidebarItemText: var(--palette-navy150);
+  --color-sidebarItemTextSelected: var(--palette-purple200);
+  --color-sidebarHeaderText: var(--palette-white);
+  --color-sidebarTextSubdued: var(--palette-navy300);
+  --color-sidebarTextMuted: var(--palette-navy500);
+  --color-sidebarRightBorder: var(--color-sidebarBackground);
+}

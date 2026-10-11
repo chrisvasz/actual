@@ -7,6 +7,7 @@ import {
   MAX_FONT_FILE_SIZE,
   migrateLegacyOverride,
   parseInstalledTheme,
+  stylesSidebar,
   validateThemeCss,
   validateThemeCssSafely,
 } from './customThemes';
@@ -1870,5 +1871,43 @@ describe('validateThemeCssSafely', () => {
     expect(onError).toHaveBeenCalledOnce();
     expect(validateThemeCssSafely(undefined, onError)).toBe('');
     expect(onError).toHaveBeenCalledOnce();
+  });
+});
+
+describe('stylesSidebar', () => {
+  it('ignores themes that leave the sidebar alone', () => {
+    expect(stylesSidebar('')).toBe(false);
+    expect(stylesSidebar(':root { --color-pageBackground: #fff; }')).toBe(
+      false,
+    );
+    expect(
+      stylesSidebar(
+        ':root { --color-pageText: var(--color-sidebarBackground); }',
+      ),
+    ).toBe(false);
+    expect(
+      stylesSidebar(
+        ':root { /* --color-sidebarBackground: navy; */ --color-pageBackground: #fff; }',
+      ),
+    ).toBe(false);
+  });
+
+  it('detects themes that style the sidebar', () => {
+    expect(
+      stylesSidebar(
+        ':root {\n  --color-pageBackground: #fff;\n  --color-sidebarBackground: hsl(237, 51%, 23%);\n}',
+      ),
+    ).toBe(true);
+    expect(stylesSidebar(':root { --color-sidebarItemText:#fff; }')).toBe(true);
+  });
+
+  it('ignores sidebar tokens in CSS the validator rejects', () => {
+    expect(
+      stylesSidebar(
+        validateThemeCssSafely(
+          '@media (prefers-color-scheme: dark) { :root { --color-sidebarBackground: navy; } }',
+        ),
+      ),
+    ).toBe(false);
   });
 });

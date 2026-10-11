@@ -98,7 +98,7 @@ All hex values in this file (frontmatter included) are the light-theme palette m
 
 ### Neutral
 
-- **Navy Ink** (#102a43): Sidebar background, darkest text. The app's anchor dark.
+- **Navy Ink** (#102a43): Darkest text. The app's anchor dark.
 - **Page Ink** (#272630): Default body text on light surfaces.
 - **Navy Slate** (#627d98): Secondary and subdued text, table headers.
 - **Navy Mist** (#e8ecf0): Page background, table borders, dividers.
@@ -179,7 +179,7 @@ Utilitarian and quick: compact paddings, instant state feedback, built for daily
 
 ### Navigation
 
-- **Sidebar:** Navy Ink background, light navy text; hover darkens the row, selection marked with a purple accent and purple text. Status states (pending/positive/failed) tint the item background gold/green/red
+- **Sidebar:** Surface White background with a 2px Navy Mist right edge, navy text; hover tints the row light navy, selection marked with a light purple background and purple text. Accounts sit in collapsible on-budget, off-budget and closed groups. Custom light themes that style the sidebar fall back to a Navy Ink sidebar
 - **Mobile:** Purple header, white nav bar, purple selected item
 
 ### Pills / Chips

@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 
+import customThemeSidebarFallbackCss from '@actual-app/components/themes/custom-theme-sidebar-fallback.css?inline';
 import darkThemeCss from '@actual-app/components/themes/dark.css?inline';
 import lightThemeCss from '@actual-app/components/themes/light.css?inline';
 import midnightThemeCss from '@actual-app/components/themes/midnight.css?inline';
@@ -12,6 +13,7 @@ import {
   isBaseTheme,
   migrateLegacyOverride,
   parseInstalledTheme,
+  stylesSidebar,
   validateThemeCssSafely,
 } from './customThemes';
 
@@ -102,6 +104,7 @@ export function ThemeStyle() {
   const [installedCustomDarkThemeJson] = useGlobalPref(
     'installedCustomDarkTheme',
   );
+  const [customCssOverride] = useGlobalPref('customCssOverride');
 
   // Rendered rather than injected from an effect so the CSS variables exist
   // in the same commit as any consumer effect that reads them.
@@ -112,11 +115,22 @@ export function ThemeStyle() {
 
   if (!themeColors) return null;
 
+  const sidebarFallbackCss =
+    themeColors === themes.light.colors &&
+    stylesSidebar(
+      [customLightTheme?.cssContent, customCssOverride]
+        .map(css => validateThemeCssSafely(css))
+        .join('\n'),
+    )
+      ? customThemeSidebarFallbackCss
+      : null;
+
   if (activeTheme !== 'auto') {
     return (
       <>
         <style>{paletteCss}</style>
         <style>{themeColors}</style>
+        {sidebarFallbackCss != null && <style>{sidebarFallbackCss}</style>}
       </>
     );
   }
@@ -133,6 +147,11 @@ export function ThemeStyle() {
     <>
       <style>{paletteCss}</style>
       <style media="(prefers-color-scheme: light)">{themeColors}</style>
+      {sidebarFallbackCss != null && (
+        <style media="(prefers-color-scheme: light)">
+          {sidebarFallbackCss}
+        </style>
+      )}
       <style media="(prefers-color-scheme: dark)">{darkColors}</style>
     </>
   );
