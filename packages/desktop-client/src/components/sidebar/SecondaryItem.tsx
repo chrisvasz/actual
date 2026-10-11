@@ -26,7 +26,6 @@ type SecondaryItemProps = {
   onClick?: ComponentProps<typeof ItemContent>['onClick'];
   bold?: boolean;
   indent?: number;
-  dataTestId?: string;
 };
 
 export function SecondaryItem({
@@ -37,7 +36,6 @@ export function SecondaryItem({
   onClick,
   bold,
   indent = 0,
-  dataTestId,
 }: SecondaryItemProps) {
   const content = (
     <View
@@ -55,7 +53,7 @@ export function SecondaryItem({
   );
 
   return (
-    <View data-testid={dataTestId} style={{ flexShrink: 0, ...style }}>
+    <View style={{ flexShrink: 0, ...style }}>
       <ItemContent
         style={{
           ...accountNameStyle,

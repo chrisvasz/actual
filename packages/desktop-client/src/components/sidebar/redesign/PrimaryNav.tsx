@@ -18,7 +18,6 @@ export function PrimaryNav() {
 
   return (
     <View
-      data-testid="sidebar-primary-buttons"
       style={{
         flexShrink: 0,
         padding: `${spacing.xs}px ${spacing.sm}px 0`,
