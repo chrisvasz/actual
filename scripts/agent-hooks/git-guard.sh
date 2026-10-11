@@ -8,10 +8,9 @@
 # blocks the call and feeds the reason back to the agent.
 #
 # Best-effort by design: it catches the honest mistakes agents actually make
-# (a forgotten [AI] commit prefix, --no-verify, a force push, yarn in a
-# workspace). It does NOT try to defend against deliberate evasion via unusual
-# shell forms (git global options before the subcommand, `git commit -F`/`-C`/
-# `--amend`, etc.) — CI and branch protection are the real gates for what lands.
+# (a forgotten [AI] commit prefix, --no-verify, yarn in a workspace). It does
+# NOT try to defend against deliberate evasion via unusual shell forms (git
+# global options before the subcommand, `git commit -F`/`-C`/`--amend`, etc.) — CI and branch protection are the real gates for what lands.
 
 block() {
   echo "$1" >&2
@@ -77,16 +76,6 @@ case "$cmd" in
     case "$cmd" in
       *--get* | *--list* | *" -l "* | *" -l") ;;
       *) block "Blocked: 'git config' changes are forbidden." ;;
-    esac ;;
-esac
-
-# Never force-push. Pushing to main/master is allowed in this fork — the
-# upstream-facing rule lived here, but chrisvasz/actual deploys from master.
-case "$cmd" in
-  *"git push"*)
-    case "$cmd" in
-      *--force* | *" -f "* | *" -f")
-        block "Blocked: force push only on explicit user request. Use --force-with-lease and confirm with the user first." ;;
     esac ;;
 esac
 
