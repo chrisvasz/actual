@@ -23,7 +23,6 @@ import {
   ModalTitle,
 } from '#components/common/Modal';
 import { useCategory } from '#hooks/useCategory';
-import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import type { Modal as ModalType } from '#modals/modalsSlice';
 import { envelopeBudget } from '#spreadsheet/bindings';
 
@@ -57,7 +56,6 @@ export function EnvelopeBudgetMenuModal({
     envelopeBudget.catBudgeted(categoryId),
   );
   const { data: category } = useCategory(categoryId);
-  const mobileCalculatorEnabled = useFeatureFlag('mobileCalculator');
 
   const _onUpdateBudget = (amount: number) => {
     onUpdateBudget?.(amountToInteger(amount));
@@ -74,12 +72,7 @@ export function EnvelopeBudgetMenuModal({
   }
 
   return (
-    <Modal
-      name="envelope-budget-menu"
-      wrapperProps={{
-        style: mobileCalculatorEnabled ? { paddingBottom: '30vh' } : undefined,
-      }}
-    >
+    <Modal name="envelope-budget-menu">
       {({ state }) => (
         <>
           <ModalHeader
@@ -106,7 +99,6 @@ export function EnvelopeBudgetMenuModal({
               onChange={_onUpdateBudget}
               data-testid="budget-amount"
               autoFocus
-              autoFocusDelay={150}
               variant="large"
             />
           </View>

@@ -13,7 +13,6 @@ const DEFAULT_FEATURE_FLAG_STATE: Record<FeatureFlag, boolean> = {
   enableBanking: false,
   sankeyReport: false,
   akahuBankSync: false,
-  mobileCalculator: false,
   monteCarloReport: false,
 };
 

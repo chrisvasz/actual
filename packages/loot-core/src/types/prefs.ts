@@ -9,7 +9,6 @@ export type FeatureFlag =
   | 'enableBanking'
   | 'sankeyReport'
   | 'akahuBankSync'
-  | 'mobileCalculator'
   | 'monteCarloReport';
 
 /**
