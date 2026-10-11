@@ -45,6 +45,7 @@ describe('Sync', () => {
         timestamp,
       },
     ]);
+    await waitForScheduledSyncs();
 
     global.stepForwardInTime();
 

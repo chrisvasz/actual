@@ -11,7 +11,7 @@ import {
 } from '#server/mutators';
 import { setServer } from '#server/server-config';
 import * as sheet from '#server/sheet';
-import { setSyncingMode } from '#server/sync';
+import { setSyncingMode, waitForScheduledSyncs } from '#server/sync';
 import * as rules from '#server/transactions/transaction-rules';
 import { updateVersion } from '#server/update';
 import { resetTracer, tracer } from '#shared/test-helpers';
@@ -158,7 +158,10 @@ beforeEach(() => {
   resetTracer();
 });
 
-afterEach(() => {
+afterEach(async () => {
+  // Surface a background sync failure in the test that caused it
+  await waitForScheduledSyncs();
+
   global.resetRandomId();
   tracer.end();
   void fetchClient.clearServer();

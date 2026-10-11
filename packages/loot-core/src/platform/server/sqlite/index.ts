@@ -184,8 +184,6 @@ export function transaction(
   }
 }
 
-// See the comment about this function in index.api.ts. You
-// shouldn't normally use this. I'd like to get rid of it.
 // Opens a transaction that stays open until `commitTransaction`, across
 // any number of handler calls. Only for bulk imports (the API's
 // batch-budget-start/end): any statement that runs in between is caught
