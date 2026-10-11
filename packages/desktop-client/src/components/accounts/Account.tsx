@@ -51,8 +51,6 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   accountQueries,
   useReopenAccountMutation,
-  useSyncAndDownloadMutation,
-  useUnlinkAccountMutation,
   useUpdateAccountMutation,
 } from '#accounts';
 import { markAccountRead } from '#accounts/accountsSlice';
@@ -348,13 +346,10 @@ type AccountInternalProps = {
   payees: PayeeEntity[];
   categoryGroups: CategoryGroupEntity[];
   hideFraction: boolean;
-  accountsSyncing: string[];
   dispatch: AppDispatch;
   onSetTransfer: ReturnType<typeof useTransactionBatchActions>['onSetTransfer'];
   onReopenAccount: (id: AccountEntity['id']) => void;
   onUpdateAccount: (account: AccountEntity) => Promise<unknown>;
-  onUnlinkAccount: (id: AccountEntity['id']) => void;
-  onSyncAndDownload: (accountId?: AccountEntity['id']) => void;
   onCreatePayee: (name: PayeeEntity['name']) => Promise<PayeeEntity['id']>;
   preload: AccountPreload;
   queryClient: QueryClient;
@@ -818,13 +813,6 @@ class AccountInternal extends PureComponent<
     }
   }, 150);
 
-  onSync = async () => {
-    const accountId = this.props.accountId;
-    const account = this.props.accounts.find(acct => acct.id === accountId);
-
-    this.props.onSyncAndDownload(account ? account.id : accountId);
-  };
-
   onImport = async () => {
     const accountId = this.props.accountId;
     const account = this.props.accounts.find(acct => acct.id === accountId);
@@ -1032,8 +1020,6 @@ class AccountInternal extends PureComponent<
 
   onMenuSelect = async (
     item:
-      | 'link'
-      | 'unlink'
       | 'close'
       | 'reopen'
       | 'export'
@@ -1049,34 +1035,6 @@ class AccountInternal extends PureComponent<
     )!;
 
     switch (item) {
-      case 'link':
-        this.props.dispatch(
-          pushModal({
-            modal: {
-              name: 'add-account',
-              options: {
-                upgradingAccountId: accountId,
-              },
-            },
-          }),
-        );
-        break;
-      case 'unlink':
-        this.props.dispatch(
-          pushModal({
-            modal: {
-              name: 'confirm-unlink-account',
-              options: {
-                accountName: account.name,
-                isViewBankSyncSettings: false,
-                onUnlink: () => {
-                  this.props.onUnlinkAccount(accountId);
-                },
-              },
-            },
-          }),
-        );
-        break;
       case 'close':
         void this.props.dispatch(openAccountCloseModal({ accountId }));
         break;
@@ -2011,7 +1969,6 @@ class AccountInternal extends PureComponent<
       payees,
       dateFormat,
       hideFraction,
-      accountsSyncing,
       accountId,
       categoryId,
     } = this.props;
@@ -2086,8 +2043,6 @@ class AccountInternal extends PureComponent<
                 filterId={filterId}
                 savedFilters={this.props.savedFilters}
                 accountName={accountName}
-                accountsSyncing={accountsSyncing}
-                accounts={accounts}
                 transactions={transactions}
                 showReconciled={showReconciled ?? false}
                 showEmptyMessage={showEmptyMessage ?? false}
@@ -2112,7 +2067,6 @@ class AccountInternal extends PureComponent<
                 onCreateReconciliationTransaction={
                   this.onCreateReconciliationTransaction
                 }
-                onSync={this.onSync}
                 onImport={this.onImport}
                 onBatchDelete={this.onBatchDelete}
                 onBatchDuplicate={this.onBatchDuplicate}
@@ -2174,7 +2128,7 @@ class AccountInternal extends PureComponent<
                         onAdd={() =>
                           this.props.dispatch(
                             replaceModal({
-                              modal: { name: 'add-account', options: {} },
+                              modal: { name: 'add-local-account' },
                             }),
                           )
                         }
@@ -2401,7 +2355,6 @@ export function Account() {
   } = useTransactionTableColumns(params.id);
 
   const modalShowing = useSelector(state => state.modals.modalStack.length > 0);
-  const accountsSyncing = useSelector(state => state.account.accountsSyncing);
   const filterConditions = location?.state?.filterConditions || [];
 
   const savedFiters = useTransactionFilters();
@@ -2419,13 +2372,6 @@ export function Account() {
   const { mutateAsync: updateAccount } = useUpdateAccountMutation();
   const onUpdateAccount = (account: AccountEntity) =>
     updateAccount({ account }).catch(() => undefined);
-
-  const { mutate: unlinkAccount } = useUnlinkAccountMutation();
-  const onUnlinkAccount = (id: AccountEntity['id']) => unlinkAccount({ id });
-
-  const { mutate: syncAndDownload } = useSyncAndDownloadMutation();
-  const onSyncAndDownload = (id?: AccountEntity['id']) =>
-    syncAndDownload({ id });
 
   const createPayee = useCreatePayeeMutation();
   const onCreatePayee = (name: PayeeEntity['name']) =>
@@ -2482,7 +2428,6 @@ export function Account() {
             saveColumns={saveColumns}
             payees={payees}
             modalShowing={modalShowing}
-            accountsSyncing={accountsSyncing}
             filterConditions={filterConditions}
             categoryGroups={categoryGroups}
             accountId={params.id}
@@ -2491,8 +2436,6 @@ export function Account() {
             savedFilters={savedFiters}
             onReopenAccount={onReopenAccount}
             onUpdateAccount={onUpdateAccount}
-            onUnlinkAccount={onUnlinkAccount}
-            onSyncAndDownload={onSyncAndDownload}
             onCreatePayee={onCreatePayee}
             preload={preload}
           />

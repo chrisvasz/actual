@@ -9,31 +9,11 @@ import { resetApp } from '#app/appSlice';
 const sliceName = 'account';
 
 type AccountState = {
-  failedAccounts: {
-    [key: AccountEntity['id']]: { type: string; code: string };
-  };
-  accountsSyncing: Array<AccountEntity['id']>;
   updatedAccounts: Array<AccountEntity['id']>;
 };
 
 const initialState: AccountState = {
-  failedAccounts: {},
-  accountsSyncing: [],
   updatedAccounts: [],
-};
-
-type SetAccountsSyncingPayload = {
-  ids: Array<AccountEntity['id']>;
-};
-
-type MarkAccountFailedPayload = {
-  id: AccountEntity['id'];
-  errorType: string;
-  errorCode: string;
-};
-
-type MarkAccountSuccessPayload = {
-  id: AccountEntity['id'];
 };
 
 type MarkUpdatedAccountsPayload = {
@@ -48,24 +28,6 @@ const accountsSlice = createSlice({
   name: sliceName,
   initialState,
   reducers: {
-    setAccountsSyncing(
-      state,
-      action: PayloadAction<SetAccountsSyncingPayload>,
-    ) {
-      state.accountsSyncing = action.payload.ids;
-    },
-    markAccountFailed(state, action: PayloadAction<MarkAccountFailedPayload>) {
-      state.failedAccounts[action.payload.id] = {
-        type: action.payload.errorType,
-        code: action.payload.errorCode,
-      };
-    },
-    markAccountSuccess(
-      state,
-      action: PayloadAction<MarkAccountSuccessPayload>,
-    ) {
-      delete state.failedAccounts[action.payload.id];
-    },
     markUpdatedAccounts(
       state,
       action: PayloadAction<MarkUpdatedAccountsPayload>,
@@ -94,10 +56,4 @@ export const actions = {
   ...accountsSlice.actions,
 };
 
-export const {
-  markAccountRead,
-  markAccountFailed,
-  markAccountSuccess,
-  markUpdatedAccounts,
-  setAccountsSyncing,
-} = accountsSlice.actions;
+export const { markAccountRead, markUpdatedAccounts } = accountsSlice.actions;

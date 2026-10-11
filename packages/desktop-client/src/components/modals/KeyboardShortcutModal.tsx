@@ -232,12 +232,6 @@ export function KeyboardShortcutModal() {
         name: t('Account page general'),
         items: [
           {
-            id: 'bank-sync',
-            shortcut: 'B',
-            meta: ctrl,
-            description: t('Bank sync'),
-          },
-          {
             id: 'import-transactions',
             shortcut: 'I',
             meta: ctrl,

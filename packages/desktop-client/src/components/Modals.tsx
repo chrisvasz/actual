@@ -2,7 +2,6 @@
 import React, { Fragment, useEffect, useEffectEvent } from 'react';
 import { useLocation } from 'react-router';
 
-import { send } from '@actual-app/core/platform/client/connection';
 import * as monthUtils from '@actual-app/core/shared/months';
 
 import { useMetadataPref } from '#hooks/useMetadataPref';
@@ -11,11 +10,9 @@ import { SheetNameProvider } from '#hooks/useSheetName';
 import { closeModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 
-import { EditSyncAccount } from './banksync/EditSyncAccount';
 import { AccountAutocompleteModal } from './modals/AccountAutocompleteModal';
 import { AccountGroupsModal } from './modals/AccountGroupsModal';
 import { AccountMenuModal } from './modals/AccountMenuModal';
-import { AkahuInitialiseModal } from './modals/AkahuInitialiseModal';
 import { BudgetPageMenuModal } from './modals/BudgetPageMenuModal';
 import { CategoryAutocompleteModal } from './modals/CategoryAutocompleteModal';
 import { CategoryGroupAutocompleteModal } from './modals/CategoryGroupAutocompleteModal';
@@ -26,19 +23,15 @@ import { ConfirmCategoryDeleteModal } from './modals/ConfirmCategoryDeleteModal'
 import { ConfirmDeleteModal } from './modals/ConfirmDeleteModal';
 import { ConfirmPayeesMergeModal } from './modals/ConfirmPayeesMergeModal';
 import { ConfirmTransactionEditModal } from './modals/ConfirmTransactionEditModal';
-import { ConfirmUnlinkAccountModal } from './modals/ConfirmUnlinkAccountModal';
 import { ConvertToScheduleModal } from './modals/ConvertToScheduleModal';
 import { CopyWidgetToDashboardModal } from './modals/CopyWidgetToDashboardModal';
 import { CoverModal } from './modals/CoverModal';
-import { CreateAccountModal } from './modals/CreateAccountModal';
 import { CreateEncryptionKeyModal } from './modals/CreateEncryptionKeyModal';
 import { CreateLocalAccountModal } from './modals/CreateLocalAccountModal';
 import { EditUserAccess } from './modals/EditAccess';
 import { EditFieldModal } from './modals/EditFieldModal';
 import { EditRuleModal } from './modals/EditRuleModal';
 import { EditUserFinanceApp } from './modals/EditUser';
-import { EnableBankingExternalMsgModal } from './modals/EnableBankingExternalMsgModal';
-import { EnableBankingInitialiseModal } from './modals/EnableBankingInitialiseModal';
 import { EnvelopeBalanceMenuModal } from './modals/EnvelopeBalanceMenuModal';
 import { EnvelopeBudgetMenuModal } from './modals/EnvelopeBudgetMenuModal';
 import { EnvelopeBudgetMonthMenuModal } from './modals/EnvelopeBudgetMonthMenuModal';
@@ -46,8 +39,6 @@ import { EnvelopeBudgetSummaryModal } from './modals/EnvelopeBudgetSummaryModal'
 import { EnvelopeIncomeBalanceMenuModal } from './modals/EnvelopeIncomeBalanceMenuModal';
 import { EnvelopeToBudgetMenuModal } from './modals/EnvelopeToBudgetMenuModal';
 import { FixEncryptionKeyModal } from './modals/FixEncryptionKeyModal';
-import { GoCardlessExternalMsgModal } from './modals/GoCardlessExternalMsgModal';
-import { GoCardlessInitialiseModal } from './modals/GoCardlessInitialiseModal';
 import { HoldBufferModal } from './modals/HoldBufferModal';
 import { ImportTransactionsModal } from './modals/ImportTransactionsModal';
 import { KeyboardShortcutModal } from './modals/KeyboardShortcutModal';
@@ -67,10 +58,7 @@ import { OpenIDEnableModal } from './modals/OpenIDEnableModal';
 import { OutOfSyncMigrationsModal } from './modals/OutOfSyncMigrationsModal';
 import { PasswordEnableModal } from './modals/PasswordEnableModal';
 import { PayeeAutocompleteModal } from './modals/PayeeAutocompleteModal';
-import { PluggyAiInitialiseModal } from './modals/PluggyAiInitialiseModal';
 import { ScheduledTransactionMenuModal } from './modals/ScheduledTransactionMenuModal';
-import { SelectLinkedAccountsModal } from './modals/SelectLinkedAccountsModal';
-import { SimpleFinInitialiseModal } from './modals/SimpleFinInitialiseModal';
 import { TransactionTableColumnsModal } from './modals/TransactionTableColumnsModal';
 import { TransferModal } from './modals/TransferModal';
 import { TransferOwnership } from './modals/TransferOwnership';
@@ -109,9 +97,6 @@ export function Modals() {
         case 'import-transactions':
           return <ImportTransactionsModal key={key} {...modal.options} />;
 
-        case 'add-account':
-          return <CreateAccountModal key={key} {...modal.options} />;
-
         case 'add-local-account':
           return <CreateLocalAccountModal key={key} />;
 
@@ -121,17 +106,11 @@ export function Modals() {
         case 'close-account':
           return <CloseAccountModal key={key} {...modal.options} />;
 
-        case 'select-linked-accounts':
-          return <SelectLinkedAccountsModal key={key} {...modal.options} />;
-
         case 'confirm-category-delete':
           return <ConfirmCategoryDeleteModal key={key} {...modal.options} />;
 
         case 'confirm-payees-merge':
           return <ConfirmPayeesMergeModal key={key} {...modal.options} />;
-
-        case 'confirm-unlink-account':
-          return <ConfirmUnlinkAccountModal key={key} {...modal.options} />;
 
         case 'confirm-transaction-edit':
           return <ConfirmTransactionEditModal key={key} {...modal.options} />;
@@ -166,36 +145,6 @@ export function Modals() {
 
         case 'merge-unused-payees':
           return <MergeUnusedPayeesModal key={key} {...modal.options} />;
-
-        case 'gocardless-init':
-          return <GoCardlessInitialiseModal key={key} {...modal.options} />;
-
-        case 'simplefin-init':
-          return <SimpleFinInitialiseModal key={key} {...modal.options} />;
-
-        case 'pluggyai-init':
-          return <PluggyAiInitialiseModal key={key} {...modal.options} />;
-
-        case 'akahu-init':
-          return <AkahuInitialiseModal key={key} {...modal.options} />;
-
-        case 'enablebanking-init':
-          return <EnableBankingInitialiseModal key={key} {...modal.options} />;
-
-        case 'enablebanking-external-msg':
-          return <EnableBankingExternalMsgModal key={key} {...modal.options} />;
-
-        case 'gocardless-external-msg':
-          return (
-            <GoCardlessExternalMsgModal
-              key={key}
-              {...modal.options}
-              onClose={() => {
-                modal.options.onClose?.();
-                void send('gocardless-poll-web-token-stop');
-              }}
-            />
-          );
 
         case 'create-encryption-key':
           return <CreateEncryptionKeyModal key={key} {...modal.options} />;
@@ -253,9 +202,6 @@ export function Modals() {
 
         case 'schedule-posts-offline-notification':
           return <PostsOfflineNotification key={key} />;
-
-        case 'synced-account-edit':
-          return <EditSyncAccount key={key} {...modal.options} />;
 
         case 'account-menu':
           return <AccountMenuModal key={key} {...modal.options} />;

@@ -43,9 +43,7 @@ export function EncryptionSettings() {
         <Trans>
           Your budget data is encrypted with a key that only you have before
           sending it out to the cloud. Local data remains unencrypted so if you
-          forget your password you can re-encrypt it. Note: bank sync operations
-          and secrets stored on the server are not covered by end-to-end
-          encryption.
+          forget your password you can re-encrypt it.
         </Trans>{' '}
         <Link
           variant="external"

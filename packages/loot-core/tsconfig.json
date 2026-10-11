@@ -23,8 +23,7 @@
     "src/**/*.tsx",
     "typings/**/*.ts",
     "typings/**/*.d.ts",
-    "migrations/**/*.js",
-    "src/server/tests/mockData.json"
+    "migrations/**/*.js"
   ],
   "exclude": ["node_modules", "build", "lib-dist", "@types"]
 }

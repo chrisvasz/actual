@@ -15,14 +15,12 @@ import { CollapseChevron } from './CollapseChevron';
 import { CountPill } from './CountPill';
 import { SidebarBalance } from './SidebarBalance';
 import { sectionLabelStyle } from './styles';
-import { SyncErrorRollup } from './SyncErrorRollup';
 import type { GroupBucket, SidebarAccountSide } from './useSidebarAccountTree';
 import { useSidebarBalanceMode } from './useSidebarBalanceMode';
 
 type SideGroupProps = {
   label: string;
   side: 'on' | 'off';
-  showSyncDot: boolean;
   sideData: SidebarAccountSide;
   balanceTestId: string;
   isOpen: boolean;
@@ -34,7 +32,6 @@ type SideGroupProps = {
 export function SideGroup({
   label,
   side,
-  showSyncDot,
   sideData,
   balanceTestId,
   isOpen,
@@ -97,7 +94,6 @@ export function SideGroup({
         >
           <Text style={sectionLabelStyle}>{label}</Text>
           {!isOpen && <CountPill count={sideData.accountCount} />}
-          <SyncErrorRollup count={sideData.failedCount} />
           <View style={{ flex: 1 }} />
           <SidebarBalance
             binding={
@@ -115,7 +111,6 @@ export function SideGroup({
           label={label}
           side={side}
           buckets={sideData.buckets}
-          showSyncDot={showSyncDot}
           isBucketOpen={isBucketOpen}
           onToggleBucket={onToggleBucket}
         />

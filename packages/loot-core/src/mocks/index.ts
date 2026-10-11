@@ -12,10 +12,9 @@ import { random } from './random';
 
 export function generateAccount(
   name: AccountEntity['name'],
-  isConnected?: boolean,
   offbudget?: boolean,
 ): AccountEntity {
-  const offlineAccount: AccountEntity = {
+  return {
     id: uuidv4(),
     name,
     offbudget: offbudget ? 1 : 0,
@@ -24,58 +23,6 @@ export function generateAccount(
     tombstone: 0,
     closed: 0,
     account_group_id: null,
-    ...emptySyncFields(),
-  };
-
-  if (isConnected) {
-    return {
-      ...offlineAccount,
-      balance_current: Math.floor(random() * 100000),
-      bankId: Math.floor(random() * 10000).toString(),
-      bankName: 'boa',
-      bank: Math.floor(random() * 10000).toString(),
-      account_id: 'idx',
-      mask: 'xxx',
-      official_name: 'boa',
-      balance_available: 0,
-      balance_limit: 0,
-      account_sync_source: 'goCardless',
-      last_sync: new Date().getTime().toString(),
-      bank_sync_status: 'ok',
-    };
-  }
-
-  return offlineAccount;
-}
-
-function emptySyncFields(): Pick<
-  AccountEntity,
-  | 'account_id'
-  | 'bank'
-  | 'bankId'
-  | 'bankName'
-  | 'mask'
-  | 'official_name'
-  | 'balance_current'
-  | 'balance_available'
-  | 'balance_limit'
-  | 'account_sync_source'
-  | 'last_sync'
-  | 'bank_sync_status'
-> {
-  return {
-    account_id: null,
-    bank: null,
-    bankId: null,
-    bankName: null,
-    mask: null,
-    official_name: null,
-    balance_current: null,
-    balance_available: null,
-    balance_limit: null,
-    account_sync_source: null,
-    last_sync: null,
-    bank_sync_status: null,
   };
 }
 

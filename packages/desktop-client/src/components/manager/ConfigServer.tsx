@@ -114,9 +114,9 @@ export function ConfigServer() {
             </Trans>
           ) : (
             <Trans>
-              A sync server keeps your budget up to date across all your devices
-              and unlocks features like bank syncing. It is completely optional:
-              Actual works great on just this device too.
+              A sync server keeps your budget up to date across all your
+              devices. It is completely optional: Actual works great on just
+              this device too.
             </Trans>
           )}
         </Text>

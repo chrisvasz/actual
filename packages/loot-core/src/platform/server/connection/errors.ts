@@ -22,7 +22,7 @@ function getStringField(error: unknown, field: string): string | undefined {
 }
 
 // Internal errors carry their machine-readable slug on `reason` (PostError,
-// SyncError, …) or `code` (BankSyncError, Node system errors); `errno` covers
+// SyncError, …) or `code` (Node system errors); `errno` covers
 // Emscripten filesystem errors.
 function getErrorCode(error: unknown): string | undefined {
   const code =

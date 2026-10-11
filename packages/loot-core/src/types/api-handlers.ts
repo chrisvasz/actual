@@ -140,10 +140,6 @@ export type ApiHandlers = {
 
   'api/sync': () => Promise<void>;
 
-  'api/bank-sync': (arg?: {
-    accountId: APIAccountEntity['id'];
-  }) => Promise<void>;
-
   'api/accounts-get': () => Promise<APIAccountEntity[]>;
 
   'api/account-create': (arg: {

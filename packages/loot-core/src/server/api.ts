@@ -4,7 +4,6 @@ import { getClock } from '@actual-app/crdt';
 import * as connection from '#platform/server/connection';
 import { logger } from '#platform/server/log';
 import {
-  getBankSyncError,
   getDownloadError,
   getSyncError,
   getTestKeyError,
@@ -279,45 +278,6 @@ handlers['api/sync'] = async function () {
       new Error(getSyncError(result.error.reason, id, result.error.meta)),
       result.error.reason,
     );
-  }
-};
-
-handlers['api/bank-sync'] = async function (args) {
-  const batchSync = args?.accountId == null;
-  const allErrors = [];
-
-  if (!batchSync) {
-    const { errors } = await handlers['accounts-bank-sync']({
-      ids: [args.accountId],
-    });
-
-    allErrors.push(...errors);
-  } else {
-    const accountsData = await handlers['accounts-get']();
-    const accountIdsToSync = accountsData.map(a => a.id);
-    const simpleFinAccounts = accountsData.filter(
-      a => a.account_sync_source === 'simpleFin',
-    );
-    const simpleFinAccountIds = simpleFinAccounts.map(a => a.id);
-
-    if (simpleFinAccounts.length >= 1) {
-      const res = await handlers['simplefin-batch-sync']({
-        ids: simpleFinAccountIds,
-      });
-
-      res.forEach(a => allErrors.push(...a.res.errors));
-    }
-
-    const { errors } = await handlers['accounts-bank-sync']({
-      ids: accountIdsToSync.filter(a => !simpleFinAccountIds.includes(a)),
-    });
-
-    allErrors.push(...errors);
-  }
-
-  const errors = allErrors.filter(e => e != null);
-  if (errors.length > 0) {
-    throw withErrorCode(new Error(getBankSyncError(errors[0])), errors[0].code);
   }
 };
 

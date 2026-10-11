@@ -387,13 +387,10 @@ export default defineConfig(async ({ mode, command }) => {
           navigateFallbackDenylist: [
             /^\/account\/.*$/,
             /^\/admin\/.*$/,
-            /^\/secret\/.*$/,
             /^\/openid\/.*$/,
             /^\/plugins\/.*$/,
             /^\/kcab\/.*$/,
             /^\/plugin-data\/.*$/,
-            /^\/enablebanking\/.*$/,
-            /^\/gocardless\/.*$/,
           ],
         },
       }),

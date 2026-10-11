@@ -6,9 +6,7 @@ export type FeatureFlag =
   | 'balanceForecastReport'
   | 'customThemes'
   | 'budgetAnalysisReport'
-  | 'enableBanking'
   | 'sankeyReport'
-  | 'akahuBankSync'
   | 'monteCarloReport';
 
 /**
@@ -50,12 +48,6 @@ export type SyncedPrefs = Partial<
     | `csv-has-header-${string}`
     | `csv-encoding-${string}`
     | `import-notes-${string}-${'ofx' | 'qfx' | 'qif' | 'xml'}`
-    | `custom-sync-mappings-${string}`
-    | `sync-import-pending-${string}`
-    | `sync-reimport-deleted-${string}`
-    | `sync-import-notes-${string}`
-    | `sync-import-transactions-${string}`
-    | `sync-update-dates-${string}`
     | `ofx-fallback-missing-payee-${string}`
     | `ofx-swap-payee-memo-${string}`
     | `qif-swap-payee-memo-${string}`
@@ -104,7 +96,6 @@ export type LocalPrefs = Partial<{
   reportsViewLabel: boolean;
   sidebarWidth: number;
   'mobile.showSpentColumn': boolean;
-  'mobile.bankSyncProvidersCollapsed': boolean;
 }>;
 
 export type Theme = 'light' | 'dark' | 'auto' | 'midnight' | string;

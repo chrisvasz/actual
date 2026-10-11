@@ -63,8 +63,7 @@ export function ClosedSection({
         <AccountTree
           label={t('Closed accounts')}
           side="closed"
-          buckets={[{ group: null, accounts, failedCount: 0 }]}
-          showSyncDot={false}
+          buckets={[{ group: null, accounts }]}
         />
       )}
     </View>

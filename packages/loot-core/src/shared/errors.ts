@@ -166,10 +166,6 @@ export function getSyncError(error: string, id: string, meta?: unknown) {
   }
 }
 
-export function getBankSyncError(error: { message?: string }) {
-  return error.message || 'We had an unknown problem syncing the account.';
-}
-
 export class LazyLoadFailedError extends Error {
   type = 'app-init-failure';
   meta = {};

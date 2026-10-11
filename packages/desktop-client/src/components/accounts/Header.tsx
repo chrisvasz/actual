@@ -37,8 +37,6 @@ import { format as formatDate, isSameYear } from 'date-fns';
 import type { Locale } from 'date-fns';
 import type { TFunction } from 'i18next';
 
-import { isAccountFailedSync } from '#accounts/syncStatus';
-import { AnimatedRefresh } from '#components/AnimatedRefresh';
 import { Link } from '#components/common/Link';
 import { Search } from '#components/common/Search';
 import { FilterButton } from '#components/filters/FiltersMenu';
@@ -55,11 +53,9 @@ import { useNotes } from '#hooks/useNotes';
 import { usePendingValue } from '#hooks/usePendingValue';
 import { useSplitsExpanded } from '#hooks/useSplitsExpanded';
 import { useSyncedPref } from '#hooks/useSyncedPref';
-import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
 import { normalizeUrl } from '#notes/linkParser';
 
 import type { TableRef } from './Account';
-import { AccountSyncCheck } from './AccountSyncCheck';
 import { Balances } from './Balance';
 import { BalanceHistoryGraph } from './BalanceHistoryGraph';
 import { PrewarmReconcileBalance, ReconcilingMessage } from './Reconcile';
@@ -73,8 +69,6 @@ type AccountHeaderProps = {
   account?: AccountEntity;
   filterId?: SavedFilter;
   savedFilters: TransactionFilterEntity[];
-  accountsSyncing: string[];
-  accounts: AccountEntity[];
   transactions: TransactionEntity[];
   showReconciled: boolean;
   showEmptyMessage: boolean;
@@ -98,7 +92,6 @@ type AccountHeaderProps = {
   >['onCreateTransaction'];
   onSaveName: AccountNameFieldProps['onSaveName'];
   saveNameError: AccountNameFieldProps['saveNameError'];
-  onSync: () => void;
   onImport: () => void;
   onMenuSelect: AccountMenuProps['onMenuSelect'];
   onReconcile: () => void;
@@ -142,8 +135,6 @@ export function AccountHeader({
   account,
   filterId,
   savedFilters,
-  accountsSyncing,
-  accounts,
   transactions,
   showReconciled,
   showEmptyMessage,
@@ -163,7 +154,6 @@ export function AccountHeader({
   onCreateReconciliationTransaction,
   onSaveName,
   saveNameError,
-  onSync,
   onImport,
   onMenuSelect,
   onReconcile,
@@ -206,20 +196,11 @@ export function AccountHeader({
     wasReconciling.current = isReconciling;
   }, [isReconciling]);
   const splitsExpanded = useSplitsExpanded();
-  const syncServerStatus = useSyncServerStatus();
-  const isUsingServer = syncServerStatus !== 'no-server';
-  const isServerOffline = syncServerStatus === 'offline';
   const [_, setExpandSplitsPref] = useLocalPref('expand-splits');
   const [showNetWorthChartPref, _setShowNetWorthChartPref] = useSyncedPref(
     `show-account-${accountId}-net-worth-chart`,
   );
   const showNetWorthChart = showNetWorthChartPref === 'true';
-
-  let canSync = !!(account?.account_id && isUsingServer);
-  if (!account) {
-    // All accounts - check for any syncable account
-    canSync = !!accounts.find(account => !!account.account_id) && isUsingServer;
-  }
 
   // Only show the ability to make linked transfers on multi-account views.
   const showMakeTransfer = !account;
@@ -274,16 +255,6 @@ export function AccountHeader({
     },
     [onImport],
   );
-  useHotkeys(
-    'ctrl+b, cmd+b, meta+b',
-    () => onSync(),
-    {
-      enabled: canSync && !isServerOffline,
-      preventDefault: true,
-      scopes: ['app'],
-    },
-    [onSync],
-  );
 
   return (
     <>
@@ -310,12 +281,6 @@ export function AccountHeader({
                 gap: 3,
               }}
             >
-              {!!account?.bank && (
-                <AccountSyncSidebar
-                  account={account}
-                  accountsSyncing={accountsSyncing}
-                />
-              )}
               <AccountNameField
                 account={account}
                 accountName={accountName}
@@ -324,7 +289,6 @@ export function AccountHeader({
                 onSaveName={onSaveName}
               />
               <View style={{ marginLeft: 7, flexDirection: 'row', gap: 7 }}>
-                <AccountSyncCheck />
                 <UncategorizedChip />
               </View>
             </View>
@@ -348,25 +312,6 @@ export function AccountHeader({
           />
         </View>
         <SpaceBetween gap={10} style={{ marginTop: 12 }}>
-          {canSync && (
-            <Button
-              variant="bare"
-              onPress={onSync}
-              isDisabled={isServerOffline}
-            >
-              <AnimatedRefresh
-                width={13}
-                height={13}
-                animating={
-                  account
-                    ? accountsSyncing.includes(account.id)
-                    : accountsSyncing.length > 0
-                }
-              />{' '}
-              {isServerOffline ? t('Bank Sync Offline') : t('Bank Sync')}
-            </Button>
-          )}
-
           {account && !account.closed && (
             <Button variant="bare" onPress={onImport}>
               <SvgDownloadThickBottom
@@ -492,7 +437,6 @@ export function AccountHeader({
                   <Dialog>
                     <AccountMenu
                       account={account}
-                      canSync={canSync}
                       showNetWorthChart={showNetWorthChart}
                       isSorted={isSorted}
                       showReconciled={showReconciled}
@@ -570,32 +514,6 @@ export function AccountHeader({
         />
       )}
     </>
-  );
-}
-
-type AccountSyncSidebarProps = {
-  account: AccountEntity;
-  accountsSyncing: string[];
-};
-
-function AccountSyncSidebar({
-  account,
-  accountsSyncing,
-}: AccountSyncSidebarProps) {
-  return (
-    <View
-      style={{
-        backgroundColor: accountsSyncing.includes(account.id)
-          ? theme.sidebarItemBackgroundPending
-          : isAccountFailedSync(account)
-            ? theme.sidebarItemBackgroundFailed
-            : theme.sidebarItemBackgroundPositive,
-        marginRight: '4px',
-        width: 8,
-        height: 8,
-        borderRadius: 8,
-      }}
-    />
   );
 }
 
@@ -752,14 +670,11 @@ function getNoteUrl(notes: string | null) {
 
 type AccountMenuProps = {
   account: AccountEntity;
-  canSync: boolean;
   showNetWorthChart: boolean;
   showReconciled: boolean;
   isSorted: boolean;
   onMenuSelect: (
     item:
-      | 'link'
-      | 'unlink'
       | 'close'
       | 'reopen'
       | 'export'
@@ -773,14 +688,12 @@ type AccountMenuProps = {
 
 function AccountMenu({
   account,
-  canSync,
   showNetWorthChart,
   showReconciled,
   isSorted,
   onMenuSelect,
 }: AccountMenuProps) {
   const { t } = useTranslation();
-  const syncServerStatus = useSyncServerStatus();
   const newSidebarUIEnabled = useFeatureFlag('newSidebarUI');
 
   return (
@@ -823,24 +736,6 @@ function AccountMenu({
             : t('Show reconciled transactions'),
         },
         { name: 'export', text: t('Export') },
-        ...(account && !account.closed
-          ? canSync
-            ? [
-                {
-                  name: 'unlink',
-                  text: t('Unlink account'),
-                } as const,
-              ]
-            : syncServerStatus === 'online'
-              ? [
-                  {
-                    name: 'link',
-                    text: t('Link account'),
-                  } as const,
-                ]
-              : []
-          : []),
-
         ...(account.closed
           ? [{ name: 'reopen', text: t('Reopen account') } as const]
           : [{ name: 'close', text: t('Close account') } as const]),

@@ -34,7 +34,7 @@ export function AccountsHeaderRow({
   const [balanceMode] = useSidebarBalanceMode();
 
   const onAddAccount = () => {
-    dispatch(replaceModal({ modal: { name: 'add-account', options: {} } }));
+    dispatch(replaceModal({ modal: { name: 'add-local-account' } }));
   };
 
   return (

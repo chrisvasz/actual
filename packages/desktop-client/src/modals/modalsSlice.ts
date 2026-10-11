@@ -3,16 +3,13 @@ import type { IntegerAmount } from '@actual-app/core/shared/util';
 import type { File } from '@actual-app/core/types/file';
 import type {
   AccountEntity,
-  BankSyncCredentialSource,
   CategoryEntity,
   CategoryGroupEntity,
-  GoCardlessToken,
   NewRuleEntity,
   NewUserEntity,
   NoteEntity,
   RuleEntity,
   ScheduleEntity,
-  SyncServerEnableBankingAccount,
   TransactionEntity,
   UserAccessEntity,
   UserEntity,
@@ -22,7 +19,6 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 
 import { accountQueries } from '#accounts';
 import { resetApp, setAppState } from '#app/appSlice';
-import type { SelectLinkedAccountsModalProps } from '#components/modals/SelectLinkedAccountsModal';
 import type { TransactionTableColumn } from '#components/transactions/table/columns';
 import { createAppAsyncThunk } from '#redux';
 import { signOut } from '#users/usersSlice';
@@ -49,12 +45,6 @@ export type Modal =
       };
     }
   | {
-      name: 'add-account';
-      options: {
-        upgradingAccountId?: string;
-      };
-    }
-  | {
       name: 'add-local-account';
     }
   | {
@@ -70,10 +60,6 @@ export type Modal =
         balance: number;
         canDelete: boolean;
       };
-    }
-  | {
-      name: 'select-linked-accounts';
-      options: SelectLinkedAccountsModalProps;
     }
   | {
       name: 'confirm-category-delete';
@@ -115,71 +101,6 @@ export type Modal =
       options: {
         payeeIds: string[];
         targetPayeeId: string;
-      };
-    }
-  | {
-      name: 'gocardless-init';
-      options: {
-        onSuccess: () => void;
-      };
-    }
-  | {
-      name: 'simplefin-init';
-      options: {
-        onSuccess: () => void;
-      };
-    }
-  | {
-      name: 'pluggyai-init';
-      options: {
-        onSuccess: (perBudgetFile: boolean) => void;
-        credentialSource: BankSyncCredentialSource;
-      };
-    }
-  | {
-      name: 'akahu-init';
-      options: {
-        onSuccess: () => void;
-      };
-    }
-  | {
-      name: 'enablebanking-init';
-      options: {
-        onSuccess: () => void;
-      };
-    }
-  | {
-      name: 'enablebanking-external-msg';
-      options: {
-        onMoveExternal: (arg: {
-          aspspId: string;
-          country: string;
-          maxConsentValidity?: number;
-          psuType?: 'personal' | 'business';
-          onStateReady?: (state: string) => void;
-        }) => Promise<
-          | { error: 'timeout' }
-          | { error: 'unknown'; message?: string }
-          | { data: { accounts: SyncServerEnableBankingAccount[] } }
-        >;
-        onClose?: (() => void) | undefined;
-        onSuccess: (data: {
-          accounts: SyncServerEnableBankingAccount[];
-        }) => Promise<void>;
-      };
-    }
-  | {
-      name: 'gocardless-external-msg';
-      options: {
-        onMoveExternal: (arg: {
-          institutionId: string;
-        }) => Promise<
-          | { error: 'timeout' }
-          | { error: 'unknown'; message?: string }
-          | { data: GoCardlessToken }
-        >;
-        onClose?: (() => void) | undefined;
-        onSuccess: (data: GoCardlessToken) => Promise<void>;
       };
     }
   | {
@@ -335,12 +256,6 @@ export type Modal =
     }
   | {
       name: 'schedule-posts-offline-notification';
-    }
-  | {
-      name: 'synced-account-edit';
-      options: {
-        account: AccountEntity;
-      };
     }
   | {
       name: 'account-menu';
@@ -592,14 +507,6 @@ export type Modal =
       name: 'enable-password-auth';
       options: {
         onSave?: () => void;
-      };
-    }
-  | {
-      name: 'confirm-unlink-account';
-      options: {
-        accountName: string;
-        isViewBankSyncSettings: boolean;
-        onUnlink: () => void;
       };
     }
   | {

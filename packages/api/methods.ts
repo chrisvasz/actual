@@ -111,12 +111,6 @@ export async function sync() {
   return send('api/sync');
 }
 
-export async function runBankSync(args?: {
-  accountId: APIAccountEntity['id'];
-}) {
-  return send('api/bank-sync', args);
-}
-
 export async function batchBudgetUpdates(func: () => Promise<void>) {
   await send('api/batch-budget-start');
   try {

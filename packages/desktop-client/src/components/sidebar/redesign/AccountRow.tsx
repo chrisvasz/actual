@@ -14,38 +14,29 @@ import type { AccountEntity } from '@actual-app/core/types/models';
 import { css } from '@emotion/css';
 
 import { useReopenAccountMutation, useUpdateAccountMutation } from '#accounts';
-import { isAccountFailedSync } from '#accounts/syncStatus';
 import { useContextMenu } from '#hooks/useContextMenu';
 import { usePendingValue } from '#hooks/usePendingValue';
 import { useUpdatedAccounts } from '#hooks/useUpdatedAccounts';
 import { openAccountCloseModal, pushModal } from '#modals/modalsSlice';
-import { useDispatch, useSelector } from '#redux';
+import { useDispatch } from '#redux';
 import * as bindings from '#spreadsheet/bindings';
 import { isTouchDevice } from '#util/isTouchDevice';
 
 import { DragHandle } from './DragHandle';
 import { SidebarBalance } from './SidebarBalance';
-import { SyncDot, useSyncDotLabel } from './SyncDot';
-import type { SyncDotStatus } from './SyncDot';
 import { treeKeys } from './treeKeys';
 import { useSidebarBalanceMode } from './useSidebarBalanceMode';
 
 type AccountRowProps = {
   account: AccountEntity;
   isClosed?: boolean;
-  showSyncDot?: boolean;
 };
 
-export function AccountRow({
-  account,
-  isClosed,
-  showSyncDot,
-}: AccountRowProps) {
+export function AccountRow({ account, isClosed }: AccountRowProps) {
   const { t } = useTranslation();
   const [balanceMode] = useSidebarBalanceMode();
   const dispatch = useDispatch();
   const location = useLocation();
-  const syncingAccountIds = useSelector(state => state.account.accountsSyncing);
   const updatedAccounts = useUpdatedAccounts();
   const isUpdated = !isClosed && updatedAccounts.includes(account.id);
   const [isEditing, setIsEditing] = useState(false);
@@ -96,18 +87,6 @@ export function AccountRow({
     ],
   });
 
-  let status: SyncDotStatus = 'unlinked';
-  if (!isClosed && account.bank) {
-    if (isAccountFailedSync(account)) {
-      status = 'error';
-    } else if (syncingAccountIds.includes(account.id)) {
-      status = 'pending';
-    } else {
-      status = 'synced';
-    }
-  }
-  const statusLabel = useSyncDotLabel(status);
-
   return (
     <TreeItem
       ref={setRowElement}
@@ -155,15 +134,7 @@ export function AccountRow({
               textDecoration: isClosed ? 'line-through' : 'none',
             }}
           >
-            <View
-              style={{
-                width: spacing.lg,
-                flexShrink: 0,
-                alignItems: 'center',
-              }}
-            >
-              {showSyncDot && <SyncDot status={status} />}
-            </View>
+            <View style={{ width: spacing.lg, flexShrink: 0 }} />
             {isEditing ? (
               <InitialFocus>
                 <Input
@@ -189,7 +160,6 @@ export function AccountRow({
             ) : (
               <Text style={{ flex: 1, ...styles.ellipsisText }}>{name}</Text>
             )}
-            <Text style={styles.visuallyHidden}>{statusLabel}</Text>
             <SidebarBalance
               binding={bindings.accountBalanceByMode(account.id, balanceMode)}
               style={{

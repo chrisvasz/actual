@@ -42,18 +42,6 @@ function createAccount(id: string, name: string): AccountEntity {
     last_reconciled: null,
     tombstone: 0,
     account_group_id: null,
-    account_id: null,
-    bank: null,
-    bankName: null,
-    bankId: null,
-    mask: null,
-    official_name: null,
-    balance_current: null,
-    balance_available: null,
-    balance_limit: null,
-    account_sync_source: null,
-    last_sync: null,
-    bank_sync_status: null,
   };
 }
 

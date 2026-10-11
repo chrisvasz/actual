@@ -14,11 +14,6 @@ export function AccountsSection() {
   const tree = useSidebarAccountTree();
   const collapse = useSidebarCollapseState({ tree });
 
-  const showSyncDot = [
-    ...tree.onBudget.buckets.map(b => b.accounts).flat(),
-    ...tree.offBudget.buckets.map(b => b.accounts).flat(),
-  ].reduce((seen, account) => seen || account.bank !== null, false);
-
   return (
     <View
       style={{
@@ -37,7 +32,6 @@ export function AccountsSection() {
           <SideGroup
             label={t('On budget')}
             side="on"
-            showSyncDot={showSyncDot}
             sideData={tree.onBudget}
             balanceTestId="sidebar-on-budget-balance"
             isOpen={collapse.isOpen('onbudget')}
@@ -50,7 +44,6 @@ export function AccountsSection() {
           <SideGroup
             label={t('Off budget')}
             side="off"
-            showSyncDot={showSyncDot}
             sideData={tree.offBudget}
             balanceTestId="sidebar-off-budget-balance"
             isOpen={collapse.isOpen('offbudget')}
