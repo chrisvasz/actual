@@ -2,8 +2,7 @@ name: Nightly theme catalog scan
 
 on:
   schedule:
-    # 05:15 UTC daily — runs after the i18n extract job (04:00) and well
-    # before the nightly Electron/npm publishes (00:00 UTC the next day).
+    # 05:15 UTC daily — runs after the i18n extract job (04:00).
     - cron: '15 5 * * *'
   workflow_dispatch:
 

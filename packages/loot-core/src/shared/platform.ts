@@ -17,7 +17,6 @@ export const OS: 'windows' | 'mac' | 'linux' | 'unknown' = isWindows
   : isMac
     ? 'mac'
     : 'linux';
-export const env: 'web' | 'mobile' | 'unknown' = 'web';
 export const isBrowser: boolean = true;
 
 const userAgent = navigator.userAgent;
