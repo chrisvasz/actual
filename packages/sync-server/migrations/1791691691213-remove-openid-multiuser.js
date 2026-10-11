@@ -3,10 +3,26 @@ import { v4 as uuidv4 } from 'uuid';
 import { getAccountDb } from '../src/account-db';
 
 // OpenID login and multi-user support were removed. Drop their tables and
-// columns, and fall back to password login. A server that was set up with
-// OpenID and never had a password goes back to the bootstrap screen.
+// columns, and fall back to password login.
 export const up = async function () {
   const accountDb = getAccountDb();
+
+  // A server set up with OpenID may never have had a password. Removing the
+  // OpenID login would leave it with no login at all, and the bootstrap screen
+  // would let the first visitor claim it. Refuse to migrate until a password
+  // has been set from the command line.
+  const methods = accountDb.all('SELECT method FROM auth');
+  if (
+    methods.length > 0 &&
+    !methods.some(({ method }) => method === 'password')
+  ) {
+    throw new Error(
+      'OpenID login has been removed and this server has no password. ' +
+        'Set one with `actual-server --reset-password` (or ' +
+        '`yarn workspace @actual-app/sync-server reset-password`), ' +
+        'then start the server again.',
+    );
+  }
 
   accountDb.transaction(() => {
     accountDb.exec(

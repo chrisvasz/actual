@@ -1,5 +1,5 @@
-import { bootstrap, needsBootstrap } from '#account-db';
-import { changePassword } from '#accounts/password';
+import { bootstrap, listLoginMethods, needsBootstrap } from '#account-db';
+import { bootstrapPassword, changePassword } from '#accounts/password';
 import { promptPassword } from '#util/prompt';
 
 if (needsBootstrap()) {
@@ -23,6 +23,25 @@ if (needsBootstrap()) {
     console.log(
       'Please report this as an issue: https://github.com/actualbudget/actual-server/issues',
     );
+    process.exit(1);
+  }
+} else if (!listLoginMethods().some(({ method }) => method === 'password')) {
+  // A server that used the removed OpenID login has an auth row but no
+  // password. Set one so the pending migration can run.
+  console.log(
+    "OpenID login has been removed and this server has no password. Let's set one up now!",
+  );
+
+  try {
+    const password = await promptPassword();
+    const { error } = await bootstrapPassword(password);
+    if (error) {
+      console.log('Error setting password:', error);
+      process.exit(1);
+    }
+    console.log('Password set! Start the server to finish upgrading.');
+  } catch (err) {
+    console.log('Unexpected error:', err);
     process.exit(1);
   }
 } else {
