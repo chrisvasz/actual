@@ -73,7 +73,7 @@ export function buildFilterInfo(
   };
 }
 
-export async function getTransactions(
+export function getTransactions(
   accountIds: string[] | undefined,
   filterInfo: ForecastFilterInfo,
 ) {
@@ -94,7 +94,7 @@ export async function getTransactions(
     query = query.filter({ [filterInfo.conditionsOpKey]: filterInfo.filters });
   }
 
-  const { data } = await aqlQuery(query);
+  const { data } = aqlQuery(query);
   return data;
 }
 
@@ -314,7 +314,7 @@ export function matchesForecastFilters(
   );
 }
 
-export async function enrichForecastFilterObjects(
+export function enrichForecastFilterObjects(
   transactions: TransactionEntity[],
   accountsById: Map<string, AccountWithComputedBalance>,
 ) {
@@ -325,22 +325,22 @@ export async function enrichForecastFilterObjects(
     ...new Set(transactions.flatMap(tx => (tx.category ? [tx.category] : []))),
   ];
 
-  const [{ data: payees }, { data: categories }] = await Promise.all([
+  const { data: payees } =
     payeeIds.length > 0
       ? aqlQuery(
           q('payees')
             .filter({ id: { $oneof: payeeIds } })
             .select(['id', 'name', 'transfer_acct']),
         )
-      : Promise.resolve({ data: [] }),
+      : { data: [] };
+  const { data: categories } =
     categoryIds.length > 0
       ? aqlQuery(
           q('categories')
             .filter({ id: { $oneof: categoryIds } })
             .select(['id', 'name', 'group']),
         )
-      : Promise.resolve({ data: [] }),
-  ]);
+      : { data: [] };
 
   const categoryGroupIds = [
     ...new Set(
@@ -352,7 +352,7 @@ export async function enrichForecastFilterObjects(
 
   const { data: categoryGroups } =
     categoryGroupIds.length > 0
-      ? await aqlQuery(
+      ? aqlQuery(
           q('category_groups')
             .filter({ id: { $oneof: categoryGroupIds } })
             .select(['id', 'name']),

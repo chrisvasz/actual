@@ -32,7 +32,7 @@ function applyTypes(data: Record<string, unknown>[], outputTypes: OutputTypes) {
   }
 }
 
-export async function execQuery(
+export function execQuery(
   queryState: QueryState,
   compilerState: CompilerState,
   sqlPieces: SqlPieces,
@@ -51,7 +51,7 @@ export type AqlQueryExecutor = (
   sqlPieces: SqlPieces,
   params: (string | number)[],
   outputTypes: OutputTypes,
-) => Promise<Record<string, unknown>[]>;
+) => Record<string, unknown>[];
 
 type AqlQueryParamName = string;
 type AqlQueryParamValue = unknown;
@@ -62,7 +62,7 @@ export type RunCompiledAqlQueryOptions = {
   executors?: Record<string, AqlQueryExecutor>;
 };
 
-export async function runCompiledAqlQuery(
+export function runCompiledAqlQuery(
   queryState: QueryState,
   sqlPieces: SqlPieces,
   compilerState: CompilerState,
@@ -78,7 +78,7 @@ export async function runCompiledAqlQuery(
 
   let data: Record<string, unknown>[] = [];
   if (executors[compilerState.implicitTableName]) {
-    data = await executors[compilerState.implicitTableName](
+    data = executors[compilerState.implicitTableName](
       compilerState,
       queryState,
       sqlPieces,
@@ -86,7 +86,7 @@ export async function runCompiledAqlQuery(
       compilerState.outputTypes,
     );
   } else {
-    data = await execQuery(
+    data = execQuery(
       queryState,
       compilerState,
       sqlPieces,
@@ -110,7 +110,7 @@ export async function runCompiledAqlQuery(
   return data;
 }
 
-export async function compileAndRunAqlQuery(
+export function compileAndRunAqlQuery(
   schema,
   schemaConfig: SchemaConfig,
   queryState: QueryState,
@@ -118,11 +118,6 @@ export async function compileAndRunAqlQuery(
 ) {
   const { sqlPieces, state } = compileQuery(queryState, schema, schemaConfig);
   // oxlint-disable-next-line typescript/no-explicit-any
-  const data: any = await runCompiledAqlQuery(
-    queryState,
-    sqlPieces,
-    state,
-    options,
-  );
+  const data: any = runCompiledAqlQuery(queryState, sqlPieces, state, options);
   return { data, dependencies: state.dependencies };
 }

@@ -74,7 +74,7 @@ async function getOrphanedPayees(): Promise<Array<Pick<PayeeEntity, 'id'>>> {
 
 async function getPayeeRuleCounts() {
   const payeeCounts: Record<PayeeEntity['id'], number> = {};
-  const completedScheduleRules = new Set(await getCompletedScheduleRuleIds());
+  const completedScheduleRules = new Set(getCompletedScheduleRuleIds());
 
   rules.iterateIds(rules.getRules(), 'payee', (rule, id) => {
     if (rule.id && completedScheduleRules.has(rule.id)) {

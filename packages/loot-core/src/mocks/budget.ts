@@ -912,14 +912,14 @@ export async function createTestBudget(handlers: Handlers) {
   // don't want to show that as it'd be weird. We modify the latest
   // deposit transaction to force it to be positive
   const primaryAccount = accounts.find(a => (a.name = 'Bank of America'));
-  const { data: primaryBalance } = await aqlQuery(
+  const { data: primaryBalance } = aqlQuery(
     q('transactions')
       .filter({ account: primaryAccount.id })
       .calculate({ $sum: '$amount' })
       .serialize(),
   );
   if (primaryBalance < 0) {
-    const { data: results } = await aqlQuery(
+    const { data: results } = aqlQuery(
       q('transactions')
         .filter({ account: primaryAccount.id, amount: { $gt: 0 } })
         .limit(1)

@@ -117,7 +117,7 @@ async function getCategories({ hidden }: { hidden?: boolean } = {}) {
     // A hidden category can live in a visible group, so when the caller
     // explicitly asks for hidden categories the flat list must look beyond
     // the (already hidden-filtered) groups returned above.
-    const { data }: { data: CategoryEntity[] } = await aqlQuery(
+    const { data }: { data: CategoryEntity[] } = aqlQuery(
       q('categories').filter({ hidden: true }).select('*'),
     );
     list = data;
@@ -301,7 +301,7 @@ async function getCategoryGroups({ hidden }: { hidden?: boolean } = {}) {
   const baseQuery = q('category_groups').select('*');
   const query = hidden === undefined ? baseQuery : baseQuery.filter({ hidden });
   const { data: categoryGroups }: { data: CategoryGroupEntity[] } =
-    await aqlQuery(query);
+    aqlQuery(query);
   if (hidden === undefined) {
     return categoryGroups;
   }

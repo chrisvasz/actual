@@ -111,9 +111,9 @@ export function getAccountRestrictionMode(
   return !hasNonAccountConditions || conditionsOp === 'and';
 }
 
-export async function getAccounts(
+export function getAccounts(
   accountIds?: string[],
-): Promise<AccountWithComputedBalance[]> {
+): AccountWithComputedBalance[] {
   const accounts = db.getAccounts();
   const selectedAccounts =
     accountIds === undefined
@@ -125,7 +125,7 @@ export async function getAccounts(
   }
 
   const ids = selectedAccounts.map(account => account.id);
-  const { data: balanceRows } = await aqlQuery(
+  const { data: balanceRows } = aqlQuery(
     q('transactions')
       .filter({
         'account.id': { $oneof: ids },

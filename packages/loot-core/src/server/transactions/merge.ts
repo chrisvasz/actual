@@ -175,7 +175,7 @@ export async function mergeTransactionsNoTransfer(
 
   // Delete the dropped transaction using shared deleteTransaction to
   // intelligently handle possible parent/child cascading logic
-  const { data: transactionsToDelete } = await aqlQuery(
+  const { data: transactionsToDelete } = aqlQuery(
     q('transactions')
       .filter({ id: drop.id })
       .select('*')

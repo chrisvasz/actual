@@ -76,36 +76,30 @@ describe('compileAndRunQuery', () => {
     await insertTransactions();
 
     // date
-    let { data } = await compileAndRunAqlQuery(
+    let { data } = compileAndRunAqlQuery(
       q('transactions').select('date').serialize(),
     );
     expect(data[0].date).toBe('2020-01-04');
 
     // date-month
-    data = (
-      await compileAndRunAqlQuery(
-        q('transactions')
-          .select({ month: { $month: '$date' } })
-          .serialize(),
-      )
+    data = compileAndRunAqlQuery(
+      q('transactions')
+        .select({ month: { $month: '$date' } })
+        .serialize(),
     ).data;
     expect(data[0].month).toBe('2020-01');
 
     // date-year
-    data = (
-      await compileAndRunAqlQuery(
-        q('transactions')
-          .select({ year: { $year: '$date' } })
-          .serialize(),
-      )
+    data = compileAndRunAqlQuery(
+      q('transactions')
+        .select({ year: { $year: '$date' } })
+        .serialize(),
     ).data;
     expect(data[0].year).toBe('2020');
 
     // boolean
-    data = (
-      await compileAndRunAqlQuery(
-        q('transactions').select(['is_child', 'is_parent']).raw().serialize(),
-      )
+    data = compileAndRunAqlQuery(
+      q('transactions').select(['is_child', 'is_parent']).raw().serialize(),
     ).data;
     expect(data[0].is_child).toBe(false);
     expect(data[0].is_parent).toBe(true);
@@ -123,7 +117,7 @@ describe('compileAndRunQuery', () => {
       cleared: true,
     });
 
-    let { data } = await compileAndRunAqlQuery(
+    let { data } = compileAndRunAqlQuery(
       q('transactions')
         .filter({ amount: { $lt: { $neg: ':amount' } } })
         .select()
@@ -132,36 +126,30 @@ describe('compileAndRunQuery', () => {
     );
     expect(data[0].id).toBe(transId);
 
-    data = (
-      await compileAndRunAqlQuery(
-        q('transactions')
-          .filter({ date: { $transform: '$month', $eq: { $month: ':month' } } })
-          .select('date')
-          .serialize(),
-        { params: { month: '2020-01-02' } },
-      )
+    data = compileAndRunAqlQuery(
+      q('transactions')
+        .filter({ date: { $transform: '$month', $eq: { $month: ':month' } } })
+        .select('date')
+        .serialize(),
+      { params: { month: '2020-01-02' } },
     ).data;
     expect(data[0].id).toBe(transId);
 
-    data = (
-      await compileAndRunAqlQuery(
-        q('transactions')
-          .filter({ date: { $transform: '$year', $eq: { $year: ':month' } } })
-          .select('date')
-          .serialize(),
-        { params: { month: '2020-01-02' } },
-      )
+    data = compileAndRunAqlQuery(
+      q('transactions')
+        .filter({ date: { $transform: '$year', $eq: { $year: ':month' } } })
+        .select('date')
+        .serialize(),
+      { params: { month: '2020-01-02' } },
     ).data;
     expect(data[0].id).toBe(transId);
 
-    data = (
-      await compileAndRunAqlQuery(
-        q('transactions')
-          .filter({ cleared: ':cleared' })
-          .select('date')
-          .serialize(),
-        { params: { cleared: true } },
-      )
+    data = compileAndRunAqlQuery(
+      q('transactions')
+        .filter({ cleared: ':cleared' })
+        .select('date')
+        .serialize(),
+      { params: { cleared: true } },
     ).data;
     expect(data[0].id).toBe(transId);
   });
@@ -194,25 +182,23 @@ describe('compileAndRunQuery', () => {
       .select()
       .serialize();
 
-    let { data } = await compileAndRunAqlQuery(queryState, {
+    let { data } = compileAndRunAqlQuery(queryState, {
       params: { category: null },
     });
     expect(data[0].id).toBe(transNoCat);
 
-    data = (
-      await compileAndRunAqlQuery(queryState, { params: { category: 'cat' } })
-    ).data;
+    data = compileAndRunAqlQuery(queryState, {
+      params: { category: 'cat' },
+    }).data;
     expect(data[0].id).toBe(transCat);
 
-    data = (
-      await compileAndRunAqlQuery(
-        q('transactions')
-          .filter({ category: { $ne: ':category' } })
-          .select('category')
-          .serialize(),
+    data = compileAndRunAqlQuery(
+      q('transactions')
+        .filter({ category: { $ne: ':category' } })
+        .select('category')
+        .serialize(),
 
-        { params: { category: 'cat2' } },
-      )
+      { params: { category: 'cat2' } },
     ).data;
     expect(data).toHaveLength(2);
     expect(data).toEqual(
@@ -223,14 +209,12 @@ describe('compileAndRunQuery', () => {
       ]),
     );
 
-    data = (
-      await compileAndRunAqlQuery(
-        q('transactions')
-          .filter({ category: { $ne: ':category' } })
-          .select('category')
-          .serialize(),
-        { params: { category: null } },
-      )
+    data = compileAndRunAqlQuery(
+      q('transactions')
+        .filter({ category: { $ne: ':category' } })
+        .select('category')
+        .serialize(),
+      { params: { category: null } },
     ).data;
     expect(data).toHaveLength(2);
     expect(data).toEqual(
@@ -251,7 +235,7 @@ describe('compileAndRunQuery', () => {
       amount: -5001,
     });
 
-    const { data } = await compileAndRunAqlQuery(
+    const { data } = compileAndRunAqlQuery(
       q('transactions')
         .filter({
           amount: { $lt: { $neg: ':amount' } },
@@ -273,7 +257,7 @@ describe('compileAndRunQuery', () => {
     const ids = rows.slice(0, 3).map(row => row.id);
     ids.sort((a, b) => String(a).localeCompare(String(b)));
 
-    const { data } = await compileAndRunAqlQuery(
+    const { data } = compileAndRunAqlQuery(
       q('transactions')
         .filter({ id: { $oneof: repeat(ids, 1000) }, amount: { $lt: 50 } })
         .select('id')
@@ -288,7 +272,7 @@ describe('compileAndRunQuery', () => {
   });
 
   it('depends on the tables behind the views it reads', async () => {
-    const { dependencies } = await compileAndRunAqlQuery(
+    const { dependencies } = compileAndRunAqlQuery(
       q('transactions').filter({ payee: 'p1' }).select('id').serialize(),
     );
     // Payees are resolved through `payee_mapping`, which the
@@ -297,7 +281,7 @@ describe('compileAndRunQuery', () => {
       expect.arrayContaining(['transactions', 'payee_mapping']),
     );
 
-    const { dependencies: payeeDependencies } = await compileAndRunAqlQuery(
+    const { dependencies: payeeDependencies } = compileAndRunAqlQuery(
       q('payees').select('name').serialize(),
     );
     // A transfer payee is named after its account
@@ -305,7 +289,7 @@ describe('compileAndRunQuery', () => {
       expect.arrayContaining(['payees', 'accounts']),
     );
 
-    const { dependencies: scheduleDependencies } = await compileAndRunAqlQuery(
+    const { dependencies: scheduleDependencies } = compileAndRunAqlQuery(
       q('schedules').select(['id', 'next_date']).serialize(),
     );
     // Skipping a date only writes `schedules_next_date`

@@ -30,7 +30,7 @@ beforeEach(async () => {
 
 async function getMatchingTransactions(conds) {
   const { filters } = conditionsToAQL(conds);
-  const { data } = await aqlQuery(
+  const { data } = aqlQuery(
     q('transactions').filter({ $and: filters }).select('*'),
   );
   return data;

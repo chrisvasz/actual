@@ -95,7 +95,7 @@ function sort(reports: CustomReportEntity[]) {
 
 async function getReports() {
   // Use aql because it auto deserialized json columns e.g. conditions
-  const { data }: { data: CustomReportData[] } = await aqlQuery(
+  const { data }: { data: CustomReportData[] } = aqlQuery(
     q('custom_reports').select('*'),
   );
   return sort(data.map(r => reportModel.toJS(r)));

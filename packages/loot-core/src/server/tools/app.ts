@@ -76,15 +76,13 @@ async function fixSplitTransactions(): Promise<{
     await batchUpdateTransactions({ updated });
   });
 
-  const splitTransactions = (
-    await aqlQuery(
-      q('transactions')
-        .options({ splits: 'grouped' })
-        .filter({
-          is_parent: true,
-        })
-        .select('*'),
-    )
+  const splitTransactions = aqlQuery(
+    q('transactions')
+      .options({ splits: 'grouped' })
+      .filter({
+        is_parent: true,
+      })
+      .select('*'),
   ).data;
 
   const mismatchedSplits = splitTransactions.filter(t => {
