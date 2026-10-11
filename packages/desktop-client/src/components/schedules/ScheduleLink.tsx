@@ -90,7 +90,9 @@ export function ScheduleLink({
             }}
           >
             <Text>
-              {`Choose the schedule these ${ids?.length ?? 0} transactions belong to:`}
+              {ids?.length === 1
+                ? 'Choose the schedule this transaction belongs to:'
+                : `Choose the schedule these ${ids?.length ?? 0} transactions belong to:`}
             </Text>
             <InitialFocus<HTMLInputElement>>
               {node => (

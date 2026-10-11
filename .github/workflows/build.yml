@@ -53,8 +53,6 @@ jobs:
           persist-credentials: false
       - name: Set up environment
         uses: ./.github/actions/setup
-        with:
-          download-translations: 'false'
       - name: Build Server
         run: yarn workspace @actual-app/sync-server build
       - name: Upload Build

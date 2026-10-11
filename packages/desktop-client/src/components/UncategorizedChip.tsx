@@ -23,7 +23,7 @@ export function UncategorizedChip() {
   }
 
   const content = `${count} uncategorized`;
-  const label = `${count} uncategorized transactions`;
+  const label = `${count} uncategorized ${count === 1 ? 'transaction' : 'transactions'}`;
 
   // On the Uncategorized view itself the count is a live counter, not a link.
   if (isOnUncategorizedView) {

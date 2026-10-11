@@ -295,7 +295,6 @@ function LayerSelector({
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-
   return (
     <>
       <Button

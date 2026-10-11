@@ -27,8 +27,6 @@ jobs:
       - name: Set up environment
         id: setup
         uses: ./.github/actions/setup
-        with:
-          download-translations: 'false'
       - name: Check dependency version consistency
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         run: yarn constraints
@@ -65,8 +63,6 @@ jobs:
           persist-credentials: false
       - name: Set up environment
         uses: ./.github/actions/setup
-        with:
-          download-translations: 'false'
       - name: Test
         run: yarn test
   check-gh-actions:
@@ -93,8 +89,6 @@ jobs:
           filter: blob:none
       - name: Set up environment
         uses: ./.github/actions/setup
-        with:
-          download-translations: 'false'
       - name: Check migrations
         run: yarn workspace @actual-app/ci-actions tsx bin/check-migrations.ts
       - name: Save PR number for the warnings comment workflow

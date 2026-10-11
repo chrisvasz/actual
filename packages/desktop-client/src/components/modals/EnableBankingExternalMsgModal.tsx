@@ -401,7 +401,7 @@ export function EnableBankingExternalMsgModal({
                     onClick={onJump}
                     style={{ marginTop: 10 }}
                   >
-                    ( Account linking not opening in a new tab? Click here )
+                    (Account linking not opening in a new tab? Click here)
                   </Link>
                 )}
               </View>

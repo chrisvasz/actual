@@ -280,7 +280,7 @@ function UserDirectoryContent({ isModal }: ManageUserDirectoryContentProps) {
           >
             {selectedInst.items.size > 0 && (
               <Button onPress={onDeleteSelected}>
-                Delete {selectedCount} users
+                Delete {selectedCount} {selectedCount === 1 ? 'user' : 'users'}
               </Button>
             )}
             <Button variant="primary" onPress={onAddUser}>

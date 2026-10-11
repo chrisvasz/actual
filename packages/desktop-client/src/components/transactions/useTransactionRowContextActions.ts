@@ -204,7 +204,7 @@ export function useTransactionRowContextActions({
       },
       {
         name: 'unsplit-transactions',
-        text: `Unsplit ${selectedIds.length} transactions`,
+        text: `Unsplit ${selectedIds.length} ${selectedIds.length === 1 ? 'transaction' : 'transactions'}`,
         onClick: () => onMakeAsNonSplitTransactions(selectedIds),
         hidden: !canUnsplitTransactions,
       },

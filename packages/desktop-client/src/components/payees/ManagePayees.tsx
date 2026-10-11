@@ -234,7 +234,7 @@ export const ManagePayees = ({
           >
             {buttonsDisabled
               ? 'No payees selected'
-              : `${selected.items.size} payees`}
+              : `${selected.items.size} ${selected.items.size === 1 ? 'payee' : 'payees'}`}
             <SvgExpandArrow width={8} height={8} style={{ marginLeft: 5 }} />
           </Button>
 

@@ -92,8 +92,7 @@ export function CurrencySettings() {
   });
 
   const currencyOptions: [string, string][] = currencies.map(currency => {
-    const translatedName =
-      currencyNames.get(currency.code) ?? currency.name;
+    const translatedName = currencyNames.get(currency.code) ?? currency.name;
     if (currency.code === '') {
       return [currency.code, translatedName];
     }

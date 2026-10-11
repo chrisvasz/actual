@@ -22,7 +22,9 @@ export function PayeeRuleCountLabel({
           <AnimatedLoading style={{ width: 12, height: 12 }} />
         </View>
       ) : count > 0 ? (
-        <>{count} associated rules</>
+        <>
+          {count} associated {count === 1 ? 'rule' : 'rules'}
+        </>
       ) : (
         'Create rule'
       )}

@@ -47,7 +47,12 @@ export function PostsOfflineNotification() {
           />
           <Paragraph>
             <Text>
-              {payees.length > 0 ? (
+              {payees.length === 1 ? (
+                <>
+                  The payee <span>{payeeNamesList}</span> has a schedule that is
+                  due today.
+                </>
+              ) : payees.length > 1 ? (
                 <>
                   The payees <span>{payeeNamesList}</span> have schedules that
                   are due today.
