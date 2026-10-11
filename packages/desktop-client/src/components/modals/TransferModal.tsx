@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { InitialFocus } from '@actual-app/components/initial-focus';
@@ -30,7 +29,6 @@ export function TransferModal({
   showToBeBudgeted,
   onSubmit,
 }: TransferModalProps) {
-  const { t } = useTranslation();
   const [hideFraction] = useSyncedPref('hideFraction');
 
   const { data: { grouped: originalCategoryGroups } = { grouped: [] } } =
@@ -90,7 +88,7 @@ export function TransferModal({
           />
           <View>
             <View>
-              <FieldLabel title={t('Transfer this amount:')} />
+              <FieldLabel title="Transfer this amount:" />
               <InitialFocus>
                 <AmountInput
                   value={amount}
@@ -134,7 +132,7 @@ export function TransferModal({
                   state.close();
                 }}
               >
-                <Trans>Transfer</Trans>
+                Transfer
               </Button>
             </View>
           </View>

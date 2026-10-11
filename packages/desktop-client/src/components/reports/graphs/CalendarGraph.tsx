@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import type { Ref } from 'react';
-import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { styles } from '@actual-app/components/styles';
@@ -132,7 +131,7 @@ export function CalendarGraph({
                           marginRight: 4,
                         }}
                       >
-                        <Trans>Income:</Trans>
+                        Income:
                       </View>
                       <View
                         style={{
@@ -157,7 +156,7 @@ export function CalendarGraph({
                           marginRight: 4,
                         }}
                       >
-                        <Trans>Expenses:</Trans>
+                        Expenses:
                       </View>
                       <View
                         style={{

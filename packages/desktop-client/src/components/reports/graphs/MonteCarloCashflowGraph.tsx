@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import type { CSSProperties } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -61,7 +59,6 @@ export function MonteCarloCashflowGraph({
   spendingPhases,
   startAge,
 }: MonteCarloCashflowGraphProps) {
-  const { t } = useTranslation();
   const format = useFormat();
   const tickFormatter = useMonteCarloTickFormatter();
 
@@ -73,7 +70,6 @@ export function MonteCarloCashflowGraph({
       incomeStreams,
       spendingPhases,
       startAge,
-      translate: t,
     });
 
   return (
@@ -150,11 +146,11 @@ export function MonteCarloCashflowGraph({
         }}
       >
         <MonteCarloCashflowLegendGroup
-          heading={t('Money in')}
+          heading="Money in"
           series={inflowSeries}
         />
         <MonteCarloCashflowLegendGroup
-          heading={t('Money out')}
+          heading="Money out"
           series={outflowSeries}
         />
       </View>

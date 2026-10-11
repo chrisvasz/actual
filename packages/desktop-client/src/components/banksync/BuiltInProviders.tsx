@@ -1,5 +1,4 @@
 import { Dialog, DialogTrigger } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button, ButtonWithLoading } from '@actual-app/components/button';
 import {
@@ -34,13 +33,9 @@ export function BuiltInProviders({
   isCollapsed = false,
   onToggleCollapse,
 }: BuiltInProvidersProps) {
-  const { t } = useTranslation();
-
   const Cheveron = isCollapsed ? SvgCheveronRight : SvgCheveronDown;
   const title = (
-    <Text style={{ fontSize: 20, fontWeight: 600 }}>
-      <Trans>Providers</Trans>
-    </Text>
+    <Text style={{ fontSize: 20, fontWeight: 600 }}>Providers</Text>
   );
 
   if (onToggleCollapse && isCollapsed) {
@@ -74,10 +69,8 @@ export function BuiltInProviders({
           title
         )}
         <Paragraph style={{ fontSize: 15, color: theme.pageTextSubdued }}>
-          <Trans>
-            Set up a bank sync provider, then link new accounts or connect an
-            existing Actual account.
-          </Trans>
+          Set up a bank sync provider, then link new accounts or connect an
+          existing Actual account.
         </Paragraph>
       </View>
 
@@ -91,20 +84,18 @@ export function BuiltInProviders({
           }}
         >
           <Button isDisabled style={{ padding: '10px 0', fontSize: 15 }}>
-            <Trans>Set up bank sync</Trans>
+            Set up bank sync
           </Button>
           <Paragraph style={{ fontSize: 15, marginTop: 10 }}>
-            <Trans>
-              Connect to an Actual server to set up{' '}
-              <Link
-                variant="external"
-                to="https://actualbudget.org/docs/advanced/bank-sync"
-                linkColor="muted"
-              >
-                automatic syncing
-              </Link>
-              .
-            </Trans>
+            Connect to an Actual server to set up{' '}
+            <Link
+              variant="external"
+              to="https://actualbudget.org/docs/advanced/bank-sync"
+              linkColor="muted"
+            >
+              automatic syncing
+            </Link>
+            .
           </Paragraph>
         </View>
       ) : (
@@ -164,11 +155,9 @@ export function BuiltInProviders({
                           padding: '2px 8px',
                         }}
                       >
-                        {provider.credentialSource === 'global' ? (
-                          <Trans>global</Trans>
-                        ) : (
-                          <Trans>this budget only</Trans>
-                        )}
+                        {provider.credentialSource === 'global'
+                          ? 'global'
+                          : 'this budget only'}
                       </Text>
                     )}
                   </View>
@@ -181,11 +170,7 @@ export function BuiltInProviders({
                       fontWeight: 500,
                     }}
                   >
-                    {provider.isConfigured ? (
-                      <Trans>Configured</Trans>
-                    ) : (
-                      <Trans>Not configured</Trans>
-                    )}
+                    {provider.isConfigured ? 'Configured' : 'Not configured'}
                   </Text>
                 </View>
 
@@ -193,9 +178,7 @@ export function BuiltInProviders({
                   <DialogTrigger>
                     <Button
                       variant="bare"
-                      aria-label={t('{{provider}} menu', {
-                        provider: provider.displayName,
-                      })}
+                      aria-label={`${provider.displayName} menu`}
                     >
                       <SvgDotsHorizontalTriple
                         width={15}
@@ -215,9 +198,7 @@ export function BuiltInProviders({
                           items={[
                             {
                               name: 'reconfigure',
-                              text: t('Reset {{provider}} credentials', {
-                                provider: provider.displayName,
-                              }),
+                              text: `Reset ${provider.displayName} credentials`,
                             },
                           ]}
                         />
@@ -241,11 +222,7 @@ export function BuiltInProviders({
                   isDisabled={!provider.canConfigure}
                   onPress={() => provider.onConfigure()}
                 >
-                  {provider.isConfigured ? (
-                    <Trans>Edit setup</Trans>
-                  ) : (
-                    <Trans>Set up</Trans>
-                  )}
+                  {provider.isConfigured ? 'Edit setup' : 'Set up'}
                 </Button>
                 <ButtonWithLoading
                   variant="primary"
@@ -253,17 +230,15 @@ export function BuiltInProviders({
                   isLoading={provider.isLoading}
                   onPress={() => provider.onLink()}
                 >
-                  <Trans>Link bank account</Trans>
+                  Link bank account
                 </ButtonWithLoading>
               </View>
               {provider.supportsPerBudgetFile &&
                 provider.credentialSource === 'global' &&
                 !provider.canConfigure && (
                   <Text style={{ color: theme.pageTextSubdued, fontSize: 13 }}>
-                    <Trans>
-                      Reset credentials before setting credentials for this
-                      budget file.
-                    </Trans>
+                    Reset credentials before setting credentials for this budget
+                    file.
                   </Text>
                 )}
             </View>
@@ -274,16 +249,16 @@ export function BuiltInProviders({
       {permissionWarning && (
         <Warning>
           {permissionWarning === 'file-owner' ? (
-            <Trans>
+            <>
               You don&apos;t have the required permissions to configure all bank
               sync providers. You can set up Pluggy.ai because you are the owner
               of this budget file.
-            </Trans>
+            </>
           ) : (
-            <Trans>
+            <>
               You don&apos;t have the required permissions to configure bank
               sync providers. Please contact an Admin.
-            </Trans>
+            </>
           )}
         </Warning>
       )}

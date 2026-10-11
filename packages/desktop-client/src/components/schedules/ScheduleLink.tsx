@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useMemo, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgAdd } from '@actual-app/components/icons/v0';
@@ -30,8 +29,6 @@ export function ScheduleLink({
   accountName,
   onScheduleLinked,
 }: ScheduleLinkProps) {
-  const { t } = useTranslation();
-
   const dispatch = useDispatch();
   const [filter, setFilter] = useState(accountName || '');
   const schedulesQuery = useMemo(
@@ -81,7 +78,7 @@ export function ScheduleLink({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Link schedule')}
+            title="Link schedule"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View
@@ -93,10 +90,7 @@ export function ScheduleLink({
             }}
           >
             <Text>
-              {t(
-                'Choose the schedule these {{ count }} transactions belong to:',
-                { count: ids?.length ?? 0 },
-              )}
+              {`Choose the schedule these ${ids?.length ?? 0} transactions belong to:`}
             </Text>
             <InitialFocus<HTMLInputElement>>
               {node => (
@@ -107,7 +101,7 @@ export function ScheduleLink({
                   }}
                   isInModal
                   width={300}
-                  placeholder={t('Filter schedules…')}
+                  placeholder="Filter schedules…"
                   value={filter}
                   onChange={setFilter}
                 />
@@ -123,7 +117,7 @@ export function ScheduleLink({
                 }}
               >
                 <SvgAdd style={{ width: '20', padding: '3' }} />
-                <Trans>Create New</Trans>
+                Create New
               </Button>
             )}
           </View>

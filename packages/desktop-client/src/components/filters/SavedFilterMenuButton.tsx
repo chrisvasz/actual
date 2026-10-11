@@ -1,5 +1,4 @@
 import React, { useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgExpandArrow } from '@actual-app/components/icons/v0';
@@ -38,7 +37,6 @@ export function SavedFilterMenuButton({
   onReloadSavedFilter: (savedFilter: SavedFilter, value?: string) => void;
   savedFilters: TransactionFilterEntity[];
 }) {
-  const { t } = useTranslation();
   const [nameOpen, setNameOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -181,12 +179,10 @@ export function SavedFilterMenuButton({
               flexShrink: 0,
             }}
           >
-            {!filterId?.id ? t('Unsaved filter') : filterId?.name}&nbsp;
+            {!filterId?.id ? 'Unsaved filter' : filterId?.name}&nbsp;
           </Text>
           {filterId?.id && filterId?.status !== 'saved' && (
-            <Text>
-              <Trans>(modified)</Trans>&nbsp;
-            </Text>
+            <Text>(modified)&nbsp;</Text>
           )}
           <SvgExpandArrow width={8} height={8} style={{ marginRight: 5 }} />
         </Button>

@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgAdd } from '@actual-app/components/icons/v1';
@@ -23,7 +22,6 @@ import { TagsList } from './TagsList';
 import { TagsMenuButton } from './TagsMenuButton';
 
 export function ManageTags() {
-  const { t } = useTranslation();
   const [filter, setFilter] = useState('');
   const [hoveredTag, setHoveredTag] = useState<string>();
   const [create, setCreate] = useState(false);
@@ -66,11 +64,11 @@ export function ManageTags() {
               width: '50%',
             }}
           >
-            <Trans>User defined tags with color and description.</Trans>
+            User defined tags with color and description.
           </View>
           <View style={{ flex: 1 }} />
           <Search
-            placeholder={t('Filter tags...')}
+            placeholder="Filter tags..."
             value={filter}
             onChange={setFilter}
           />
@@ -78,7 +76,7 @@ export function ManageTags() {
         <SpaceBetween gap={10} style={{ alignItems: 'center' }}>
           <Button variant="bare" onPress={() => setCreate(true)}>
             <SvgAdd width={10} height={10} style={{ marginRight: 3 }} />
-            <Trans>Add New</Trans>
+            Add New
           </Button>
           <View style={{ flex: 1 }} />
           <SelectedTagsButton
@@ -105,9 +103,7 @@ export function ManageTags() {
                 fontStyle: 'italic',
               }}
             >
-              <Text style={{ margin: 'auto', padding: '20px' }}>
-                <Trans>No Tags</Trans>
-              </Text>
+              <Text style={{ margin: 'auto', padding: '20px' }}>No Tags</Text>
             </View>
           )}
         </View>

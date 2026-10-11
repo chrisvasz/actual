@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -67,7 +66,6 @@ function getWidthAtPointer(drag: DragState, clientX: number) {
 // rule, so nothing re-renders; the width is only saved to the local pref (and
 // React) when the drag ends.
 export function CategoryColumnResizeHandle() {
-  const { t } = useTranslation();
   const [width, setWidthPref] = useCategoryColumnWidth();
   const dragRef = useRef<DragState | null>(null);
 
@@ -138,12 +136,12 @@ export function CategoryColumnResizeHandle() {
     <View
       role="separator"
       aria-orientation="vertical"
-      aria-label={t('Resize category column')}
+      aria-label="Resize category column"
       aria-valuenow={width}
       aria-valuemin={MIN_CATEGORY_COLUMN_WIDTH}
       aria-valuemax={MAX_CATEGORY_COLUMN_WIDTH}
       tabIndex={0}
-      title={t('Drag to resize, double-click to reset')}
+      title="Drag to resize, double-click to reset"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}

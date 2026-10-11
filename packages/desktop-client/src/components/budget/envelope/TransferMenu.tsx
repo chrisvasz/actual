@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { Form } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { InitialFocus } from '@actual-app/components/initial-focus';
@@ -31,8 +30,6 @@ export function TransferMenu({
   onSubmit,
   onClose,
 }: TransferMenuProps) {
-  const { t } = useTranslation();
-
   const { data: { grouped: originalCategoryGroups } = { grouped: [] } } =
     useCategories();
   const filteredCategoryGroups = useMemo(() => {
@@ -67,17 +64,13 @@ export function TransferMenu({
       }}
     >
       <View style={{ padding: 10 }}>
-        <View style={{ marginBottom: 5 }}>
-          <Trans>Transfer this amount:</Trans>
-        </View>
+        <View style={{ marginBottom: 5 }}>Transfer this amount:</View>
         <View>
           <InitialFocus>
             <FinancialInput value={amount} onUpdate={setAmount} />
           </InitialFocus>
         </View>
-        <View style={{ margin: '10px 0 5px 0' }}>
-          <Trans>To:</Trans>
-        </View>
+        <View style={{ margin: '10px 0 5px 0' }}>To:</View>
 
         <CategoryAutocomplete
           categoryGroups={filteredCategoryGroups}
@@ -85,7 +78,7 @@ export function TransferMenu({
           openOnFocus
           onSelect={(id: string | undefined) => setToCategoryId(id || null)}
           inputProps={{
-            placeholder: t('(none)'),
+            placeholder: '(none)',
           }}
           showHiddenCategories
         />
@@ -106,7 +99,7 @@ export function TransferMenu({
               paddingBottom: 3,
             }}
           >
-            <Trans>Transfer</Trans>
+            Transfer
           </Button>
         </View>
       </View>

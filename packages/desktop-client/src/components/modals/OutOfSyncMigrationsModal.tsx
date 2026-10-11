@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Paragraph } from '@actual-app/components/paragraph';
@@ -14,8 +13,6 @@ import { useDispatch } from '#redux';
 export function OutOfSyncMigrationsModal() {
   const dispatch = useDispatch();
 
-  const { t } = useTranslation();
-
   const closeBudgetAndModal = (close: () => void) => {
     void dispatch(closeBudget());
     close();
@@ -25,9 +22,7 @@ export function OutOfSyncMigrationsModal() {
     <Modal name="out-of-sync-migrations">
       {({ state }) => (
         <>
-          <ModalHeader
-            title={<ModalTitle title={t('Please update Actual!')} />}
-          />
+          <ModalHeader title={<ModalTitle title="Please update Actual!" />} />
           <View
             style={{
               padding: 15,
@@ -40,12 +35,10 @@ export function OutOfSyncMigrationsModal() {
           >
             <Text>
               <Paragraph style={{ fontSize: 16 }}>
-                <Trans>
-                  It looks like you&apos;re using an outdated version of the
-                  Actual client. Your budget data has been updated by another
-                  client, but this client is still on the old version. For the
-                  best experience, please update Actual to the latest version.
-                </Trans>
+                It looks like you&apos;re using an outdated version of the
+                Actual client. Your budget data has been updated by another
+                client, but this client is still on the old version. For the
+                best experience, please update Actual to the latest version.
               </Paragraph>
             </Text>
 
@@ -54,14 +47,12 @@ export function OutOfSyncMigrationsModal() {
                 fontSize: 16,
               }}
             >
-              <Trans>
-                If you can&apos;t update Actual at this time you can find the
-                latest release at{' '}
-                <Link variant="external" to="https://app.actualbudget.org">
-                  app.actualbudget.org
-                </Link>
-                . You can use it until your client is updated.
-              </Trans>
+              If you can&apos;t update Actual at this time you can find the
+              latest release at{' '}
+              <Link variant="external" to="https://app.actualbudget.org">
+                app.actualbudget.org
+              </Link>
+              . You can use it until your client is updated.
             </Paragraph>
 
             <View
@@ -80,7 +71,7 @@ export function OutOfSyncMigrationsModal() {
                 }}
                 onPress={() => closeBudgetAndModal(() => state.close())}
               >
-                <Trans>Close Budget</Trans>
+                Close Budget
               </Button>
             </View>
           </View>

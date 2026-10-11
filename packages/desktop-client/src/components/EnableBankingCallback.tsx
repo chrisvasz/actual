@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Paragraph } from '@actual-app/components/paragraph';
 import { View } from '@actual-app/components/view';
@@ -9,7 +8,6 @@ import { Error as ErrorAlert } from '#components/alerts';
 import { useUrlParam } from '#hooks/useUrlParam';
 
 export function EnableBankingCallback() {
-  const { t } = useTranslation();
   const [code] = useUrlParam('code');
   const [stateParam] = useUrlParam('state');
   const [errorParam] = useUrlParam('error');
@@ -31,24 +29,20 @@ export function EnableBankingCallback() {
     async function handleCallback() {
       if (errorParam) {
         setStatus('error');
-        setErrorMessage(
-          t('Authorization was denied or failed: {{error}}', {
-            error: errorParam,
-          }),
-        );
+        setErrorMessage(`Authorization was denied or failed: ${errorParam}`);
         return;
       }
 
       if (!code) {
         setStatus('error');
-        setErrorMessage(t('Missing authorization parameters.'));
+        setErrorMessage('Missing authorization parameters.');
         return;
       }
 
       if (!stateValid) {
         localStorage.removeItem('enablebanking_auth_state');
         setStatus('error');
-        setErrorMessage(t('Authorization state mismatch. Please try again.'));
+        setErrorMessage('Authorization state mismatch. Please try again.');
         return;
       }
 
@@ -61,7 +55,7 @@ export function EnableBankingCallback() {
         if (result.error) {
           setStatus('error');
           setErrorMessage(
-            result.error.message || t('Failed to complete authorization.'),
+            result.error.message || 'Failed to complete authorization.',
           );
           return;
         }
@@ -75,12 +69,12 @@ export function EnableBankingCallback() {
         }, 1500);
       } catch {
         setStatus('error');
-        setErrorMessage(t('An unexpected error occurred.'));
+        setErrorMessage('An unexpected error occurred.');
       }
     }
 
     void handleCallback();
-  }, [code, stateParam, stateValid, errorParam, t]);
+  }, [code, stateParam, stateValid, errorParam]);
 
   return (
     <View
@@ -92,16 +86,12 @@ export function EnableBankingCallback() {
       }}
     >
       {status === 'loading' && (
-        <Paragraph>
-          <Trans>Completing authorization...</Trans>
-        </Paragraph>
+        <Paragraph>Completing authorization...</Paragraph>
       )}
 
       {status === 'success' && (
         <Paragraph>
-          <Trans>
-            Authorization successful! This window will close automatically.
-          </Trans>
+          Authorization successful! This window will close automatically.
         </Paragraph>
       )}
 
@@ -109,7 +99,7 @@ export function EnableBankingCallback() {
         <>
           <ErrorAlert>{errorMessage}</ErrorAlert>
           <Paragraph style={{ marginTop: 10 }}>
-            <Trans>You can close this window and try again.</Trans>
+            You can close this window and try again.
           </Paragraph>
         </>
       )}

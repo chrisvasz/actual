@@ -1,5 +1,4 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -19,19 +18,14 @@ import { useFailedAccounts } from '#hooks/useFailedAccounts';
 import { useDispatch } from '#redux';
 
 function useErrorMessage() {
-  const { t } = useTranslation();
   function getErrorMessage(type: string, code: string) {
     switch (type.toUpperCase()) {
       case 'ITEM_ERROR':
         switch (code.toUpperCase()) {
           case 'NO_ACCOUNTS':
-            return t(
-              'No open accounts could be found. Did you close the account? If so, unlink the account.',
-            );
+            return 'No open accounts could be found. Did you close the account? If so, unlink the account.';
           case 'ITEM_LOGIN_REQUIRED':
-            return t(
-              'Your password or something else has changed with your bank and you need to login again.',
-            );
+            return 'Your password or something else has changed with your bank and you need to login again.';
           default:
         }
         break;
@@ -39,25 +33,23 @@ function useErrorMessage() {
       case 'INVALID_INPUT':
         switch (code.toUpperCase()) {
           case 'INVALID_ACCESS_TOKEN':
-            return t('Item is no longer authorized. You need to login again.');
+            return 'Item is no longer authorized. You need to login again.';
           default:
         }
         break;
 
       case 'RATE_LIMIT_EXCEEDED':
-        return t('Rate limit exceeded for this item. Please try again later.');
+        return 'Rate limit exceeded for this item. Please try again later.';
 
       case 'TIMED_OUT':
-        return t('The request timed out. Please try again later.');
+        return 'The request timed out. Please try again later.';
 
       case 'INVALID_ACCESS_TOKEN':
-        return t(
-          'Your SimpleFIN Access Token is no longer valid. Please reset and generate a new token.',
-        );
+        return 'Your SimpleFIN Access Token is no longer valid. Please reset and generate a new token.';
 
       case 'ACCOUNT_NEEDS_ATTENTION':
         return (
-          <Trans>
+          <>
             The account needs your attention at{' '}
             <Link
               variant="external"
@@ -66,25 +58,23 @@ function useErrorMessage() {
               SimpleFIN
             </Link>
             .
-          </Trans>
+          </>
         );
 
       case 'ACCOUNT_MISSING':
-        return t(
-          'This account was not found in SimpleFIN. Try unlinking and relinking the account.',
-        );
+        return 'This account was not found in SimpleFIN. Try unlinking and relinking the account.';
 
       default:
     }
 
     return (
-      <Trans>
+      <>
         An internal error occurred. Try to log in again, or get{' '}
         <Link variant="external" to="https://actualbudget.org/contact/">
           in touch
         </Link>{' '}
         for support.
-      </Trans>
+      </>
     );
   }
 
@@ -163,9 +153,7 @@ export function AccountSyncCheck() {
         <SvgExclamationOutline
           style={{ width: 14, height: 14, marginRight: 5 }}
         />{' '}
-        <Trans>
-          This account is experiencing connection problems. Let's fix it.
-        </Trans>
+        This account is experiencing connection problems. Let's fix it.
       </Button>
 
       <Popover
@@ -176,7 +164,7 @@ export function AccountSyncCheck() {
         style={{ fontSize: 14, padding: 15, maxWidth: 400 }}
       >
         <div style={{ marginBottom: '1.15em' }}>
-          <Trans>The server returned the following error:</Trans>
+          The server returned the following error:
         </div>
 
         <div style={{ marginBottom: '1.25em', color: theme.errorText }}>
@@ -186,22 +174,18 @@ export function AccountSyncCheck() {
         <View style={{ justifyContent: 'flex-end', flexDirection: 'row' }}>
           {showAuth ? (
             <>
-              <Button onPress={() => unlink(account)}>
-                <Trans>Unlink</Trans>
-              </Button>
+              <Button onPress={() => unlink(account)}>Unlink</Button>
               <Button
                 variant="primary"
                 autoFocus
                 onPress={() => reauth(account)}
                 style={{ marginLeft: 5 }}
               >
-                <Trans>Reauthorize</Trans>
+                Reauthorize
               </Button>
             </>
           ) : (
-            <Button onPress={() => unlink(account)}>
-              <Trans>Unlink account</Trans>
-            </Button>
+            <Button onPress={() => unlink(account)}>Unlink account</Button>
           )}
         </View>
       </Popover>

@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import type { ComponentPropsWithoutRef, CSSProperties } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Menu } from '@actual-app/components/menu';
 import { styles } from '@actual-app/components/styles';
@@ -77,7 +76,7 @@ export function ScheduledTransactionMenuModal({
             }}
           >
             <Text style={{ fontSize: 17, fontWeight: 400 }}>
-              <Trans>Scheduled date</Trans>
+              Scheduled date
             </Text>
             <Text style={{ fontSize: 17, fontWeight: 700 }}>
               {format(schedule?.next_date || '', 'MMMM dd, yyyy', locale)}
@@ -120,8 +119,6 @@ function ScheduledTransactionMenu({
   canBeCompleted: boolean;
   canBeSkipped: boolean;
 }) {
-  const { t } = useTranslation();
-
   return (
     <Menu
       {...props}
@@ -144,13 +141,13 @@ function ScheduledTransactionMenu({
         }
       }}
       items={[
-        { name: 'post', text: t('Post transaction') },
-        { name: 'post-today', text: t('Post transaction today') },
+        { name: 'post', text: 'Post transaction' },
+        { name: 'post-today', text: 'Post transaction today' },
         ...(canBeSkipped
-          ? [{ name: 'skip', text: t('Skip next scheduled date') }]
+          ? [{ name: 'skip', text: 'Skip next scheduled date' }]
           : []),
         ...(canBeCompleted
-          ? [{ name: 'complete', text: t('Mark as completed') }]
+          ? [{ name: 'complete', text: 'Mark as completed' }]
           : []),
       ]}
     />

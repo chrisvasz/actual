@@ -27,16 +27,14 @@ function isSyncProvider(value: string): value is SyncProviders {
   return syncProviderKeysSet.has(value);
 }
 
-export function getSyncSourceReadable(
-  translate: (key: string) => string,
-): Record<SyncProviders, string> {
+export function getSyncSourceReadable(): Record<SyncProviders, string> {
   return {
     goCardless: 'GoCardless',
     simpleFin: 'SimpleFIN',
     pluggyai: 'Pluggy.ai',
     enableBanking: 'Enable Banking',
     akahu: 'Akahu',
-    unlinked: translate('Unlinked'),
+    unlinked: 'Unlinked',
   };
 }
 

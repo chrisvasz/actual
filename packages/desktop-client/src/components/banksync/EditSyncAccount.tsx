@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SpaceBetween } from '@actual-app/components/space-between';
@@ -144,7 +143,6 @@ export type EditSyncAccountProps = {
 };
 
 export function EditSyncAccount({ account }: EditSyncAccountProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const {
@@ -208,15 +206,11 @@ export function EditSyncAccount({ account }: EditSyncAccountProps) {
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('{{accountName}} bank sync settings', {
-              accountName: potentiallyTruncatedAccountName,
-            })}
+            title={`${potentiallyTruncatedAccountName} bank sync settings`}
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
 
-          <Text style={{ fontSize: 15 }}>
-            <Trans>Field mapping</Trans>
-          </Text>
+          <Text style={{ fontSize: 15 }}>Field mapping</Text>
 
           <FieldMapping
             transactionDirection={transactionDirection}
@@ -226,9 +220,7 @@ export function EditSyncAccount({ account }: EditSyncAccountProps) {
             setMapping={setMapping}
           />
 
-          <Text style={{ fontSize: 15, margin: '1em 0 .5em 0' }}>
-            <Trans>Options</Trans>
-          </Text>
+          <Text style={{ fontSize: 15, margin: '1em 0 .5em 0' }}>Options</Text>
 
           <BankSyncCheckboxOptions
             importPending={importPending}
@@ -259,20 +251,18 @@ export function EditSyncAccount({ account }: EditSyncAccountProps) {
                 void onUnlink(() => state.close());
               }}
             >
-              <Trans>Unlink account</Trans>
+              Unlink account
             </Button>
 
             <SpaceBetween gap={10}>
-              <Button onPress={() => state.close()}>
-                <Trans>Cancel</Trans>
-              </Button>
+              <Button onPress={() => state.close()}>Cancel</Button>
               <Button
                 variant="primary"
                 onPress={() => {
                   void onSave(() => state.close());
                 }}
               >
-                <Trans>Save</Trans>
+                Save
               </Button>
             </SpaceBetween>
           </View>

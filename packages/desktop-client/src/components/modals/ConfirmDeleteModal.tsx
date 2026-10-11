@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -20,7 +19,6 @@ export function ConfirmDeleteModal({
   message,
   onConfirm,
 }: ConfirmDeleteModalProps) {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
   const narrowButtonStyle = isNarrowWidth
     ? {
@@ -33,7 +31,7 @@ export function ConfirmDeleteModal({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Confirm Delete')}
+            title="Confirm Delete"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ lineHeight: 1.5 }}>
@@ -51,7 +49,7 @@ export function ConfirmDeleteModal({
                 }}
                 onPress={() => state.close()}
               >
-                <Trans>Cancel</Trans>
+                Cancel
               </Button>
               <InitialFocus>
                 <Button
@@ -62,7 +60,7 @@ export function ConfirmDeleteModal({
                     state.close();
                   }}
                 >
-                  <Trans>Delete</Trans>
+                  Delete
                 </Button>
               </InitialFocus>
             </View>

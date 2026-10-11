@@ -1,5 +1,4 @@
 import { Fragment } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgDelete } from '@actual-app/components/icons/v0';
@@ -15,7 +14,6 @@ import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import type { TransObjectLiteral } from '@actual-app/core/types/util';
 import { v4 as uuidv4 } from 'uuid';
 
 import { FinancialText } from '#components/FinancialText';
@@ -60,7 +58,6 @@ export function MonteCarloContributions({
   targetAge,
   onConfigChange,
 }: MonteCarloContributionsProps) {
-  const { t } = useTranslation();
   const format = useFormat();
 
   function updateContribution(
@@ -100,16 +97,14 @@ export function MonteCarloContributions({
   if (pots.length === 0) {
     return (
       <Text style={{ color: theme.pageText }}>
-        <Trans>
-          Add an investment pot first - contributions are paid into a pot.
-        </Trans>
+        Add an investment pot first - contributions are paid into a pot.
       </Text>
     );
   }
 
   const potOptions = pots.map(
     (pot, potIndex) =>
-      [pot.id, getMonteCarloPotLabel(pots, potIndex, t)] satisfies [
+      [pot.id, getMonteCarloPotLabel(pots, potIndex)] satisfies [
         string,
         string,
       ],
@@ -117,15 +112,13 @@ export function MonteCarloContributions({
   // Named as the Paid from dropdown lists them
   function getIncomeStreamLabel(incomeIndex: number) {
     const incomeStream = incomeStreams[incomeIndex];
-    return (
-      incomeStream.name || t('Income {{number}}', { number: incomeIndex + 1 })
-    );
+    return incomeStream.name || `Income ${incomeIndex + 1}`;
   }
 
   const sourceOptions: SelectOption[] = [
-    [OUTSIDE_SOURCE, t('Outside the plan')],
+    [OUTSIDE_SOURCE, 'Outside the plan'],
     ...(incomeStreams.length > 0
-      ? [[Menu.label, t('Income streams')] satisfies SelectHeading]
+      ? [[Menu.label, 'Income streams'] satisfies SelectHeading]
       : []),
     ...incomeStreams.map(
       (incomeStream, incomeIndex) =>
@@ -151,25 +144,25 @@ export function MonteCarloContributions({
         <View style={{ minWidth: 'fit-content' }}>
           <TableHeader>
             <Field width="flex" style={{ minWidth: 150 }}>
-              <Trans>Contribution name</Trans>
+              Contribution name
             </Field>
             <Field width="flex" style={{ minWidth: 160 }}>
-              <Trans>Into pot</Trans>
+              Into pot
             </Field>
             <Field width="flex" style={{ minWidth: 160 }}>
-              <Trans>Paid from</Trans>
+              Paid from
             </Field>
             <Field width="flex" style={{ minWidth: 100 }}>
-              <Trans>From age</Trans>
+              From age
             </Field>
             <Field width="flex" style={{ minWidth: 100 }}>
-              <Trans>To age</Trans>
+              To age
             </Field>
             <Field width="flex" style={{ minWidth: 140 }}>
-              <Trans>Amount (per year)</Trans>
+              Amount (per year)
             </Field>
             <Field width="flex" style={{ minWidth: 170 }}>
-              <Trans>Inflation</Trans>
+              Inflation
             </Field>
             <Field width="flex" style={{ minWidth: 120 }} truncate={false}>
               <View
@@ -180,24 +173,20 @@ export function MonteCarloContributions({
                   whiteSpace: 'nowrap',
                 }}
               >
-                <Text>
-                  <Trans>Before tax</Trans>
-                </Text>
+                <Text>Before tax</Text>
                 <MonteCarloHelpTooltip>
-                  <Trans>
-                    For a contribution paid from an income stream: tick it to
-                    take the money out of the income before its tax is worked
-                    out, like a workplace pension or salary sacrifice - the
-                    stream then pays less tax. Leave it unticked to save from
-                    income that has already been taxed.
-                    <br />
-                    <br />
-                    For example, a 10,000 contribution from a 12,000 income
-                    taxed at 20%: before tax, only the remaining 2,000 is taxed
-                    (400); after tax, the full 12,000 is taxed (2,400) and the
-                    contribution comes out of what is left. A state pension is
-                    usually taxed as you receive it, so it stays unticked.
-                  </Trans>
+                  For a contribution paid from an income stream: tick it to take
+                  the money out of the income before its tax is worked out, like
+                  a workplace pension or salary sacrifice - the stream then pays
+                  less tax. Leave it unticked to save from income that has
+                  already been taxed.
+                  <br />
+                  <br />
+                  For example, a 10,000 contribution from a 12,000 income taxed
+                  at 20%: before tax, only the remaining 2,000 is taxed (400);
+                  after tax, the full 12,000 is taxed (2,400) and the
+                  contribution comes out of what is left. A state pension is
+                  usually taxed as you receive it, so it stays unticked.
                 </MonteCarloHelpTooltip>
               </View>
             </Field>
@@ -235,10 +224,8 @@ export function MonteCarloContributions({
                   >
                     <Input
                       defaultValue={contribution.name}
-                      placeholder={t('Contribution {{number}}', {
-                        number: index + 1,
-                      })}
-                      aria-label={t('Contribution name')}
+                      placeholder={`Contribution ${index + 1}`}
+                      aria-label="Contribution name"
                       onUpdate={newName => {
                         if (newName !== contribution.name) {
                           updateContribution(contribution.id, {
@@ -291,13 +278,13 @@ export function MonteCarloContributions({
                   >
                     <MonteCarloNumberInput
                       value={contribution.fromAge}
-                      aria-label={t('From age')}
+                      aria-label="From age"
                       allowEmpty
                       roundToInteger
                       min={currentAge}
                       max={contribution.toAge ?? targetAge}
                       step={1}
-                      placeholder={t('Now')}
+                      placeholder="Now"
                       onCommit={newValue =>
                         updateContribution(contribution.id, {
                           fromAge: newValue,
@@ -313,13 +300,13 @@ export function MonteCarloContributions({
                   >
                     <MonteCarloNumberInput
                       value={contribution.toAge}
-                      aria-label={t('To age')}
+                      aria-label="To age"
                       allowEmpty
                       roundToInteger
                       min={contribution.fromAge ?? currentAge}
                       max={targetAge}
                       step={1}
-                      placeholder={t('End of plan')}
+                      placeholder="End of plan"
                       onCommit={newValue =>
                         updateContribution(contribution.id, { toAge: newValue })
                       }
@@ -333,7 +320,7 @@ export function MonteCarloContributions({
                   >
                     <FinancialInput
                       value={contribution.annualAmount}
-                      aria-label={t('Amount (per year)')}
+                      aria-label="Amount (per year)"
                       onUpdate={value => {
                         const newAmount = Math.min(
                           MAX_AMOUNT,
@@ -362,7 +349,7 @@ export function MonteCarloContributions({
                         })
                       }
                     >
-                      <Trans>Adjust by inflation</Trans>
+                      Adjust by inflation
                     </LabeledCheckbox>
                   </Field>
 
@@ -381,7 +368,7 @@ export function MonteCarloContributions({
                           })
                         }
                       >
-                        <Trans>Before tax</Trans>
+                        Before tax
                       </LabeledCheckbox>
                     )}
                   </Field>
@@ -393,7 +380,7 @@ export function MonteCarloContributions({
                   >
                     <Button
                       variant="bare"
-                      aria-label={t('Remove contribution')}
+                      aria-label="Remove contribution"
                       onPress={() => removeContribution(contribution.id)}
                       style={{ padding: 6 }}
                     >
@@ -409,21 +396,12 @@ export function MonteCarloContributions({
                     }}
                   >
                     <Text style={{ color: theme.warningText, fontSize: 13 }}>
-                      <Trans>
-                        {{ stream: getIncomeStreamLabel(sourceIndex) }} pays{' '}
-                        <FinancialText as="span">
-                          {
-                            {
-                              amount: format(
-                                sourceStream.annualAmount,
-                                'financial',
-                              ),
-                            } as TransObjectLiteral
-                          }
-                        </FinancialText>{' '}
-                        a year, so no more than that - less any tax, unless
-                        Before tax is ticked - can be paid in from it.
-                      </Trans>
+                      {getIncomeStreamLabel(sourceIndex)} pays{' '}
+                      <FinancialText as="span">
+                        {format(sourceStream.annualAmount, 'financial')}
+                      </FinancialText>{' '}
+                      a year, so no more than that - less any tax, unless Before
+                      tax is ticked - can be paid in from it.
                     </Text>
                   </View>
                 )}
@@ -436,7 +414,7 @@ export function MonteCarloContributions({
       <View style={{ flexDirection: 'row' }}>
         <Button onPress={addContribution}>
           <SvgAdd width={10} height={10} style={{ marginRight: 5 }} />
-          <Trans>Add contribution</Trans>
+          Add contribution
         </Button>
       </View>
     </View>

@@ -13,11 +13,6 @@ export type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
 export type WithOptional<T, K extends keyof T> = Omit<T, K> &
   Partial<Pick<T, K>>;
 
-// Allows use of object literals inside child elements of `Trans` tags
-// see https://github.com/i18next/react-i18next/issues/1483
-// oxlint-disable-next-line typescript/no-explicit-any
-export type TransObjectLiteral = any;
-
 export type AtLeastOne<T extends Record<string, unknown>> =
   keyof T extends infer K
     ? K extends string

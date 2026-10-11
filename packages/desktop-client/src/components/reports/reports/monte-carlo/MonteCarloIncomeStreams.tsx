@@ -1,5 +1,3 @@
-import { Trans, useTranslation } from 'react-i18next';
-
 import { Button } from '@actual-app/components/button';
 import { SvgDelete } from '@actual-app/components/icons/v0';
 import { SvgAdd } from '@actual-app/components/icons/v1';
@@ -45,8 +43,6 @@ export function MonteCarloIncomeStreams({
   targetAge,
   onConfigChange,
 }: MonteCarloIncomeStreamsProps) {
-  const { t } = useTranslation();
-
   function updateIncomeStream(
     incomeStreamId: string,
     changes: Partial<MonteCarloIncomeStream>,
@@ -94,26 +90,22 @@ export function MonteCarloIncomeStreams({
         <View style={{ minWidth: 'fit-content' }}>
           <TableHeader>
             <Field width="flex" style={{ minWidth: 150 }}>
-              <Trans>Income name</Trans>
+              Income name
             </Field>
             <Field width="flex" style={{ minWidth: 100 }}>
-              <Trans>From age</Trans>
+              From age
             </Field>
             <Field width="flex" style={{ minWidth: 100 }}>
-              <Trans>To age</Trans>
+              To age
             </Field>
             <Field width="flex" style={{ minWidth: 140 }}>
-              <Trans>Amount (per year)</Trans>
+              Amount (per year)
             </Field>
             <Field width="flex" style={{ minWidth: 130 }}>
-              {usesTaxBands ? (
-                <Trans>Taxable portion (%)</Trans>
-              ) : (
-                <Trans>Tax (%)</Trans>
-              )}
+              {usesTaxBands ? 'Taxable portion (%)' : 'Tax (%)'}
             </Field>
             <Field width="flex" style={{ minWidth: 170 }}>
-              <Trans>Inflation</Trans>
+              Inflation
             </Field>
             <Field width={36} />
           </TableHeader>
@@ -131,8 +123,8 @@ export function MonteCarloIncomeStreams({
               <Field width="flex" style={{ minWidth: 150 }} truncate={false}>
                 <Input
                   defaultValue={incomeStream.name}
-                  placeholder={t('Income {{number}}', { number: index + 1 })}
-                  aria-label={t('Income name')}
+                  placeholder={`Income ${index + 1}`}
+                  aria-label="Income name"
                   onUpdate={newName => {
                     if (newName !== incomeStream.name) {
                       updateIncomeStream(incomeStream.id, { name: newName });
@@ -144,13 +136,13 @@ export function MonteCarloIncomeStreams({
               <Field width="flex" style={{ minWidth: 100 }} truncate={false}>
                 <MonteCarloNumberInput
                   value={incomeStream.fromAge}
-                  aria-label={t('From age')}
+                  aria-label="From age"
                   allowEmpty
                   roundToInteger
                   min={currentAge}
                   max={incomeStream.toAge ?? targetAge}
                   step={1}
-                  placeholder={t('Now')}
+                  placeholder="Now"
                   onCommit={newValue =>
                     updateIncomeStream(incomeStream.id, { fromAge: newValue })
                   }
@@ -160,13 +152,13 @@ export function MonteCarloIncomeStreams({
               <Field width="flex" style={{ minWidth: 100 }} truncate={false}>
                 <MonteCarloNumberInput
                   value={incomeStream.toAge}
-                  aria-label={t('To age')}
+                  aria-label="To age"
                   allowEmpty
                   roundToInteger
                   min={incomeStream.fromAge ?? currentAge}
                   max={targetAge}
                   step={1}
-                  placeholder={t('End of plan')}
+                  placeholder="End of plan"
                   onCommit={newValue =>
                     updateIncomeStream(incomeStream.id, { toAge: newValue })
                   }
@@ -176,7 +168,7 @@ export function MonteCarloIncomeStreams({
               <Field width="flex" style={{ minWidth: 140 }} truncate={false}>
                 <FinancialInput
                   value={incomeStream.annualAmount}
-                  aria-label={t('Amount (per year)')}
+                  aria-label="Amount (per year)"
                   onUpdate={value => {
                     const newAmount = Math.min(MAX_AMOUNT, Math.max(0, value));
                     if (newAmount !== incomeStream.annualAmount) {
@@ -192,7 +184,7 @@ export function MonteCarloIncomeStreams({
                 {usesTaxBands ? (
                   <MonteCarloNumberInput
                     value={incomeStream.taxableFraction}
-                    aria-label={t('Taxable portion (%)')}
+                    aria-label="Taxable portion (%)"
                     scale={100}
                     min={0}
                     max={100}
@@ -205,7 +197,7 @@ export function MonteCarloIncomeStreams({
                 ) : (
                   <MonteCarloNumberInput
                     value={incomeStream.taxRate}
-                    aria-label={t('Tax (%)')}
+                    aria-label="Tax (%)"
                     scale={100}
                     min={0}
                     max={MAX_WITHDRAWAL_TAX_RATE * 100}
@@ -228,7 +220,7 @@ export function MonteCarloIncomeStreams({
                     })
                   }
                 >
-                  <Trans>Adjust by inflation</Trans>
+                  Adjust by inflation
                 </LabeledCheckbox>
               </Field>
 
@@ -239,7 +231,7 @@ export function MonteCarloIncomeStreams({
               >
                 <Button
                   variant="bare"
-                  aria-label={t('Remove income')}
+                  aria-label="Remove income"
                   onPress={() => removeIncomeStream(incomeStream.id)}
                   style={{ padding: 6 }}
                 >
@@ -254,7 +246,7 @@ export function MonteCarloIncomeStreams({
       <View style={{ flexDirection: 'row' }}>
         <Button onPress={addIncomeStream}>
           <SvgAdd width={10} height={10} style={{ marginRight: 5 }} />
-          <Trans>Add income</Trans>
+          Add income
         </Button>
       </View>
     </View>

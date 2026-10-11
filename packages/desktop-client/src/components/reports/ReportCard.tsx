@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 import type { CSSProperties, ReactNode, RefObject } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -129,7 +128,6 @@ function Layout({
   onRename,
   contextMenuTriggerRef,
 }: LayoutProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -144,19 +142,19 @@ function Layout({
     items: [
       onRename && {
         name: 'rename',
-        text: t('Rename'),
+        text: 'Rename',
         onClick: onRename,
         order: 1,
       },
       {
         name: 'remove',
-        text: t('Remove'),
+        text: 'Remove',
         onClick: () => removeDashboardWidgetMutation.mutate({ id: widgetId }),
         order: 1,
       },
       {
         name: 'copy',
-        text: t('Copy to dashboard'),
+        text: 'Copy to dashboard',
         onClick: () => {
           dispatch(
             pushModal({
@@ -207,7 +205,7 @@ function Layout({
           <Button
             ref={triggerRef}
             variant="bare"
-            aria-label={t('Menu')}
+            aria-label="Menu"
             onPress={() => {
               if (viewRef.current) {
                 const rect = triggerRef.current?.getBoundingClientRect();

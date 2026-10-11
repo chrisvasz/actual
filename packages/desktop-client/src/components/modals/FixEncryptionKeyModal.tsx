@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React, { useState } from 'react';
 import { Form } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button, ButtonWithLoading } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -34,7 +33,6 @@ export function FixEncryptionKeyModal({
   hasExistingKey,
   onSuccess,
 }: FixEncryptionKeyModalProps) {
-  const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -67,9 +65,7 @@ export function FixEncryptionKeyModal({
         <>
           <ModalHeader
             title={
-              hasExistingKey
-                ? t('Decrypt budget file')
-                : t('This file is encrypted')
+              hasExistingKey ? 'Decrypt budget file' : 'This file is encrypted'
             }
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
@@ -83,26 +79,25 @@ export function FixEncryptionKeyModal({
           >
             {hasExistingKey ? (
               <Paragraph>
-                {t(
-                  'Please provide the encryption key to unlock this budget file. You may be unlocking it for the first time, or the key has changed. Enter your password to continue.',
-                )}{' '}
+                Please provide the encryption key to unlock this budget file.
+                You may be unlocking it for the first time, or the key has
+                changed. Enter your password to continue.{' '}
                 <Link
                   variant="external"
                   to="https://actualbudget.org/docs/getting-started/sync/#end-to-end-encryption"
                 >
-                  <Trans>Learn more</Trans>
+                  Learn more
                 </Link>
               </Paragraph>
             ) : (
               <Paragraph>
-                {t(
-                  "We don't have a key that encrypts or decrypts this file. Enter the password for this file to create the key for encryption.",
-                )}{' '}
+                We don't have a key that encrypts or decrypts this file. Enter
+                the password for this file to create the key for encryption.{' '}
                 <Link
                   variant="external"
                   to="https://actualbudget.org/docs/getting-started/sync/#end-to-end-encryption"
                 >
-                  <Trans>Learn more</Trans>
+                  Learn more
                 </Link>
               </Paragraph>
             )}
@@ -120,9 +115,7 @@ export function FixEncryptionKeyModal({
                 alignItems: 'center',
               }}
             >
-              <Text style={{ fontWeight: 600, marginBottom: 5 }}>
-                <Trans>Password</Trans>
-              </Text>{' '}
+              <Text style={{ fontWeight: 600, marginBottom: 5 }}>Password</Text>{' '}
               {error && (
                 <View
                   style={{
@@ -151,7 +144,7 @@ export function FixEncryptionKeyModal({
                     type="checkbox"
                     onClick={() => setShowPassword(!showPassword)}
                   />{' '}
-                  <Trans>Show password</Trans>
+                  Show password
                 </label>
               </Text>
             </View>
@@ -165,7 +158,7 @@ export function FixEncryptionKeyModal({
                 }}
                 onPress={() => state.close()}
               >
-                <Trans>Back</Trans>
+                Back
               </Button>
               <ButtonWithLoading
                 type="submit"
@@ -175,7 +168,7 @@ export function FixEncryptionKeyModal({
                 }}
                 isLoading={loading}
               >
-                {hasExistingKey ? t('Unlock budget file') : t('Create key')}
+                {hasExistingKey ? 'Unlock budget file' : 'Create key'}
               </ButtonWithLoading>
             </ModalButtons>
           </Form>

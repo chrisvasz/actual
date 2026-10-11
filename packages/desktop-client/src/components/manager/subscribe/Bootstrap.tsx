@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Paragraph } from '@actual-app/components/paragraph';
@@ -19,7 +18,6 @@ import { Title, useBootstrapped } from './common';
 import { ConfirmPasswordForm } from './ConfirmPasswordForm';
 
 export function Bootstrap() {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const [error, setError] = useState(null);
   const refreshLoginMethods = useRefreshLoginMethods();
@@ -30,19 +28,19 @@ export function Bootstrap() {
   function getErrorMessage(error) {
     switch (error) {
       case 'invalid-password':
-        return t('Password cannot be empty');
+        return 'Password cannot be empty';
       case 'password-match':
-        return t('Passwords do not match');
+        return 'Passwords do not match';
       case 'network-failure':
-        return t('Unable to contact the server');
+        return 'Unable to contact the server';
       case 'missing-issuer':
-        return t('OpenID server cannot be empty');
+        return 'OpenID server cannot be empty';
       case 'missing-client-id':
-        return t('Client ID cannot be empty');
+        return 'Client ID cannot be empty';
       case 'missing-client-secret':
-        return t('Client secret cannot be empty');
+        return 'Client secret cannot be empty';
       default:
-        return t(`An unknown error occurred: {{error}}`, { error });
+        return `An unknown error occurred: ${error}`;
     }
   }
 
@@ -68,23 +66,19 @@ export function Bootstrap() {
 
   return (
     <View style={{ maxWidth: 450 }}>
-      <Title text={t('Welcome to Actual!')} />
+      <Title text="Welcome to Actual!" />
       <Paragraph style={{ fontSize: 16, color: theme.pageTextDark }}>
-        <Trans>
-          Actual is a super fast privacy-focused app for managing your finances.
-          To secure your data, you'll need to set a password for your server.
-        </Trans>
+        Actual is a super fast privacy-focused app for managing your finances.
+        To secure your data, you'll need to set a password for your server.
       </Paragraph>
 
       <Paragraph isLast style={{ fontSize: 16, color: theme.pageTextDark }}>
-        <Trans>
-          Consider opening{' '}
-          <Link variant="external" to="https://actualbudget.org/docs/tour/">
-            our tour
-          </Link>{' '}
-          in a new tab for some guidance on what to do when you've set your
-          password.
-        </Trans>
+        Consider opening{' '}
+        <Link variant="external" to="https://actualbudget.org/docs/tour/">
+          our tour
+        </Link>{' '}
+        in a new tab for some guidance on what to do when you've set your
+        password.
       </Paragraph>
 
       {error && (
@@ -111,7 +105,7 @@ export function Bootstrap() {
             }}
             onPress={onDemo}
           >
-            {t('Try Demo')}
+            Try Demo
           </Button>
         }
         onSetPassword={onSetPassword}

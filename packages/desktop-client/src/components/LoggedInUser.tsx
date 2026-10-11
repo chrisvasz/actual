@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -12,7 +11,6 @@ import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
 import type { RemoteFile, SyncedLocalFile } from '@actual-app/core/types/file';
-import type { TransObjectLiteral } from '@actual-app/core/types/util';
 
 import { useAuth } from '#auth/AuthProvider';
 import { Permissions } from '#auth/types';
@@ -31,7 +29,6 @@ type LoggedInUserProps = {
 };
 
 export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { userData, isLoading: loading } = useUserData();
@@ -94,36 +91,34 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
   function getServerStatus() {
     if (!serverUrl) {
       return {
-        message: t('No server'),
+        message: 'No server',
         tooltip: (
-          <Trans>
+          <>
             A server syncs your budget across devices and keeps a backup of your
             data.
             <br />
             Click to set one up.
-          </Trans>
+          </>
         ),
       };
     }
 
     if (userData?.offline) {
       return {
-        message: t('Server offline'),
+        message: 'Server offline',
         tooltip: (
-          <Trans>
+          <>
             Can't reach your server right now.
             <br />
             Changes are saved locally and will sync once it's reachable again.
-          </Trans>
+          </>
         ),
       };
     }
 
     return {
-      message: t('Server online'),
-      tooltip: (
-        <Trans>Connected to your server — your budget is syncing.</Trans>
-      ),
+      message: 'Server online',
+      tooltip: 'Connected to your server — your budget is syncing.',
     };
   }
 
@@ -139,7 +134,7 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
           ...style,
         }}
       >
-        <Trans>Connecting...</Trans>
+        Connecting...
       </Text>
     );
   }
@@ -158,26 +153,26 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
       !userData?.offline &&
       userData?.loginMethod === 'password'
     ) {
-      baseMenu.push({ name: 'change-password', text: t('Change password') });
+      baseMenu.push({ name: 'change-password', text: 'Change password' });
     }
     if (serverUrl) {
-      baseMenu.push({ name: 'sign-out', text: t('Sign out') });
+      baseMenu.push({ name: 'sign-out', text: 'Sign out' });
     }
     baseMenu.push({
       name: 'config-server',
-      text: serverUrl ? t('Change server URL') : t('Start using a server'),
+      text: serverUrl ? 'Change server URL' : 'Start using a server',
     });
 
     const adminMenu: (MenuItem | typeof Menu.line)[] = [];
     if (multiuserEnabled && isAdmin) {
       if (!budgetId && location.pathname !== '/') {
-        adminMenu.push({ name: 'index', text: t('View file list') });
+        adminMenu.push({ name: 'index', text: 'View file list' });
       } else if (
         serverUrl &&
         !userData?.offline &&
         location.pathname !== '/user-directory'
       ) {
-        adminMenu.push({ name: 'user-directory', text: t('User Directory') });
+        adminMenu.push({ name: 'user-directory', text: 'User Directory' });
       }
     }
 
@@ -192,7 +187,7 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
     ) {
       adminMenu.push({
         name: 'user-access',
-        text: t('User Access Management'),
+        text: 'User Access Management',
       });
     }
 
@@ -226,14 +221,7 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
         userData?.displayName &&
         !hasSyncedPrefs && (
           <small>
-            (
-            <Trans>
-              logged in as:{' '}
-              <span>
-                {{ userName: userData?.displayName } as TransObjectLiteral}
-              </span>
-            </Trans>
-            )
+            ( logged in as: <span>{userData?.displayName}</span>)
           </small>
         )}
       {!loading &&
@@ -242,14 +230,7 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
         userData?.displayName &&
         hasSyncedPrefs && (
           <small>
-            (
-            <Trans>
-              logged in as:{' '}
-              <span>
-                {{ userName: userData?.displayName } as TransObjectLiteral}
-              </span>
-            </Trans>
-            )
+            ( logged in as: <span>{userData?.displayName}</span>)
           </small>
         )}
 

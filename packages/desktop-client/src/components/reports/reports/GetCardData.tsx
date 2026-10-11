@@ -1,6 +1,5 @@
 import React from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { Trans } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { styles } from '@actual-app/components/styles';
@@ -32,7 +31,7 @@ function ErrorFallback() {
         <br />
       </div>
       <Text style={{ ...styles.mediumText, color: theme.errorText }}>
-        <Trans>There was a problem loading your report</Trans>
+        There was a problem loading your report
       </Text>
     </>
   );

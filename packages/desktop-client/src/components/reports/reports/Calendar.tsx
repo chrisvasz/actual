@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Ref } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -83,7 +82,6 @@ type CalendarInnerProps = {
 
 function CalendarInner({ widget, parameters }: CalendarInnerProps) {
   const locale = useLocale();
-  const { t } = useTranslation();
   const format = useFormat();
 
   const [start, setStart] = useState(
@@ -308,7 +306,7 @@ function CalendarInner({ widget, parameters }: CalendarInnerProps) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isNarrowWidth } = useResponsive();
-  const title = widget?.meta?.name || t('Calendar');
+  const title = widget?.meta?.name || 'Calendar';
   const table = useRef<TableHandleRef<TransactionEntity>>(null);
   const dateFormat = useDateFormat();
   const updateDashboardWidgetMutation = useUpdateDashboardWidgetMutation();
@@ -318,7 +316,7 @@ function CalendarInner({ widget, parameters }: CalendarInnerProps) {
       throw new Error('No widget that could be saved.');
     }
 
-    const name = newName || t('Calendar');
+    const name = newName || 'Calendar';
     updateDashboardWidgetMutation.mutate({
       widget: {
         id: widget.id,
@@ -363,7 +361,7 @@ function CalendarInner({ widget, parameters }: CalendarInnerProps) {
             addNotification({
               notification: {
                 type: 'message',
-                message: t('Dashboard widget successfully saved.'),
+                message: 'Dashboard widget successfully saved.',
               },
             }),
           );
@@ -373,7 +371,7 @@ function CalendarInner({ widget, parameters }: CalendarInnerProps) {
             addNotification({
               notification: {
                 type: 'error',
-                message: t('Failed to save dashboard widget.'),
+                message: 'Failed to save dashboard widget.',
               },
             }),
           );
@@ -457,7 +455,7 @@ function CalendarInner({ widget, parameters }: CalendarInnerProps) {
         >
           {widget && (
             <Button variant="primary" onPress={onSaveWidget}>
-              <Trans>Save widget</Trans>
+              Save widget
             </Button>
           )}
         </Header>
@@ -564,7 +562,7 @@ function CalendarInner({ widget, parameters }: CalendarInnerProps) {
                         fontStyle: 'italic',
                       }}
                     >
-                      <Trans>No transactions</Trans>
+                      No transactions
                     </View>
                   )}
                   onSort={onSort}
@@ -627,8 +625,6 @@ function CalendarWithHeader({
   conditionsOp,
   format,
 }: CalendarWithHeaderProps) {
-  const { t } = useTranslation();
-
   return (
     <View
       style={{
@@ -700,7 +696,7 @@ function CalendarWithHeader({
               flexGrow: 1,
               justifyContent: 'start',
             }}
-            aria-label={t('Income')}
+            aria-label="Income"
           >
             <FinancialText>
               {format(calendar.totalIncome, 'financial')}
@@ -718,7 +714,7 @@ function CalendarWithHeader({
               flexGrow: 1,
               justifyContent: 'start',
             }}
-            aria-label={t('Expenses')}
+            aria-label="Expenses"
           >
             <FinancialText>
               {format(calendar.totalExpense, 'financial')}
@@ -811,7 +807,7 @@ function CalendarCardHeader({
                 marginRight: 4,
               }}
             >
-              <Trans>Income:</Trans>
+              Income:
             </View>
             <View style={{ color: theme.reportsNumberPositive }}>
               {format(totalIncome, 'financial')}
@@ -823,7 +819,7 @@ function CalendarCardHeader({
                 marginRight: 4,
               }}
             >
-              <Trans>Expenses:</Trans>
+              Expenses:
             </View>
             <View style={{ color: theme.reportsNumberNegative }}>
               {format(totalExpense, 'financial')}

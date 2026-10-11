@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -210,7 +209,6 @@ function SplitAmountMethodSelect({
 }
 
 function EditorButtons({ onAdd, onDelete }) {
-  const { t } = useTranslation();
   return (
     <>
       {onDelete && (
@@ -218,7 +216,7 @@ function EditorButtons({ onAdd, onDelete }) {
           variant="bare"
           onPress={onDelete}
           style={{ padding: 7 }}
-          aria-label={t('Delete entry')}
+          aria-label="Delete entry"
         >
           <SvgSubtract style={{ width: 8, height: 8, color: 'inherit' }} />
         </Button>
@@ -228,7 +226,7 @@ function EditorButtons({ onAdd, onDelete }) {
           variant="bare"
           onPress={onAdd}
           style={{ padding: 7 }}
-          aria-label={t('Add entry')}
+          aria-label="Add entry"
         >
           <SvgAdd style={{ width: 10, height: 10, color: 'inherit' }} />
         </Button>
@@ -412,7 +410,7 @@ function ScheduleDescription({ id }) {
         }}
       >
         <SpaceBetween gap={5} style={{ flexWrap: 'nowrap' }}>
-          <Trans>Payee:</Trans>
+          Payee:
           <DisplayId
             type="payees"
             id={schedule._payee}
@@ -422,7 +420,7 @@ function ScheduleDescription({ id }) {
 
         <Text style={{ flexShrink: 0 }}>
           <Text> — </Text>
-          <Trans>Amount:</Trans>{' '}
+          Amount:{' '}
           <FinancialText>
             {formatAmount(schedule._amount, format)}
           </FinancialText>
@@ -430,9 +428,7 @@ function ScheduleDescription({ id }) {
 
         <Text style={{ flexShrink: 0 }}>
           <Text> — </Text>
-          <Trans>
-            Next: {{ month: monthUtils.format(schedule.next_date, dateFormat) }}
-          </Trans>
+          Next: {monthUtils.format(schedule.next_date, dateFormat)}
         </Text>
       </SpaceBetween>
       {!isNarrowWidth && <StatusBadge status={status} />}
@@ -485,7 +481,6 @@ function ActionEditor({
   onDelete,
   onAdd,
 }: ActionEditorProps) {
-  const { t } = useTranslation();
   const {
     field,
     op,
@@ -562,10 +557,8 @@ function ActionEditor({
                   marginTop: 3,
                 }}
               >
-                <Trans>
-                  Templating is deprecated and will be removed in a future
-                  release. Switch this action to a formula instead.
-                </Trans>
+                Templating is deprecated and will be removed in a future
+                release. Switch this action to a formula instead.
               </Text>
             )}
           </View>
@@ -583,9 +576,7 @@ function ActionEditor({
                   height: 24,
                   width: 24,
                 }}
-                aria-label={
-                  hasFormula ? t('Disable formula') : t('Enable formula')
-                }
+                aria-label={hasFormula ? 'Disable formula' : 'Enable formula'}
                 onPress={() =>
                   hasFormula
                     ? onChange('formula', undefined)
@@ -615,7 +606,7 @@ function ActionEditor({
                     : undefined,
                 }}
                 aria-label={
-                  templated ? t('Disable templating') : t('Enable templating')
+                  templated ? 'Disable templating' : 'Enable templating'
                 }
                 onPress={() => onChange('template', !templated)}
               >
@@ -632,7 +623,7 @@ function ActionEditor({
               flexShrink: 0,
             }}
           >
-            {t('allocate')}
+            allocate
           </View>
 
           <SplitAmountMethodSelect
@@ -679,7 +670,7 @@ function ActionEditor({
                 justifyContent: 'center',
                 borderRadius: 4,
               }}
-              aria-label={t('Formula mode indicator')}
+              aria-label="Formula mode indicator"
               role="img"
             >
               <span
@@ -755,13 +746,7 @@ function StageInfo() {
   return (
     <View style={{ position: 'relative', marginLeft: 5 }}>
       <Tooltip
-        content={
-          <Trans>
-            The stage of a rule allows you to force a specific order. Pre rules
-            always run first, and post rules always run last. Within each stage
-            rules are automatically ordered from least to most specific.
-          </Trans>
-        }
+        content="The stage of a rule allows you to force a specific order. Pre rules always run first, and post rules always run last. Within each stage rules are automatically ordered from least to most specific."
         placement="bottom start"
         style={{
           ...styles.tooltip,
@@ -957,7 +942,7 @@ function ConditionsList({
 
   return conditions.length === 0 ? (
     <Button style={{ alignSelf: 'flex-start' }} onPress={addInitialCondition}>
-      <Trans>Add condition</Trans>
+      Add condition
     </Button>
   ) : (
     <SpaceBetween direction="vertical" gap={10} data-testid="condition-list">
@@ -1033,7 +1018,6 @@ export function RuleEditor({
   onCancel,
   style,
 }: RuleEditorProps) {
-  const { t } = useTranslation();
   const [conditions, setConditions] = useState(
     defaultRule.conditions.map(parse).map(c => ({ ...c, inputKey: uuidv4() })),
   );
@@ -1339,28 +1323,26 @@ export function RuleEditor({
           padding: '0 20px',
         }}
       >
-        <Text style={{ marginRight: 15 }}>
-          <Trans>Stage of rule:</Trans>
-        </Text>
+        <Text style={{ marginRight: 15 }}>Stage of rule:</Text>
 
         <SpaceBetween gap={5} style={{ alignItems: 'center' }}>
           <StageButton
             selected={stage === 'pre'}
             onSelect={() => onChangeStage('pre')}
           >
-            <Trans>Pre</Trans>
+            Pre
           </StageButton>
           <StageButton
             selected={stage === null}
             onSelect={() => onChangeStage(null)}
           >
-            <Trans>Default</Trans>
+            Default
           </StageButton>
           <StageButton
             selected={stage === 'post'}
             onSelect={() => onChangeStage('post')}
           >
-            <Trans>Post</Trans>
+            Post
           </StageButton>
 
           <StageInfo />
@@ -1382,20 +1364,18 @@ export function RuleEditor({
         <View style={{ flexShrink: 0 }}>
           <View style={{ marginBottom: 30 }}>
             <Text style={{ marginBottom: 15 }}>
-              <Trans>
-                If{' '}
-                <FieldSelect
-                  data-testid="conditions-op"
-                  style={{ display: 'inline-flex' }}
-                  fields={[
-                    ['and', t('all')],
-                    ['or', t('any')],
-                  ]}
-                  value={conditionsOp}
-                  onChange={onChangeConditionsOp}
-                />
-                {{ allOrAny: '' }} of these conditions match:
-              </Trans>
+              If{' '}
+              <FieldSelect
+                data-testid="conditions-op"
+                style={{ display: 'inline-flex' }}
+                fields={[
+                  ['and', 'all'],
+                  ['or', 'any'],
+                ]}
+                value={conditionsOp}
+                onChange={onChangeConditionsOp}
+              />{' '}
+              of these conditions match:
             </Text>
 
             <ConditionsList
@@ -1407,16 +1387,14 @@ export function RuleEditor({
             />
           </View>
 
-          <Text style={{ marginBottom: 15 }}>
-            <Trans>Then apply these actions:</Trans>
-          </Text>
+          <Text style={{ marginBottom: 15 }}>Then apply these actions:</Text>
           <View style={{ flex: 1 }}>
             {actionSplits.length === 0 && (
               <Button
                 style={{ alignSelf: 'flex-start' }}
                 onPress={addInitialAction}
               >
-                <Trans>Add action</Trans>
+                Add action
               </Button>
             )}
             <SpaceBetween
@@ -1451,8 +1429,8 @@ export function RuleEditor({
                         }}
                       >
                         {splitIndex === 0
-                          ? t('Apply to all')
-                          : `${t('Split')} ${splitIndex}`}
+                          ? 'Apply to all'
+                          : `${'Split'} ${splitIndex}`}
                       </Text>
                       {splitIndex && (
                         <Button
@@ -1462,7 +1440,7 @@ export function RuleEditor({
                             width: 20,
                             height: 20,
                           }}
-                          aria-label={t('Delete split')}
+                          aria-label="Delete split"
                         >
                           <SvgDelete
                             style={{
@@ -1502,7 +1480,7 @@ export function RuleEditor({
                       style={{ alignSelf: 'flex-start', marginTop: 5 }}
                       onPress={() => addActionToSplitAfterIndex(splitIndex, -1)}
                     >
-                      <Trans>Add action</Trans>
+                      Add action
                     </Button>
                   )}
                 </View>
@@ -1517,8 +1495,8 @@ export function RuleEditor({
                 data-testid="add-split-transactions"
               >
                 {actionSplits.length > 1
-                  ? t('Add another split')
-                  : t('Split into multiple transactions')}
+                  ? 'Add another split'
+                  : 'Split into multiple transactions'}
               </Button>
             )}
           </View>
@@ -1544,14 +1522,14 @@ export function RuleEditor({
             }}
           >
             <Text style={{ color: theme.pageTextLight, marginBottom: 0 }}>
-              <Trans>This rule applies to these transactions:</Trans>
+              This rule applies to these transactions:
             </Text>
 
             <Button
               isDisabled={selectedInst.items.size === 0}
               onPress={onApply}
             >
-              <Trans>Apply actions</Trans> ({selectedInst.items.size})
+              Apply actions ({selectedInst.items.size})
             </Button>
           </SpaceBetween>
 
@@ -1571,18 +1549,12 @@ export function RuleEditor({
               justifyContent: onDelete ? 'space-between' : 'flex-end',
             }}
           >
-            {onDelete && (
-              <Button onPress={onDelete}>
-                <Trans>Delete</Trans>
-              </Button>
-            )}
+            {onDelete && <Button onPress={onDelete}>Delete</Button>}
 
             <SpaceBetween>
-              <Button onPress={onCancel}>
-                <Trans>Cancel</Trans>
-              </Button>
+              <Button onPress={onCancel}>Cancel</Button>
               <Button variant="primary" onPress={onSave}>
-                <Trans>Save</Trans>
+                Save
               </Button>
             </SpaceBetween>
           </SpaceBetween>

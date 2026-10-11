@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { SvgExclamationSolid } from '@actual-app/components/icons/v1';
 import { styles } from '@actual-app/components/styles';
@@ -41,7 +40,7 @@ export function CustomReportListCards({
   if (!report) {
     return (
       <MissingReportCard widgetId={widgetId} isEditing={isEditing}>
-        <Trans>This custom report has been deleted.</Trans>
+        This custom report has been deleted.
       </MissingReportCard>
     );
   }
@@ -62,8 +61,6 @@ function CustomReportListCardsInner({
 }: CustomReportListCardsProps & {
   report: CustomReportEntity;
 }) {
-  const { t } = useTranslation();
-
   const dispatch = useDispatch();
 
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
@@ -103,9 +100,7 @@ function CustomReportListCardsInner({
             addNotification({
               notification: {
                 type: 'error',
-                message: t('Failed saving report name: {{error}}', {
-                  error: error.message,
-                }),
+                message: `Failed saving report name: ${error.message}`,
               },
             }),
           );
@@ -141,7 +136,7 @@ function CustomReportListCardsInner({
               <DateRange start={report.startDate} end={report.endDate} />
             ) : (
               <Text style={{ color: theme.pageTextSubdued }}>
-                {t(report.dateRange)}
+                {report.dateRange}
               </Text>
             )}
           </View>
@@ -166,9 +161,7 @@ function CustomReportListCardsInner({
       {hasWarning && (
         <View style={{ padding: 5, position: 'absolute', bottom: 0 }}>
           <Tooltip
-            content={t(
-              'The widget is configured to use a non-existing filter value (i.e. category/account/payee). Edit the filters used in this report widget to remove the warning.',
-            )}
+            content="The widget is configured to use a non-existing filter value (i.e. category/account/payee). Edit the filters used in this report widget to remove the warning."
             placement="bottom start"
             style={{ ...styles.tooltip, maxWidth: 300 }}
           >

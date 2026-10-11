@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import {
@@ -63,7 +62,6 @@ export function EnvelopeBudgetMonthMenuModal({
   };
 
   const displayMonth = monthUtils.format(month, "MMMM ''yy", locale);
-  const { t } = useTranslation();
 
   return (
     <Modal
@@ -92,9 +90,7 @@ export function EnvelopeBudgetMonthMenuModal({
               }}
             >
               <Notes
-                notes={
-                  originalNotes?.length > 0 ? originalNotes : t('No notes')
-                }
+                notes={originalNotes?.length > 0 ? originalNotes : 'No notes'}
                 editable={false}
                 focused={false}
                 getStyle={() => ({
@@ -123,7 +119,7 @@ export function EnvelopeBudgetMonthMenuModal({
                     height={20}
                     style={{ paddingRight: 5 }}
                   />
-                  <Trans>Edit notes</Trans>
+                  Edit notes
                 </Button>
               </View>
               <View>
@@ -153,7 +149,7 @@ export function EnvelopeBudgetMonthMenuModal({
                       style={{ paddingRight: 5 }}
                     />
                   )}
-                  <Trans>Actions</Trans>
+                  Actions
                 </Button>
               </View>
             </View>
@@ -165,20 +161,14 @@ export function EnvelopeBudgetMonthMenuModal({
                   onBudgetAction(month, 'copy-last');
                   state.close();
                   showUndoNotification({
-                    message: t(
-                      "{{displayMonth}} budgets have all been set to last month's budgeted amounts.",
-                      { displayMonth },
-                    ),
+                    message: `${displayMonth} budgets have all been set to last month's budgeted amounts.`,
                   });
                 }}
                 onSetBudgetsToZero={() => {
                   onBudgetAction(month, 'set-zero');
                   state.close();
                   showUndoNotification({
-                    message: t(
-                      '{{displayMonth}} budgets have all been set to zero.',
-                      { displayMonth },
-                    ),
+                    message: `${displayMonth} budgets have all been set to zero.`,
                   });
                 }}
                 onSetMonthsAverage={numberOfMonths => {

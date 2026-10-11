@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -44,15 +43,13 @@ import { liveQuery } from '#queries/liveQuery';
 import { useDispatch } from '#redux';
 
 function useAddBudgetAccountOptions() {
-  const { t } = useTranslation();
-
   const addOnBudgetAccountOption = {
     id: 'new-on',
-    name: t('Create new account'),
+    name: 'Create new account',
   };
   const addOffBudgetAccountOption = {
     id: 'new-off',
-    name: t('Create new account (off budget)'),
+    name: 'Create new account (off budget)',
   };
 
   return { addOnBudgetAccountOption, addOffBudgetAccountOption };
@@ -243,7 +240,6 @@ export function SelectLinkedAccountsModal({
       }
     }, [externalAccounts, syncSource, requisitionId, upgradingAccountId]);
 
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
   const dispatch = useDispatch();
   const { data: allAccounts = [] } = useAccounts();
@@ -479,15 +475,15 @@ export function SelectLinkedAccountsModal({
   const label = useMemo(() => {
     const s = new Set(draftLinkAccounts.values());
     if (s.has('linking') && s.has('unlinking')) {
-      return t('Link and unlink accounts');
+      return 'Link and unlink accounts';
     } else if (s.has('linking')) {
-      return t('Link accounts');
+      return 'Link accounts';
     } else if (s.has('unlinking')) {
-      return t('Unlink accounts');
+      return 'Unlink accounts';
     }
 
-    return t('Link or unlink accounts');
-  }, [draftLinkAccounts, t]);
+    return 'Link or unlink accounts';
+  }, [draftLinkAccounts]);
 
   return (
     <Modal
@@ -510,7 +506,7 @@ export function SelectLinkedAccountsModal({
           style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
         >
           <ModalHeader
-            title={t('Link Accounts')}
+            title="Link Accounts"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
 
@@ -521,10 +517,8 @@ export function SelectLinkedAccountsModal({
             }}
           >
             <Text style={{ marginBottom: 20 }}>
-              <Trans>
-                We found the following accounts. Select which ones you want to
-                add:
-              </Trans>
+              We found the following accounts. Select which ones you want to
+              add:
             </Text>
           </View>
 
@@ -558,13 +552,13 @@ export function SelectLinkedAccountsModal({
               style={{ ...styles.tableContainer, height: 300, flex: 'unset' }}
             >
               <TableHeader>
-                <Cell value={t('Institution to Sync')} width={150} />
-                <Cell value={t('Bank Account To Sync')} width={150} />
-                <Cell value={t('Balance')} width={120} />
-                <Cell value={t('Account in Actual')} width="flex" />
-                <Cell value={t('Starting Date')} width={120} />
-                <Cell value={t('Starting Balance')} width={120} />
-                <Cell value={t('Actions')} width={150} textAlign="center" />
+                <Cell value="Institution to Sync" width={150} />
+                <Cell value="Bank Account To Sync" width={150} />
+                <Cell value="Balance" width={120} />
+                <Cell value="Account in Actual" width="flex" />
+                <Cell value="Starting Date" width={120} />
+                <Cell value="Starting Balance" width={120} />
+                <Cell value="Actions" width={150} textAlign="center" />
               </TableHeader>
 
               <Table<ExternalAccount & { id: string }>
@@ -752,7 +746,6 @@ function TableRow({
     useAddBudgetAccountOptions();
   const format = useFormat();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
-  const { t } = useTranslation();
   const startingBalanceInfo = useStartingBalanceInfo(
     showStartingOptions ? undefined : chosenAccount?.id,
   );
@@ -803,7 +796,7 @@ function TableRow({
             {format(externalAccount.balance.toString(), 'financial')}
           </FinancialText>
         ) : (
-          t('Unknown')
+          'Unknown'
         )}
       </Field>
       {/* Account in Actual */}
@@ -877,7 +870,7 @@ function TableRow({
             }}
             style={{ float: 'right' }}
           >
-            <Trans>Remove bank sync</Trans>
+            Remove bank sync
           </Button>
         ) : (
           <Button
@@ -887,7 +880,7 @@ function TableRow({
             }}
             style={{ float: 'right' }}
           >
-            <Trans>Set up bank sync</Trans>
+            Set up bank sync
           </Button>
         )}
       </Field>
@@ -983,7 +976,7 @@ function StartingOptionsFields({
               color: theme.pageTextSubdued,
             }}
           >
-            <Trans>Starting date:</Trans>
+            Starting date:
           </Text>
           <Input
             type="date"
@@ -1005,7 +998,7 @@ function StartingOptionsFields({
               color: theme.pageTextSubdued,
             }}
           >
-            <Trans>Balance on that date:</Trans>
+            Balance on that date:
           </Text>
           <AmountInput
             value={customStartingDate.amount ?? 0}
@@ -1047,7 +1040,6 @@ function AccountCard({
     useAddBudgetAccountOptions();
   const format = useFormat();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
-  const { t } = useTranslation();
 
   const availableAccountOptions = getSelectableAccountOptions({
     localAccounts,
@@ -1110,13 +1102,13 @@ function AccountCard({
           color: theme.pageTextSubdued,
         }}
       >
-        <Trans>Balance:</Trans>{' '}
+        Balance:{' '}
         {externalAccount.balance != null ? (
           <FinancialText>
             {format(externalAccount.balance.toString(), 'financial')}
           </FinancialText>
         ) : (
-          t('Unknown')
+          'Unknown'
         )}
       </View>
 
@@ -1128,17 +1120,13 @@ function AccountCard({
           color: theme.pageTextSubdued,
         }}
       >
-        <Text>
-          <Trans>Linked to:</Trans>
-        </Text>
+        <Text>Linked to:</Text>
         {chosenAccount ? (
           <Text style={{ color: theme.noticeTextLight, fontWeight: 500 }}>
             {chosenAccount.name}
           </Text>
         ) : (
-          <Text style={{ color: theme.pageTextSubdued }}>
-            <Trans>Not linked</Trans>
-          </Text>
+          <Text style={{ color: theme.pageTextSubdued }}>Not linked</Text>
         )}
       </SpaceBetween>
 
@@ -1153,9 +1141,7 @@ function AccountCard({
           }}
         >
           <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
-            <Text style={{ color: theme.pageTextSubdued }}>
-              <Trans>Starting date:</Trans>
-            </Text>
+            <Text style={{ color: theme.pageTextSubdued }}>Starting date:</Text>
             <Text
               style={{
                 color: theme.pageTextSubdued,
@@ -1167,7 +1153,7 @@ function AccountCard({
           </View>
           <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
             <Text style={{ color: theme.pageTextSubdued }}>
-              <Trans>Starting balance:</Trans>
+              Starting balance:
             </Text>
 
             <FinancialText
@@ -1195,7 +1181,7 @@ function AccountCard({
             }}
             inputProps={{
               onBlur: () => setFocusedField(null),
-              placeholder: t('Select account...'),
+              placeholder: 'Select account...',
             }}
             value={chosenAccount?.id}
           />
@@ -1223,7 +1209,7 @@ function AccountCard({
             width: '100%',
           }}
         >
-          <Trans>Remove bank sync</Trans>
+          Remove bank sync
         </Button>
       ) : (
         <Button
@@ -1237,7 +1223,7 @@ function AccountCard({
             width: '100%',
           }}
         >
-          <Trans>Link account</Trans>
+          Link account
         </Button>
       )}
     </SpaceBetween>

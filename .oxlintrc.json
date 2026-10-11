@@ -31,8 +31,6 @@
 
     // Actual rules
     "actual/typography": "error",
-    "actual/no-untranslated-strings": "error",
-    "actual/prefer-trans-over-t": "error",
     "actual/prefer-if-statement": "error",
     "actual/prefer-logger-over-console": "error",
     "actual/object-shorthand-properties": "error",
@@ -388,7 +386,6 @@
     {
       "files": ["**/*.test.{js,ts,jsx,tsx}"],
       "rules": {
-        "actual/no-untranslated-strings": "off",
         "actual/prefer-logger-over-console": "off",
         "typescript/unbound-method": "off"
       }

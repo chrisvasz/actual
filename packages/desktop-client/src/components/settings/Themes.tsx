@@ -1,5 +1,4 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgCode } from '@actual-app/components/icons/v1';
@@ -40,7 +39,6 @@ type InstallerState = {
 } | null;
 
 export function ThemeSettings() {
-  const { t } = useTranslation();
   const sidebar = useSidebar();
   const [theme, switchTheme] = useTheme();
   const [darkTheme, switchDarkTheme] = usePreferredDarkTheme();
@@ -74,14 +72,14 @@ export function ThemeSettings() {
       ] as const);
     }
     options.push(Menu.line);
-    options.push([INSTALL_NEW_VALUE, t('Custom theme')] as const);
+    options.push([INSTALL_NEW_VALUE, 'Custom theme'] as const);
 
     return options;
-  }, [installedCustomLightTheme, theme, t]);
+  }, [installedCustomLightTheme, theme]);
 
   const buildLightOptions = useCallback(() => {
     const options: Array<readonly [string, string] | typeof Menu.line> = [
-      ['light', t('Light')],
+      ['light', 'Light'],
     ];
     if (installedCustomLightTheme) {
       options.push([
@@ -90,9 +88,9 @@ export function ThemeSettings() {
       ] as const);
     }
     options.push(Menu.line);
-    options.push([INSTALL_CUSTOM_LIGHT, t('Custom theme')] as const);
+    options.push([INSTALL_CUSTOM_LIGHT, 'Custom theme'] as const);
     return options;
-  }, [installedCustomLightTheme, t]);
+  }, [installedCustomLightTheme]);
 
   const buildDarkOptions = useCallback(() => {
     const options: Array<readonly [string, string] | typeof Menu.line> = [
@@ -105,9 +103,9 @@ export function ThemeSettings() {
       ] as const);
     }
     options.push(Menu.line);
-    options.push([INSTALL_CUSTOM_DARK, t('Custom theme')] as const);
+    options.push([INSTALL_CUSTOM_DARK, 'Custom theme'] as const);
     return options;
-  }, [installedCustomDarkTheme, t]);
+  }, [installedCustomDarkTheme]);
 
   const getCurrentValue = useCallback(() => {
     if (installedCustomLightTheme && theme !== 'auto') {
@@ -217,7 +215,7 @@ export function ThemeSettings() {
                 },
               }}
             >
-              <Column title={t('Theme')}>
+              <Column title="Theme">
                 <Select<string>
                   onChange={handleThemeChange}
                   value={getCurrentValue()}
@@ -232,7 +230,7 @@ export function ThemeSettings() {
               </Column>
               {theme === 'auto' && (
                 <>
-                  <Column title={t('Light theme')}>
+                  <Column title="Light theme">
                     <Select<string>
                       onChange={handleLightThemeChange}
                       value={
@@ -250,7 +248,7 @@ export function ThemeSettings() {
                       })}
                     />
                   </Column>
-                  <Column title={t('Dark theme')}>
+                  <Column title="Dark theme">
                     <Select<string>
                       onChange={handleDarkThemeChange}
                       value={
@@ -276,7 +274,7 @@ export function ThemeSettings() {
           {!showInstaller && hasCustomCssOverride && (
             <Button
               variant="bare"
-              aria-label={t('Custom CSS override active — click to edit')}
+              aria-label="Custom CSS override active — click to edit"
               onPress={handleEditOverride}
               style={{
                 alignSelf: 'flex-start',
@@ -284,7 +282,7 @@ export function ThemeSettings() {
                 gap: 6,
               }}
             >
-              <Trans>Custom CSS is active</Trans>
+              Custom CSS is active
               <SvgCode style={{ width: 14, height: 14 }} />
             </Button>
           )}
@@ -305,9 +303,7 @@ export function ThemeSettings() {
       }
     >
       <Text>
-        <Trans>
-          <strong>Themes</strong> change the user interface colors.
-        </Trans>
+        <strong>Themes</strong> change the user interface colors.
       </Text>
     </Setting>
   );

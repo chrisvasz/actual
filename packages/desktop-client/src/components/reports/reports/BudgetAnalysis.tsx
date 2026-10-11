@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
@@ -69,14 +68,13 @@ function OptionsButton({
   showHiddenCategories,
   onToggleShowHiddenCategories,
 }: OptionsButtonProps) {
-  const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
       <Button ref={triggerRef} onPress={() => setIsOpen(true)}>
-        <Trans>Options</Trans>
+        Options
       </Button>
       <Popover
         triggerRef={triggerRef}
@@ -96,24 +94,24 @@ function OptionsButton({
           items={[
             {
               name: 'graph-type',
-              text: t('Bar chart'),
+              text: 'Bar chart',
               toggle: graphType === 'Bar',
             },
             Menu.line,
             {
               name: 'show-balance',
-              text: t('Show balance'),
+              text: 'Show balance',
               toggle: showBalance,
             },
             {
               name: 'show-categories',
-              text: t('Show categories'),
+              text: 'Show categories',
               toggle: showCategories,
             },
             Menu.line,
             {
               name: 'show-hidden-categories',
-              text: t('Show hidden categories'),
+              text: 'Show hidden categories',
               toggle: showHiddenCategories,
             },
           ]}
@@ -144,7 +142,6 @@ type BudgetAnalysisInternalProps = {
 function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
   const locale = useLocale();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
   const format = useFormat();
 
   const {
@@ -331,7 +328,7 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
             addNotification({
               notification: {
                 type: 'message',
-                message: t('Dashboard widget successfully saved.'),
+                message: 'Dashboard widget successfully saved.',
               },
             }),
           );
@@ -343,13 +340,13 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
   const onExportCsv = () => {
     if (!data) return;
     const csv = buildBudgetAnalysisCsv(data.intervalData);
-    const reportName = (widget?.meta?.name || t('Budget Analysis'))
+    const reportName = (widget?.meta?.name || 'Budget Analysis')
       .replace(/[^a-z0-9]/gi, '-')
       .toLowerCase();
     void window.Actual.saveFile(
       csv,
       `${reportName}-${start}-${end}.csv`,
-      t('Export budget analysis'),
+      'Export budget analysis',
     );
   };
 
@@ -360,14 +357,14 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
   const latestInterval = data.intervalData[data.intervalData.length - 1];
   const endingBalance = latestInterval?.balance ?? 0;
 
-  const title = widget?.meta?.name || t('Budget Analysis');
+  const title = widget?.meta?.name || 'Budget Analysis';
 
   const onSaveWidgetName = async (newName: string) => {
     if (!widget) {
       throw new Error('No widget that could be saved.');
     }
 
-    const name = newName || t('Budget Analysis');
+    const name = newName || 'Budget Analysis';
     updateDashboardWidgetMutation.mutate({
       widget: {
         id: widget.id,
@@ -435,11 +432,11 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
           onToggleShowHiddenCategories={() => setShowHiddenCategories(v => !v)}
         />
 
-        <Tooltip content={t('Export as CSV')}>
+        <Tooltip content="Export as CSV">
           <Button
             variant="bare"
             onPress={onExportCsv}
-            aria-label={t('Export as CSV')}
+            aria-label="Export as CSV"
           >
             <SvgDownload style={{ width: 16, height: 16 }} />
           </Button>
@@ -447,7 +444,7 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
 
         {widget && (
           <Button variant="primary" onPress={onSaveWidget}>
-            <Trans>Save widget</Trans>
+            Save widget
           </Button>
         )}
       </Header>
@@ -499,11 +496,7 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
                       <>
                         <AlignedText
                           style={{ marginBottom: 5, minWidth: 210 }}
-                          left={
-                            <Block>
-                              <Trans>Budgeted:</Trans>
-                            </Block>
-                          }
+                          left={<Block>Budgeted:</Block>}
                           right={
                             <FinancialText style={{ fontWeight: 600 }}>
                               {format(data.totalBudgeted, 'financial')}
@@ -512,11 +505,7 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
                         />
                         <AlignedText
                           style={{ marginBottom: 5, minWidth: 210 }}
-                          left={
-                            <Block>
-                              <Trans>Spent:</Trans>
-                            </Block>
-                          }
+                          left={<Block>Spent:</Block>}
                           right={
                             <FinancialText style={{ fontWeight: 600 }}>
                               {format(data.totalSpent, 'financial')}
@@ -525,11 +514,7 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
                         />
                         <AlignedText
                           style={{ marginBottom: 5, minWidth: 210 }}
-                          left={
-                            <Block>
-                              <Trans>Overspending adj:</Trans>
-                            </Block>
-                          }
+                          left={<Block>Overspending adj:</Block>}
                           right={
                             <FinancialText style={{ fontWeight: 600 }}>
                               {format(
@@ -541,11 +526,7 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
                         />
                         <AlignedText
                           style={{ marginBottom: 5, minWidth: 210 }}
-                          left={
-                            <Block>
-                              <Trans>Ending balance:</Trans>
-                            </Block>
-                          }
+                          left={<Block>Ending balance:</Block>}
                           right={
                             <FinancialText style={{ fontWeight: 600 }}>
                               <Change amount={endingBalance} />
@@ -566,33 +547,31 @@ function BudgetAnalysisInternal({ widget }: BudgetAnalysisInternalProps) {
                 isConcise={isConcise}
               />
               <View style={{ marginTop: 30 }}>
-                <Trans>
-                  <Paragraph>
-                    <strong>Understanding the Chart</strong>
-                    <br />• <strong>Budgeted:</strong> The amount you allocated
-                    each month
-                    <br />• <strong>Spent:</strong> Your actual spending
-                    <br />• <strong>Overspending Adjustment:</strong> Amounts
-                    from categories without rollover that were reset
-                    <br />• <strong>Balance:</strong> Your cumulative budget
-                    performance, starting with any prior balance. Respects
-                    category rollover settings from your budget.
-                  </Paragraph>
-                  <Paragraph>
-                    <strong>Understanding the Budget Summary</strong>
-                    <br />
-                    The balance starts from the month before your selected
-                    period. Budgeted, spent, and overspending adjustments show
-                    totals over the period. Ending balance shows the final
-                    balance at period end. You can filter by categories to track
-                    changes in a specific area.
-                  </Paragraph>
-                  <Paragraph>
-                    Use the <strong>Options</strong> button to switch between
-                    line and bar chart, toggle balance and category series
-                    visibility, and include hidden budget categories.
-                  </Paragraph>
-                </Trans>
+                <Paragraph>
+                  <strong>Understanding the Chart</strong>
+                  <br />• <strong>Budgeted:</strong> The amount you allocated
+                  each month
+                  <br />• <strong>Spent:</strong> Your actual spending
+                  <br />• <strong>Overspending Adjustment:</strong> Amounts from
+                  categories without rollover that were reset
+                  <br />• <strong>Balance:</strong> Your cumulative budget
+                  performance, starting with any prior balance. Respects
+                  category rollover settings from your budget.
+                </Paragraph>
+                <Paragraph>
+                  <strong>Understanding the Budget Summary</strong>
+                  <br />
+                  The balance starts from the month before your selected period.
+                  Budgeted, spent, and overspending adjustments show totals over
+                  the period. Ending balance shows the final balance at period
+                  end. You can filter by categories to track changes in a
+                  specific area.
+                </Paragraph>
+                <Paragraph>
+                  Use the <strong>Options</strong> button to switch between line
+                  and bar chart, toggle balance and category series visibility,
+                  and include hidden budget categories.
+                </Paragraph>
               </View>
             </View>
           </View>

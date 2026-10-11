@@ -12,7 +12,6 @@ import type {
   CategoryEntity,
   CategoryGroupEntity,
 } from '@actual-app/core/types/models';
-import { t } from 'i18next';
 
 import type { DropPosition } from '#components/sort';
 import type { useSpreadsheet } from '#hooks/useSpreadsheet';
@@ -38,11 +37,11 @@ export function addToBeBudgetedGroup(groups: CategoryGroupEntity[]) {
   return [
     {
       id: 'to-budget',
-      name: t('To Budget'),
+      name: 'To Budget',
       categories: [
         {
           id: 'to-budget',
-          name: t('To Budget'),
+          name: 'To Budget',
           group: 'to-budget',
         },
       ],

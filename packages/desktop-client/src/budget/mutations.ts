@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { send } from '@actual-app/core/platform/client/connection';
 import type { IntegerAmount } from '@actual-app/core/shared/util';
 import type {
@@ -8,7 +6,6 @@ import type {
 } from '@actual-app/core/types/models';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
-import type { TFunction } from 'i18next';
 import { v4 as uuidv4 } from 'uuid';
 
 import { pushModal } from '#modals/modalsSlice';
@@ -44,17 +41,13 @@ function dispatchErrorNotification(
 
 function dispatchCategoryNameAlreadyExistsNotification(
   dispatch: AppDispatch,
-  t: TFunction,
   name: CategoryEntity['name'],
 ) {
   dispatch(
     addNotification({
       notification: {
         type: 'error',
-        message: t(
-          'Category "{{name}}" already exists in group (it may be hidden)',
-          { name },
-        ),
+        message: `Category "${name}" already exists in group (it may be hidden)`,
       },
     }),
   );
@@ -70,7 +63,6 @@ type CreateCategoryPayload = {
 export function useCreateCategoryMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -92,7 +84,7 @@ export function useCreateCategoryMutation() {
       console.error('Error creating category:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error creating the category. Please try again.'),
+        'There was an error creating the category. Please try again.',
         error,
       );
     },
@@ -106,7 +98,6 @@ type UpdateCategoryPayload = {
 export function useUpdateCategoryMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ category }: UpdateCategoryPayload) => {
@@ -119,7 +110,7 @@ export function useUpdateCategoryMutation() {
       console.error('Error updating category:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error updating the category. Please try again.'),
+        'There was an error updating the category. Please try again.',
         error,
       );
     },
@@ -133,7 +124,6 @@ type SaveCategoryPayload = {
 export function useSaveCategoryMutation() {
   const createCategory = useCreateCategoryMutation();
   const updateCategory = useUpdateCategoryMutation();
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
 
@@ -151,11 +141,7 @@ export function useSaveCategoryMutation() {
       );
 
       if (exists) {
-        dispatchCategoryNameAlreadyExistsNotification(
-          dispatch,
-          t,
-          category.name,
-        );
+        dispatchCategoryNameAlreadyExistsNotification(dispatch, category.name);
         return;
       }
 
@@ -180,7 +166,6 @@ type DeleteCategoryPayload = {
 export function useDeleteCategoryMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   const deleteCategory = async ({
     id,
@@ -221,7 +206,7 @@ export function useDeleteCategoryMutation() {
       console.error('Error deleting category:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error deleting the category. Please try again.'),
+        'There was an error deleting the category. Please try again.',
         error,
       );
     },
@@ -237,7 +222,6 @@ type MoveCategoryPayload = {
 export function useMoveCategoryMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id, groupId, targetId }: MoveCategoryPayload) => {
@@ -248,7 +232,7 @@ export function useMoveCategoryMutation() {
       console.error('Error moving category:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error moving the category. Please try again.'),
+        'There was an error moving the category. Please try again.',
         error,
       );
     },
@@ -265,7 +249,6 @@ export function useReorderCategoryMutation() {
   const moveCategory = useMoveCategoryMutation();
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id, groupId, targetId }: ReoderCategoryPayload) => {
@@ -284,7 +267,6 @@ export function useReorderCategoryMutation() {
       if (exists) {
         dispatchCategoryNameAlreadyExistsNotification(
           dispatch,
-          t,
           moveCandidate.name,
         );
         return;
@@ -302,7 +284,6 @@ type CreateCategoryGroupPayload = {
 export function useCreateCategoryGroupMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ name }: CreateCategoryGroupPayload) => {
@@ -314,7 +295,7 @@ export function useCreateCategoryGroupMutation() {
       console.error('Error creating category group:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error creating the category group. Please try again.'),
+        'There was an error creating the category group. Please try again.',
         error,
       );
     },
@@ -328,7 +309,6 @@ type UpdateCategoryGroupPayload = {
 export function useUpdateCategoryGroupMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ group }: UpdateCategoryGroupPayload) => {
       // Strip off the categories field if it exist. It's not a real db
@@ -343,7 +323,7 @@ export function useUpdateCategoryGroupMutation() {
       console.error('Error updating category group:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error updating the category group. Please try again.'),
+        'There was an error updating the category group. Please try again.',
         error,
       );
     },
@@ -359,7 +339,6 @@ export function useSaveCategoryGroupMutation() {
   const updateCategoryGroup = useUpdateCategoryGroupMutation();
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ group }: SaveCategoryGroupPayload) => {
@@ -376,9 +355,7 @@ export function useSaveCategoryGroupMutation() {
       if (exists) {
         dispatchErrorNotification(
           dispatch,
-          t('A category group with name "{{name}}" already exists.', {
-            name: group.name,
-          }),
+          `A category group with name "${group.name}" already exists.`,
         );
         return;
       }
@@ -399,7 +376,6 @@ type DeleteCategoryGroupPayload = {
 export function useDeleteCategoryGroupMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id }: DeleteCategoryGroupPayload) => {
@@ -448,7 +424,7 @@ export function useDeleteCategoryGroupMutation() {
       console.error('Error deleting category group:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error deleting the category group. Please try again.'),
+        'There was an error deleting the category group. Please try again.',
         error,
       );
     },
@@ -463,7 +439,6 @@ type MoveCategoryGroupPayload = {
 export function useMoveCategoryGroupMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id, targetId }: MoveCategoryGroupPayload) => {
@@ -474,7 +449,7 @@ export function useMoveCategoryGroupMutation() {
       console.error('Error moving category group:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error moving the category group. Please try again.'),
+        'There was an error moving the category group. Please try again.',
         error,
       );
     },
@@ -507,7 +482,6 @@ type SortCategoriesPayload = {
 export function useSortCategoriesMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ groupId, direction }: SortCategoriesPayload) => {
@@ -518,7 +492,7 @@ export function useSortCategoriesMutation() {
       console.error('Error sorting categories:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error sorting the categories. Please try again.'),
+        'There was an error sorting the categories. Please try again.',
         error,
       );
     },
@@ -649,7 +623,6 @@ type ApplyBudgetActionPayload =
 
 export function useBudgetActions() {
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ month, type, args }: ApplyBudgetActionPayload) => {
@@ -761,7 +734,7 @@ export function useBudgetActions() {
       console.error('Error applying budget action:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error applying the budget action. Please try again.'),
+        'There was an error applying the budget action. Please try again.',
         error,
       );
     },

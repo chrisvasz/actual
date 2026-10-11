@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Trans } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import type { CSSProperties } from '@actual-app/components/styles';
@@ -77,7 +76,7 @@ export const AdvancedToggle = ({ children }: AdvancedToggleProps) => {
       }}
     >
       <View style={{ fontSize: 20, fontWeight: 500, flexShrink: 0 }}>
-        <Trans>Advanced Settings</Trans>
+        Advanced Settings
       </View>
       {children}
     </View>
@@ -93,7 +92,7 @@ export const AdvancedToggle = ({ children }: AdvancedToggleProps) => {
         marginBottom: 25,
       }}
     >
-      <Trans>Show advanced settings</Trans>
+      Show advanced settings
     </Link>
   );
 };

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { ComponentProps } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgCustomNotesPaper } from '@actual-app/components/icons/v2';
@@ -32,7 +31,6 @@ export function NotesButton({
   tooltipPosition = 'bottom start',
   style,
 }: NotesButtonProps) {
-  const { t } = useTranslation();
   const triggerRef = useRef(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const note = useNotes(id) || '';
@@ -67,7 +65,7 @@ export function NotesButton({
         <Button
           ref={triggerRef}
           variant="bare"
-          aria-label={t('View notes')}
+          aria-label="View notes"
           className={cx(
             css({
               color: defaultColor,

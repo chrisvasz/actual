@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Form } from 'react-aria-components';
-import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
@@ -39,9 +38,7 @@ export function SaveReportChoose({ onApply }: SaveReportChooseProps) {
         }}
       >
         <View style={{ flexDirection: 'row', align: 'center' }}>
-          <Text style={{ userSelect: 'none', flex: 1 }}>
-            <Trans>Choose Report</Trans>
-          </Text>
+          <Text style={{ userSelect: 'none', flex: 1 }}>Choose Report</Text>
           <View style={{ flex: 1 }} />
         </View>
         <GenericInput
@@ -62,7 +59,7 @@ export function SaveReportChoose({ onApply }: SaveReportChooseProps) {
           }}
         >
           <Button variant="primary" type="submit">
-            <Trans>Apply</Trans>
+            Apply
           </Button>
         </View>
       </Form>

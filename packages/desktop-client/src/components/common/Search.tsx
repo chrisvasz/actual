@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { Ref } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgRemove, SvgSearchAlternate } from '@actual-app/components/icons/v2';
@@ -31,8 +30,6 @@ export function Search({
   height,
   style,
 }: SearchProps) {
-  const { t } = useTranslation();
-
   const [focused, setFocused] = useState(false);
 
   const clearButtonPadding = ((height ?? 24) - 8) / 2;
@@ -106,7 +103,7 @@ export function Search({
       />
 
       {value && (
-        <View title={t('Clear search term')}>
+        <View title="Clear search term">
           <Button
             variant="bare"
             style={{

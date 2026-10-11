@@ -1,5 +1,4 @@
 import { useEffect, useEffectEvent, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useJoyride } from 'react-joyride';
 import type { Controls, EventData } from 'react-joyride';
 
@@ -22,7 +21,6 @@ type TourHostProps = {
 };
 
 export function TourHost({ tourId }: TourHostProps) {
-  const { t } = useTranslation();
   const { stopTour } = useTour();
   const { activeModal, modalStack } = useModalState();
   const reducedMotion = useReducedMotion();
@@ -51,11 +49,11 @@ export function TourHost({ tourId }: TourHostProps) {
     onEvent: handleEvent,
     tooltipComponent: TourTooltip,
     locale: {
-      back: t('Back'),
-      close: t('Close'),
-      last: t('Finish'),
-      next: t('Next'),
-      skip: t('Skip tour'),
+      back: 'Back',
+      close: 'Close',
+      last: 'Finish',
+      next: 'Next',
+      skip: 'Skip tour',
     },
     options: {
       arrowColor: theme.menuBackground,

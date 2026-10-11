@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useEffect, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import { Button, ButtonWithLoading } from '@actual-app/components/button';
@@ -19,7 +18,6 @@ import { loggedIn, signOut } from '#users/usersSlice';
 import { Title } from './subscribe/common';
 
 export function ConfigServer() {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,13 +34,9 @@ export function ConfigServer() {
   function getErrorMessage(error: string) {
     switch (error) {
       case 'network-failure':
-        return t(
-          'Connection failed. If you use a self-signed certificate or were recently offline, try refreshing the page. Otherwise ensure you have HTTPS set up properly.',
-        );
+        return 'Connection failed. If you use a self-signed certificate or were recently offline, try refreshing the page. Otherwise ensure you have HTTPS set up properly.';
       default:
-        return t(
-          'Server does not look like an Actual server. Is it set up correctly?',
-        );
+        return 'Server does not look like an Actual server. Is it set up correctly?';
     }
   }
 
@@ -99,7 +93,7 @@ export function ConfigServer() {
         />
       )}
       <>
-        <Title text={t('Connect to a server')} />
+        <Title text="Connect to a server" />
         <Text
           style={{
             fontSize: 16,
@@ -107,18 +101,9 @@ export function ConfigServer() {
             lineHeight: 1.5,
           }}
         >
-          {currentUrl ? (
-            <Trans>
-              Existing sessions will be logged out and you will log in to this
-              server. We will validate that Actual is running at this URL.
-            </Trans>
-          ) : (
-            <Trans>
-              A sync server keeps your budget up to date across all your devices
-              and unlocks features like bank syncing. It is completely optional:
-              Actual works great on just this device too.
-            </Trans>
-          )}
+          {currentUrl
+            ? 'Existing sessions will be logged out and you will log in to this server. We will validate that Actual is running at this URL.'
+            : 'A sync server keeps your budget up to date across all your devices and unlocks features like bank syncing. It is completely optional: Actual works great on just this device too.'}
         </Text>
         {!currentUrl && (
           <Text
@@ -129,18 +114,15 @@ export function ConfigServer() {
               marginTop: 10,
             }}
           >
-            <Trans>
-              If you already run a server, enter its URL below. Otherwise you
-              can{' '}
-              <Link
-                variant="external"
-                to="https://actualbudget.org/docs/install/"
-                linkColor="purple"
-              >
-                learn how to set one up
-              </Link>{' '}
-              and connect it whenever you are ready.
-            </Trans>
+            If you already run a server, enter its URL below. Otherwise you can{' '}
+            <Link
+              variant="external"
+              to="https://actualbudget.org/docs/install/"
+              linkColor="purple"
+            >
+              learn how to set one up
+            </Link>{' '}
+            and connect it whenever you are ready.
           </Text>
         )}
         {error && (
@@ -158,7 +140,7 @@ export function ConfigServer() {
         <View style={{ display: 'flex', flexDirection: 'row', marginTop: 30 }}>
           <BigInput
             autoFocus
-            placeholder={t('https://example.com')}
+            placeholder="https://example.com"
             value={url || ''}
             onChangeValue={setUrl}
             style={{ flex: 1, marginRight: 10 }}
@@ -170,7 +152,7 @@ export function ConfigServer() {
             style={{ fontSize: 15 }}
             onPress={onSubmit}
           >
-            <Trans>Connect</Trans>
+            Connect
           </ButtonWithLoading>
         </View>
         <View
@@ -186,7 +168,7 @@ export function ConfigServer() {
               style={{ color: theme.pageTextLink }}
               onPress={onSkip}
             >
-              <Trans>Stop using a server</Trans>
+              Stop using a server
             </Button>
           ) : (
             <>
@@ -195,7 +177,7 @@ export function ConfigServer() {
                 style={{ color: theme.pageTextLink }}
                 onPress={onSameDomain}
               >
-                <Trans>Use the current domain</Trans>
+                Use the current domain
               </Button>
               {!userData && (
                 <Button
@@ -203,7 +185,7 @@ export function ConfigServer() {
                   style={{ color: theme.pageTextLink }}
                   onPress={onSkip}
                 >
-                  <Trans>Don't use a server</Trans>
+                  Don't use a server
                 </Button>
               )}
             </>

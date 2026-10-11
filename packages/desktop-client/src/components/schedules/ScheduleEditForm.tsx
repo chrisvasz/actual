@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -118,7 +117,6 @@ export function ScheduleEditForm({
   onUnlinkTransactions,
 }: ScheduleEditFormProps) {
   const locale = useLocale();
-  const { t } = useTranslation();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
   const { isNarrowWidth } = useResponsive();
 
@@ -127,12 +125,12 @@ export function ScheduleEditForm({
       <View style={{ display: 'block', overflow: 'auto', padding: 10 }}>
         <SpaceBetween style={{ marginTop: 10 }}>
           <FormField style={{ flex: 1 }}>
-            <FormLabel title={t('Schedule Name')} htmlFor="name-field" />
+            <FormLabel title="Schedule Name" htmlFor="name-field" />
             <InitialFocus>
               <Input
                 id="name-field"
                 value={fields.name}
-                placeholder={t('nothing')}
+                placeholder="nothing"
                 onChangeValue={e => {
                   dispatch({ type: 'set-field', field: 'name', value: e });
                 }}
@@ -148,11 +146,7 @@ export function ScheduleEditForm({
           }}
         >
           <FormField style={{ flex: 1 }}>
-            <FormLabel
-              title={t('Payee')}
-              id="payee-label"
-              htmlFor="payee-field"
-            />
+            <FormLabel title="Payee" id="payee-label" htmlFor="payee-field" />
             <GenericInput
               type="id"
               field="payee"
@@ -165,7 +159,7 @@ export function ScheduleEditForm({
 
           <FormField style={{ flex: 1 }}>
             <FormLabel
-              title={t('Account')}
+              title="Account"
               id="account-label"
               htmlFor="account-field"
             />
@@ -182,7 +176,7 @@ export function ScheduleEditForm({
           <FormField style={{ flex: 1, gridColumn: '1 / -1' }}>
             <SpaceBetween style={{ marginBottom: 3, alignItems: 'center' }}>
               <FormLabel
-                title={t('Amount')}
+                title="Amount"
                 htmlFor="amount-field"
                 style={{ margin: 0, flex: 1 }}
               />
@@ -192,11 +186,11 @@ export function ScheduleEditForm({
                 formatOp={op => {
                   switch (op) {
                     case 'is':
-                      return t('is exactly');
+                      return 'is exactly';
                     case 'isapprox':
-                      return t('is approximately');
+                      return 'is approximately';
                     case 'isbetween':
-                      return t('is between');
+                      return 'is between';
                     default:
                       throw new Error('Invalid op for select: ' + op);
                   }
@@ -245,7 +239,7 @@ export function ScheduleEditForm({
         </SpaceBetween>
 
         <View style={{ marginTop: 20 }}>
-          <FormLabel title={t('Date')} />
+          <FormLabel title="Date" />
         </View>
 
         <SpaceBetween
@@ -277,7 +271,7 @@ export function ScheduleEditForm({
             {upcomingDates && (
               <View style={{ fontSize: 13, marginTop: 20 }}>
                 <Text style={{ color: theme.pageTextLight, fontWeight: 600 }}>
-                  <Trans>Upcoming dates</Trans>
+                  Upcoming dates
                 </Text>
                 <SpaceBetween
                   direction="vertical"
@@ -314,7 +308,7 @@ export function ScheduleEditForm({
               }}
             />
             <label htmlFor="form_repeats" style={{ userSelect: 'none' }}>
-              <Trans>Repeats</Trans>
+              Repeats
             </label>
           </View>
         </SpaceBetween>
@@ -328,7 +322,7 @@ export function ScheduleEditForm({
         >
           <FormField style={{ flex: 1 }}>
             <FormLabel
-              title={t('Upcoming length')}
+              title="Upcoming length"
               htmlFor="upcoming-length-field"
             />
             {(() => {
@@ -352,11 +346,11 @@ export function ScheduleEditForm({
               const options: Array<
                 readonly [string, string] | typeof Menu.line
               > = [
-                ['', t('Use global default')] as [string, string],
+                ['', 'Use global default'] as [string, string],
                 ...UPCOMING_LENGTH_PRESET_OPTIONS.map(
-                  o => [o.value, t(o.labelKey)] as [string, string],
+                  o => [o.value, o.labelKey] as [string, string],
                 ),
-                ['custom', t('Custom length')] as [string, string],
+                ['custom', 'Custom length'] as [string, string],
               ];
 
               return (
@@ -406,9 +400,7 @@ export function ScheduleEditForm({
                 marginTop: 3,
               }}
             >
-              <Trans>
-                How far in advance this schedule appears as upcoming
-              </Trans>
+              How far in advance this schedule appears as upcoming
             </Text>
           </FormField>
 
@@ -437,7 +429,7 @@ export function ScheduleEditForm({
                 htmlFor="form_posts_transaction"
                 style={{ userSelect: 'none' }}
               >
-                <Trans>Automatically add transaction</Trans>
+                Automatically add transaction
               </label>
             </View>
             <Text
@@ -447,9 +439,7 @@ export function ScheduleEditForm({
                 marginTop: 3,
               }}
             >
-              <Trans>
-                Automatically create transactions in the specified account
-              </Trans>
+              Automatically create transactions in the specified account
             </Text>
           </FormField>
         </SpaceBetween>
@@ -471,11 +461,11 @@ export function ScheduleEditForm({
                     width: 350,
                   }}
                 >
-                  <Trans>This schedule has custom conditions and actions</Trans>
+                  This schedule has custom conditions and actions
                 </Text>
               )}
               <Button onPress={() => onEditRule(schedule.rule)}>
-                <Trans>Edit as rule</Trans>
+                Edit as rule
               </Button>
             </SpaceBetween>
           )}
@@ -493,11 +483,11 @@ export function ScheduleEditForm({
           {adding ? (
             <View style={{ flexDirection: 'row', padding: '5px 0' }}>
               <Text style={{ color: theme.pageTextLight }}>
-                <Trans>These transactions match this schedule:</Trans>
+                These transactions match this schedule:
               </Text>
               <View style={{ flex: 1 }} />
               <Text style={{ color: theme.pageTextLight }}>
-                <Trans>Select transactions to link on save</Trans>
+                Select transactions to link on save
               </Text>
             </View>
           ) : (
@@ -514,7 +504,7 @@ export function ScheduleEditForm({
                 }}
                 onPress={() => onSwitchTransactions('linked')}
               >
-                <Trans>Linked transactions</Trans>
+                Linked transactions
               </Button>{' '}
               <Button
                 variant="bare"
@@ -527,16 +517,16 @@ export function ScheduleEditForm({
                 }}
                 onPress={() => onSwitchTransactions('matched')}
               >
-                <Trans>Find matching transactions</Trans>
+                Find matching transactions
               </Button>
               <View style={{ flex: 1 }} />
               <SelectedItemsButton
                 id="transactions"
-                name={count => t('{{count}} transactions', { count })}
+                name={count => `${count} transactions`}
                 items={
                   transactionsMode === 'linked'
-                    ? [{ name: 'unlink', text: t('Unlink from schedule') }]
-                    : [{ name: 'link', text: t('Link to schedule') }]
+                    ? [{ name: 'unlink', text: 'Unlink from schedule' }]
+                    : [{ name: 'link', text: 'Link to schedule' }]
                 }
                 onSelect={(name, ids) => {
                   switch (name) {
@@ -584,8 +574,6 @@ type NoTransactionsMessageProps = {
 };
 
 function NoTransactionsMessage(props: NoTransactionsMessageProps) {
-  const { t } = useTranslation();
-
   return (
     <View
       style={{
@@ -596,12 +584,12 @@ function NoTransactionsMessage(props: NoTransactionsMessageProps) {
     >
       {props.error ? (
         <Text style={{ color: theme.errorText }}>
-          <Trans>Could not search: {{ errorReason: props.error }}</Trans>
+          Could not search: {props.error}
         </Text>
       ) : props.transactionsMode === 'matched' ? (
-        t('No matching transactions')
+        'No matching transactions'
       ) : (
-        t('No linked transactions')
+        'No linked transactions'
       )}
     </View>
   );

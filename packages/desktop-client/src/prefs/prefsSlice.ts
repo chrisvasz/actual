@@ -13,7 +13,6 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
 import { resetApp } from '#app/appSlice';
-import { setI18NextLanguage } from '#i18n';
 import { closeModal } from '#modals/modalsSlice';
 import { createAppAsyncThunk } from '#redux';
 import { getUserData } from '#users/usersSlice';
@@ -61,9 +60,6 @@ export const loadPrefs = createAppAsyncThunk(
         hideFraction: syncedPrefs.hideFraction,
       }),
     );
-
-    // We need to load translations before the app renders
-    setI18NextLanguage(globalPrefs.language ?? '');
 
     return prefs;
   },

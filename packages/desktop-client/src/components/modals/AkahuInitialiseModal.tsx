@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { ButtonWithLoading } from '@actual-app/components/button';
 import { Input } from '@actual-app/components/input';
@@ -27,13 +26,12 @@ type AkahuInitialiseModalProps = Extract<
 export const AkahuInitialiseModal = ({
   onSuccess,
 }: AkahuInitialiseModalProps) => {
-  const { t } = useTranslation();
   const [userToken, setUserToken] = useState('');
   const [appToken, setAppToken] = useState('');
   const [isValid, setIsValid] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(
-    t('It is required to provide a User Token and an App Token.'),
+    'It is required to provide a User Token and an App Token.',
   );
 
   const onSubmit = async (close: () => void) => {
@@ -82,28 +80,26 @@ export const AkahuInitialiseModal = ({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Set-up Akahu')}
+            title="Set-up Akahu"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ display: 'flex', gap: 10 }}>
             <Text>
-              <Trans>
-                In order to enable bank sync via Akahu (only for New Zealand
-                banks), you will need to create a token. This can be done by
-                creating an account with{' '}
-                <Link
-                  variant="external"
-                  to="https://my.akahu.nz/"
-                  linkColor="purple"
-                >
-                  Akahu
-                </Link>
-                .
-              </Trans>
+              In order to enable bank sync via Akahu (only for New Zealand
+              banks), you will need to create a token. This can be done by
+              creating an account with{' '}
+              <Link
+                variant="external"
+                to="https://my.akahu.nz/"
+                linkColor="purple"
+              >
+                Akahu
+              </Link>
+              .
             </Text>
 
             <FormField>
-              <FormLabel title={t('App ID Token:')} htmlFor="appToken-field" />
+              <FormLabel title="App ID Token:" htmlFor="appToken-field" />
               <Input
                 id="appToken-field"
                 type="password"
@@ -116,10 +112,7 @@ export const AkahuInitialiseModal = ({
             </FormField>
 
             <FormField>
-              <FormLabel
-                title={t('User Access Token:')}
-                htmlFor="userToken-field"
-              />
+              <FormLabel title="User Access Token:" htmlFor="userToken-field" />
               <Input
                 id="userToken-field"
                 type="password"
@@ -143,7 +136,7 @@ export const AkahuInitialiseModal = ({
                 void onSubmit(() => state.close());
               }}
             >
-              <Trans>Save and continue</Trans>
+              Save and continue
             </ButtonWithLoading>
           </ModalButtons>
         </>

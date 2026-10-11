@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import type { MenuItemObject } from '@actual-app/components/menu';
 import type { TagEntity } from '@actual-app/core/types/models';
 
@@ -20,7 +18,6 @@ type SelectedTagsButtonProps = {
 
 export function SelectedTagsButton({ onRename }: SelectedTagsButtonProps) {
   const dispatch = useSelectedDispatch();
-  const { t } = useTranslation();
   const selectedItems = useSelectedItems();
   const { mutate: deleteTags } = useDeleteTagsMutation();
   const { mutate: hideTags } = useHideTagsMutation();
@@ -73,14 +70,14 @@ export function SelectedTagsButton({ onRename }: SelectedTagsButtonProps) {
           ? [
               {
                 name: 'rename-tag',
-                text: t('Rename'),
+                text: 'Rename',
                 key: 'R',
               } satisfies MenuItemObject<Actions>,
             ]
           : []),
-        { name: 'delete-tags', text: t('Delete'), key: 'D' },
-        { name: 'hide-tags', text: t('Hide'), key: 'H' },
-        { name: 'unhide-tags', text: t('Unhide'), key: 'U' },
+        { name: 'delete-tags', text: 'Delete', key: 'D' },
+        { name: 'hide-tags', text: 'Hide', key: 'H' },
+        { name: 'unhide-tags', text: 'Unhide', key: 'U' },
       ]}
       onSelect={handleSelect}
     />

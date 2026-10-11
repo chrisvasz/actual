@@ -1,6 +1,5 @@
 import React from 'react';
 import type { ComponentProps } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -18,7 +17,6 @@ export function FilterList<T extends { id: string; name: string }>({
   highlightedIndex: number;
   embedded?: boolean;
 }) {
-  const { t } = useTranslation();
   return (
     <View>
       <View
@@ -28,7 +26,7 @@ export function FilterList<T extends { id: string; name: string }>({
           ...(!embedded && { maxHeight: 175 }),
         }}
       >
-        <ItemHeader title={t('Saved Filters')} type="filter" />
+        <ItemHeader title="Saved Filters" type="filter" />
         {items.map((item, idx) => {
           return [
             <div

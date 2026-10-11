@@ -1,6 +1,5 @@
 import React, { useId, useState } from 'react';
 import type { Ref } from 'react';
-import { Trans } from 'react-i18next';
 
 import { Button, ButtonWithLoading } from '@actual-app/components/button';
 import { SvgDelete } from '@actual-app/components/icons/v0';
@@ -13,7 +12,6 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { currentDay } from '@actual-app/core/shared/months';
 import type { Query } from '@actual-app/core/shared/query';
-import { t } from 'i18next';
 
 import { FinancialText } from '#components/FinancialText';
 import { DateSelect } from '#components/select/DateSelect';
@@ -144,7 +142,7 @@ export function ReconcilingMessage({
             />
           </InitialFocus>
           <label htmlFor={dateInputId} style={formulaLabelStyle}>
-            <Trans>Date</Trans>
+            Date
           </label>
         </View>
         <View style={{ alignItems: 'center' }}>
@@ -166,14 +164,14 @@ export function ReconcilingMessage({
             onEscape={onCancel}
           />
           <label htmlFor={targetInputId} style={formulaLabelStyle}>
-            <Trans>Balance</Trans>
+            Balance
           </label>
         </View>
         <FormulaOperator>−</FormulaOperator>
-        <FormulaTerm label={t('Cleared')} value={clearedBalance} />
+        <FormulaTerm label="Cleared" value={clearedBalance} />
         <FormulaOperator>=</FormulaOperator>
         <FormulaTerm
-          label={t('Difference')}
+          label="Difference"
           value={difference}
           isEmphasized
           isReconciled={targetDiff === 0}
@@ -186,7 +184,7 @@ export function ReconcilingMessage({
           isDisabled={pendingAction !== null}
           onPress={lock}
         >
-          <Trans>Lock</Trans>
+          Lock
         </ButtonWithLoading>
       ) : (
         <ButtonWithLoading
@@ -201,12 +199,12 @@ export function ReconcilingMessage({
             }
           }}
         >
-          <Trans>Adjust</Trans>
+          Adjust
         </ButtonWithLoading>
       )}
       <Button
         variant="bare"
-        aria-label={t('Exit reconciliation')}
+        aria-label="Exit reconciliation"
         isDisabled={pendingAction !== null}
         onPress={onCancel}
         style={{ padding: 8, marginLeft: -6 }}
@@ -374,7 +372,7 @@ function FormulaTerm({
         </FinancialText>
         {isReconciled && (
           <SvgCheckCircle1
-            aria-label={t('Reconciled')}
+            aria-label="Reconciled"
             style={{ width: 11, height: 11, color: 'inherit' }}
           />
         )}

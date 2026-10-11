@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
-import { Trans } from 'react-i18next';
 
 import { View } from '@actual-app/components/view';
 import type { RemoteFile, SyncedLocalFile } from '@actual-app/core/types/file';
@@ -61,9 +60,7 @@ export const ProtectedRoute = ({
         margin: '50px',
       }}
     >
-      <h3>
-        <Trans>You don't have permission to view this page</Trans>
-      </h3>
+      <h3>You don't have permission to view this page</h3>
     </View>
   );
 };

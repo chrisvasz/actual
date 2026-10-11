@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Label } from '@actual-app/components/label';
@@ -15,8 +14,6 @@ import { useDispatch } from '#redux';
 import { Setting } from './UI';
 
 export function AuthSettings() {
-  const { t } = useTranslation();
-
   const multiuserEnabled = useMultiuserEnabled();
   const loginMethod = useLoginMethod();
   const dispatch = useDispatch();
@@ -34,17 +31,15 @@ export function AuthSettings() {
       primaryAction={
         <>
           <label>
-            <Trans>OpenID is</Trans>{' '}
+            OpenID is{' '}
             <label style={{ fontWeight: 'bold' }}>
-              {loginMethod === 'openid' ? t('enabled') : t('disabled')}
+              {loginMethod === 'openid' ? 'enabled' : 'disabled'}
             </label>
           </label>
           {isOffline && (
             <View>
               <Text style={{ paddingTop: 5, color: theme.warningText }}>
-                <Trans>
-                  Server is offline. OpenID settings are unavailable.
-                </Trans>
+                Server is offline. OpenID settings are unavailable.
               </Text>
             </View>
           )}
@@ -68,11 +63,11 @@ export function AuthSettings() {
                   )
                 }
               >
-                <Trans>Start using OpenID</Trans>
+                Start using OpenID
               </Button>
               <Label
                 style={{ paddingTop: 5 }}
-                title={t('OpenID is required to enable multi-user mode.')}
+                title="OpenID is required to enable multi-user mode."
               />
             </>
           )}
@@ -95,13 +90,11 @@ export function AuthSettings() {
                   )
                 }
               >
-                <Trans>Disable OpenID</Trans>
+                Disable OpenID
               </Button>
               {multiuserEnabled && (
                 <Text style={{ paddingTop: 5, color: theme.errorText }}>
-                  <Trans>
-                    Disabling OpenID will deactivate multi-user mode.
-                  </Trans>
+                  Disabling OpenID will deactivate multi-user mode.
                 </Text>
               )}
             </>
@@ -110,10 +103,8 @@ export function AuthSettings() {
       }
     >
       <Text>
-        <Trans>
-          <strong>Authentication method</strong> modifies how users log in to
-          the system.
-        </Trans>
+        <strong>Authentication method</strong> modifies how users log in to the
+        system.
       </Text>
     </Setting>
   );

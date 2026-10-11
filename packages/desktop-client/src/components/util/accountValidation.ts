@@ -1,5 +1,4 @@
 import type { AccountEntity } from '@actual-app/core/types/models';
-import { t } from 'i18next';
 
 export function validateAccountName(
   newAccountName: string,
@@ -12,11 +11,11 @@ export function validateAccountName(
       account => account.name === newAccountName && account.id !== accountId,
     );
     if (duplicateNamedAccounts.length) {
-      return t('Name {{ newAccountName }} already exists.', { newAccountName });
+      return `Name ${newAccountName} already exists.`;
     } else {
       return '';
     }
   } else {
-    return t('Name cannot be blank.');
+    return 'Name cannot be blank.';
   }
 }

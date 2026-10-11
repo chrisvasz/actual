@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { send } from '@actual-app/core/platform/client/connection';
 import type { TagEntity } from '@actual-app/core/types/models';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -42,7 +40,6 @@ type CreateTagPayload = {
 export function useCreateTagMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ tag }: CreateTagPayload) => {
@@ -53,7 +50,7 @@ export function useCreateTagMutation() {
       console.error('Error creating tag:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error creating the tag. Please try again.'),
+        'There was an error creating the tag. Please try again.',
         error,
       );
     },
@@ -67,7 +64,6 @@ type UpdateTagPayload = {
 export function useUpdateTagMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ tag }: UpdateTagPayload) => {
@@ -78,7 +74,7 @@ export function useUpdateTagMutation() {
       console.error('Error updating tag:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error updating the tag. Please try again.'),
+        'There was an error updating the tag. Please try again.',
         error,
       );
     },
@@ -93,7 +89,6 @@ type RenameTagPayload = {
 export function useRenameTagMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id, tag }: RenameTagPayload) => {
@@ -104,7 +99,7 @@ export function useRenameTagMutation() {
       console.error('Error renaming tag:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error renaming the tag. Please try again.'),
+        'There was an error renaming the tag. Please try again.',
         error,
       );
     },
@@ -118,7 +113,6 @@ type DeleteTagPayload = {
 export function useDeleteTagMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id }: DeleteTagPayload) => {
@@ -129,7 +123,7 @@ export function useDeleteTagMutation() {
       console.error('Error deleting tag:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error deleting the tag. Please try again.'),
+        'There was an error deleting the tag. Please try again.',
         error,
       );
     },
@@ -143,7 +137,6 @@ type DeleteTagsPayload = {
 export function useDeleteTagsMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ ids }: DeleteTagsPayload) => {
@@ -154,7 +147,7 @@ export function useDeleteTagsMutation() {
       console.error('Error deleting tags:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error deleting the tags. Please try again.'),
+        'There was an error deleting the tags. Please try again.',
         error,
       );
     },
@@ -168,7 +161,6 @@ type HideTagsPayload = {
 export function useHideTagsMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ ids }: HideTagsPayload) => {
@@ -179,7 +171,7 @@ export function useHideTagsMutation() {
       console.error('Error hiding tags:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error hiding the tags. Please try again.'),
+        'There was an error hiding the tags. Please try again.',
         error,
       );
     },
@@ -193,7 +185,6 @@ type UnhideTagsPayload = {
 export function useUnhideTagsMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ ids }: UnhideTagsPayload) => {
@@ -204,7 +195,7 @@ export function useUnhideTagsMutation() {
       console.error('Error hiding tags:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error hiding the tags. Please try again.'),
+        'There was an error hiding the tags. Please try again.',
         error,
       );
     },
@@ -214,7 +205,6 @@ export function useUnhideTagsMutation() {
 export function useDiscoverTagsMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async () => {
@@ -225,7 +215,7 @@ export function useDiscoverTagsMutation() {
       console.error('Error discovering tags:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error discovering the tags. Please try again.'),
+        'There was an error discovering the tags. Please try again.',
         error,
       );
     },

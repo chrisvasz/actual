@@ -1,5 +1,4 @@
 import React, { memo } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { styles } from '@actual-app/components/styles';
@@ -22,13 +21,12 @@ type AccountRowProps = {
 
 export const AccountRow = memo(
   ({ account, hovered, onHover, onAction, locale }: AccountRowProps) => {
-    const { t } = useTranslation();
     const backgroundFocus = hovered;
 
     // The bank name is stored as null when the sync provider doesn't report an
     // institution; show a localized fallback for linked accounts.
     const bankName =
-      account.bank && !account.bankName ? t('Unknown') : account.bankName;
+      account.bank && !account.bankName ? 'Unknown' : account.bankName;
 
     const lastSyncString = tsToRelativeTime(account.last_sync, locale, {
       capitalize: true,
@@ -106,14 +104,12 @@ export const AccountRow = memo(
 
         {account.account_sync_source ? (
           <Cell name="edit" plain style={{ paddingRight: '10px' }}>
-            <Button onPress={() => onAction(account, 'edit')}>
-              <Trans>Edit</Trans>
-            </Button>
+            <Button onPress={() => onAction(account, 'edit')}>Edit</Button>
           </Cell>
         ) : (
           <Cell name="link" plain style={{ paddingRight: '10px' }}>
             <Button onPress={() => onAction(account, 'link')}>
-              <Trans>Link account</Trans>
+              Link account
             </Button>
           </Cell>
         )}

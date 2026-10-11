@@ -3,7 +3,6 @@ import { integerToAmount } from '@actual-app/core/shared/util';
 // the Node build (which imports `stream`), breaking the lazy-loaded reports
 // chunk in the browser bundle. The browser ESM build is self-contained.
 import { stringify as csvStringify } from 'csv-stringify/browser/esm/sync';
-import { t } from 'i18next';
 
 type IntervalRow = {
   date: string;
@@ -16,11 +15,11 @@ type IntervalRow = {
 const FORMULA_TRIGGERS = /^[=+\-@\t\r]/;
 
 export function buildBudgetAnalysisCsv(rows: IntervalRow[]): string {
-  const month = t('Month');
-  const budgeted = t('Budgeted');
-  const spent = t('Spent');
-  const overspendingAdjustment = t('Overspending Adjustment');
-  const balance = t('Balance');
+  const month = 'Month';
+  const budgeted = 'Budgeted';
+  const spent = 'Spent';
+  const overspendingAdjustment = 'Overspending Adjustment';
+  const balance = 'Balance';
 
   const columns = [month, budgeted, spent, overspendingAdjustment, balance];
 

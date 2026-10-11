@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import { theme } from '@actual-app/components/theme';
@@ -17,19 +16,14 @@ const UNCATEGORIZED_PATH = '/categories/uncategorized';
  * categorized). Hidden when there are none.
  */
 export function UncategorizedChip() {
-  const { t } = useTranslation();
   const count: number | null = useSheetValue(bindings.uncategorizedCount());
   const isOnUncategorizedView = useLocation().pathname === UNCATEGORIZED_PATH;
   if (count === null || count <= 0) {
     return null;
   }
 
-  const content = t('{{count}} uncategorized', { count });
-  const label = t('{{count}} uncategorized transactions', {
-    count,
-    defaultValue_one: '{{count}} uncategorized transaction',
-    defaultValue_other: '{{count}} uncategorized transactions',
-  });
+  const content = `${count} uncategorized`;
+  const label = `${count} uncategorized transactions`;
 
   // On the Uncategorized view itself the count is a live counter, not a link.
   if (isOnUncategorizedView) {

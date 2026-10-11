@@ -9,15 +9,15 @@ const interleaveArrays = (...arrays: ReactNode[][]) =>
     (_, i) => arrays.map(array => array[i]),
   ).flat();
 
-export function useFormatList(values: ReactNode[], lng: string, opt = {}) {
+export function useFormatList(values: ReactNode[], opt = {}) {
   const formatter = useMemo(
     () =>
-      new Intl.ListFormat(lng, {
+      new Intl.ListFormat('en', {
         style: 'long',
         type: 'conjunction',
         ...opt,
       }),
-    [lng, opt],
+    [opt],
   );
 
   const parts = useMemo(() => {

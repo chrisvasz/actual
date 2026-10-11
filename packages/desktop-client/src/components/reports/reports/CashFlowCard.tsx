@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import type { SVGAttributes } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -103,7 +102,6 @@ export function CashFlowCard({
   meta = {},
   onMetaChange,
 }: CashFlowCardProps) {
-  const { t } = useTranslation();
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
   const transactionDates = useTransactionDates();
@@ -136,7 +134,7 @@ export function CashFlowCard({
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
-              name={meta?.name || t('Cash Flow')}
+              name={meta?.name || 'Cash Flow'}
               isEditing={nameMenuOpen}
               onChange={newName => {
                 onMetaChange({
@@ -183,7 +181,7 @@ export function CashFlowCard({
                   <LabelList
                     dataKey="income"
                     position="left"
-                    content={<CustomLabel name={t('Income')} />}
+                    content={<CustomLabel name="Income" />}
                   />
                 </Bar>
 
@@ -196,7 +194,7 @@ export function CashFlowCard({
                   <LabelList
                     dataKey="expenses"
                     position="right"
-                    content={<CustomLabel name={t('Expenses')} />}
+                    content={<CustomLabel name="Expenses" />}
                   />
                 </Bar>
               </BarChart>

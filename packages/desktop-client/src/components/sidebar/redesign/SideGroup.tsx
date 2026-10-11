@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { Button } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
@@ -42,7 +40,6 @@ export function SideGroup({
   isBucketOpen,
   onToggleBucket,
 }: SideGroupProps) {
-  const { t } = useTranslation();
   const [balanceMode] = useSidebarBalanceMode();
 
   return (
@@ -60,11 +57,7 @@ export function SideGroup({
         <Button
           variant="bare"
           aria-expanded={isOpen}
-          aria-label={
-            isOpen
-              ? t('Collapse {{section}}', { section: label })
-              : t('Expand {{section}}', { section: label })
-          }
+          aria-label={isOpen ? `Collapse ${label}` : `Expand ${label}`}
           onPress={onToggle}
           className={css({
             '&[data-hovered], &[data-focus-visible]': {

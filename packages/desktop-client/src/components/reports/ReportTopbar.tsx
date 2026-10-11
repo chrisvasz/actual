@@ -1,6 +1,5 @@
 import React from 'react';
 import type { ComponentProps } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import {
   SvgCalculator,
@@ -60,7 +59,6 @@ export function ReportTopbar({
   isItemDisabled,
   defaultItems,
 }: ReportTopbarProps) {
-  const { t } = useTranslation();
   const onChangeGraph = (cond: string) => {
     setSessionReport('graphType', cond);
     onReportChange({ type: 'modify' });
@@ -94,7 +92,7 @@ export function ReportTopbar({
     >
       <GraphButton
         selected={customReportItems.graphType === 'TableGraph'}
-        title={t('Data Table')}
+        title="Data Table"
         onSelect={() => {
           onChangeGraph('TableGraph');
         }}
@@ -105,9 +103,7 @@ export function ReportTopbar({
       </GraphButton>
       <GraphButton
         title={
-          customReportItems.mode === 'total'
-            ? t('Bar Graph')
-            : t('Stacked Bar Graph')
+          customReportItems.mode === 'total' ? 'Bar Graph' : 'Stacked Bar Graph'
         }
         selected={
           customReportItems.graphType === 'BarGraph' ||
@@ -126,7 +122,7 @@ export function ReportTopbar({
         <SvgChartBar width={15} height={15} />
       </GraphButton>
       <GraphButton
-        title={t('Line Graph')}
+        title="Line Graph"
         selected={customReportItems.graphType === 'LineGraph'}
         onSelect={() => {
           onChangeGraph('LineGraph');
@@ -137,7 +133,7 @@ export function ReportTopbar({
         <SvgChart width={15} height={15} />
       </GraphButton>
       <GraphButton
-        title={t('Area Graph')}
+        title="Area Graph"
         selected={customReportItems.graphType === 'AreaGraph'}
         onSelect={() => {
           onChangeGraph('AreaGraph');
@@ -148,7 +144,7 @@ export function ReportTopbar({
         <SvgChartArea width={15} height={15} />
       </GraphButton>
       <GraphButton
-        title={t('Donut Graph')}
+        title="Donut Graph"
         selected={customReportItems.graphType === 'DonutGraph'}
         onSelect={() => {
           onChangeGraph('DonutGraph');
@@ -173,7 +169,7 @@ export function ReportTopbar({
           onChangeViews('viewLegend');
         }}
         style={{ marginRight: 15 }}
-        title={t('Show Legend')}
+        title="Show Legend"
         disabled={isItemDisabled('ShowLegend')}
       >
         <SvgListBullet width={15} height={15} />
@@ -184,7 +180,7 @@ export function ReportTopbar({
           onChangeViews('viewSummary');
         }}
         style={{ marginRight: 15 }}
-        title={t('Show Summary')}
+        title="Show Summary"
       >
         <SvgCalculator width={15} height={15} />
       </GraphButton>
@@ -194,7 +190,7 @@ export function ReportTopbar({
           onChangeViews('viewLabels');
         }}
         style={{ marginRight: 15 }}
-        title={t('Show Labels')}
+        title="Show Labels"
         disabled={isItemDisabled('ShowLabels')}
       >
         <SvgTag width={15} height={15} />
@@ -210,7 +206,7 @@ export function ReportTopbar({
       />
       <SnapshotButton
         style={{ marginRight: 15 }}
-        title={t('Download Snapshot')}
+        title="Download Snapshot"
         onSelect={downloadSnapshot}
       >
         <SvgCamera width={15} height={15} />

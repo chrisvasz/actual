@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import type { RuleEntity } from '@actual-app/core/types/models';
-import { t } from 'i18next';
 import { v4 as uuidv4 } from 'uuid';
 
 export type ActionSplit = {
@@ -25,10 +24,10 @@ export function groupActionsBySplitIndex(
 
 export function getAllocationMethods(hasFormulaMode = false) {
   return {
-    'fixed-amount': t('a fixed amount'),
-    'fixed-percent': t('a fixed percent of the remainder'),
-    ...(hasFormulaMode && { formula: t('based on a formula') }),
-    remainder: t('an equal portion of the remainder'),
+    'fixed-amount': 'a fixed amount',
+    'fixed-percent': 'a fixed percent of the remainder',
+    ...(hasFormulaMode && { formula: 'based on a formula' }),
+    remainder: 'an equal portion of the remainder',
   };
 }
 
@@ -37,40 +36,40 @@ export function mapField(field, opts?) {
 
   switch (field) {
     case 'imported_payee':
-      return t('imported payee');
+      return 'imported payee';
     case 'payee_name':
-      return t('payee (name)');
+      return 'payee (name)';
     case 'amount':
       if (opts.inflow) {
-        return t('amount (inflow)');
+        return 'amount (inflow)';
       } else if (opts.outflow) {
-        return t('amount (outflow)');
+        return 'amount (outflow)';
       }
-      return t('amount');
+      return 'amount';
     case 'amount-inflow':
-      return t('amount (inflow)');
+      return 'amount (inflow)';
     case 'amount-outflow':
-      return t('amount (outflow)');
+      return 'amount (outflow)';
     case 'account':
-      return t('account');
+      return 'account';
     case 'date':
-      return t('date');
+      return 'date';
     case 'category':
-      return t('category');
+      return 'category';
     case 'category_group':
-      return t('category group');
+      return 'category group';
     case 'notes':
-      return t('notes');
+      return 'notes';
     case 'payee':
-      return t('payee');
+      return 'payee';
     case 'saved':
-      return t('saved');
+      return 'saved';
     case 'cleared':
-      return t('cleared');
+      return 'cleared';
     case 'reconciled':
-      return t('reconciled');
+      return 'reconciled';
     case 'transfer':
-      return t('transfer');
+      return 'transfer';
     default:
       return field;
   }
@@ -79,71 +78,71 @@ export function mapField(field, opts?) {
 export function friendlyOp(op, type?) {
   switch (op) {
     case 'oneOf':
-      return t('one of');
+      return 'one of';
     case 'notOneOf':
-      return t('not one of');
+      return 'not one of';
     case 'is':
-      return t('is');
+      return 'is';
     case 'isNot':
-      return t('is not');
+      return 'is not';
     case 'isapprox':
-      return t('is approx');
+      return 'is approx';
     case 'isbetween':
-      return t('is between');
+      return 'is between';
     case 'contains':
-      return t('contains');
+      return 'contains';
     case 'hasTags':
-      return t('has all tags');
+      return 'has all tags';
     case 'hasAnyTag':
-      return t('has any tag');
+      return 'has any tag';
     case 'matches':
-      return t('matches');
+      return 'matches';
     case 'doesNotContain':
-      return t('does not contain');
+      return 'does not contain';
     case 'gt':
       if (type === 'date') {
-        return t('is after');
+        return 'is after';
       }
-      return t('is greater than');
+      return 'is greater than';
     case 'gte':
       if (type === 'date') {
-        return t('is after or equals');
+        return 'is after or equals';
       }
-      return t('is greater than or equals');
+      return 'is greater than or equals';
     case 'lt':
       if (type === 'date') {
-        return t('is before');
+        return 'is before';
       }
-      return t('is less than');
+      return 'is less than';
     case 'lte':
       if (type === 'date') {
-        return t('is before or equals');
+        return 'is before or equals';
       }
-      return t('is less than or equals');
+      return 'is less than or equals';
     case 'true':
-      return t('is true');
+      return 'is true';
     case 'false':
-      return t('is false');
+      return 'is false';
     case 'set':
-      return t('set');
+      return 'set';
     case 'set-split-amount':
-      return t('allocate');
+      return 'allocate';
     case 'link-schedule':
-      return t('link schedule');
+      return 'link schedule';
     case 'prepend-notes':
-      return t('prepend to notes');
+      return 'prepend to notes';
     case 'append-notes':
-      return t('append to notes');
+      return 'append to notes';
     case 'and':
-      return t('and');
+      return 'and';
     case 'or':
-      return t('or');
+      return 'or';
     case 'onBudget':
-      return t('is on budget');
+      return 'is on budget';
     case 'offBudget':
-      return t('is off budget');
+      return 'is off budget';
     case 'delete-transaction':
-      return t('delete transaction');
+      return 'delete transaction';
     default:
       return '';
   }
@@ -152,9 +151,9 @@ export function friendlyOp(op, type?) {
 export function translateRuleStage(stage: string): string {
   switch (stage) {
     case 'pre':
-      return t('Pre');
+      return 'Pre';
     case 'post':
-      return t('Post');
+      return 'Post';
     default:
       return '';
   }

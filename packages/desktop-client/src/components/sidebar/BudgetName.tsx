@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgExpandArrow } from '@actual-app/components/icons/v0';
@@ -52,7 +51,6 @@ export function BudgetName({ children }: BudgetNameProps) {
 }
 
 function EditableBudgetName() {
-  const { t } = useTranslation();
   const [budgetName, setBudgetNamePref] = useMetadataPref('budgetName');
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -63,17 +61,17 @@ function EditableBudgetName() {
     items: [
       {
         name: 'rename',
-        text: t('Rename budget'),
+        text: 'Rename budget',
         onClick: () => setEditing(true),
       },
       {
         name: 'settings',
-        text: t('Settings'),
+        text: 'Settings',
         onClick: () => void navigate('/settings'),
       },
       {
         name: 'close',
-        text: t('Switch file'),
+        text: 'Switch file',
         onClick: () => void dispatch(closeBudget()),
       },
     ],
@@ -116,7 +114,7 @@ function EditableBudgetName() {
       onClick={handleContextMenu}
     >
       <Text style={{ whiteSpace: 'nowrap', overflow: 'hidden' }}>
-        {budgetName || t('Unnamed')}
+        {budgetName || 'Unnamed'}
       </Text>
       <SvgExpandArrow
         width={7}

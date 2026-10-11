@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import type { PayeeEntity } from '@actual-app/core/types/models';
@@ -11,7 +10,6 @@ import { payeeQueries } from '#payees';
 import { ManagePayeesWithData } from './ManagePayeesWithData';
 
 export function ManagePayeesPage() {
-  const { t } = useTranslation();
   const location = useLocation();
 
   // Suspend until the table has what it draws, so navigating here keeps the
@@ -29,7 +27,7 @@ export function ManagePayeesPage() {
       ? [locationState.selectedPayee as PayeeEntity['id']]
       : [];
   return (
-    <Page header={t('Payees')}>
+    <Page header="Payees">
       <ManagePayeesWithData initialSelectedIds={initialSelectedIds} />
     </Page>
   );

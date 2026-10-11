@@ -41,13 +41,11 @@ describe('bankSyncUtils', () => {
   });
 
   it('returns stable readable provider labels', () => {
-    const readable = getSyncSourceReadable(
-      (key: string) => `translated:${key}`,
-    );
+    const readable = getSyncSourceReadable();
 
     expect(readable.goCardless).toBe('GoCardless');
     expect(readable.simpleFin).toBe('SimpleFIN');
     expect(readable.pluggyai).toBe('Pluggy.ai');
-    expect(readable.unlinked).toBe('translated:Unlinked');
+    expect(readable.unlinked).toBe('Unlinked');
   });
 });

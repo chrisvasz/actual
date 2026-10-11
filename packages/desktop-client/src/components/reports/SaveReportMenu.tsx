@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Menu } from '@actual-app/components/menu';
 import type { MenuItem } from '@actual-app/components/menu';
@@ -15,12 +14,11 @@ export function SaveReportMenu({
   savedStatus: SavedStatus;
   listReports: number;
 }) {
-  const { t } = useTranslation();
   const savedMenu: MenuItem[] =
     savedStatus === 'saved'
       ? [
-          { name: 'rename-report', text: t('Rename') },
-          { name: 'delete-report', text: t('Delete') },
+          { name: 'rename-report', text: 'Rename' },
+          { name: 'delete-report', text: 'Delete' },
           Menu.line,
         ]
       : [];
@@ -28,16 +26,16 @@ export function SaveReportMenu({
   const modifiedMenu: MenuItem[] =
     savedStatus === 'modified'
       ? [
-          { name: 'rename-report', text: t('Rename') },
+          { name: 'rename-report', text: 'Rename' },
           {
             name: 'update-report',
-            text: t('Update report'),
+            text: 'Update report',
           },
           {
             name: 'reload-report',
-            text: t('Revert changes'),
+            text: 'Revert changes',
           },
-          { name: 'delete-report', text: t('Delete') },
+          { name: 'delete-report', text: 'Delete' },
           Menu.line,
         ]
       : [];
@@ -45,16 +43,16 @@ export function SaveReportMenu({
   const unsavedMenu: MenuItem[] = [
     {
       name: 'save-report',
-      text: t('Save new report'),
+      text: 'Save new report',
     },
     {
       name: 'reset-report',
-      text: t('Reset to default'),
+      text: 'Reset to default',
     },
     Menu.line,
     {
       name: 'choose-report',
-      text: t('Choose Report'),
+      text: 'Choose Report',
       disabled: listReports > 0 ? false : true,
     },
   ];

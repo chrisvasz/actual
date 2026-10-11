@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { View } from '@actual-app/components/view';
 import * as monthUtils from '@actual-app/core/shared/months';
@@ -35,7 +34,6 @@ export function SummaryCard({
   onMetaChange,
 }: SummaryCardProps) {
   const locale = useLocale();
-  const { t } = useTranslation();
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
   const transactionDates = useTransactionDates();
@@ -90,7 +88,7 @@ export function SummaryCard({
       <View style={{ flex: 1, overflow: 'hidden' }}>
         <View style={{ flexGrow: 0, flexShrink: 0, padding: 20 }}>
           <ReportCardName
-            name={meta?.name || t('Summary')}
+            name={meta?.name || 'Summary'}
             isEditing={nameMenuOpen}
             onChange={newName => {
               onMetaChange({

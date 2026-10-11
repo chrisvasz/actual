@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { theme } from '@actual-app/components/theme';
@@ -52,7 +51,6 @@ export function SankeyCard({
   meta,
   onMetaChange,
 }: SankeyCardProps) {
-  const { t } = useTranslation();
   const locale = useLocale();
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
   const { data: categoriesData } = useCategories();
@@ -191,7 +189,7 @@ export function SankeyCard({
     dateDescription = formattedEndDate;
   }
 
-  const modeLabel = mode === 'budgeted' ? t('Budgeted') : t('Spent');
+  const modeLabel = mode === 'budgeted' ? 'Budgeted' : 'Spent';
 
   dateDescription += ` (${modeLabel})`;
 
@@ -207,7 +205,7 @@ export function SankeyCard({
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
-              name={meta?.name || t('Sankey')}
+              name={meta?.name || 'Sankey'}
               isEditing={nameMenuOpen}
               onChange={newName => {
                 onMetaChange({

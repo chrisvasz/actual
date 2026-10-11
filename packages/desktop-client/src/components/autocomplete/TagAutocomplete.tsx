@@ -6,7 +6,6 @@ import type {
   KeyboardEventHandler,
 } from 'react';
 import { ListBox, ListBoxItem, Popover } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { SvgAdd } from '@actual-app/components/icons/v0';
 import { Input } from '@actual-app/components/input';
@@ -38,7 +37,6 @@ export function TagAutocomplete({
   onKeyDown,
   onUpdate,
 }: TagAutocompleteProps) {
-  const { t } = useTranslation();
   const getTagCSS = useTagCSS({ ellipsis: true });
   const autocompleteId = useId();
   const id = useCallback(
@@ -154,7 +152,7 @@ export function TagAutocomplete({
       <Input
         ref={inputRef}
         name="notes"
-        aria-label={t('Notes')}
+        aria-label="Notes"
         aria-expanded={showPopup}
         aria-controls={id('popover')}
         role="combobox"
@@ -187,7 +185,7 @@ export function TagAutocomplete({
         onOpenChange={setIsOpen}
       >
         <ListBox
-          aria-label={t('Tag List')}
+          aria-label="Tag List"
           id={id('popover')}
           items={filteredItems}
           selectionMode="single"
@@ -246,7 +244,7 @@ export function TagAutocomplete({
                       fontSize: 11,
                     }}
                   >
-                    <Trans>Create tag</Trans>
+                    Create tag
                   </span>
                   <span className={getTagCSS('')}>{item.name}</span>
                 </div>

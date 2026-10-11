@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useId, useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -44,8 +43,6 @@ type TrendTooltipProps = TooltipContentProps & {
 };
 
 function TrendTooltip({ active, payload, style }: TrendTooltipProps) {
-  const { t } = useTranslation();
-
   if (active && payload && payload.length) {
     return (
       <div
@@ -68,15 +65,15 @@ function TrendTooltip({ active, payload, style }: TrendTooltipProps) {
           </div>
           <div style={{ lineHeight: 1.5 }}>
             <AlignedText
-              left={t('Assets:')}
+              left="Assets:"
               right={<FinancialText>{payload[0].payload.assets}</FinancialText>}
             />
             <AlignedText
-              left={t('Debt:')}
+              left="Debt:"
               right={<FinancialText>{payload[0].payload.debt}</FinancialText>}
             />
             <AlignedText
-              left={t('Net worth:')}
+              left="Net worth:"
               right={
                 <FinancialText as="strong">
                   {payload[0].payload.networth}
@@ -84,7 +81,7 @@ function TrendTooltip({ active, payload, style }: TrendTooltipProps) {
               }
             />
             <AlignedText
-              left={t('Change:')}
+              left="Change:"
               right={<FinancialText>{payload[0].payload.change}</FinancialText>}
             />
           </div>
@@ -149,12 +146,8 @@ function StackedTooltip({
         <table style={{ borderSpacing: '15px 0', marginLeft: '-15px' }}>
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', paddingLeft: 15 }}>
-                <Trans>Account</Trans>
-              </th>
-              <th style={{ textAlign: 'right' }}>
-                <Trans>Value</Trans>
-              </th>
+              <th style={{ textAlign: 'left', paddingLeft: 15 }}>Account</th>
+              <th style={{ textAlign: 'right' }}>Value</th>
               {showPercentage && <th style={{ textAlign: 'right' }}>%</th>}
             </tr>
           </thead>
@@ -204,7 +197,7 @@ function StackedTooltip({
               }}
             >
               <td style={{ textAlign: 'left', paddingLeft: 15, paddingTop: 5 }}>
-                <Trans>Total</Trans>
+                Total
               </td>
               <td style={{ textAlign: 'right', paddingTop: 5 }}>
                 <FinancialText>{format(total, 'financial')}</FinancialText>

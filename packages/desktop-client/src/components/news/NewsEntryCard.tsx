@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { VisuallyHidden } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
@@ -37,7 +36,6 @@ type NewsEntryCardProps = {
 };
 
 export function NewsEntryCard({ entry, isUnread }: NewsEntryCardProps) {
-  const { t } = useTranslation();
   const locale = useLocale();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
   const [isShowingDetails, setIsShowingDetails] = useState(false);
@@ -66,7 +64,7 @@ export function NewsEntryCard({ entry, isUnread }: NewsEntryCardProps) {
               : theme.pillBackgroundSelected,
           }}
         >
-          {isRelease ? t('Release') : t('Post')}
+          {isRelease ? 'Release' : 'Post'}
         </Text>
         <Text style={{ fontWeight: 600, fontSize: 16, flex: 1 }}>
           {entry.title}
@@ -82,9 +80,7 @@ export function NewsEntryCard({ entry, isUnread }: NewsEntryCardProps) {
                 backgroundColor: theme.pageTextPositive,
               }}
             />
-            <VisuallyHidden>
-              <Trans>Unread</Trans>
-            </VisuallyHidden>
+            <VisuallyHidden>Unread</VisuallyHidden>
           </>
         )}
         <Text style={{ fontSize: 12 }}>
@@ -124,15 +120,11 @@ export function NewsEntryCard({ entry, isUnread }: NewsEntryCardProps) {
             onClick={() => setIsShowingDetails(!isShowingDetails)}
             style={{ color: theme.pageTextPositive }}
           >
-            {isShowingDetails ? t('Hide all changes') : t('Show all changes')}
+            {isShowingDetails ? 'Hide all changes' : 'Show all changes'}
           </Link>
         )}
         <Link variant="external" to={entry.url} linkColor="purple">
-          {isRelease ? (
-            <Trans>View on actualbudget.org</Trans>
-          ) : (
-            <Trans>Read the full post</Trans>
-          )}
+          {isRelease ? 'View on actualbudget.org' : 'Read the full post'}
         </Link>
       </View>
     </Setting>

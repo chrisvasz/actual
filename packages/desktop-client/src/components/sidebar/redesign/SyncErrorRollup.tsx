@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { radius, spacing } from '@actual-app/components/tokens';
@@ -10,8 +8,6 @@ type SyncErrorRollupProps = {
 };
 
 export function SyncErrorRollup({ count }: SyncErrorRollupProps) {
-  const { t } = useTranslation();
-
   if (count === 0) {
     return null;
   }
@@ -20,8 +16,8 @@ export function SyncErrorRollup({ count }: SyncErrorRollupProps) {
     <View
       title={
         count === 1
-          ? t('1 account needs attention')
-          : t('{{count}} accounts need attention', { count })
+          ? '1 account needs attention'
+          : `${count} accounts need attention`
       }
       style={{
         flexDirection: 'row',

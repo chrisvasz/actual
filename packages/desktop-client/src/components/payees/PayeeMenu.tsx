@@ -1,5 +1,3 @@
-import { Trans, useTranslation } from 'react-i18next';
-
 import { SvgDelete, SvgMerge } from '@actual-app/components/icons/v0';
 import { SvgBookmark, SvgLightBulb } from '@actual-app/components/icons/v1';
 import { Menu } from '@actual-app/components/menu';
@@ -29,7 +27,6 @@ export function PayeeMenu({
   onLearn,
   onClose,
 }: PayeeMenuProps) {
-  const { t } = useTranslation();
   const [learnCategories = 'true'] = useSyncedPref('learn-categories');
   const isLearnCategoriesEnabled = String(learnCategories) === 'true';
 
@@ -47,21 +44,21 @@ export function PayeeMenu({
     {
       icon: SvgDelete,
       name: 'delete',
-      text: t('Delete'),
+      text: 'Delete',
       disabled: isDisabled,
     },
     {
       icon: SvgBookmark,
       iconSize: 9,
       name: 'favorite',
-      text: t('Favorite'),
+      text: 'Favorite',
       disabled: isDisabled,
     },
     {
       icon: SvgMerge,
       iconSize: 9,
       name: 'merge',
-      text: t('Merge'),
+      text: 'Merge',
       disabled: isDisabled || selectedPayees.size < 2,
     },
   ];
@@ -71,7 +68,7 @@ export function PayeeMenu({
       icon: SvgLightBulb,
       iconSize: 9,
       name: 'learn',
-      text: t('Category Learning'),
+      text: 'Category Learning',
       disabled: isDisabled,
     });
   }
@@ -108,7 +105,7 @@ export function PayeeMenu({
           }}
         >
           {selectedPayees.size > 4 ? (
-            <Trans>{{ selectedPayeeNames }}, and more</Trans>
+            <>{selectedPayeeNames}, and more</>
           ) : (
             selectedPayeeNames
           )}

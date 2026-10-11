@@ -3,7 +3,6 @@ import type {
   AccountEntity,
   SyncServerEnableBankingAccount,
 } from '@actual-app/core/types/models';
-import { t } from 'i18next';
 
 import { pushModal } from '#modals/modalsSlice';
 import type { AppDispatch } from '#redux/store';
@@ -63,7 +62,7 @@ function _authorize(
             if (!authUrl || !state) {
               return {
                 error: 'unknown' as const,
-                message: t('Missing auth URL or state'),
+                message: 'Missing auth URL or state',
               };
             }
 

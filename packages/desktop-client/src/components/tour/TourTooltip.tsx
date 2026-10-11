@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import type { TooltipRenderProps } from 'react-joyride';
 
 import { SvgDelete } from '@actual-app/components/icons/v0';
@@ -20,8 +19,6 @@ export function TourTooltip({
   step,
   tooltipProps,
 }: TooltipRenderProps) {
-  const { t } = useTranslation();
-
   return (
     <View
       {...tooltipProps}
@@ -72,10 +69,7 @@ export function TourTooltip({
         }}
       >
         <Text style={{ color: theme.pageTextSubdued, flex: 1 }}>
-          {t('{{current}} of {{total}}', {
-            current: index + 1,
-            total: size,
-          })}
+          {`${index + 1} of ${size}`}
         </Text>
         {!isLastStep && (
           <TourTooltipButton

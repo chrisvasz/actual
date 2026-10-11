@@ -6,7 +6,6 @@ import type { File } from '@actual-app/core/types/file';
 import type { Handlers } from '@actual-app/core/types/handlers';
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { t } from 'i18next';
 
 import { resetApp, setAppState } from '#app/appSlice';
 import { closeModal, pushModal } from '#modals/modalsSlice';
@@ -56,7 +55,7 @@ type LoadBudgetPayload = {
 export const loadBudget = createAppAsyncThunk(
   `${sliceName}/loadBudget`,
   async ({ id, options = {} }: LoadBudgetPayload, { dispatch }) => {
-    dispatch(setAppState({ loadingText: t('Loading...') }));
+    dispatch(setAppState({ loadingText: 'Loading...' }));
 
     // Loading a budget may fail
     const { error } = await send('load-budget', { id, ...options });
@@ -71,9 +70,7 @@ export const loadBudget = createAppAsyncThunk(
           const showBackups = window.confirm(
             message +
               ' ' +
-              t(
-                'Make sure the app is up-to-date. Do you want to load a backup?',
-              ),
+              'Make sure the app is up-to-date. Do you want to load a backup?',
           );
 
           if (showBackups) {
@@ -82,7 +79,7 @@ export const loadBudget = createAppAsyncThunk(
             );
           }
         } else {
-          alert(message + ' ' + t('Make sure the app is up-to-date.'));
+          alert(message + ' Make sure the app is up-to-date.');
         }
       } else {
         alert(message);
@@ -103,7 +100,7 @@ export const closeBudget = createAppAsyncThunk(
     if (prefs && prefs.id) {
       dispatch(resetApp());
       queryClient.clear();
-      dispatch(setAppState({ loadingText: t('Closing...') }));
+      dispatch(setAppState({ loadingText: 'Closing...' }));
       await send('close-budget');
       dispatch(setAppState({ loadingText: null }));
       if (localStorage.getItem('SharedArrayBufferOverride')) {
@@ -151,7 +148,7 @@ export const createBudget = createAppAsyncThunk(
     dispatch(
       setAppState({
         loadingText:
-          testMode || demoMode ? t('Making demo...') : t('Creating budget...'),
+          testMode || demoMode ? 'Making demo...' : 'Creating budget...',
       }),
     );
 
@@ -206,10 +203,7 @@ export const duplicateBudget = createAppAsyncThunk(
     try {
       dispatch(
         setAppState({
-          loadingText: t('Duplicating: {{oldName}} to: {{newName}}', {
-            oldName,
-            newName,
-          }),
+          loadingText: `Duplicating: ${oldName} to: ${newName}`,
         }),
       );
 
@@ -309,7 +303,7 @@ export const downloadBudget = createAppAsyncThunk(
   ): Promise<string | null> => {
     dispatch(
       setAppState({
-        loadingText: t('Downloading...'),
+        loadingText: 'Downloading...',
       }),
     );
 
@@ -337,24 +331,12 @@ export const downloadBudget = createAppAsyncThunk(
         );
         dispatch(setAppState({ loadingText: null }));
       } else if (error.reason === 'file-exists') {
+        const meta =
+          error.meta && typeof error.meta === 'object' ? error.meta : {};
+        const id = 'id' in meta ? String(meta.id) : '';
+        const name = 'name' in meta ? String(meta.name) : '';
         alert(
-          t(
-            'A file with id "{{id}}" already exists with the name "{{name}}". ' +
-              'This file will be replaced. This probably happened because files were manually ' +
-              'moved around outside of Actual.',
-            {
-              id:
-                error.meta &&
-                typeof error.meta === 'object' &&
-                'id' in error.meta &&
-                error.meta.id,
-              name:
-                error.meta &&
-                typeof error.meta === 'object' &&
-                'name' in error.meta &&
-                error.meta.name,
-            },
-          ),
+          `A file with id "${id}" already exists with the name "${name}". This file will be replaced. This probably happened because files were manually moved around outside of Actual.`,
         );
 
         return await dispatch(

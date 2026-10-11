@@ -1,5 +1,3 @@
-import { Trans, useTranslation } from 'react-i18next';
-
 import type { CSSProperties } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -35,7 +33,6 @@ type CustomTooltipProps = {
 };
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
-  const { t } = useTranslation();
   const format = useFormat();
 
   if (active && payload && payload.length) {
@@ -55,9 +52,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
           <div style={{ marginBottom: 10 }}>
             <strong>{payload[0].payload.x}</strong>
             {payload[0].payload.isProjection ? (
-              <span style={{ marginLeft: 8, opacity: 0.7 }}>
-                {t('(projected)')}
-              </span>
+              <span style={{ marginLeft: 8, opacity: 0.7 }}>(projected)</span>
             ) : null}
           </div>
           <div style={{ lineHeight: 1.5 }}>
@@ -67,9 +62,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
                 justifyContent: 'space-between',
               })}
             >
-              <div>
-                <Trans>Monthly investment income:</Trans>
-              </div>
+              <div>Monthly investment income:</div>
               <div>
                 <FinancialText>
                   {format(payload[0].payload.investmentIncome, 'financial')}
@@ -82,9 +75,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
                 justifyContent: 'space-between',
               })}
             >
-              <div>
-                <Trans>Monthly expenses:</Trans>
-              </div>
+              <div>Monthly expenses:</div>
               <div>
                 <FinancialText>
                   {format(payload[0].payload.expenses, 'financial')}
@@ -98,9 +89,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
                   justifyContent: 'space-between',
                 })}
               >
-                <div>
-                  <Trans>Target income:</Trans>
-                </div>
+                <div>Target income:</div>
                 <div>
                   <FinancialText>
                     {format(payload[0].payload.adjustedExpenses, 'financial')}
@@ -114,9 +103,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
                 justifyContent: 'space-between',
               })}
             >
-              <div>
-                <Trans>Life savings:</Trans>
-              </div>
+              <div>Life savings:</div>
               <div>
                 <FinancialText>
                   {format(payload[0].payload.nestEgg, 'financial')}

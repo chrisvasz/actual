@@ -1,6 +1,5 @@
 import React from 'react';
 import type { CSSProperties } from 'react';
-import { Trans } from 'react-i18next';
 
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
@@ -68,7 +67,7 @@ export function EnvelopeBalanceMenuModal({
                 fontWeight: 400,
               }}
             >
-              <Trans>Balance</Trans>
+              Balance
             </Text>
             <BalanceWithCarryover
               isDisabled

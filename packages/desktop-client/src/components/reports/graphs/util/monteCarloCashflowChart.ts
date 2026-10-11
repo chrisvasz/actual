@@ -1,5 +1,4 @@
 import { theme } from '@actual-app/components/theme';
-import type { TFunction } from 'i18next';
 
 import { getColorScale } from '#components/reports/chart-theme';
 import {
@@ -80,7 +79,6 @@ type BuildMonteCarloCashflowChartInput = {
   spendingPhases: MonteCarloSpendingPhase[];
   /** The user's current age; a row's age is startAge + year - 1 */
   startAge: number;
-  translate: TFunction;
 };
 
 function seriesKey(kind: MonteCarloCashflowSeriesKind, index: number) {
@@ -105,7 +103,6 @@ export function buildMonteCarloCashflowChart({
   incomeStreams,
   spendingPhases,
   startAge,
-  translate,
 }: BuildMonteCarloCashflowChartInput): MonteCarloCashflowChart {
   const colorScale = getColorScale('qualitative');
   const phases = resolveSpendingPhases(spendingPhases);
@@ -121,7 +118,7 @@ export function buildMonteCarloCashflowChart({
   const potSeries: MonteCarloCashflowSeries[] = pots.map((pot, potIndex) => ({
     key: seriesKey('pot', potIndex),
     kind: 'pot',
-    label: getMonteCarloPotLabel(pots, potIndex, translate),
+    label: getMonteCarloPotLabel(pots, potIndex),
     color: inflowColor(potIndex),
   }));
   // Only streams that pay something in this run get a series
@@ -132,9 +129,7 @@ export function buildMonteCarloCashflowChart({
             {
               key: seriesKey('income', incomeIndex),
               kind: 'income',
-              label:
-                incomeStream.name ||
-                translate('Income {{number}}', { number: incomeIndex + 1 }),
+              label: incomeStream.name || `Income ${incomeIndex + 1}`,
               color: inflowColor(pots.length + incomeIndex),
             } satisfies MonteCarloCashflowSeries,
           ]
@@ -150,9 +145,7 @@ export function buildMonteCarloCashflowChart({
         kind: 'phase',
         label:
           phase.name ||
-          translate('Phase {{number}}', {
-            number: configuredIndex === -1 ? 1 : configuredIndex + 1,
-          }),
+          `Phase ${configuredIndex === -1 ? 1 : configuredIndex + 1}`,
         color: outflowColor(phaseIndex),
       };
     },
@@ -160,7 +153,7 @@ export function buildMonteCarloCashflowChart({
   const taxSeries: MonteCarloCashflowSeries = {
     key: seriesKey('tax', 0),
     kind: 'tax',
-    label: translate('Tax'),
+    label: 'Tax',
     color: theme.reportsNumberNegative,
   };
   // Only contributions that deposit something in this run get a series
@@ -172,10 +165,7 @@ export function buildMonteCarloCashflowChart({
               key: seriesKey('contribution', contributionIndex),
               kind: 'contribution',
               label:
-                contribution.name ||
-                translate('Contribution {{number}}', {
-                  number: contributionIndex + 1,
-                }),
+                contribution.name || `Contribution ${contributionIndex + 1}`,
               color: outflowColor(phases.length + contributionIndex),
             } satisfies MonteCarloCashflowSeries,
           ]
@@ -187,9 +177,7 @@ export function buildMonteCarloCashflowChart({
   const surplusSeries: MonteCarloCashflowSeries = {
     key: seriesKey('surplus', 0),
     kind: 'surplus',
-    label: translate('Saved into {{pot}}', {
-      pot: getMonteCarloSurplusPotLabel(pots, translate),
-    }),
+    label: `Saved into ${getMonteCarloSurplusPotLabel(pots)}`,
     color: outflowColor(phases.length + contributions.length),
   };
 
@@ -206,7 +194,7 @@ export function buildMonteCarloCashflowChart({
   const tooltipGroups: MonteCarloCashflowTooltipGroup[] = [
     {
       key: 'withdrawals',
-      heading: translate('Withdrawals'),
+      heading: 'Withdrawals',
       series: potSeries,
       listMembers: true,
     },
@@ -214,7 +202,7 @@ export function buildMonteCarloCashflowChart({
       ? [
           {
             key: 'income',
-            heading: translate('Income'),
+            heading: 'Income',
             series: incomeSeries,
             listMembers: true,
           },
@@ -224,7 +212,7 @@ export function buildMonteCarloCashflowChart({
       ? [
           {
             key: 'tax',
-            heading: translate('Tax'),
+            heading: 'Tax',
             series: [taxSeries],
             listMembers: false,
           },
@@ -232,7 +220,7 @@ export function buildMonteCarloCashflowChart({
       : []),
     {
       key: 'spending',
-      heading: translate('Spending'),
+      heading: 'Spending',
       series: phaseSeries,
       listMembers: true,
     },
@@ -240,7 +228,7 @@ export function buildMonteCarloCashflowChart({
       ? [
           {
             key: 'contributions',
-            heading: translate('Contributions'),
+            heading: 'Contributions',
             series: contributionSeries,
             listMembers: true,
           },
@@ -250,7 +238,7 @@ export function buildMonteCarloCashflowChart({
       ? [
           {
             key: 'surplus',
-            heading: translate('Saved'),
+            heading: 'Saved',
             series: [surplusSeries],
             listMembers: false,
           },

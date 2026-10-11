@@ -1,12 +1,10 @@
 import React from 'react';
-import { Trans } from 'react-i18next';
 
 import { styles } from '@actual-app/components/styles';
 import type { CSSProperties } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import type { TransObjectLiteral } from '@actual-app/core/types/util';
 
 import { useFormat } from '#hooks/useFormat';
 
@@ -46,18 +44,16 @@ export function GoalProgressSummary({
           ...styles.tnum,
         }}
       >
-        <Trans>
-          {{ percent }}%{' '}
-          <span
-            style={{
-              fontSize: 13,
-              fontWeight: 400,
-              color: theme.pageText,
-            }}
-          >
-            of {{ goal } as TransObjectLiteral} goal
-          </span>
-        </Trans>
+        {percent}%{' '}
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 400,
+            color: theme.pageText,
+          }}
+        >
+          of {goal} goal
+        </span>
       </Text>
       <View
         aria-hidden

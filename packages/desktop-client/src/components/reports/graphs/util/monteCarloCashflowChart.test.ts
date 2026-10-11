@@ -1,4 +1,3 @@
-import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
 
 import type {
@@ -10,13 +9,6 @@ import type {
 } from '#components/reports/reports/monte-carlo/monteCarloSimulation';
 
 import { buildMonteCarloCashflowChart } from './monteCarloCashflowChart';
-
-// Interpolates like i18next so labels can be asserted literally
-const translate = ((key: string, options?: Record<string, unknown>) =>
-  key.replace(/{{\w+}}/g, placeholder => {
-    const name = placeholder.slice('{{'.length, -'}}'.length);
-    return String(options?.[name]);
-  })) as unknown as TFunction;
 
 function makePot(id: string, name = ''): MonteCarloPot {
   return {
@@ -138,7 +130,6 @@ describe('buildMonteCarloCashflowChart', () => {
       incomeStreams,
       spendingPhases: phases,
       startAge: 60,
-      translate,
     });
 
     expect(
@@ -198,7 +189,6 @@ describe('buildMonteCarloCashflowChart', () => {
       incomeStreams: [],
       spendingPhases: phases,
       startAge: 60,
-      translate,
     });
 
     // Ages 60, 61 fall in phase 1; age 62 switches to phase 2
@@ -219,7 +209,6 @@ describe('buildMonteCarloCashflowChart', () => {
       incomeStreams,
       spendingPhases: phases,
       startAge: 60,
-      translate,
     });
 
     expect(chart.inflowSeries.map(series => series.kind)).toEqual([
@@ -244,7 +233,6 @@ describe('buildMonteCarloCashflowChart', () => {
       incomeStreams,
       spendingPhases: phases,
       startAge: 60,
-      translate,
     });
 
     expect(chart.tooltipGroups.map(group => group.key)).toEqual([
@@ -264,7 +252,6 @@ describe('buildMonteCarloCashflowChart', () => {
       incomeStreams: [],
       spendingPhases: [],
       startAge: 60,
-      translate,
     });
 
     expect(chart.outflowSeries.map(series => series.label)).toEqual([
@@ -282,7 +269,6 @@ describe('buildMonteCarloCashflowChart', () => {
       incomeStreams: [],
       spendingPhases: [makePhase('late', 70), makePhase('early', null)],
       startAge: 60,
-      translate,
     });
 
     // Resolved (age) order is early, late - but labels keep editor numbers
@@ -308,7 +294,6 @@ describe('buildMonteCarloCashflowChart', () => {
       incomeStreams,
       spendingPhases: phases,
       startAge: 60,
-      translate,
     });
 
     const surplusSeries = chart.outflowSeries.find(
@@ -337,7 +322,6 @@ describe('buildMonteCarloCashflowChart', () => {
       incomeStreams: [],
       spendingPhases: phases,
       startAge: 60,
-      translate,
     });
 
     expect(chart.data.map(point => point.afterDepletion)).toEqual([

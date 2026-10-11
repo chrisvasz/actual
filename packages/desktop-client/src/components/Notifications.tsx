@@ -1,6 +1,5 @@
 import React, { useEffect, useEffectEvent, useMemo, useState } from 'react';
 import type { CSSProperties, SetStateAction } from 'react';
-import { useTranslation } from 'react-i18next';
 import { animated, to, useSpring } from 'react-spring';
 import { useSwipeable } from 'react-swipeable';
 
@@ -99,7 +98,6 @@ function Notification({
   index: number;
   isInteractive: boolean;
 }) {
-  const { t } = useTranslation();
   const {
     type,
     title,
@@ -249,7 +247,7 @@ function Notification({
         {/* Close button in top right corner */}
         <Button
           variant="bare"
-          aria-label={t('Close')}
+          aria-label="Close"
           style={{
             position: 'absolute',
             top: 8,

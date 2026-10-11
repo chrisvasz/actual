@@ -6,7 +6,6 @@ import type {
   CategoryGroupEntity,
   RuleConditionEntity,
 } from '@actual-app/core/types/models';
-import { t } from 'i18next';
 
 import { getColorScale } from '#components/reports/chart-theme';
 import type { useSpreadsheet } from '#hooks/useSpreadsheet';
@@ -105,8 +104,6 @@ export type NodeData = {
   value?: number;
   type: GraphLayers;
   name?: string;
-  labelKey?: string;
-  labelParams?: Record<string, string>;
   isNegative?: boolean;
   tooltipInfo?: Array<{ name: string; value: number }>;
   percentageLabel?: string;
@@ -755,8 +752,7 @@ export function createBudgetGraph(
           graph,
           entry.categoryId,
           GraphLayers.Account,
-          'From {{category}}',
-          { category: entry.category },
+          `From ${entry.category}`,
           true,
         );
         addValueToLink(
@@ -781,7 +777,6 @@ export function createBudgetGraph(
       SpecialNodeKeys.ToBudget,
       GraphLayers.CategoryGroup,
       'To budget',
-      undefined,
       false,
     );
     addValueToLink(
@@ -796,7 +791,6 @@ export function createBudgetGraph(
       SpecialNodeKeys.ToBudget,
       GraphLayers.Account,
       'Overbudgeted',
-      undefined,
       true,
     );
     addValueToLink(
@@ -817,8 +811,7 @@ export function createBudgetGraph(
     graph,
     SpecialNodeKeys.FromPrevMonth,
     GraphLayers.IncomeCategory,
-    'From {{month}}',
-    { month: monthUtils.prevMonth(aggregated.startMonth) },
+    `From ${monthUtils.prevMonth(aggregated.startMonth)}`,
   );
   addValueToLink(
     graph,
@@ -830,8 +823,7 @@ export function createBudgetGraph(
     graph,
     SpecialNodeKeys.ForNextMonth,
     GraphLayers.Budget,
-    'For {{month}}',
-    { month: monthUtils.nextMonth(aggregated.endMonth) },
+    `For ${monthUtils.nextMonth(aggregated.endMonth)}`,
   );
   addValueToLink(
     graph,
@@ -862,13 +854,7 @@ export function createTransactionsGraph(
 ): Graph {
   function addAccountNode(accountId: string, accountName: string): void {
     if (accountId === SpecialNodeKeys.AllAccounts) {
-      addNodeWithLabel(
-        graph,
-        accountId,
-        GraphLayers.Account,
-        'Income',
-        undefined,
-      );
+      addNodeWithLabel(graph, accountId, GraphLayers.Account, 'Income');
     } else {
       addNode(graph, accountId, GraphLayers.Account, accountName);
     }
@@ -887,7 +873,6 @@ export function createTransactionsGraph(
             entry.categoryId + SpecialNodeKeys.NegativeSuffix,
             GraphLayers.CategoryGroup,
             entry.payeeName ?? entry.category,
-            undefined,
             true,
           );
           addValueToLink(
@@ -996,16 +981,14 @@ export function addNodeWithLabel(
   graph: Graph,
   key: NodeKey,
   type: GraphLayers,
-  labelKey: string,
-  labelParams?: Record<string, string>,
+  name: string,
   isNegative?: boolean,
 ) {
   if (!graph.has(key)) {
     graph.set(key, {
       to: new Map(),
       type,
-      labelKey,
-      labelParams,
+      name,
       isNegative,
     });
   }
@@ -1937,9 +1920,7 @@ export function convertToSankeyData(
 ): SankeyData {
   const nodes = Array.from(graph, ([key, data]) => ({
     key,
-    name: data.labelKey
-      ? t(data.labelKey, data.labelParams)
-      : (data.name ?? key),
+    name: data.name ?? key,
     percentageLabel: data.percentageLabel ?? '',
     color: data.color ?? undefined,
   }));

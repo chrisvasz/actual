@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { Button } from '@actual-app/components/button';
@@ -23,8 +22,6 @@ export function ConvertToScheduleModal({
   daysUntilTransaction,
   upcomingDays,
 }: ConvertToScheduleModalProps) {
-  const { t } = useTranslation();
-
   const { isNarrowWidth } = useResponsive();
   const narrowButtonStyle = isNarrowWidth
     ? {
@@ -40,7 +37,7 @@ export function ConvertToScheduleModal({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Convert to Schedule')}
+            title="Convert to Schedule"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ lineHeight: 1.5 }}>
@@ -52,15 +49,10 @@ export function ConvertToScheduleModal({
                 borderRadius: 4,
               }}
             >
-              <Trans count={daysUntilTransaction}>
-                <strong>Warning:</strong> This transaction is{' '}
-                {{ count: daysUntilTransaction }} days away,
-              </Trans>{' '}
-              <Trans count={upcomingDays}>
-                which is beyond your configured upcoming length of{' '}
-                {{ count: upcomingDays }} days. The schedule preview will not be
-                visible in your account until it gets closer to the date.
-              </Trans>
+              <strong>Warning:</strong> This transaction is{' '}
+              {daysUntilTransaction} days away, which is beyond your configured
+              upcoming length of {upcomingDays} days. The schedule preview will
+              not be visible in your account until it gets closer to the date.
             </Block>
             <View
               style={{
@@ -70,7 +62,7 @@ export function ConvertToScheduleModal({
               }}
             >
               <Button
-                aria-label={t('Cancel')}
+                aria-label="Cancel"
                 style={{
                   marginRight: 10,
                   ...narrowButtonStyle,
@@ -81,11 +73,11 @@ export function ConvertToScheduleModal({
                   onCancel?.();
                 }}
               >
-                <Trans>Cancel</Trans>
+                Cancel
               </Button>
               <InitialFocus>
                 <Button
-                  aria-label={t('Convert to Schedule')}
+                  aria-label="Convert to Schedule"
                   variant="primary"
                   style={{
                     ...narrowButtonStyle,
@@ -96,7 +88,7 @@ export function ConvertToScheduleModal({
                     onConfirm();
                   }}
                 >
-                  <Trans>Create schedule anyway</Trans>
+                  Create schedule anyway
                 </Button>
               </InitialFocus>
             </View>

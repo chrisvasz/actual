@@ -1,4 +1,3 @@
-import { Trans } from 'react-i18next';
 import type { Step } from 'react-joyride';
 
 import * as monthUtils from '@actual-app/core/shared/months';
@@ -69,14 +68,14 @@ function getBudgetTourSteps({ navigate }: TourStepDeps): Step[] {
       id: 'welcome',
       target: 'body',
       placement: 'center',
-      title: <Trans>Welcome to {{ appName: 'Actual' }}!</Trans>,
+      title: <>Welcome to Actual!</>,
       content: (
-        <Trans>
-          {{ appName: 'Actual' }} is a budgeting app that helps you understand
-          exactly where your money goes. This short tour walks you through the
-          basics. It only takes a couple of minutes, and you can leave at any
-          time and replay it later from the Help menu.
-        </Trans>
+        <>
+          Actual is a budgeting app that helps you understand exactly where your
+          money goes. This short tour walks you through the basics. It only
+          takes a couple of minutes, and you can leave at any time and replay it
+          later from the Help menu.
+        </>
       ),
     },
     {
@@ -90,12 +89,12 @@ function getBudgetTourSteps({ navigate }: TourStepDeps): Step[] {
         }
         await waitForElement('[data-testid="budget-table"]');
       },
-      title: <Trans>Your Budget</Trans>,
+      title: 'Your Budget',
       content: (
-        <Trans>
-          Categories in {{ appName: 'Actual' }} work like virtual envelopes: you
-          assign the money you already have to them, then spend from each
-          envelope. This approach is called{' '}
+        <>
+          Categories in Actual work like virtual envelopes: you assign the money
+          you already have to them, then spend from each envelope. This approach
+          is called{' '}
           <Link
             variant="external"
             to="https://actualbudget.org/docs/getting-started/envelope-budgeting"
@@ -103,72 +102,67 @@ function getBudgetTourSteps({ navigate }: TourStepDeps): Step[] {
             envelope budgeting
           </Link>
           .
-        </Trans>
+        </>
       ),
     },
     {
       id: 'budget-summary',
       target: findBudgetSummary,
       placement: 'bottom',
-      title: <Trans>To Budget</Trans>,
+      title: 'To Budget',
       content: (
-        <Trans>
+        <>
           The <strong>To Budget</strong> amount shows the money you have not
           assigned to a category yet. Aim to bring it to zero, so that all of
           your money has a job.
-        </Trans>
+        </>
       ),
     },
     {
       id: 'category',
       target: '[data-testid="category-name"]',
       placement: 'bottom',
-      title: <Trans>Categories</Trans>,
+      title: 'Categories',
       content: (
-        <Trans>
+        <>
           Each row in the budget is a category. Click the{' '}
           <strong>Budgeted</strong> amount to assign money to a category, and
           keep an eye on the <strong>Balance</strong> column to see how much is
           left to spend.
-        </Trans>
+        </>
       ),
     },
     {
       id: 'month-picker',
       target: '[data-testid="selected-budget-month"]',
       placement: 'bottom',
-      title: <Trans>Month by Month</Trans>,
-      content: (
-        <Trans>
-          Every month gets its own budget. Use the month picker to move between
-          months, and the calendar icons on the left to choose how many months
-          are shown side by side.
-        </Trans>
-      ),
+      title: 'Month by Month',
+      content:
+        'Every month gets its own budget. Use the month picker to move between months, and the calendar icons on the left to choose how many months are shown side by side.',
     },
     {
       id: 'sidebar-navigation',
       target: '[data-testid="sidebar-primary-buttons"]',
       placement: 'right',
-      title: <Trans>Getting Around</Trans>,
+      title: 'Getting Around',
       content: (
-        <Trans>
+        <>
           The sidebar takes you to your budget, reports, and scheduled
           transactions. You can find payees, rules, and the settings (with help
           and your server connection) under <strong>More</strong>.
-        </Trans>
+        </>
       ),
     },
     {
       id: ADD_ACCOUNT_STEP_ID,
       target: '[data-testid="sidebar-add-account"]',
       placement: 'right',
-      title: <Trans>Add Your Accounts</Trans>,
+      title: 'Add Your Accounts',
       content: (
-        <Trans>
+        <>
           Transactions live in accounts, so adding your first account is the
-          best way to get started with {{ appName: 'Actual' }}. Click here to
-          add one. You can enter transactions yourself, or{' '}
+          best way to get started with Actual. Click here to add one. You can
+          enter transactions yourself, or{' '}
           <Link
             variant="external"
             to="https://actualbudget.org/docs/advanced/bank-sync"
@@ -176,7 +170,7 @@ function getBudgetTourSteps({ navigate }: TourStepDeps): Step[] {
             link the account to your bank
           </Link>{' '}
           to import them automatically.
-        </Trans>
+        </>
       ),
     },
   ];

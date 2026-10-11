@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import { TextArea } from 'react-aria-components';
-import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 
 import { Menu } from '@actual-app/components/menu';
@@ -46,8 +45,6 @@ export function MarkdownCard({
   meta,
   onMetaChange,
 }: MarkdownCardProps) {
-  const { t } = useTranslation();
-
   const [isVisibleTextArea, setIsVisibleTextArea] = useState(false);
 
   const contextMenuTriggerRef = useRef(null);
@@ -58,12 +55,12 @@ export function MarkdownCard({
     items: [
       {
         type: Menu.label,
-        name: t('Text position:'),
+        name: 'Text position:',
         text: '',
       },
       {
         name: 'text-left',
-        text: t('Left'),
+        text: 'Left',
         onClick: () =>
           onMetaChange({
             ...meta,
@@ -72,7 +69,7 @@ export function MarkdownCard({
       },
       {
         name: 'text-center',
-        text: t('Center'),
+        text: 'Center',
         onClick: () =>
           onMetaChange({
             ...meta,
@@ -81,7 +78,7 @@ export function MarkdownCard({
       },
       {
         name: 'text-right',
-        text: t('Right'),
+        text: 'Right',
         onClick: () =>
           onMetaChange({
             ...meta,
@@ -91,7 +88,7 @@ export function MarkdownCard({
       Menu.line,
       {
         name: 'edit',
-        text: t('Edit content'),
+        text: 'Edit content',
         onClick: () => setIsVisibleTextArea(true),
       },
     ],

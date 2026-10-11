@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import type { FallbackProps } from 'react-error-boundary';
-import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { styles } from '@actual-app/components/styles';
@@ -28,7 +27,7 @@ export function FeatureErrorFallback({
       }}
     >
       <Text style={{ ...styles.mediumText, color: theme.errorText }}>
-        <Trans>Something went wrong loading this section.</Trans>
+        Something went wrong loading this section.
       </Text>
       {message && (
         <Text
@@ -46,7 +45,7 @@ export function FeatureErrorFallback({
         </Text>
       )}
       <Button onPress={resetErrorBoundary} style={{ marginTop: 15 }}>
-        <Trans>Try again</Trans>
+        Try again
       </Button>
     </View>
   );

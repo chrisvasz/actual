@@ -1,5 +1,3 @@
-import { Trans, useTranslation } from 'react-i18next';
-
 import { Button } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
@@ -24,8 +22,6 @@ export function ClosedSection({
   isOpen,
   onToggle,
 }: ClosedSectionProps) {
-  const { t } = useTranslation();
-
   if (accounts.length === 0) {
     return null;
   }
@@ -55,13 +51,13 @@ export function ClosedSection({
       >
         <CollapseChevron isOpen={isOpen} color={theme.sidebarTextMuted} />
         <Text style={{ ...sectionLabelStyle, color: theme.sidebarTextMuted }}>
-          <Trans>Closed</Trans>
+          Closed
         </Text>
         {!isOpen && <CountPill count={accounts.length} />}
       </Button>
       {isOpen && (
         <AccountTree
-          label={t('Closed accounts')}
+          label="Closed accounts"
           side="closed"
           buckets={[{ group: null, accounts, failedCount: 0 }]}
           showSyncDot={false}

@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { ButtonWithLoading } from '@actual-app/components/button';
 import { Input } from '@actual-app/components/input';
@@ -28,11 +27,10 @@ type SimpleFinInitialiseModalProps = Extract<
 export const SimpleFinInitialiseModal = ({
   onSuccess,
 }: SimpleFinInitialiseModalProps) => {
-  const { t } = useTranslation();
   const [token, setToken] = useState('');
   const [isValid, setIsValid] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(t('It is required to provide a token.'));
+  const [error, setError] = useState('It is required to provide a token.');
 
   const onSubmit = async (close: () => void) => {
     if (!token) {
@@ -67,28 +65,26 @@ export const SimpleFinInitialiseModal = ({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Set-up SimpleFIN')}
+            title="Set-up SimpleFIN"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ display: 'flex', gap: 10 }}>
             <Text>
-              <Trans>
-                In order to enable bank sync via SimpleFIN (only for North
-                American banks), you will need to create a token. This can be
-                done by creating an account with{' '}
-                <Link
-                  variant="external"
-                  to="https://bridge.simplefin.org/"
-                  linkColor="purple"
-                >
-                  SimpleFIN
-                </Link>
-                .
-              </Trans>
+              In order to enable bank sync via SimpleFIN (only for North
+              American banks), you will need to create a token. This can be done
+              by creating an account with{' '}
+              <Link
+                variant="external"
+                to="https://bridge.simplefin.org/"
+                linkColor="purple"
+              >
+                SimpleFIN
+              </Link>
+              .
             </Text>
 
             <FormField>
-              <FormLabel title={t('Token:')} htmlFor="token-field" />
+              <FormLabel title="Token:" htmlFor="token-field" />
               <Input
                 id="token-field"
                 type="password"
@@ -112,7 +108,7 @@ export const SimpleFinInitialiseModal = ({
                 void onSubmit(() => state.close());
               }}
             >
-              <Trans>Save and continue</Trans>
+              Save and continue
             </ButtonWithLoading>
           </ModalButtons>
         </>

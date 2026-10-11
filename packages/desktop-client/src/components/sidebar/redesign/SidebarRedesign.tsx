@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { theme } from '@actual-app/components/theme';
 import { spacing } from '@actual-app/components/tokens';
 import { View } from '@actual-app/components/view';
@@ -17,7 +15,6 @@ import { SidebarHeader } from './SidebarHeader';
 const DEFAULT_SIDEBAR_WIDTH = 270;
 
 export function SidebarRedesign() {
-  const { t } = useTranslation();
   const sidebar = useSidebar();
   const [isFloating = false, setFloatingSidebarPref] =
     useGlobalPref('floatingSidebar');
@@ -33,7 +30,7 @@ export function SidebarRedesign() {
     >
       <View
         role="navigation"
-        aria-label={t('Sidebar')}
+        aria-label="Sidebar"
         style={{ flex: 1, minHeight: 0 }}
       >
         <SidebarHeader>

@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { styles } from '@actual-app/components/styles';
@@ -24,12 +23,11 @@ import { BuiltInProviders } from './BuiltInProviders';
 import { useBuiltInBankSyncProviders } from './useBuiltInBankSyncProviders';
 
 export function BankSync() {
-  const { t } = useTranslation();
   const [floatingSidebar] = useGlobalPref('floatingSidebar');
   const { data: accounts = [] } = useAccounts();
   const dispatch = useDispatch();
   const { isNarrowWidth } = useResponsive();
-  const syncSourceReadable = useMemo(() => getSyncSourceReadable(t), [t]);
+  const syncSourceReadable = useMemo(() => getSyncSourceReadable(), []);
   const { providers, syncServerStatus, permissionWarning } =
     useBuiltInBankSyncProviders();
 
@@ -85,7 +83,7 @@ export function BankSync() {
 
   return (
     <Page
-      header={t('Bank Sync')}
+      header="Bank Sync"
       style={{
         minHeight: 'initial',
         marginInline: floatingSidebar && !isNarrowWidth ? 'auto' : 0,
@@ -100,12 +98,10 @@ export function BankSync() {
 
         {openAccounts.length === 0 && (
           <Text style={{ fontSize: '1.1rem' }}>
-            <Trans>
-              No accounts yet. Once a provider is set up, use{' '}
-              <strong>Link bank account</strong> to connect your bank and create
-              your accounts automatically. You can also add accounts manually
-              and connect them here later.
-            </Trans>
+            No accounts yet. Once a provider is set up, use{' '}
+            <strong>Link bank account</strong> to connect your bank and create
+            your accounts automatically. You can also add accounts manually and
+            connect them here later.
           </Text>
         )}
 

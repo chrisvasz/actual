@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { Button } from '@actual-app/components/button';
 import {
   SvgCheckCircle1,
@@ -15,7 +13,6 @@ type BalanceModeToggleProps = {
 };
 
 export function BalanceModeToggle({ className }: BalanceModeToggleProps) {
-  const { t } = useTranslation();
   const [mode, setMode] = useSidebarBalanceMode();
   const isCleared = mode === 'cleared';
   const iconColor = isCleared
@@ -23,8 +20,8 @@ export function BalanceModeToggle({ className }: BalanceModeToggleProps) {
     : theme.sidebarTextSubdued;
 
   const label = isCleared
-    ? t('Summing cleared transactions. Switch to all')
-    : t('Summing all transactions. Switch to cleared only');
+    ? 'Summing cleared transactions. Switch to all'
+    : 'Summing all transactions. Switch to cleared only';
 
   return (
     <Button

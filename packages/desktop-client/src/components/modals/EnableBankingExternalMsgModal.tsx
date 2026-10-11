@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
@@ -35,7 +34,6 @@ function useAvailableBanks(
   country: string | undefined,
   refetchKey?: boolean | null,
 ) {
-  const { t } = useTranslation();
   const [banks, setBanks] = useState<BankOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -71,7 +69,7 @@ function useAvailableBanks(
         setBanks(
           aspsps.map(aspsp => ({
             id: `${aspsp.country}:${aspsp.name}`,
-            name: aspsp.beta ? `${aspsp.name} ${t('(beta)')}` : aspsp.name,
+            name: aspsp.beta ? `${aspsp.name} ${'(beta)'}` : aspsp.name,
             maxConsentValidity: aspsp.maximum_consent_validity,
           })),
         );
@@ -84,7 +82,7 @@ function useAvailableBanks(
     return () => {
       cancelled = true;
     };
-  }, [country, refetchKey, t]);
+  }, [country, refetchKey]);
 
   return {
     data: banks,
@@ -93,18 +91,12 @@ function useAvailableBanks(
   };
 }
 
-function renderError(
-  error: { code: 'unknown' | 'timeout'; message?: string },
-  t: ReturnType<typeof useTranslation>['t'],
-) {
+function renderError(error: { code: 'unknown' | 'timeout'; message?: string }) {
   return (
     <Error style={{ alignSelf: 'center', marginBottom: 10 }}>
       {error.code === 'timeout'
-        ? t('Timed out. Please try again.')
-        : t(
-            'An error occurred while linking your account, sorry! The potential issue could be: {{ message }}',
-            { message: error.message },
-          )}
+        ? 'Timed out. Please try again.'
+        : `An error occurred while linking your account, sorry! The potential issue could be: ${error.message}`}
     </Error>
   );
 }
@@ -119,8 +111,6 @@ export function EnableBankingExternalMsgModal({
   onSuccess,
   onClose,
 }: EnableBankingExternalMsgModalProps) {
-  const { t } = useTranslation();
-
   const dispatch = useDispatch();
   const [language] = useGlobalPref('language');
 
@@ -258,10 +248,7 @@ export function EnableBankingExternalMsgModal({
     return (
       <View style={{ gap: 10 }}>
         <FormField>
-          <FormLabel
-            title={t('Choose your country:')}
-            htmlFor="country-field"
-          />
+          <FormLabel title="Choose your country:" htmlFor="country-field" />
           <Autocomplete
             strict
             highlightFirst
@@ -273,37 +260,32 @@ export function EnableBankingExternalMsgModal({
             value={country}
             inputProps={{
               id: 'country-field',
-              placeholder: t('(please select)'),
+              placeholder: '(please select)',
             }}
           />
         </FormField>
 
         {isBankOptionError ? (
           <Error>
-            <Trans>
-              Failed loading available banks: Enable Banking access credentials
-              might be misconfigured. Please{' '}
-              <Link
-                variant="text"
-                onClick={onEnableBankingInit}
-                style={{ color: theme.formLabelText, display: 'inline' }}
-              >
-                set them up
-              </Link>{' '}
-              again.
-            </Trans>
+            Failed loading available banks: Enable Banking access credentials
+            might be misconfigured. Please{' '}
+            <Link
+              variant="text"
+              onClick={onEnableBankingInit}
+              style={{ color: theme.formLabelText, display: 'inline' }}
+            >
+              set them up
+            </Link>{' '}
+            again.
           </Error>
         ) : (
           country &&
           (isBankOptionsLoading ? (
-            t('Loading banks...')
+            'Loading banks...'
           ) : (
             <>
               <FormField>
-                <FormLabel
-                  title={t('Choose your bank:')}
-                  htmlFor="bank-field"
-                />
+                <FormLabel title="Choose your bank:" htmlFor="bank-field" />
                 <Autocomplete
                   focused
                   strict
@@ -313,22 +295,19 @@ export function EnableBankingExternalMsgModal({
                   value={selectedAspsp}
                   inputProps={{
                     id: 'bank-field',
-                    placeholder: t('(please select)'),
+                    placeholder: '(please select)',
                   }}
                 />
               </FormField>
 
               <FormField>
-                <FormLabel
-                  title={t('Usage type:')}
-                  htmlFor="usage-type-field"
-                />
+                <FormLabel title="Usage type:" htmlFor="usage-type-field" />
                 <Autocomplete
                   strict
                   highlightFirst
                   suggestions={[
-                    { id: 'personal', name: t('personal') },
-                    { id: 'business', name: t('business') },
+                    { id: 'personal', name: 'personal' },
+                    { id: 'business', name: 'business' },
                   ]}
                   onSelect={value =>
                     setPsuType(value === 'business' ? 'business' : 'personal')
@@ -336,7 +315,7 @@ export function EnableBankingExternalMsgModal({
                   value={psuType}
                   inputProps={{
                     id: 'usage-type-field',
-                    placeholder: t('(please select)'),
+                    placeholder: '(please select)',
                   }}
                 />
               </FormField>
@@ -345,20 +324,18 @@ export function EnableBankingExternalMsgModal({
         )}
 
         <Warning>
-          <Trans>
-            By enabling bank sync, you will be granting Enable Banking (a third
-            party service) read-only access to your entire account's transaction
-            history. This service is not affiliated with Actual in any way. Make
-            sure you've read and understand Enable Banking's{' '}
-            <Link
-              variant="external"
-              to="https://enablebanking.com/privacy-policy/"
-              linkColor="purple"
-            >
-              Privacy Policy
-            </Link>{' '}
-            before proceeding.
-          </Trans>
+          By enabling bank sync, you will be granting Enable Banking (a third
+          party service) read-only access to your entire account's transaction
+          history. This service is not affiliated with Actual in any way. Make
+          sure you've read and understand Enable Banking's{' '}
+          <Link
+            variant="external"
+            to="https://enablebanking.com/privacy-policy/"
+            linkColor="purple"
+          >
+            Privacy Policy
+          </Link>{' '}
+          before proceeding.
         </Warning>
 
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
@@ -374,7 +351,7 @@ export function EnableBankingExternalMsgModal({
             onPress={onJump}
             isDisabled={!selectedAspsp || !country}
           >
-            <Trans>Link bank in browser</Trans> &rarr;
+            Link bank in browser &rarr;
           </Button>
         </View>
       </View>
@@ -390,19 +367,17 @@ export function EnableBankingExternalMsgModal({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Link Your Bank')}
+            title="Link Your Bank"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View>
             <Paragraph style={{ fontSize: 15 }}>
-              <Trans>
-                To link your bank account, you will be redirected to a new page
-                where Enable Banking will ask to connect to your bank. Enable
-                Banking will not be able to withdraw funds from your accounts.
-              </Trans>
+              To link your bank account, you will be redirected to a new page
+              where Enable Banking will ask to connect to your bank. Enable
+              Banking will not be able to withdraw funds from your accounts.
             </Paragraph>
 
-            {error && renderError(error, t)}
+            {error && renderError(error)}
 
             {waiting || isConfigurationLoading ? (
               <View style={{ alignItems: 'center', marginTop: 15 }}>
@@ -412,11 +387,11 @@ export function EnableBankingExternalMsgModal({
                 />
                 <View style={{ marginTop: 10, color: theme.pageText }}>
                   {isConfigurationLoading
-                    ? t('Checking Enable Banking configuration...')
+                    ? 'Checking Enable Banking configuration...'
                     : waiting === 'browser'
-                      ? t('Waiting on Enable Banking...')
+                      ? 'Waiting on Enable Banking...'
                       : waiting === 'accounts'
-                        ? t('Loading accounts...')
+                        ? 'Loading accounts...'
                         : null}
                 </View>
 
@@ -426,11 +401,7 @@ export function EnableBankingExternalMsgModal({
                     onClick={onJump}
                     style={{ marginTop: 10 }}
                   >
-                    (
-                    <Trans>
-                      Account linking not opening in a new tab? Click here
-                    </Trans>
-                    )
+                    ( Account linking not opening in a new tab? Click here )
                   </Link>
                 )}
               </View>
@@ -439,12 +410,10 @@ export function EnableBankingExternalMsgModal({
             ) : (
               <>
                 <Paragraph style={{ color: theme.errorText }}>
-                  <Trans>
-                    Enable Banking integration has not yet been configured.
-                  </Trans>
+                  Enable Banking integration has not yet been configured.
                 </Paragraph>
                 <Button variant="primary" onPress={onEnableBankingInit}>
-                  <Trans>Configure Enable Banking integration</Trans>
+                  Configure Enable Banking integration
                 </Button>
               </>
             )}

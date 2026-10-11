@@ -1,6 +1,5 @@
 import React from 'react';
 import type { CSSProperties } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
@@ -67,20 +66,19 @@ function SetActionExpression({
   value,
   options,
 }: SetRuleActionEntity) {
-  const { t } = useTranslation();
   return (
     <>
       <Text>{friendlyOp(op)}</Text>{' '}
       <Text style={valueStyle}>{mapField(field, options)}</Text>{' '}
-      <Text>{t('to ')}</Text>
+      <Text>{'to '}</Text>
       {options?.formula ? (
         <>
-          <Text>{t('formula ')}</Text>
+          <Text>{'formula '}</Text>
           <Text style={valueStyle}>{options.formula}</Text>
         </>
       ) : options?.template ? (
         <>
-          <Text>{t('template ')}</Text>
+          <Text>{'template '}</Text>
           <Text style={valueStyle}>{options.template}</Text>
         </>
       ) : (
@@ -95,7 +93,6 @@ function SetSplitAmountActionExpression({
   value,
   options,
 }: SetSplitAmountRuleActionEntity) {
-  const { t } = useTranslation();
   const method = options?.method;
   if (!method) {
     return null;
@@ -108,7 +105,7 @@ function SetSplitAmountActionExpression({
       {method !== 'remainder' && ': '}
       {options?.method === 'formula' ? (
         <>
-          <Text>{t('formula ')}</Text>
+          <Text>{'formula '}</Text>
           <Text style={valueStyle}>{options.formula}</Text>
         </>
       ) : method === 'fixed-amount' ? (

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { styles } from '@actual-app/components/styles';
@@ -32,7 +31,6 @@ export function BudgetAnalysisCard({
   meta = {},
   onMetaChange,
 }: BudgetAnalysisCardProps) {
-  const { t } = useTranslation();
   const format = useFormat();
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
@@ -84,7 +82,7 @@ export function BudgetAnalysisCard({
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
-              name={meta?.name || t('Budget Analysis')}
+              name={meta?.name || 'Budget Analysis'}
               isEditing={nameMenuOpen}
               onChange={newName => {
                 onMetaChange({

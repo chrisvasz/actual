@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React, { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
 import { InitialFocus } from '@actual-app/components/initial-focus';
@@ -71,7 +70,6 @@ export function Account<FieldName extends SheetFields<'account'>>({
   isExactPathMatch,
   balanceTestId,
 }: AccountProps<FieldName>) {
-  const { t } = useTranslation();
   const type = account
     ? account.closed
       ? 'account-closed'
@@ -115,18 +113,18 @@ export function Account<FieldName extends SheetFields<'account'>>({
     items: [
       {
         name: 'account-rename',
-        text: t('Rename'),
+        text: 'Rename',
         onClick: () => setIsEditing(true),
       },
       account?.closed
         ? {
             name: 'account-reopen',
-            text: t('Reopen'),
+            text: 'Reopen',
             onClick: () => reopenAccount.mutate({ id: account.id }),
           }
         : {
             name: 'account-close',
-            text: t('Close'),
+            text: 'Close',
             onClick: () =>
               dispatch(openAccountCloseModal({ accountId: account.id })),
           },

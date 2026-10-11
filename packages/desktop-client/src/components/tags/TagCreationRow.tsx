@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { ColorPicker } from '@actual-app/components/color-picker';
@@ -21,7 +20,6 @@ type TagCreationRowProps = {
 };
 
 export const TagCreationRow = ({ onClose, tags }: TagCreationRowProps) => {
-  const { t } = useTranslation();
   const [tag, setTag] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState<string | null>(null);
@@ -118,7 +116,7 @@ export const TagCreationRow = ({ onClose, tags }: TagCreationRowProps) => {
           textAlign="flex"
           exposed={tableNavigator.focusedField === 'tag'}
           onExpose={name => tableNavigator.onEdit('new-tag', name)}
-          value={tag || t('New tag')}
+          value={tag || 'New tag'}
           valueStyle={
             tag ? {} : { fontStyle: 'italic', color: theme.tableTextLight }
           }
@@ -126,7 +124,7 @@ export const TagCreationRow = ({ onClose, tags }: TagCreationRowProps) => {
             value: tag || '',
             onChange: e => setTag(e.target.value.replace(/\s/g, '')),
             onKeyDownCapture: onKeyDown,
-            placeholder: t('New tag'),
+            placeholder: 'New tag',
             ref: tagInput,
           }}
         />
@@ -137,7 +135,7 @@ export const TagCreationRow = ({ onClose, tags }: TagCreationRowProps) => {
           textAlign="flex"
           exposed={tableNavigator.focusedField === 'description'}
           onExpose={name => tableNavigator.onEdit('new-tag', name)}
-          value={description || t('Tag description')}
+          value={description || 'Tag description'}
           valueStyle={
             description
               ? {}
@@ -147,7 +145,7 @@ export const TagCreationRow = ({ onClose, tags }: TagCreationRowProps) => {
             value: description || '',
             onUpdate: setDescription,
             onKeyDownCapture: onKeyDown,
-            placeholder: t('Tag description'),
+            placeholder: 'Tag description',
           }}
         />
       </Row>
@@ -163,7 +161,7 @@ export const TagCreationRow = ({ onClose, tags }: TagCreationRowProps) => {
         }}
         collapsed
       >
-        <Trans>Choose Color:</Trans>
+        Choose Color:
         <ColorPicker
           value={color ?? undefined}
           onChange={color => setColor(color.toString('hex'))}
@@ -191,7 +189,7 @@ export const TagCreationRow = ({ onClose, tags }: TagCreationRowProps) => {
             data-testid="close-button"
             ref={cancelButtonRef}
           >
-            <Trans>Cancel</Trans>
+            Cancel
           </Button>
           <Button
             variant="primary"
@@ -201,7 +199,7 @@ export const TagCreationRow = ({ onClose, tags }: TagCreationRowProps) => {
             isDisabled={!isTagValid()}
             ref={addButtonRef}
           >
-            <Trans>Add</Trans>
+            Add
           </Button>
         </SpaceBetween>
       </Row>

@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import { getNewestDate, getReleaseToNotify } from '#news/utils';
@@ -22,7 +21,6 @@ const NOTIFICATIONS_PAGE_PATH = '/notifications';
  * is disabled (the user turned it off in settings).
  */
 export function useNewsNotification() {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -69,14 +67,11 @@ export function useNewsNotification() {
           type: 'message',
           id: NOTIFICATION_ID,
           sticky: true,
-          title: t("What's new in Actual {{version}}", {
-            version: release.version,
-          }),
-          message: t(
+          title: `What's new in Actual ${release.version}`,
+          message:
             'You are now running a new version of Actual. Take a look at what has changed.',
-          ),
           button: {
-            title: t("See what's new"),
+            title: "See what's new",
             action: () => {
               void navigate(NOTIFICATIONS_PAGE_PATH);
             },
@@ -95,6 +90,5 @@ export function useNewsNotification() {
     lastSeenNewsDate,
     navigate,
     setLastSeenNewsDate,
-    t,
   ]);
 }

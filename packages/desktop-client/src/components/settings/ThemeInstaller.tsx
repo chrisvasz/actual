@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { TextArea } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
@@ -48,7 +47,6 @@ export function ThemeInstaller({
   installedTheme,
   mode,
 }: ThemeInstallerProps) {
-  const { t } = useTranslation();
   const [customCssOverride, setCustomCssOverride] =
     useGlobalPref('customCssOverride');
   const [selectedCatalogTheme, setSelectedCatalogTheme] =
@@ -161,11 +159,11 @@ export function ThemeInstaller({
         name: theme.name,
         repo: normalizedRepo,
         id: generateThemeId(normalizedRepo),
-        errorMessage: t('Failed to load theme'),
+        errorMessage: 'Failed to load theme',
         catalogTheme: theme,
       });
     },
-    [installTheme, t],
+    [installTheme],
   );
 
   const handlePastedCssChange = useCallback((value: string) => {
@@ -183,10 +181,10 @@ export function ThemeInstaller({
       setPastedCss(validated);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : t('Failed to validate theme CSS'),
+        err instanceof Error ? err.message : 'Failed to validate theme CSS',
       );
     }
-  }, [pastedCss, setCustomCssOverride, t]);
+  }, [pastedCss, setCustomCssOverride]);
 
   return (
     <View
@@ -206,16 +204,16 @@ export function ThemeInstaller({
         }}
       >
         <Text style={{ fontWeight: 600, fontSize: 14 }}>
-          <Trans>Install Custom Theme</Trans>
+          Install Custom Theme
         </Text>
         <Button variant="bare" onPress={onClose}>
-          <Trans>Close</Trans>
+          Close
         </Button>
       </View>
 
       {/* Catalog Virtualized List */}
       <Text style={{ marginBottom: 8, color: themeStyle.pageTextSubdued }}>
-        <Trans>Choose from catalog:</Trans>
+        Choose from catalog:
       </Text>
       {catalogError ? (
         <Text
@@ -225,9 +223,7 @@ export function ThemeInstaller({
             fontSize: 12,
           }}
         >
-          <Trans>
-            Failed to load theme catalog. You can still paste custom CSS below.
-          </Trans>
+          Failed to load theme catalog. You can still paste custom CSS below.
         </Text>
       ) : (
         <View
@@ -382,7 +378,7 @@ export function ThemeInstaller({
                                       color: themeStyle.pageTextSubdued,
                                     }}
                                   >
-                                    {t('by')}{' '}
+                                    by{' '}
                                     <Text style={{ fontWeight: 'bold' }}>
                                       {extractRepoOwner(theme.repo)}
                                     </Text>
@@ -392,7 +388,7 @@ export function ThemeInstaller({
                                     to={normalizeGitHubRepo(theme.repo)}
                                     onClick={e => e.stopPropagation()}
                                   >
-                                    <Trans>Source</Trans>
+                                    Source
                                   </Link>
                                 </SpaceBetween>
                               </Button>
@@ -418,13 +414,13 @@ export function ThemeInstaller({
         }}
       >
         <Text style={{ marginBottom: 8, color: themeStyle.pageTextSubdued }}>
-          <Trans>Additional CSS overrides:</Trans>
+          Additional CSS overrides:
         </Text>
         <TextArea
           value={pastedCss}
           onChange={e => handlePastedCssChange(e.target.value)}
-          placeholder={t(':root {\n  --color-sidebarItemSelected: #007bff;\n}')}
-          aria-label={t('Custom Theme CSS')}
+          placeholder={':root {\n  --color-sidebarItemSelected: #007bff;\n}'}
+          aria-label="Custom Theme CSS"
           style={{
             ...baseInputStyle,
             height: 120,
@@ -439,7 +435,7 @@ export function ThemeInstaller({
           }}
         >
           <Button variant="normal" onPress={handleApplyOverride}>
-            <Trans>Apply</Trans>
+            Apply
           </Button>
         </View>
       </View>

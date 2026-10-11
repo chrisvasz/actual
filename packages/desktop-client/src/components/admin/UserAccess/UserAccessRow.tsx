@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { memo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -23,7 +22,6 @@ type UserAccessProps = {
 
 export const UserAccessRow = memo(
   ({ access, hovered, onHover }: UserAccessProps) => {
-    const { t } = useTranslation();
     const dispatch = useDispatch();
 
     const backgroundFocus = hovered;
@@ -54,10 +52,9 @@ export const UserAccessRow = memo(
             addNotification({
               notification: {
                 type: 'error',
-                title: t('Access Revocation Incomplete'),
-                message: t(
+                title: 'Access Revocation Incomplete',
+                message:
                   'Some access permissions were not revoked successfully.',
-                ),
                 sticky: true,
               },
             }),
@@ -74,11 +71,11 @@ export const UserAccessRow = memo(
             notification: {
               type: 'error',
               id: 'login-expired',
-              title: t('Login expired'),
+              title: 'Login expired',
               sticky: true,
               message: getUserAccessErrors(error),
               button: {
-                title: t('Go to login'),
+                title: 'Go to login',
                 action: () => {
                   void dispatch(signOut());
                 },
@@ -91,7 +88,7 @@ export const UserAccessRow = memo(
           addNotification({
             notification: {
               type: 'error',
-              title: t('Something happened while editing access'),
+              title: 'Something happened while editing access',
               sticky: true,
               message: getUserAccessErrors(error),
             },

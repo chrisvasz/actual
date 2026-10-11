@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { theme } from '@actual-app/components/theme';
 import { radius } from '@actual-app/components/tokens';
 import { View } from '@actual-app/components/view';
@@ -7,13 +5,11 @@ import { View } from '@actual-app/components/view';
 export type SyncDotStatus = 'synced' | 'error' | 'pending' | 'unlinked';
 
 export function useSyncDotLabel(status: SyncDotStatus): string {
-  const { t } = useTranslation();
-
   const labels: Record<SyncDotStatus, string> = {
-    synced: t('Synced'),
-    error: t('Sync error'),
-    pending: t('Syncing'),
-    unlinked: t('Not linked'),
+    synced: 'Synced',
+    error: 'Sync error',
+    pending: 'Syncing',
+    unlinked: 'Not linked',
   };
 
   return labels[status];

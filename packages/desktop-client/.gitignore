@@ -31,7 +31,6 @@ public/data-file-index.txt
 public/*.wasm
 
 # translations
-locale/
 
 # service worker build output
 dev-dist

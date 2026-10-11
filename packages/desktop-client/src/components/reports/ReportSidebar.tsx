@@ -1,5 +1,4 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Menu } from '@actual-app/components/menu';
@@ -111,7 +110,6 @@ export function ReportSidebar({
   firstDayOfWeekIdx,
   isComplexCategoryCondition = false,
 }: ReportSidebarProps) {
-  const { t } = useTranslation();
   const locale = useLocale();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
 
@@ -139,19 +137,19 @@ export function ReportSidebar({
         ReportOptions.dateRangeType.get(customReportItems.dateRange) || ''
       ).toLowerCase();
 
-      let text = t('Include current period');
-      let tooltip = t('Include current period in live range');
+      let text = 'Include current period';
+      let tooltip = 'Include current period in live range';
 
       if (rangeType === 'month') {
-        text = t('Include current Month');
-        tooltip = t('Include current Month in live range');
+        text = 'Include current Month';
+        tooltip = 'Include current Month in live range';
       } else if (rangeType === 'year') {
-        text = t('Include current Year');
-        tooltip = t('Include current Year in live range');
+        text = 'Include current Year';
+        tooltip = 'Include current Year in live range';
       }
 
       return [text, tooltip];
-    }, [customReportItems.dateRange, t]);
+    }, [customReportItems.dateRange]);
 
   const onChangeMode = (cond: string) => {
     setSessionReport('mode', cond);
@@ -263,9 +261,7 @@ export function ReportSidebar({
           }}
         >
           <Text>
-            <strong>
-              <Trans>Display</Trans>
-            </strong>
+            <strong>Display</strong>
           </Text>
         </View>
         <SpaceBetween
@@ -274,20 +270,18 @@ export function ReportSidebar({
             padding: 5,
           }}
         >
-          <Text style={{ width: 50, textAlign: 'right' }}>
-            <Trans>Mode:</Trans>
-          </Text>
+          <Text style={{ width: 50, textAlign: 'right' }}>Mode:</Text>
           <ModeButton
             selected={customReportItems.mode === 'total'}
             onSelect={() => onChangeMode('total')}
           >
-            <Trans>Total</Trans>
+            Total
           </ModeButton>
           <ModeButton
             selected={customReportItems.mode === 'time'}
             onSelect={() => onChangeMode('time')}
           >
-            <Trans>Time</Trans>
+            Time
           </ModeButton>
         </SpaceBetween>
 
@@ -299,7 +293,7 @@ export function ReportSidebar({
           }}
         >
           <Text style={{ width: 50, textAlign: 'right', marginRight: 5 }}>
-            <Trans>Split:</Trans>
+            Split:
           </Text>
           <Select
             value={customReportItems.groupBy}
@@ -324,7 +318,7 @@ export function ReportSidebar({
           }}
         >
           <Text style={{ width: 50, textAlign: 'right', marginRight: 5 }}>
-            <Trans>Type:</Trans>
+            Type:
           </Text>
           <Select
             value={customReportItems.balanceType}
@@ -344,7 +338,7 @@ export function ReportSidebar({
           }}
         >
           <Text style={{ width: 50, textAlign: 'right', marginRight: 5 }}>
-            <Trans>Interval:</Trans>
+            Interval:
           </Text>
           <Select
             value={customReportItems.interval}
@@ -382,7 +376,7 @@ export function ReportSidebar({
             }}
           >
             <Text style={{ width: 50, textAlign: 'right', marginRight: 5 }}>
-              <Trans>Sort:</Trans>
+              Sort:
             </Text>
             <Select
               value={customReportItems.sortBy}
@@ -414,7 +408,7 @@ export function ReportSidebar({
               padding: '5px 10px',
             }}
           >
-            <Trans>Options</Trans>
+            Options
           </Button>
           <Popover
             triggerRef={triggerRef}
@@ -485,40 +479,39 @@ export function ReportSidebar({
                 },
                 {
                   name: 'show-hidden-categories',
-                  text: t('Show hidden categories'),
-                  tooltip: t('Show hidden categories'),
+                  text: 'Show hidden categories',
+                  tooltip: 'Show hidden categories',
                   toggle: customReportItems.showHiddenCategories,
                 },
                 {
                   name: 'show-empty-items',
-                  text: t('Show empty rows'),
-                  tooltip: t('Show rows that are zero or blank'),
+                  text: 'Show empty rows',
+                  tooltip: 'Show rows that are zero or blank',
                   toggle: customReportItems.showEmpty,
                 },
                 {
                   name: 'show-off-budget',
-                  text: t('Show off budget'),
-                  tooltip: t('Show off budget accounts'),
+                  text: 'Show off budget',
+                  tooltip: 'Show off budget accounts',
                   toggle: customReportItems.showOffBudget,
                 },
                 {
                   name: 'show-uncategorized',
-                  text: t('Show uncategorized'),
-                  tooltip: t('Show uncategorized transactions'),
+                  text: 'Show uncategorized',
+                  tooltip: 'Show uncategorized transactions',
                   toggle: customReportItems.showUncategorized,
                 },
                 {
                   name: 'trim-intervals',
-                  text: t('Trim intervals'),
-                  tooltip: t(
+                  text: 'Trim intervals',
+                  tooltip:
                     'Trim empty intervals at the start and end of the report',
-                  ),
                   toggle: customReportItems.trimIntervals,
                 },
                 {
                   name: 'show-trend-lines',
-                  text: t('Show trend lines'),
-                  tooltip: t('Add a trend line per series (line graphs only)'),
+                  text: 'Show trend lines',
+                  tooltip: 'Add a trend line per series (line graphs only)',
                   toggle: customReportItems.showTrendLines,
                   disabled: customReportItems.graphType !== 'LineGraph',
                 },
@@ -542,9 +535,7 @@ export function ReportSidebar({
           }}
         >
           <Text>
-            <strong>
-              <Trans>Date filters</Trans>
-            </strong>
+            <strong>Date filters</strong>
           </Text>
           <View style={{ flex: 1 }} />
           <ModeButton
@@ -555,7 +546,7 @@ export function ReportSidebar({
               onSelectRange(customReportItems.dateRange);
             }}
           >
-            <Trans>Live</Trans>
+            Live
           </ModeButton>
           <ModeButton
             selected={customReportItems.isDateStatic}
@@ -569,7 +560,7 @@ export function ReportSidebar({
               );
             }}
           >
-            <Trans>Static</Trans>
+            Static
           </ModeButton>
         </SpaceBetween>
         {!customReportItems.isDateStatic ? (
@@ -581,7 +572,7 @@ export function ReportSidebar({
             }}
           >
             <Text style={{ width: 50, textAlign: 'right', marginRight: 5 }}>
-              <Trans>Range:</Trans>
+              Range:
             </Text>
             <Select
               value={customReportItems.dateRange}
@@ -592,11 +583,7 @@ export function ReportSidebar({
               customReportItems.includeCurrentInterval && (
                 <Tooltip
                   placement="bottom start"
-                  content={
-                    <Text>
-                      <Trans>Current month</Trans>
-                    </Text>
-                  }
+                  content={<Text>Current month</Text>}
                   style={{
                     ...styles.tooltip,
                     lineHeight: 1.5,
@@ -618,7 +605,7 @@ export function ReportSidebar({
               }}
             >
               <Text style={{ width: 50, textAlign: 'right', marginRight: 5 }}>
-                <Trans>From:</Trans>
+                From:
               </Text>
               <Select
                 onChange={newValue =>
@@ -650,7 +637,7 @@ export function ReportSidebar({
               }}
             >
               <Text style={{ width: 50, textAlign: 'right', marginRight: 5 }}>
-                <Trans>To:</Trans>
+                To:
               </Text>
               <Select
                 onChange={newValue =>
@@ -693,9 +680,7 @@ export function ReportSidebar({
       >
         {isComplexCategoryCondition ? (
           <Information>
-            <Trans>
-              Remove active category filters to show the category selector.
-            </Trans>
+            Remove active category filters to show the category selector.
           </Information>
         ) : (
           <CategorySelector

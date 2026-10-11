@@ -5,7 +5,6 @@ import React, {
   useState,
 } from 'react';
 import type { Ref } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -40,7 +39,6 @@ export function SummaryNumber({
   initialFontSize = 14,
   fontSizeChanged,
 }: SummaryNumberProps) {
-  const { t } = useTranslation();
   const [fontSize, setFontSize] = useState<number>(initialFontSize);
   const [hasSized, setHasSized] = useState(false);
   const refDiv = useRef<HTMLDivElement>(null);
@@ -96,12 +94,12 @@ export function SummaryNumber({
           ref={mergedRef as Ref<HTMLDivElement>}
           aria-label={
             !isNumericValue
-              ? t('Unknown amount')
+              ? 'Unknown amount'
               : value === 0
-                ? t('Zero amount')
+                ? 'Zero amount'
                 : value < 0
-                  ? t('Negative amount: {{amount}}', { amount: displayAmount })
-                  : t('Positive amount: {{amount}}', { amount: displayAmount })
+                  ? `Negative amount: ${displayAmount}`
+                  : `Positive amount: ${displayAmount}`
           }
           style={{
             alignItems: 'center',

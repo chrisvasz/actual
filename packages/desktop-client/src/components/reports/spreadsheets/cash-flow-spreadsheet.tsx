@@ -8,7 +8,6 @@ import { q } from '@actual-app/core/shared/query';
 import type { RuleConditionEntity } from '@actual-app/core/types/models';
 import type { Locale } from 'date-fns';
 import * as d from 'date-fns';
-import { t } from 'i18next';
 
 import { FinancialText } from '#components/FinancialText';
 import { indexCashFlow, runAll } from '#components/reports/util';
@@ -221,19 +220,19 @@ function recalculate(
           </div>
           <div style={{ lineHeight: 1.5 }}>
             <AlignedText
-              left={t('Income:')}
+              left="Income:"
               right={
                 <FinancialText>{format(income, 'financial')}</FinancialText>
               }
             />
             <AlignedText
-              left={t('Expenses:')}
+              left="Expenses:"
               right={
                 <FinancialText>{format(expense, 'financial')}</FinancialText>
               }
             />
             <AlignedText
-              left={t('Change:')}
+              left="Change:"
               right={
                 <FinancialText as="strong">
                   {format(income + expense, 'financial')}
@@ -242,7 +241,7 @@ function recalculate(
             />
             {creditTransfers + debitTransfers !== 0 && (
               <AlignedText
-                left={t('Transfers:')}
+                left="Transfers:"
                 right={
                   <FinancialText>
                     {format(creditTransfers + debitTransfers, 'financial')}
@@ -251,7 +250,7 @@ function recalculate(
               />
             )}
             <AlignedText
-              left={t('Balance:')}
+              left="Balance:"
               right={
                 <FinancialText>{format(balance, 'financial')}</FinancialText>
               }

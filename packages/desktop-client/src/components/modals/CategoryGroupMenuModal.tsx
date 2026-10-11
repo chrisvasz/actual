@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React, { useRef, useState } from 'react';
 import type { ComponentProps } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import {
@@ -51,7 +50,6 @@ export function CategoryGroupMenuModal({
     useCategories();
   const group = categoryGroups.find(g => g.id === groupId);
   const notes = useNotes(group.id);
-  const { t } = useTranslation();
 
   const onRename = newName => {
     if (newName && newName !== group.name) {
@@ -138,7 +136,7 @@ export function CategoryGroupMenuModal({
               }}
             >
               <Notes
-                notes={notes?.length > 0 ? notes : t('No notes')}
+                notes={notes?.length > 0 ? notes : 'No notes'}
                 editable={false}
                 focused={false}
                 getStyle={() => ({
@@ -163,7 +161,7 @@ export function CategoryGroupMenuModal({
             >
               <Button style={buttonStyle} onPress={_onAddCategory}>
                 <SvgAdd width={17} height={17} style={{ paddingRight: 5 }} />
-                <Trans>Add category</Trans>
+                Add category
               </Button>
               <Button style={buttonStyle} onPress={_onEditNotes}>
                 <SvgNotesPaper
@@ -171,7 +169,7 @@ export function CategoryGroupMenuModal({
                   height={20}
                   style={{ paddingRight: 5 }}
                 />
-                <Trans>Edit notes</Trans>
+                Edit notes
               </Button>
             </View>
           </View>
@@ -189,7 +187,6 @@ function AdditionalCategoryGroupMenu({
   onSortDesc,
   onClose,
 }) {
-  const { t } = useTranslation();
   const triggerRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const itemStyle: CSSProperties = {
@@ -208,7 +205,7 @@ function AdditionalCategoryGroupMenu({
         <Button
           ref={triggerRef}
           variant="bare"
-          aria-label={t('Menu')}
+          aria-label="Menu"
           onPress={() => {
             setMenuOpen(true);
           }}
@@ -234,7 +231,7 @@ function AdditionalCategoryGroupMenu({
                 [
                   {
                     name: 'toggleVisibility',
-                    text: group.hidden ? t('Show') : t('Hide'),
+                    text: group.hidden ? 'Show' : 'Hide',
                     icon: group.hidden ? SvgViewShow : SvgViewHide,
                     iconSize: 16,
                   },
@@ -242,7 +239,7 @@ function AdditionalCategoryGroupMenu({
                     Menu.line,
                     {
                       name: 'delete',
-                      text: t('Delete'),
+                      text: 'Delete',
                       icon: SvgTrash,
                       iconSize: 15,
                     },
@@ -250,8 +247,8 @@ function AdditionalCategoryGroupMenu({
                   ...(onSortAsc && onSortDesc
                     ? [
                         Menu.line,
-                        { name: 'sort-asc', text: t('Sort A to Z') },
-                        { name: 'sort-desc', text: t('Sort Z to A') },
+                        { name: 'sort-asc', text: 'Sort A to Z' },
+                        { name: 'sort-desc', text: 'Sort Z to A' },
                       ]
                     : []),
                 ].filter(i => i != null) as ComponentProps<typeof Menu>['items']

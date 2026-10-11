@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useEffect, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
@@ -65,18 +64,12 @@ function useAvailableBanks(country: string) {
   };
 }
 
-function renderError(
-  error: { code: 'unknown' | 'timeout'; message?: string },
-  t: ReturnType<typeof useTranslation>['t'],
-) {
+function renderError(error: { code: 'unknown' | 'timeout'; message?: string }) {
   return (
     <Error style={{ alignSelf: 'center', marginBottom: 10 }}>
       {error.code === 'timeout'
-        ? t('Timed out. Please try again.')
-        : t(
-            'An error occurred while linking your account, sorry! The potential issue could be: {{ message }}',
-            { message: error.message },
-          )}
+        ? 'Timed out. Please try again.'
+        : `An error occurred while linking your account, sorry! The potential issue could be: ${error.message}`}
     </Error>
   );
 }
@@ -91,8 +84,6 @@ export function GoCardlessExternalMsgModal({
   onSuccess,
   onClose,
 }: GoCardlessExternalMsgModalProps) {
-  const { t } = useTranslation();
-
   const dispatch = useDispatch();
   const [language] = useGlobalPref('language');
 
@@ -170,10 +161,7 @@ export function GoCardlessExternalMsgModal({
     return (
       <View style={{ gap: 10 }}>
         <FormField>
-          <FormLabel
-            title={t('Choose your country:')}
-            htmlFor="country-field"
-          />
+          <FormLabel title="Choose your country:" htmlFor="country-field" />
           <Autocomplete
             strict
             highlightFirst
@@ -182,33 +170,31 @@ export function GoCardlessExternalMsgModal({
             value={country}
             inputProps={{
               id: 'country-field',
-              placeholder: t('(please select)'),
+              placeholder: '(please select)',
             }}
           />
         </FormField>
 
         {isBankOptionError ? (
           <Error>
-            <Trans>
-              Failed loading available banks: GoCardless access credentials
-              might be misconfigured. Please{' '}
-              <Link
-                variant="text"
-                onClick={onGoCardlessInit}
-                style={{ color: theme.formLabelText, display: 'inline' }}
-              >
-                set them up
-              </Link>{' '}
-              again.
-            </Trans>
+            Failed loading available banks: GoCardless access credentials might
+            be misconfigured. Please{' '}
+            <Link
+              variant="text"
+              onClick={onGoCardlessInit}
+              style={{ color: theme.formLabelText, display: 'inline' }}
+            >
+              set them up
+            </Link>{' '}
+            again.
           </Error>
         ) : (
           country &&
           (isBankOptionsLoading ? (
-            t('Loading banks...')
+            'Loading banks...'
           ) : (
             <FormField>
-              <FormLabel title={t('Choose your bank:')} htmlFor="bank-field" />
+              <FormLabel title="Choose your bank:" htmlFor="bank-field" />
               <Autocomplete
                 focused
                 strict
@@ -218,7 +204,7 @@ export function GoCardlessExternalMsgModal({
                 value={institutionId}
                 inputProps={{
                   id: 'bank-field',
-                  placeholder: t('(please select)'),
+                  placeholder: '(please select)',
                 }}
               />
             </FormField>
@@ -226,20 +212,18 @@ export function GoCardlessExternalMsgModal({
         )}
 
         <Warning>
-          <Trans>
-            By enabling bank sync, you will be granting GoCardless (a third
-            party service) read-only access to your entire account's transaction
-            history. This service is not affiliated with Actual in any way. Make
-            sure you've read and understand GoCardless's{' '}
-            <Link
-              variant="external"
-              to="https://gocardless.com/privacy/"
-              linkColor="purple"
-            >
-              Privacy Policy
-            </Link>{' '}
-            before proceeding.
-          </Trans>
+          By enabling bank sync, you will be granting GoCardless (a third party
+          service) read-only access to your entire account's transaction
+          history. This service is not affiliated with Actual in any way. Make
+          sure you've read and understand GoCardless's{' '}
+          <Link
+            variant="external"
+            to="https://gocardless.com/privacy/"
+            linkColor="purple"
+          >
+            Privacy Policy
+          </Link>{' '}
+          before proceeding.
         </Warning>
 
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
@@ -255,7 +239,7 @@ export function GoCardlessExternalMsgModal({
             onPress={onJump}
             isDisabled={!institutionId || !country}
           >
-            <Trans>Link bank in browser</Trans> &rarr;
+            Link bank in browser &rarr;
           </Button>
         </View>
       </View>
@@ -271,19 +255,17 @@ export function GoCardlessExternalMsgModal({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Link Your Bank')}
+            title="Link Your Bank"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View>
             <Paragraph style={{ fontSize: 15 }}>
-              <Trans>
-                To link your bank account, you will be redirected to a new page
-                where GoCardless will ask to connect to your bank. GoCardless
-                will not be able to withdraw funds from your accounts.
-              </Trans>
+              To link your bank account, you will be redirected to a new page
+              where GoCardless will ask to connect to your bank. GoCardless will
+              not be able to withdraw funds from your accounts.
             </Paragraph>
 
-            {error && renderError(error, t)}
+            {error && renderError(error)}
 
             {waiting || isConfigurationLoading ? (
               <View style={{ alignItems: 'center', marginTop: 15 }}>
@@ -293,11 +275,11 @@ export function GoCardlessExternalMsgModal({
                 />
                 <View style={{ marginTop: 10, color: theme.pageText }}>
                   {isConfigurationLoading
-                    ? t('Checking GoCardless configuration...')
+                    ? 'Checking GoCardless configuration...'
                     : waiting === 'browser'
-                      ? t('Waiting on GoCardless...')
+                      ? 'Waiting on GoCardless...'
                       : waiting === 'accounts'
-                        ? t('Loading accounts...')
+                        ? 'Loading accounts...'
                         : null}
                 </View>
 
@@ -307,11 +289,7 @@ export function GoCardlessExternalMsgModal({
                     onClick={onJump}
                     style={{ marginTop: 10 }}
                   >
-                    (
-                    <Trans>
-                      Account linking not opening in a new tab? Click here
-                    </Trans>
-                    )
+                    ( Account linking not opening in a new tab? Click here )
                   </Link>
                 )}
               </View>
@@ -327,19 +305,17 @@ export function GoCardlessExternalMsgModal({
                 }}
                 onPress={onContinue}
               >
-                <Trans>Success! Click to continue</Trans> &rarr;
+                Success! Click to continue &rarr;
               </Button>
             ) : isConfigured || isGoCardlessSetupComplete ? (
               renderLinkButton()
             ) : (
               <>
                 <Paragraph style={{ color: theme.errorText }}>
-                  <Trans>
-                    GoCardless integration has not yet been configured.
-                  </Trans>
+                  GoCardless integration has not yet been configured.
                 </Paragraph>
                 <Button variant="primary" onPress={onGoCardlessInit}>
-                  <Trans>Configure GoCardless integration</Trans>
+                  Configure GoCardless integration
                 </Button>
               </>
             )}

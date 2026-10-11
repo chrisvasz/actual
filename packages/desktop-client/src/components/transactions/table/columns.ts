@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 // The set of columns in the transaction table, in their default order.
 export const TRANSACTION_TABLE_COLUMN_IDS = [
   'date',
@@ -53,19 +51,17 @@ export function useTransactionTableColumnLabels(): Record<
   TransactionTableColumnId,
   string
 > {
-  const { t } = useTranslation();
-
   return {
-    date: t('Date'),
-    account: t('Account'),
-    payee: t('Payee'),
-    notes: t('Notes'),
-    group: t('Category group'),
-    category: t('Category'),
-    payment: t('Payment'),
-    deposit: t('Deposit'),
-    balance: t('Running balance'),
-    cleared: t('Cleared'),
+    date: 'Date',
+    account: 'Account',
+    payee: 'Payee',
+    notes: 'Notes',
+    group: 'Category group',
+    category: 'Category',
+    payment: 'Payment',
+    deposit: 'Deposit',
+    balance: 'Running balance',
+    cleared: 'Cleared',
   };
 }
 

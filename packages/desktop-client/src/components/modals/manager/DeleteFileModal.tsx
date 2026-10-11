@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button, ButtonWithLoading } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
@@ -18,8 +17,6 @@ type DeleteFileModalProps = Extract<
 >['options'];
 
 export function DeleteFileModal({ file }: DeleteFileModalProps) {
-  const { t } = useTranslation();
-
   // If the state is "broken" that means it was created by another
   // user. The current user should be able to delete the local file,
   // but not the remote one
@@ -45,7 +42,7 @@ export function DeleteFileModal({ file }: DeleteFileModalProps) {
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Delete {{fileName}}', { fileName: file.name })}
+            title={`Delete ${file.name}`}
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View
@@ -62,12 +59,10 @@ export function DeleteFileModal({ file }: DeleteFileModalProps) {
               (canDeleteFromServer ? (
                 <>
                   <Text>
-                    <Trans>
-                      This is a <strong>hosted file</strong> which means it is
-                      stored on your server to make it available for download on
-                      any device. You can delete it from the server, which will
-                      also remove it from all of your devices.
-                    </Trans>
+                    This is a <strong>hosted file</strong> which means it is
+                    stored on your server to make it available for download on
+                    any device. You can delete it from the server, which will
+                    also remove it from all of your devices.
                   </Text>
 
                   {serverStatus === 'online' ? (
@@ -94,7 +89,7 @@ export function DeleteFileModal({ file }: DeleteFileModalProps) {
                         state.close();
                       }}
                     >
-                      <Trans>Delete file from all devices</Trans>
+                      Delete file from all devices
                     </ButtonWithLoading>
                   ) : (
                     <Button
@@ -105,16 +100,14 @@ export function DeleteFileModal({ file }: DeleteFileModalProps) {
                         fontSize: 14,
                       }}
                     >
-                      <Trans>Server is not available</Trans>
+                      Server is not available
                     </Button>
                   )}
                 </>
               ) : (
                 <Text>
-                  <Trans>
-                    This is a <strong>hosted file</strong> shared with you. Only
-                    the file owner can delete it from the server.
-                  </Trans>
+                  This is a <strong>hosted file</strong> shared with you. Only
+                  the file owner can delete it from the server.
                 </Text>
               ))}
 
@@ -122,30 +115,26 @@ export function DeleteFileModal({ file }: DeleteFileModalProps) {
               <>
                 {isCloudFile ? (
                   <Text>
-                    <Trans>
-                      You can also delete just the local copy. This will remove
-                      all local data and the file will be listed as available
-                      for download.
-                    </Trans>
+                    You can also delete just the local copy. This will remove
+                    all local data and the file will be listed as available for
+                    download.
                   </Text>
                 ) : (
                   <Text>
                     {file.state === 'broken' ? (
-                      <Trans>
+                      <>
                         This is a <strong>hosted file</strong> but it was
                         created by another user. You can only delete the local
                         copy.
-                      </Trans>
+                      </>
                     ) : (
-                      <Trans>
+                      <>
                         This a <strong>local file</strong> which is not stored
                         on a server.
-                      </Trans>
+                      </>
                     )}{' '}
-                    <Trans>
-                      Deleting it will remove it and all of its backups
-                      permanently.
-                    </Trans>
+                    Deleting it will remove it and all of its backups
+                    permanently.
                   </Text>
                 )}
 
@@ -175,7 +164,7 @@ export function DeleteFileModal({ file }: DeleteFileModalProps) {
                     state.close();
                   }}
                 >
-                  <Trans>Delete file locally</Trans>
+                  Delete file locally
                 </ButtonWithLoading>
               </>
             )}

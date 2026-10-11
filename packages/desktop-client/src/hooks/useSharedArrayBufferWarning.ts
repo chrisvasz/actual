@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { addNotification } from '#notifications/notificationsSlice';
 import { useDispatch } from '#redux';
@@ -9,7 +8,6 @@ import { useDispatch } from '#redux';
  * the app needs to run reliably in the browser.
  */
 export function useSharedArrayBufferWarning() {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -24,12 +22,11 @@ export function useSharedArrayBufferWarning() {
           id: 'shared-array-buffer',
           type: 'warning',
           sticky: true,
-          title: t('SharedArrayBuffer is not supported'),
-          message: t(
+          title: 'SharedArrayBuffer is not supported',
+          message:
             'Your environment does not support SharedArrayBuffer. You may experience data loss or degraded functionality.',
-          ),
           button: {
-            title: t('Learn more'),
+            title: 'Learn more',
             action: () =>
               window.Actual.openURLInBrowser(
                 'https://actualbudget.org/docs/troubleshooting/shared-array-buffer',
@@ -38,5 +35,5 @@ export function useSharedArrayBufferWarning() {
         },
       }),
     );
-  }, [dispatch, t]);
+  }, [dispatch]);
 }

@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { ButtonWithLoading } from '@actual-app/components/button';
 import { InitialFocus } from '@actual-app/components/initial-focus';
@@ -32,7 +31,6 @@ export const PluggyAiInitialiseModal = ({
   onSuccess,
   credentialSource,
 }: PluggyAiInitialiseProps) => {
-  const { t } = useTranslation();
   const { cloudFileId, isAdmin: canSetGlobalCredentials } = useCurrentAccess();
   const [clientId, setClientId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
@@ -43,18 +41,14 @@ export const PluggyAiInitialiseModal = ({
   const [isValid, setIsValid] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(
-    t(
-      'It is required to provide both the client id, client secret and at least one item id.',
-    ),
+    'It is required to provide both the client id, client secret and at least one item id.',
   );
 
   const onSubmit = async (close: () => void) => {
     if (!clientId || !clientSecret || !itemIds) {
       setIsValid(false);
       setError(
-        t(
-          'It is required to provide both the client id, client secret and at least one item id.',
-        ),
+        'It is required to provide both the client id, client secret and at least one item id.',
       );
       return;
     }
@@ -65,7 +59,7 @@ export const PluggyAiInitialiseModal = ({
     if (perBudgetFile && !fileId) {
       setIsLoading(false);
       setIsValid(false);
-      setError(t('Budget file ID is required.'));
+      setError('Budget file ID is required.');
       return;
     }
 
@@ -125,24 +119,22 @@ export const PluggyAiInitialiseModal = ({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Set-up Pluggy.ai')}
+            title="Set-up Pluggy.ai"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ display: 'flex', gap: 10 }}>
             <Text>
-              <Trans>
-                In order to enable bank sync via Pluggy.ai (only for Brazilian
-                banks) you will need to create access credentials. This can be
-                done by creating an account with{' '}
-                <Link
-                  variant="external"
-                  to="https://actualbudget.org/docs/advanced/bank-sync/"
-                  linkColor="purple"
-                >
-                  Pluggy.ai
-                </Link>
-                .
-              </Trans>
+              In order to enable bank sync via Pluggy.ai (only for Brazilian
+              banks) you will need to create access credentials. This can be
+              done by creating an account with{' '}
+              <Link
+                variant="external"
+                to="https://actualbudget.org/docs/advanced/bank-sync/"
+                linkColor="purple"
+              >
+                Pluggy.ai
+              </Link>
+              .
             </Text>
 
             <View
@@ -153,9 +145,7 @@ export const PluggyAiInitialiseModal = ({
                 gap: 12,
               }}
             >
-              <Text>
-                <Trans>For this budget only</Trans>
-              </Text>
+              <Text>For this budget only</Text>
               <Toggle
                 id="pluggyai-per-budget-file"
                 isOn={perBudgetFile}
@@ -165,7 +155,7 @@ export const PluggyAiInitialiseModal = ({
             </View>
 
             <FormField>
-              <FormLabel title={t('Client ID:')} htmlFor="client-id-field" />
+              <FormLabel title="Client ID:" htmlFor="client-id-field" />
               <InitialFocus>
                 <Input
                   id="client-id-field"
@@ -180,10 +170,7 @@ export const PluggyAiInitialiseModal = ({
             </FormField>
 
             <FormField>
-              <FormLabel
-                title={t('Client Secret:')}
-                htmlFor="client-secret-field"
-              />
+              <FormLabel title="Client Secret:" htmlFor="client-secret-field" />
               <Input
                 id="client-secret-field"
                 type="password"
@@ -197,7 +184,7 @@ export const PluggyAiInitialiseModal = ({
 
             <FormField>
               <FormLabel
-                title={t('Item Ids (comma separated):')}
+                title="Item Ids (comma separated):"
                 htmlFor="item-ids-field"
               />
               <Input
@@ -223,7 +210,7 @@ export const PluggyAiInitialiseModal = ({
                 void onSubmit(() => state.close());
               }}
             >
-              <Trans>Save and continue</Trans>
+              Save and continue
             </ButtonWithLoading>
           </ModalButtons>
         </>

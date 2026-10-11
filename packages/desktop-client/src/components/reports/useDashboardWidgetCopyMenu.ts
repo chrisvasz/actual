@@ -1,5 +1,4 @@
 import type { ComponentProps } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import type { Menu } from '@actual-app/components/menu';
 
@@ -16,13 +15,12 @@ type DashboardWidgetCopyMenuResult = {
 export function useDashboardWidgetCopyMenu(
   onCopy: (targetDashboardId: string) => void,
 ): DashboardWidgetCopyMenuResult {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const menuItems: ComponentProps<typeof Menu<string>>['items'] = [
     {
       name: 'copy-to-dashboard',
-      text: t('Copy to dashboard'),
+      text: 'Copy to dashboard',
     },
   ];
 

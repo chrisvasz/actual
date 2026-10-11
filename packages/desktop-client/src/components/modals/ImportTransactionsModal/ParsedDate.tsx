@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
@@ -19,7 +18,6 @@ export function ParsedDate({
   dateFormat,
   date,
 }: ParsedDateProps) {
-  const { t } = useTranslation();
   const parsed =
     date &&
     formatDate(
@@ -29,18 +27,16 @@ export function ParsedDate({
 
   if (!date) {
     return (
-      <Text style={{ color: theme.errorText, fontStyle: 'italic' }}>
-        <Trans>Empty</Trans>
-      </Text>
+      <Text style={{ color: theme.errorText, fontStyle: 'italic' }}>Empty</Text>
     );
   }
 
   return parsed ? (
-    <Text title={t('In file: {{date}}', { date })}>{parsed}</Text>
+    <Text title={`In file: ${date}`}>{parsed}</Text>
   ) : (
     <Text
       style={{ color: theme.errorText }}
-      title={t("Doesn't match the selected date format")}
+      title="Doesn't match the selected date format"
     >
       {date}
     </Text>

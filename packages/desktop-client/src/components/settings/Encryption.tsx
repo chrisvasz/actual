@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
@@ -30,53 +29,39 @@ export function EncryptionSettings() {
 
   return encryptKeyId ? (
     <Setting
-      primaryAction={
-        <Button onPress={onChangeKey}>
-          <Trans>Generate new key</Trans>
-        </Button>
-      }
+      primaryAction={<Button onPress={onChangeKey}>Generate new key</Button>}
     >
       <Text>
         <Text style={{ color: theme.noticeTextLight, fontWeight: 600 }}>
-          <Trans>End-to-end Encryption is turned on.</Trans>
+          End-to-end Encryption is turned on.
         </Text>{' '}
-        <Trans>
-          Your budget data is encrypted with a key that only you have before
-          sending it out to the cloud. Local data remains unencrypted so if you
-          forget your password you can re-encrypt it. Note: bank sync operations
-          and secrets stored on the server are not covered by end-to-end
-          encryption.
-        </Trans>{' '}
+        Your budget data is encrypted with a key that only you have before
+        sending it out to the cloud. Local data remains unencrypted so if you
+        forget your password you can re-encrypt it. Note: bank sync operations
+        and secrets stored on the server are not covered by end-to-end
+        encryption.{' '}
         <Link
           variant="external"
           to="https://actualbudget.org/docs/getting-started/sync/#end-to-end-encryption"
           linkColor="purple"
         >
-          <Trans>Learn more</Trans>
+          Learn more
         </Link>
       </Text>
     </Setting>
   ) : missingCryptoAPI ? (
-    <Setting
-      primaryAction={
-        <Button isDisabled>
-          <Trans>Enable encryption</Trans>
-        </Button>
-      }
-    >
+    <Setting primaryAction={<Button isDisabled>Enable encryption</Button>}>
       <Text>
-        <Trans>
-          <strong>End-to-end encryption</strong> is not available when making an
-          unencrypted connection to a remote server. You'll need to enable HTTPS
-          on your server to use end-to-end encryption. This problem may also
-          occur if your browser is too old to work with Actual.
-        </Trans>{' '}
+        <strong>End-to-end encryption</strong> is not available when making an
+        unencrypted connection to a remote server. You'll need to enable HTTPS
+        on your server to use end-to-end encryption. This problem may also occur
+        if your browser is too old to work with Actual.{' '}
         <Link
           variant="external"
           to="https://actualbudget.org/docs/config/https"
           linkColor="purple"
         >
-          <Trans>Learn more</Trans>
+          Learn more
         </Link>
       </Text>
     </Setting>
@@ -92,47 +77,37 @@ export function EncryptionSettings() {
             )
           }
         >
-          <Trans>Enable encryption</Trans>
+          Enable encryption
         </Button>
       }
     >
       <Text>
-        <Trans>
-          <strong>End-to-end encryption</strong> is not enabled. Any data on the
-          server is still protected by the server password, but it's not
-          end-to-end encrypted which means the server owners have the ability to
-          read it. If you want, you can use an additional password to encrypt
-          your data on the server.
-        </Trans>{' '}
+        <strong>End-to-end encryption</strong> is not enabled. Any data on the
+        server is still protected by the server password, but it's not
+        end-to-end encrypted which means the server owners have the ability to
+        read it. If you want, you can use an additional password to encrypt your
+        data on the server.{' '}
         <Link
           variant="external"
           to="https://actualbudget.org/docs/getting-started/sync/#end-to-end-encryption"
           linkColor="purple"
         >
-          <Trans>Learn more</Trans>
+          Learn more
         </Link>
       </Text>
     </Setting>
   ) : (
-    <Setting
-      primaryAction={
-        <Button isDisabled>
-          <Trans>Enable encryption</Trans>
-        </Button>
-      }
-    >
+    <Setting primaryAction={<Button isDisabled>Enable encryption</Button>}>
       <Text>
-        <Trans>
-          <strong>End-to-end encryption</strong> is not available when running
-          without a server. Budget files are always kept unencrypted locally,
-          and encryption is only applied when sending data to a server.
-        </Trans>{' '}
+        <strong>End-to-end encryption</strong> is not available when running
+        without a server. Budget files are always kept unencrypted locally, and
+        encryption is only applied when sending data to a server.{' '}
         <Link
           variant="external"
           to="https://actualbudget.org/docs/getting-started/sync/#end-to-end-encryption"
           linkColor="purple"
         >
-          <Trans>Learn more</Trans>
+          Learn more
         </Link>
       </Text>
     </Setting>

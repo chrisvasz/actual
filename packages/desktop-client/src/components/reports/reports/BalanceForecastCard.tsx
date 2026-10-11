@@ -1,6 +1,5 @@
 // oxlint-disable typescript-paths/absolute-parent-import
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { styles } from '@actual-app/components/styles';
@@ -50,7 +49,6 @@ export function BalanceForecastCard({
   meta,
   onMetaChange,
 }: BalanceForecastCardProps) {
-  const { t } = useTranslation();
   const format = useFormat();
   const granularity = meta?.granularity || 'Monthly';
 
@@ -91,7 +89,7 @@ export function BalanceForecastCard({
     error instanceof Error
       ? error.message
       : error
-        ? t('Failed to load forecast')
+        ? 'Failed to load forecast'
         : null;
   const normalizedForecastData = forecastData ?? null;
   const committedChartRange = useRef({ start, end });
@@ -143,7 +141,7 @@ export function BalanceForecastCard({
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
-              name={meta?.name || t('Balance Forecast')}
+              name={meta?.name || 'Balance Forecast'}
               isEditing={nameMenuOpen}
               onChange={newName => {
                 onMetaChange({
@@ -168,8 +166,7 @@ export function BalanceForecastCard({
                     : theme.pageText,
                 }}
               >
-                <Trans>Ending</Trans>:{' '}
-                {format(endingPoint.balance, 'financial')}
+                Ending: {format(endingPoint.balance, 'financial')}
               </Block>
 
               <Block style={{ fontSize: 12, color: theme.pageTextLight }}>
@@ -184,7 +181,7 @@ export function BalanceForecastCard({
                     marginTop: 4,
                   }}
                 >
-                  <Trans>Low</Trans>: {format(lowestPoint.balance, 'financial')}
+                  Low: {format(lowestPoint.balance, 'financial')}
                 </Block>
               ) : null}
             </View>
@@ -311,33 +308,17 @@ export function BalanceForecastCard({
             >
               {scheduledOccurrenceCount === 0 ? (
                 hasFilters ? (
-                  <Trans>
-                    Filtered running total only; no scheduled occurrences in
-                    this range
-                  </Trans>
+                  'Filtered running total only; no scheduled occurrences in this range'
                 ) : (
-                  <Trans>No scheduled transactions in this range</Trans>
+                  'No scheduled transactions in this range'
                 )
               ) : (
                 <>
-                  <Trans count={scheduledOccurrenceCount}>
-                    {{ count: scheduledOccurrenceCount }} scheduled transactions
-                    included
-                  </Trans>
-                  {hasFilters ? (
-                    <>
-                      {' '}
-                      <Trans>(filtered running total)</Trans>
-                    </>
-                  ) : null}
+                  {scheduledOccurrenceCount} scheduled transactions included
+                  {hasFilters ? <> (filtered running total)</> : null}
                 </>
               )}
-              {isUpdatingForecast ? (
-                <>
-                  {' '}
-                  <Trans>Updating...</Trans>
-                </>
-              ) : null}
+              {isUpdatingForecast ? <> Updating...</> : null}
             </Block>
           </>
         ) : (
@@ -349,10 +330,8 @@ export function BalanceForecastCard({
                 textAlign: 'center',
               }}
             >
-              <Trans>
-                No transactions are included in this report. Adjust your
-                filters, accounts, or date range to see a balance projection.
-              </Trans>
+              No transactions are included in this report. Adjust your filters,
+              accounts, or date range to see a balance projection.
             </Block>
           </View>
         )}

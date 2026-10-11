@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Select } from '@actual-app/components/select';
@@ -28,7 +27,6 @@ export function EditUserAccess({
   access: defaultUserAccess,
   onSave: originalOnSave,
 }: EditUserAccessProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const [userId, setUserId] = useState(defaultUserAccess.userId ?? '');
@@ -71,11 +69,11 @@ export function EditUserAccess({
             notification: {
               type: 'error',
               id: 'login-expired',
-              title: t('Login expired'),
+              title: 'Login expired',
               sticky: true,
               message: getUserAccessErrors(error),
               button: {
-                title: t('Go to login'),
+                title: 'Go to login',
                 action: () => {
                   void dispatch(signOut());
                 },
@@ -94,12 +92,12 @@ export function EditUserAccess({
       {({ state: { close } }: { state: { close: () => void } }) => (
         <>
           <ModalHeader
-            title={t('User Access')}
+            title="User Access"
             rightContent={<ModalCloseButton onPress={close} />}
           />
           <SpaceBetween style={{ marginTop: 10 }}>
             <FormField style={{ flex: 1 }}>
-              <FormLabel title={t('User')} htmlFor="user-field" />
+              <FormLabel title="User" htmlFor="user-field" />
               {availableUsers.length > 0 && (
                 <View>
                   <Select
@@ -114,7 +112,7 @@ export function EditUserAccess({
                       marginTop: 5,
                     }}
                   >
-                    <Trans>Select a user from the directory</Trans>
+                    Select a user from the directory
                   </Text>
                 </View>
               )}
@@ -126,7 +124,7 @@ export function EditUserAccess({
                     marginTop: 5,
                   }}
                 >
-                  <Trans>No users available to give access</Trans>
+                  No users available to give access
                 </Text>
               )}
             </FormField>
@@ -141,14 +139,14 @@ export function EditUserAccess({
           >
             {error && <Text style={{ color: theme.errorText }}>{error}</Text>}
             <Button variant="bare" onPress={() => dispatch(popModal())}>
-              <Trans>Cancel</Trans>
+              Cancel
             </Button>
             <Button
               variant="primary"
               isDisabled={availableUsers.length === 0}
               onPress={() => onSave(close)}
             >
-              {defaultUserAccess.userId ? t('Save') : t('Add')}
+              {defaultUserAccess.userId ? 'Save' : 'Add'}
             </Button>
           </SpaceBetween>
         </>

@@ -1,6 +1,5 @@
 import React from 'react';
 import type { CSSProperties } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
 import { theme } from '@actual-app/components/theme';
@@ -49,7 +48,6 @@ function CustomTooltip({
   format,
 }: CustomTooltipProps) {
   const locale = useLocale();
-  const { t } = useTranslation();
 
   if (!active || !payload || !Array.isArray(payload) || !payload[0]) {
     return null;
@@ -78,13 +76,13 @@ function CustomTooltip({
         </div>
         <div style={{ lineHeight: 1.5 }}>
           <AlignedText
-            left={t('Income:')}
+            left="Income:"
             right={
               <FinancialText>{format(data.income, 'financial')}</FinancialText>
             }
           />
           <AlignedText
-            left={t('Expenses:')}
+            left="Expenses:"
             right={
               <FinancialText>
                 {format(data.expenses, 'financial')}
@@ -92,7 +90,7 @@ function CustomTooltip({
             }
           />
           <AlignedText
-            left={t('Change:')}
+            left="Change:"
             right={
               <FinancialText as="strong">
                 {format(data.income + data.expenses, 'financial')}
@@ -101,7 +99,7 @@ function CustomTooltip({
           />
           {data.transfers !== 0 && (
             <AlignedText
-              left={t('Transfers:')}
+              left="Transfers:"
               right={
                 <FinancialText>
                   {format(data.transfers, 'financial')}
@@ -110,7 +108,7 @@ function CustomTooltip({
             />
           )}
           <AlignedText
-            left={t('Balance:')}
+            left="Balance:"
             right={
               <FinancialText>{format(data.balance, 'financial')}</FinancialText>
             }

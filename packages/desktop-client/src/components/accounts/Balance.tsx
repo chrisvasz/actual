@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
@@ -25,8 +24,6 @@ export function SelectedBalance({
   selectedItems,
   account,
 }: SelectedBalanceProps) {
-  const { t } = useTranslation();
-
   const name = `selected-balance-${[...selectedItems].join('-')}`;
 
   const rows = useSheetValue<'balance', `selected-transactions-${string}`>({
@@ -85,7 +82,7 @@ export function SelectedBalance({
 
   return (
     <BalanceStat
-      label={t('Selected')}
+      label="Selected"
       value={balance}
       isExact={isExactBalance}
       testId="account-selected-balance"
@@ -98,11 +95,9 @@ type FilteredBalanceProps = {
 };
 
 function FilteredBalance({ filteredAmount }: FilteredBalanceProps) {
-  const { t } = useTranslation();
-
   return (
     <BalanceStat
-      label={t('Filtered')}
+      label="Filtered"
       value={filteredAmount ?? 0}
       testId="account-filtered-balance"
     />
@@ -197,7 +192,6 @@ export function Balances({
   isFiltered,
   filteredAmount,
 }: BalancesProps) {
-  const { t } = useTranslation();
   const selectedItems = useSelectedItems();
   const balance = useSheetValue<'balance', `balance-query-${string}`>(
     balanceQuery,
@@ -221,19 +215,19 @@ export function Balances({
       }}
     >
       <BalanceStat
-        label={t('Total')}
+        label="Total"
         value={balance ?? 0}
         testId="account-balance"
       />
       {(unclearedCount ?? 0) > 0 && (
         <>
           <BalanceStat
-            label={t('Cleared')}
+            label="Cleared"
             value={clearedBalance ?? 0}
             testId="account-cleared-balance"
           />
           <BalanceStat
-            label={t('Uncleared')}
+            label="Uncleared"
             value={(balance ?? 0) - (clearedBalance ?? 0)}
             testId="account-uncleared-balance"
           />

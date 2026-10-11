@@ -6,7 +6,6 @@ import type {
   ReactElement,
   ReactNode,
 } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { styles } from '@actual-app/components/styles';
@@ -166,7 +165,6 @@ function CategoryGroupItem({
   embedded,
   ...props
 }: CategoryGroupItemProps) {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
   const narrowStyle = isNarrowWidth
     ? {
@@ -204,7 +202,7 @@ function CategoryGroupItem({
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <TextOneLine>
           {item.name}
-          {item.hidden ? ' ' + t('(hidden)') : ''}
+          {item.hidden ? ' (hidden)' : ''}
         </TextOneLine>
       </View>
     </button>

@@ -1,5 +1,4 @@
 import React, { useLayoutEffect } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { InitialFocus } from '@actual-app/components/initial-focus';
@@ -25,7 +24,6 @@ type CreateAccountModalProps = Extract<
 export function CreateAccountModal({
   upgradingAccountId,
 }: CreateAccountModalProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { providers, syncServerStatus, permissionWarning } =
@@ -44,10 +42,10 @@ export function CreateAccountModal({
     }
   }, [dispatch, shouldSkipToLocalAccount]);
 
-  let title = t('Add account');
+  let title = 'Add account';
 
   if (upgradingAccountId != null) {
-    title = t('Link account');
+    title = 'Link account';
   }
 
   if (shouldSkipToLocalAccount) {
@@ -74,9 +72,7 @@ export function CreateAccountModal({
                 <Paragraph
                   style={{ fontSize: 15, color: theme.pageTextSubdued }}
                 >
-                  <Trans>
-                    Choose a bank sync provider to connect this account.
-                  </Trans>
+                  Choose a bank sync provider to connect this account.
                 </Paragraph>
                 <BuiltInProviders
                   providers={providers}
@@ -97,23 +93,21 @@ export function CreateAccountModal({
                       }}
                       onPress={onCreateLocalAccount}
                     >
-                      <Trans>Create a local account</Trans>
+                      Create a local account
                     </Button>
                   </InitialFocus>
                   <View style={{ lineHeight: '1.4em', fontSize: 15 }}>
                     <Text>
-                      <Trans>
-                        <strong>Create a local account</strong> if you want to
-                        add transactions manually. You can also{' '}
-                        <Link
-                          variant="external"
-                          to="https://actualbudget.org/docs/transactions/importing"
-                          linkColor="muted"
-                        >
-                          import QIF/OFX/QFX files into a local account
-                        </Link>
-                        .
-                      </Trans>
+                      <strong>Create a local account</strong> if you want to add
+                      transactions manually. You can also{' '}
+                      <Link
+                        variant="external"
+                        to="https://actualbudget.org/docs/transactions/importing"
+                        linkColor="muted"
+                      >
+                        import QIF/OFX/QFX files into a local account
+                      </Link>
+                      .
                     </Text>
                   </View>
                 </View>
@@ -130,15 +124,13 @@ export function CreateAccountModal({
                       fontWeight: 600,
                     }}
                   >
-                    <Trans>Set up bank sync</Trans>
+                    Set up bank sync
                   </Button>
                   <Paragraph
                     style={{ fontSize: 15, color: theme.pageTextSubdued }}
                   >
-                    <Trans>
-                      Configure providers and link accounts from the Bank Sync
-                      page.
-                    </Trans>
+                    Configure providers and link accounts from the Bank Sync
+                    page.
                   </Paragraph>
                 </View>
               </>

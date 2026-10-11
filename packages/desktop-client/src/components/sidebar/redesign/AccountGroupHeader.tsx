@@ -5,7 +5,6 @@ import {
   TreeItemContent,
   TreeStateContext,
 } from 'react-aria-components';
-import { useTranslation } from 'react-i18next';
 
 import { InitialFocus } from '@actual-app/components/initial-focus';
 import { Input } from '@actual-app/components/input';
@@ -57,7 +56,6 @@ export function AccountGroupHeader({
   showSyncDot,
   isDropZoneActive,
 }: AccountGroupHeaderProps) {
-  const { t } = useTranslation();
   const [balanceMode] = useSidebarBalanceMode();
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
@@ -73,22 +71,19 @@ export function AccountGroupHeader({
     items: [
       {
         name: 'account-group-rename',
-        text: t('Rename group'),
+        text: 'Rename group',
         onClick: () => setIsEditing(true),
       },
       {
         name: 'account-group-delete',
-        text: t('Delete group'),
+        text: 'Delete group',
         onClick: () =>
           dispatch(
             pushModal({
               modal: {
                 name: 'confirm-delete',
                 options: {
-                  message: t(
-                    'Are you sure you want to delete the group "{{name}}"? Any accounts in it will be kept but left ungrouped.',
-                    { name: group.name },
-                  ),
+                  message: `Are you sure you want to delete the group "${group.name}"? Any accounts in it will be kept but left ungrouped.`,
                   onConfirm: () => deleteGroup.mutate({ id: group.id }),
                 },
               },
@@ -134,11 +129,7 @@ export function AccountGroupHeader({
           >
             <Button
               slot="chevron"
-              aria-label={
-                isExpanded
-                  ? t('Collapse {{group}}', { group: name })
-                  : t('Expand {{group}}', { group: name })
-              }
+              aria-label={isExpanded ? `Collapse ${name}` : `Expand ${name}`}
               className={css({
                 display: 'flex',
                 alignItems: 'center',
@@ -155,7 +146,7 @@ export function AccountGroupHeader({
             {isEditing ? (
               <InitialFocus>
                 <Input
-                  aria-label={t('Group name')}
+                  aria-label="Group name"
                   style={{ flex: 1, padding: 0, fontSize: 12 }}
                   defaultValue={name}
                   onKeyDown={e => e.stopPropagation()}

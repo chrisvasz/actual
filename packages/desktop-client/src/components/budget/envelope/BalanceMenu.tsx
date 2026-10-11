@@ -1,6 +1,5 @@
 import React from 'react';
 import type { ComponentPropsWithoutRef } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Menu } from '@actual-app/components/menu';
 
@@ -25,8 +24,6 @@ export function BalanceMenu({
   onCover,
   ...props
 }: BalanceMenuProps) {
-  const { t } = useTranslation();
-
   const carryover = useEnvelopeSheetValue(
     envelopeBudget.catCarryover(categoryId),
   );
@@ -56,7 +53,7 @@ export function BalanceMenu({
           ? [
               {
                 name: 'transfer',
-                text: t('Transfer to another category'),
+                text: 'Transfer to another category',
               },
             ]
           : []),
@@ -64,15 +61,15 @@ export function BalanceMenu({
           ? [
               {
                 name: 'cover',
-                text: t('Cover overspending'),
+                text: 'Cover overspending',
               },
             ]
           : []),
         {
           name: 'carryover',
           text: carryover
-            ? t('Remove overspending rollover')
-            : t('Rollover overspending'),
+            ? 'Remove overspending rollover'
+            : 'Rollover overspending',
         },
       ]}
     />

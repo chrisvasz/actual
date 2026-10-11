@@ -1,7 +1,6 @@
 import { listen, send } from '@actual-app/core/platform/client/connection';
 import type { ServerEvents } from '@actual-app/core/types/server-events';
 import type { QueryClient } from '@tanstack/react-query';
-import { t } from 'i18next';
 
 import { accountGroupQueries } from './account-groups';
 import { accountQueries } from './accounts';
@@ -43,21 +42,19 @@ const syncNotifications: Partial<
     // Sticky: firing during budget load, it would otherwise
     // auto-dismiss before the user can read it
     sticky: true,
-    title: t('Update available'),
-    message: t(
+    title: 'Update available',
+    message:
       'Some synced changes were made with a newer version of Actual. ' +
-        'They will show up here once you update this app.',
-    ),
+      'They will show up here once you update this app.',
   }),
   'dropped-messages': () => ({
     id: 'dropped-messages',
     type: 'warning',
     sticky: true,
-    title: t('Some changes could not be applied'),
-    message: t(
+    title: 'Some changes could not be applied',
+    message:
       'Some changes made on another device could not be applied ' +
-        'on this device, so your devices may show different values.',
-    ),
+      'on this device, so your devices may show different values.',
   }),
 };
 
@@ -107,8 +104,8 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
         store.dispatch(
           addNotification({
             notification: {
-              title: t('Syncing has been fixed!'),
-              message: t('Happy budgeting!'),
+              title: 'Syncing has been fixed!',
+              message: 'Happy budgeting!',
               type: 'message',
             },
           }),
@@ -176,7 +173,7 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
       }
     } else if (event.type === 'error') {
       let notif: Notification | null = null;
-      const learnMore = `[${t('Learn more')}](https://actualbudget.org/docs/getting-started/sync/#debugging-sync-issues)`;
+      const learnMore = `[${'Learn more'}](https://actualbudget.org/docs/getting-started/sync/#debugging-sync-issues)`;
       const githubIssueLink =
         'https://github.com/actualbudget/actual/issues/new?assignees=&labels=bug&template=bug-report.yml&title=%5BBug%5D%3A+';
 
@@ -184,17 +181,15 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
         case 'out-of-sync':
           if (attemptedSyncRepair) {
             notif = {
-              title: t('Your data is still out of sync'),
+              title: 'Your data is still out of sync',
               message:
-                t(
-                  'We were unable to repair your sync state, sorry! You need to reset your sync state.',
-                ) +
+                'We were unable to repair your sync state, sorry! You need to reset your sync state.' +
                 ' ' +
                 learnMore,
               sticky: true,
               id: 'reset-sync',
               button: {
-                title: t('Reset sync'),
+                title: 'Reset sync',
                 action: () => {
                   void store.dispatch(resetSync());
                 },
@@ -204,18 +199,16 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
             // A bug happened during the sync process. Sync state needs
             // to be reset.
             notif = {
-              title: t('Your data is out of sync'),
+              title: 'Your data is out of sync',
               message:
-                t(
-                  'There was a problem syncing your data. We can try to repair your sync state to fix it.',
-                ) +
+                'There was a problem syncing your data. We can try to repair your sync state to fix it.' +
                 ' ' +
                 learnMore,
               type: 'warning',
               sticky: true,
               id: 'repair-sync',
               button: {
-                title: t('Repair'),
+                title: 'Repair',
                 action: async () => {
                   attemptedSyncRepair = true;
                   await send('sync-repair');
@@ -230,15 +223,14 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
           // Tell the user something is wrong with the key state on
           // the server and the key needs to be recreated
           notif = {
-            title: t('Actual has updated the syncing format'),
-            message: t(
+            title: 'Actual has updated the syncing format',
+            message:
               'This happens rarely (if ever again). The internal syncing format ' +
-                'has changed and you need to reset sync. This will upload data from ' +
-                'this device and revert all other devices. ' +
-                '[Learn more about what this means](https://actualbudget.org/docs/getting-started/sync/#what-does-resetting-sync-mean).' +
-                '\n\n' +
-                'Old encryption keys are not migrated. If using encryption, [reset encryption here](#makeKey).',
-            ),
+              'has changed and you need to reset sync. This will upload data from ' +
+              'this device and revert all other devices. ' +
+              '[Learn more about what this means](https://actualbudget.org/docs/getting-started/sync/#what-does-resetting-sync-mean).' +
+              '\n\n' +
+              'Old encryption keys are not migrated. If using encryption, [reset encryption here](#makeKey).',
             messageActions: {
               makeKey: () =>
                 store.dispatch(
@@ -250,7 +242,7 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
             sticky: true,
             id: 'old-file',
             button: {
-              title: t('Reset sync'),
+              title: 'Reset sync',
               action: () => {
                 void store.dispatch(resetSync());
               },
@@ -262,16 +254,15 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
           // Tell the user something is wrong with the key state on
           // the server and the key needs to be recreated
           notif = {
-            title: t('Your encryption key need to be reset'),
+            title: 'Your encryption key need to be reset',
             message:
-              t(
-                'Something went wrong when registering your encryption key id. ' +
-                  'You need to recreate your key. ',
-              ) + learnMore,
+              'Something went wrong when registering your encryption key id. ' +
+              'You need to recreate your key. ' +
+              learnMore,
             sticky: true,
             id: 'invalid-key-state',
             button: {
-              title: t('Reset key'),
+              title: 'Reset key',
               action: () => {
                 store.dispatch(
                   pushModal({
@@ -286,20 +277,18 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
 
         case 'file-not-found':
           notif = {
-            title: t('This file is not a cloud file'),
+            title: 'This file is not a cloud file',
             message:
-              t(
-                'You need to register it to take advantage ' +
-                  'of syncing which allows you to use it across devices and never worry ' +
-                  'about losing your data.',
-              ) +
+              'You need to register it to take advantage ' +
+              'of syncing which allows you to use it across devices and never worry ' +
+              'about losing your data.' +
               ' ' +
               learnMore,
             type: 'warning',
             sticky: true,
             id: 'register-file',
             button: {
-              title: t('Register'),
+              title: 'Register',
               action: async () => {
                 await store.dispatch(uploadBudget({}));
                 void store.dispatch(sync());
@@ -311,18 +300,16 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
 
         case 'file-needs-upload':
           notif = {
-            title: t('File needs upload'),
+            title: 'File needs upload',
             message:
-              t(
-                'Something went wrong when creating this cloud file. You need ' +
-                  'to upload this file to fix it.',
-              ) +
+              'Something went wrong when creating this cloud file. You need ' +
+              'to upload this file to fix it.' +
               ' ' +
               learnMore,
             sticky: true,
             id: 'upload-file',
             button: {
-              title: t('Upload'),
+              title: 'Upload',
               action: () => {
                 void store.dispatch(resetSync());
               },
@@ -345,20 +332,18 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
           }
 
           notif = {
-            title: t('Syncing has been reset on this cloud file'),
+            title: 'Syncing has been reset on this cloud file',
             message:
-              t(
-                'You need to revert it to continue syncing. Any unsynced ' +
-                  'data will be lost. If you like, you can instead ' +
-                  '[upload this file](#upload) to be the latest version.',
-              ) +
+              'You need to revert it to continue syncing. Any unsynced ' +
+              'data will be lost. If you like, you can instead ' +
+              '[upload this file](#upload) to be the latest version.' +
               ' ' +
               learnMore,
             messageActions: { upload: () => store.dispatch(resetSync()) },
             sticky: true,
             id: 'needs-revert',
             button: {
-              title: t('Revert'),
+              title: 'Revert',
               action: () => {
                 void store.dispatch(closeAndDownloadBudget({ cloudFileId }));
               },
@@ -369,15 +354,14 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
         case 'decrypt-failure':
           if (event.meta?.isMissingKey) {
             notif = {
-              title: t('Missing encryption key'),
-              message: t(
+              title: 'Missing encryption key',
+              message:
                 'Unable to encrypt your data because you are missing the key. ' +
-                  'Create your key to sync your data.',
-              ),
+                'Create your key to sync your data.',
               sticky: true,
               id: 'encrypt-failure-missing',
               button: {
-                title: t('Create key'),
+                title: 'Create key',
                 action: () => {
                   store.dispatch(
                     pushModal({
@@ -394,15 +378,14 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
             };
           } else {
             notif = {
-              message: t(
+              message:
                 'Unable to encrypt your data. You have the correct ' +
-                  'key so this is likely an internal failure. To fix this, ' +
-                  'reset your sync data with a new key.',
-              ),
+                'key so this is likely an internal failure. To fix this, ' +
+                'reset your sync data with a new key.',
               sticky: true,
               id: 'encrypt-failure',
               button: {
-                title: t('Reset key'),
+                title: 'Reset key',
                 action: () => {
                   store.dispatch(
                     pushModal({
@@ -417,21 +400,17 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
         case 'invalid-schema':
           console.trace('invalid-schema', event.meta);
           notif = {
-            title: t('Update required'),
-            message: t(
+            title: 'Update required',
+            message:
               "We couldn't apply changes from the server. This probably means you " +
-                'need to update the app to support the latest database.',
-            ),
+              'need to update the app to support the latest database.',
             type: 'warning',
           };
           break;
         case 'apply-failure':
           console.trace('apply-failure', event.meta);
           notif = {
-            message: t(
-              "We couldn't apply that change to the database. Please report this as a bug by [opening a GitHub issue]({{githubIssueLink}}).",
-              { githubIssueLink },
-            ),
+            message: `We couldn't apply that change to the database. Please report this as a bug by [opening a GitHub issue](${githubIssueLink}).`,
           };
           break;
         case 'network':
@@ -439,10 +418,9 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
           break;
         case 'clock-drift':
           notif = {
-            title: t('Time sync issue'),
-            message: t(
+            title: 'Time sync issue',
+            message:
               'Failed to sync because your device time differs too much from the server. Please check your device time settings and ensure they are correct.',
-            ),
             type: 'warning',
             sticky: true,
           };
@@ -454,9 +432,8 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
         default:
           console.trace('unknown error', event);
           notif = {
-            message: t(
+            message:
               'There was a problem syncing your changes. Please confirm that your server is accessible.',
-            ),
           };
       }
 

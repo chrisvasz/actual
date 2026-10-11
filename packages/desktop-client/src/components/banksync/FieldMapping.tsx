@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { SvgRightArrow2 } from '@actual-app/components/icons/v0';
 import { SvgEquals } from '@actual-app/components/icons/v1';
@@ -17,16 +16,14 @@ import type {
 } from './EditSyncAccount';
 
 const useTransactionDirectionOptions = () => {
-  const { t } = useTranslation();
-
   const transactionDirectionOptions = [
     {
       value: 'payment',
-      label: t('Payment'),
+      label: 'Payment',
     },
     {
       value: 'deposit',
-      label: t('Deposit'),
+      label: 'Deposit',
     },
   ];
 
@@ -50,8 +47,6 @@ export function FieldMapping({
   setMapping,
   isMobile = false,
 }: FieldMappingProps) {
-  const { t } = useTranslation();
-
   const { transactionDirectionOptions } = useTransactionDirectionOptions();
 
   const iconSpacing = isMobile ? 8 : 20;
@@ -83,7 +78,7 @@ export function FieldMapping({
   return (
     <>
       <Select
-        aria-label={t('Transaction direction')}
+        aria-label="Transaction direction"
         options={transactionDirectionOptions.map(x => [x.value, x.label])}
         value={transactionDirection}
         onChange={newValue =>
@@ -98,10 +93,8 @@ export function FieldMapping({
 
       {fields.length === 0 ? (
         <Text style={{ margin: '1em 0 .5em 0' }}>
-          <Trans>
-            No transactions found with mappable fields, accounts must have been
-            synced at least once for this function to be available.
-          </Trans>
+          No transactions found with mappable fields, accounts must have been
+          synced at least once for this function to be available.
         </Text>
       ) : (
         <View style={styles.tableContainer}>
@@ -114,21 +107,17 @@ export function FieldMapping({
               <Text
                 style={{ whiteSpace: 'nowrap', fontSize: 13, fontWeight: 500 }}
               >
-                {calculatedActualFieldWidth > 70 ? t('Actual field') : 'Actual'}
+                {calculatedActualFieldWidth > 70 ? 'Actual field' : 'Actual'}
               </Text>
             </Cell>
             <Cell value="" width={arrowCellWidth} style={{ padding: 0 }} />
             <Cell
-              value={t('Bank field')}
+              value="Bank field"
               width={calculatedSelectWidth}
               style={{ paddingLeft: 0, ...selectStyle }}
             />
             <Cell value="" width={equalsCellWidth} style={{ padding: 0 }} />
-            <Cell
-              value={t('Example')}
-              width="flex"
-              style={{ paddingLeft: 0 }}
-            />
+            <Cell value="Example" width="flex" style={{ paddingLeft: 0 }} />
           </TableHeader>
 
           {fields.map(field => {
@@ -179,9 +168,7 @@ export function FieldMapping({
                   plain
                 >
                   <Select
-                    aria-label={t('Synced field to map to {{field}}', {
-                      field: field.actualField,
-                    })}
+                    aria-label={`Synced field to map to ${field.actualField}`}
                     options={field.syncFields.map(({ field }) => [
                       field,
                       field,

@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
@@ -59,7 +57,6 @@ export function MonteCarloGraphTooltip({
   payload,
   view = 'all',
 }: MonteCarloGraphTooltipProps) {
-  const { t } = useTranslation();
   const format = useFormat();
 
   if (active && payload && payload.length) {
@@ -68,20 +65,20 @@ export function MonteCarloGraphTooltip({
       Exclude<MonteCarloGraphView, 'all'>,
       string
     > = {
-      'single-worst': t('Single worst run:'),
-      'worst-case': t('Worst-case (5th percentile):'),
-      pessimistic: t('Pessimistic (30th percentile):'),
-      median: t('Median (50th percentile):'),
-      optimistic: t('Optimistic (70th percentile):'),
+      'single-worst': 'Single worst run:',
+      'worst-case': 'Worst-case (5th percentile):',
+      pessimistic: 'Pessimistic (30th percentile):',
+      median: 'Median (50th percentile):',
+      optimistic: 'Optimistic (70th percentile):',
     };
     const rows =
       view === 'all'
         ? [
-            { label: t('Best 10%:'), value: point.p90 },
-            { label: t('Top quartile:'), value: point.p75 },
-            { label: t('Median:'), value: point.p50 },
-            { label: t('Bottom quartile:'), value: point.p25 },
-            { label: t('Worst 10%:'), value: point.p10 },
+            { label: 'Best 10%:', value: point.p90 },
+            { label: 'Top quartile:', value: point.p75 },
+            { label: 'Median:', value: point.p50 },
+            { label: 'Bottom quartile:', value: point.p25 },
+            { label: 'Worst 10%:', value: point.p10 },
           ]
         : [
             {
@@ -103,9 +100,7 @@ export function MonteCarloGraphTooltip({
       >
         <div style={{ marginBottom: 10 }}>
           <strong>
-            {point.year === 0
-              ? t('Start (age {{age}})', { age: point.age })
-              : t('Age {{age}}', { age: point.age })}
+            {point.year === 0 ? `Start (age ${point.age})` : `Age ${point.age}`}
           </strong>
         </div>
         <div style={{ lineHeight: 1.5 }}>

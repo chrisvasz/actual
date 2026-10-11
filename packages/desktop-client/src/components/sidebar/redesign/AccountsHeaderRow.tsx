@@ -1,5 +1,3 @@
-import { Trans, useTranslation } from 'react-i18next';
-
 import {
   SvgAdd,
   SvgCheveronDownUp,
@@ -29,7 +27,6 @@ export function AccountsHeaderRow({
   allOpen,
   onToggleAll,
 }: AccountsHeaderRowProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const [balanceMode] = useSidebarBalanceMode();
 
@@ -64,16 +61,16 @@ export function AccountsHeaderRow({
         }}
         activeStyle={{ color: theme.sidebarItemTextSelected }}
       >
-        <Trans>Accounts</Trans>
+        Accounts
       </Link>
       <SidebarIconButton
         Icon={allOpen ? SvgCheveronDownUp : SvgCheveronUpDown}
-        label={allOpen ? t('Collapse all groups') : t('Expand all groups')}
+        label={allOpen ? 'Collapse all groups' : 'Expand all groups'}
         onPress={onToggleAll}
       />
       <SidebarIconButton
         Icon={SvgAdd}
-        label={t('Add account')}
+        label="Add account"
         onPress={onAddAccount}
       />
       <View style={{ flex: 1 }} />

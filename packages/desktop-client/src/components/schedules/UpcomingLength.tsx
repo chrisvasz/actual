@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Paragraph } from '@actual-app/components/paragraph';
@@ -17,15 +16,13 @@ import { useSyncedPref } from '#hooks/useSyncedPref';
 import { CustomUpcomingLength } from './CustomUpcomingLength';
 
 function useUpcomingLengthOptions() {
-  const { t } = useTranslation();
-
   const upcomingLengthOptions: Array<{ value: string; label: string }> =
     UPCOMING_LENGTH_PRESET_OPTIONS.map(o => ({
       value: o.value,
-      label: t(o.labelKey),
+      label: o.labelKey,
     }));
 
-  upcomingLengthOptions.push({ value: 'custom', label: t('Custom length') });
+  upcomingLengthOptions.push({ value: 'custom', label: 'Custom length' });
 
   return { upcomingLengthOptions };
 }
@@ -35,7 +32,6 @@ function nonCustomUpcomingLengthValues(value: string) {
 }
 
 export function UpcomingLength() {
-  const { t } = useTranslation();
   const [_upcomingLength, setUpcomingLength] = useSyncedPref(
     'upcomingScheduledTransactionLength',
   );
@@ -70,20 +66,16 @@ export function UpcomingLength() {
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Change upcoming length')}
+            title="Change upcoming length"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <Paragraph>
-            <Trans>
-              Change how many days in advance of the scheduled date a scheduled
-              transaction appears in the account ledger as upcoming.
-            </Trans>
+            Change how many days in advance of the scheduled date a scheduled
+            transaction appears in the account ledger as upcoming.
           </Paragraph>
           <Paragraph>
-            <Trans>
-              This only affects how schedules are displayed and not how budget
-              data is stored. It can be changed at any time.
-            </Trans>
+            This only affects how schedules are displayed and not how budget
+            data is stored. It can be changed at any time.
           </Paragraph>
           <View>
             <Select
@@ -125,7 +117,7 @@ export function UpcomingLength() {
               type="submit"
               variant="primary"
             >
-              <Trans>Save</Trans>
+              Save
             </Button>
           </div>
         </>

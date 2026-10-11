@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { send } from '@actual-app/core/platform/client/connection';
 import type {
@@ -107,7 +106,6 @@ async function ensureSuccessResponse(
 export function useBuiltInBankSyncProviders({
   upgradingAccountId,
 }: UseBuiltInBankSyncProvidersOptions = {}) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const syncServerStatus = useSyncServerStatus();
   const { cloudFileId, isAdmin, isFileOwner } = useCurrentAccess();
@@ -230,16 +228,14 @@ export function useBuiltInBankSyncProviders({
         addNotification({
           notification: {
             type: 'error',
-            title: t('Failed to reset {{provider}}', {
-              provider: providerName,
-            }),
+            title: `Failed to reset ${providerName}`,
             message: error instanceof Error ? error.message : String(error),
             timeout: 5000,
           },
         }),
       );
     },
-    [dispatch, t],
+    [dispatch],
   );
 
   const onGoCardlessReset = useCallback(async () => {
@@ -291,7 +287,7 @@ export function useBuiltInBankSyncProviders({
       const fileId =
         pluggyAiStatus.source === 'per-budget-file' ? cloudFileId : null;
       if (pluggyAiStatus.source === 'per-budget-file' && !fileId) {
-        throw new Error(t('Budget file ID is required.'));
+        throw new Error('Budget file ID is required.');
       }
 
       await ensureSuccessResponse(
@@ -327,7 +323,6 @@ export function useBuiltInBankSyncProviders({
     notifyResetFailure,
     pluggyAiStatus.source,
     setPluggyAiStatus,
-    t,
   ]);
 
   const onEnableBankingReset = useCallback(async () => {
@@ -442,7 +437,7 @@ export function useBuiltInBankSyncProviders({
         addNotification({
           notification: {
             type: 'error',
-            title: t('Error when trying to contact SimpleFIN'),
+            title: 'Error when trying to contact SimpleFIN',
             message: error instanceof Error ? error.message : String(error),
             timeout: 5000,
           },
@@ -456,7 +451,6 @@ export function useBuiltInBankSyncProviders({
     isSimpleFinSetupComplete,
     loadingSimpleFinAccounts,
     onSimpleFinInit,
-    t,
     upgradingAccountId,
   ]);
 
@@ -473,7 +467,7 @@ export function useBuiltInBankSyncProviders({
         addNotification({
           notification: {
             type: 'error',
-            title: t('Error when trying to contact Enable Banking'),
+            title: 'Error when trying to contact Enable Banking',
             message: error instanceof Error ? error.message : String(error),
             timeout: 5000,
           },
@@ -485,7 +479,6 @@ export function useBuiltInBankSyncProviders({
     dispatch,
     isEnableBankingSetupComplete,
     onEnableBankingInit,
-    t,
     upgradingAccountId,
   ]);
 
@@ -538,7 +531,7 @@ export function useBuiltInBankSyncProviders({
         addNotification({
           notification: {
             type: 'error',
-            title: t('Error when trying to contact Pluggy.ai'),
+            title: 'Error when trying to contact Pluggy.ai',
             message: error instanceof Error ? error.message : String(error),
             timeout: 5000,
           },
@@ -546,13 +539,7 @@ export function useBuiltInBankSyncProviders({
       );
       onPluggyAiInit();
     }
-  }, [
-    dispatch,
-    onPluggyAiInit,
-    pluggyAiStatus.configured,
-    t,
-    upgradingAccountId,
-  ]);
+  }, [dispatch, onPluggyAiInit, pluggyAiStatus.configured, upgradingAccountId]);
 
   const onConnectAkahu = useCallback(async () => {
     if (!isAkahuSetupComplete) {
@@ -616,7 +603,7 @@ export function useBuiltInBankSyncProviders({
         addNotification({
           notification: {
             type: 'error',
-            title: t('Error when trying to contact Akahu'),
+            title: 'Error when trying to contact Akahu',
             message: error instanceof Error ? error.message : String(error),
             timeout: 5000,
           },
@@ -632,7 +619,6 @@ export function useBuiltInBankSyncProviders({
     loadingAkahuAccounts,
     onAkahuInit,
     upgradingAccountId,
-    t,
   ]);
 
   const configuredProviders = {
@@ -650,9 +636,8 @@ export function useBuiltInBankSyncProviders({
           return {
             id: providerId,
             displayName: 'GoCardless',
-            description: t(
+            description:
               'Link a European bank account to automatically download transactions.',
-            ),
             isConfigured: configuredProviders.goCardless,
             credentialSource: 'global',
             supportsPerBudgetFile: false,
@@ -667,9 +652,8 @@ export function useBuiltInBankSyncProviders({
           return {
             id: providerId,
             displayName: 'SimpleFIN',
-            description: t(
+            description:
               'Link a North American bank account to automatically download transactions.',
-            ),
             isConfigured: configuredProviders.simpleFin,
             credentialSource: 'global',
             supportsPerBudgetFile: false,
@@ -684,9 +668,8 @@ export function useBuiltInBankSyncProviders({
         return {
           id: providerId,
           displayName: 'Pluggy.ai',
-          description: t(
+          description:
             'Link a Brazilian bank account to automatically download transactions.',
-          ),
           isConfigured: configuredProviders.pluggyai,
           credentialSource: pluggyAiStatus.source ?? 'global',
           supportsPerBudgetFile: true,
@@ -703,9 +686,8 @@ export function useBuiltInBankSyncProviders({
       baseProviders.push({
         id: 'akahu',
         displayName: 'Akahu',
-        description: t(
+        description:
           'Link a New Zealand bank account to automatically download transactions.',
-        ),
         isConfigured: configuredProviders.akahu,
         credentialSource: 'global',
         supportsPerBudgetFile: false,
@@ -721,9 +703,8 @@ export function useBuiltInBankSyncProviders({
       baseProviders.push({
         id: 'enableBanking',
         displayName: 'Enable Banking',
-        description: t(
+        description:
           'Link a European bank account via Enable Banking, a free alternative to GoCardless for PSD2-supported banks.',
-        ),
         isConfigured: configuredProviders.enableBanking,
         credentialSource: 'global',
         supportsPerBudgetFile: false,
@@ -767,7 +748,6 @@ export function useBuiltInBankSyncProviders({
     onPluggyAiReset,
     onSimpleFinInit,
     onSimpleFinReset,
-    t,
   ]);
 
   const permissionWarning = getPermissionWarning(

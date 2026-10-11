@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { send } from '@actual-app/core/platform/client/connection';
 import type { SyncResponseWithErrors } from '@actual-app/core/server/accounts/app';
 import type {
@@ -66,7 +64,6 @@ type CreateAccountPayload = {
 export function useCreateAccountMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ name, balance, offBudget }: CreateAccountPayload) => {
@@ -82,7 +79,7 @@ export function useCreateAccountMutation() {
       console.error('Error creating account:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error creating the account. Please try again.'),
+        'There was an error creating the account. Please try again.',
         error,
       );
     },
@@ -99,7 +96,6 @@ type CloseAccountPayload = {
 export function useCloseAccountMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -120,7 +116,7 @@ export function useCloseAccountMutation() {
       console.error('Error closing account:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error closing the account. Please try again.'),
+        'There was an error closing the account. Please try again.',
         error,
       );
     },
@@ -134,7 +130,6 @@ type ReopenAccountPayload = {
 export function useReopenAccountMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id }: ReopenAccountPayload) => {
@@ -145,7 +140,7 @@ export function useReopenAccountMutation() {
       console.error('Error re-opening account:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error re-opening the account. Please try again.'),
+        'There was an error re-opening the account. Please try again.',
         error,
       );
     },
@@ -159,7 +154,6 @@ type UpdateAccountPayload = {
 export function useUpdateAccountMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ account }: UpdateAccountPayload) => {
@@ -173,7 +167,7 @@ export function useUpdateAccountMutation() {
       console.error('Error updating account:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error updating the account. Please try again.'),
+        'There was an error updating the account. Please try again.',
         error,
       );
     },
@@ -189,7 +183,6 @@ type MoveAccountPayload = {
 export function useMoveAccountMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -207,7 +200,7 @@ export function useMoveAccountMutation() {
       console.error('Error moving account:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error moving the account. Please try again.'),
+        'There was an error moving the account. Please try again.',
         error,
       );
     },
@@ -223,7 +216,6 @@ type ImportPreviewTransactionsPayload = {
 export function useImportPreviewTransactionsMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -259,9 +251,7 @@ export function useImportPreviewTransactionsMutation() {
       console.error('Error importing preview transactions to account:', error);
       dispatchErrorNotification(
         dispatch,
-        t(
-          'There was an error importing preview transactions to the account. Please try again.',
-        ),
+        'There was an error importing preview transactions to the account. Please try again.',
         error,
       );
     },
@@ -278,7 +268,6 @@ type ImportTransactionsPayload = {
 export function useImportTransactionsMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -338,9 +327,7 @@ export function useImportTransactionsMutation() {
       console.error('Error importing transactions to account:', error);
       dispatchErrorNotification(
         dispatch,
-        t(
-          'There was an error importing transactions to the account. Please try again.',
-        ),
+        'There was an error importing transactions to the account. Please try again.',
         error,
       );
     },
@@ -354,7 +341,6 @@ type UnlinkAccountPayload = {
 export function useUnlinkAccountMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id }: UnlinkAccountPayload) => {
@@ -368,7 +354,7 @@ export function useUnlinkAccountMutation() {
       console.error('Error unlinking account:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error unlinking the account. Please try again.'),
+        'There was an error unlinking the account. Please try again.',
         error,
       );
     },
@@ -391,7 +377,6 @@ type LinkAccountPayload = LinkAccountBasePayload & {
 export function useLinkAccountMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -419,7 +404,7 @@ export function useLinkAccountMutation() {
       console.error('Error linking account:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error linking the account. Please try again.'),
+        'There was an error linking the account. Please try again.',
         error,
       );
     },
@@ -433,7 +418,6 @@ type LinkAccountSimpleFinPayload = LinkAccountBasePayload & {
 export function useLinkAccountSimpleFinMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -459,9 +443,7 @@ export function useLinkAccountSimpleFinMutation() {
       console.error('Error linking account to SimpleFIN:', error);
       dispatchErrorNotification(
         dispatch,
-        t(
-          'There was an error linking the account to SimpleFIN. Please try again.',
-        ),
+        'There was an error linking the account to SimpleFIN. Please try again.',
         error,
       );
     },
@@ -475,7 +457,6 @@ type LinkAccountPluggyAiPayload = LinkAccountBasePayload & {
 export function useLinkAccountPluggyAiMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -501,9 +482,7 @@ export function useLinkAccountPluggyAiMutation() {
       console.error('Error linking account to PluggyAI:', error);
       dispatchErrorNotification(
         dispatch,
-        t(
-          'There was an error linking the account to PluggyAI. Please try again.',
-        ),
+        'There was an error linking the account to PluggyAI. Please try again.',
         error,
       );
     },
@@ -517,7 +496,6 @@ type LinkAccountAkahuPayload = LinkAccountBasePayload & {
 export function useLinkAccountAkahuMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -543,7 +521,7 @@ export function useLinkAccountAkahuMutation() {
       console.error('Error linking account to Akahu:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error linking the account to Akahu. Please try again.'),
+        'There was an error linking the account to Akahu. Please try again.',
         error,
       );
     },
@@ -557,7 +535,6 @@ type LinkAccountEnableBankingPayload = LinkAccountBasePayload & {
 export function useLinkAccountEnableBankingMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -583,9 +560,7 @@ export function useLinkAccountEnableBankingMutation() {
       console.error('Error linking account to Enable Banking:', error);
       dispatchErrorNotification(
         dispatch,
-        t(
-          'There was an error linking the account to Enable Banking. Please try again.',
-        ),
+        'There was an error linking the account to Enable Banking. Please try again.',
         error,
       );
     },
@@ -599,7 +574,6 @@ type SyncAccountsPayload = {
 export function useSyncAccountsMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   const { data: accounts = [] } = useAccounts();
   const store = useStore();
@@ -732,7 +706,7 @@ export function useSyncAccountsMutation() {
       console.error('Error syncing accounts:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error syncing accounts. Please try again.'),
+        'There was an error syncing accounts. Please try again.',
         error,
       );
     },
@@ -808,7 +782,6 @@ type SyncAndDownloadPayload = {
 export function useSyncAndDownloadMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   const syncAccounts = useSyncAccountsMutation();
 
@@ -844,7 +817,7 @@ export function useSyncAndDownloadMutation() {
       console.error('Error syncing accounts:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error syncing accounts. Please try again.'),
+        'There was an error syncing accounts. Please try again.',
         error,
       );
     },

@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { ButtonWithLoading } from '@actual-app/components/button';
 import { InitialFocus } from '@actual-app/components/initial-focus';
@@ -29,21 +28,18 @@ type GoCardlessInitialiseModalProps = Extract<
 export const GoCardlessInitialiseModal = ({
   onSuccess,
 }: GoCardlessInitialiseModalProps) => {
-  const { t } = useTranslation();
   const [secretId, setSecretId] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [isValid, setIsValid] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(
-    t('It is required to provide both the secret id and secret key.'),
+    'It is required to provide both the secret id and secret key.',
   );
 
   const onSubmit = async (close: () => void) => {
     if (!secretId || !secretKey) {
       setIsValid(false);
-      setError(
-        t('It is required to provide both the secret id and secret key.'),
-      );
+      setError('It is required to provide both the secret id and secret key.');
       return;
     }
 
@@ -85,28 +81,26 @@ export const GoCardlessInitialiseModal = ({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Set up GoCardless')}
+            title="Set up GoCardless"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ display: 'flex', gap: 10 }}>
             <Text>
-              <Trans>
-                In order to enable bank sync via GoCardless (only for EU banks)
-                you will need to create access credentials. This can be done by
-                creating an account with{' '}
-                <Link
-                  variant="external"
-                  to="https://actualbudget.org/docs/advanced/bank-sync/"
-                  linkColor="purple"
-                >
-                  GoCardless
-                </Link>
-                .
-              </Trans>
+              In order to enable bank sync via GoCardless (only for EU banks)
+              you will need to create access credentials. This can be done by
+              creating an account with{' '}
+              <Link
+                variant="external"
+                to="https://actualbudget.org/docs/advanced/bank-sync/"
+                linkColor="purple"
+              >
+                GoCardless
+              </Link>
+              .
             </Text>
 
             <FormField>
-              <FormLabel title={t('Secret ID:')} htmlFor="secret-id-field" />
+              <FormLabel title="Secret ID:" htmlFor="secret-id-field" />
               <InitialFocus>
                 <Input
                   id="secret-id-field"
@@ -121,7 +115,7 @@ export const GoCardlessInitialiseModal = ({
             </FormField>
 
             <FormField>
-              <FormLabel title={t('Secret Key:')} htmlFor="secret-key-field" />
+              <FormLabel title="Secret Key:" htmlFor="secret-key-field" />
               <Input
                 id="secret-key-field"
                 type="password"
@@ -144,7 +138,7 @@ export const GoCardlessInitialiseModal = ({
                 void onSubmit(() => state.close());
               }}
             >
-              <Trans>Save and continue</Trans>
+              Save and continue
             </ButtonWithLoading>
           </ModalButtons>
         </>

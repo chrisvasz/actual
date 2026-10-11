@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
@@ -56,61 +55,54 @@ export function ServerSettings() {
       primaryAction={
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
           <Button onPress={() => void closeBudgetAndGo('/config-server')}>
-            {serverUrl ? (
-              <Trans>Change server URL</Trans>
-            ) : (
-              <Trans>Start using a server</Trans>
-            )}
+            {serverUrl ? 'Change server URL' : 'Start using a server'}
           </Button>
           {isOnline && userData?.loginMethod === 'password' && (
             <Button onPress={() => void closeBudgetAndGo('/change-password')}>
-              <Trans>Change password</Trans>
+              Change password
             </Button>
           )}
           {canManageUsers && (
             <Button onPress={() => void navigate('/user-directory')}>
-              <Trans>User Directory</Trans>
+              User Directory
             </Button>
           )}
           {canManageAccess && (
             <Button onPress={() => void navigate('/user-access')}>
-              <Trans>User Access Management</Trans>
+              User Access Management
             </Button>
           )}
           {serverUrl && (
-            <Button onPress={() => void dispatch(signOut())}>
-              <Trans>Sign out</Trans>
-            </Button>
+            <Button onPress={() => void dispatch(signOut())}>Sign out</Button>
           )}
         </View>
       }
     >
       <Text>
         {!serverUrl ? (
-          <Trans>
+          <>
             <strong>Server:</strong> not connected. A server syncs your budget
             across devices and keeps a backup of your data.
-          </Trans>
+          </>
         ) : userData?.offline ? (
-          <Trans>
+          <>
             <strong>Server:</strong> offline. Changes are saved locally and will
             sync once it's reachable again.
-          </Trans>
+          </>
         ) : (
-          <Trans>
+          <>
             <strong>Server:</strong> online. Your budget is syncing.
-          </Trans>
+          </>
         )}
       </Text>
       {serverUrl && (
         <Text style={{ color: theme.pageTextSubdued }}>
           {multiuserEnabled && userData?.displayName ? (
-            <Trans>
-              Signed in as {{ userName: userData.displayName }} on{' '}
-              {{ serverUrl }}
-            </Trans>
+            <>
+              Signed in as {userData.displayName} on {serverUrl}
+            </>
           ) : (
-            <Trans>Connected to {{ serverUrl }}</Trans>
+            <>Connected to {serverUrl}</>
           )}
         </Text>
       )}

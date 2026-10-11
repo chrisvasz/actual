@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { sendCatch } from '@actual-app/core/platform/client/connection';
 import type { send } from '@actual-app/core/platform/client/connection';
 import type {
@@ -71,7 +69,6 @@ type UpdateReportPayload = {
 export function useUpdateReportMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ report }: UpdateReportPayload) => {
@@ -82,7 +79,7 @@ export function useUpdateReportMutation() {
       console.error('Error updating report:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error updating the report. Please try again.'),
+        'There was an error updating the report. Please try again.',
         error,
       );
     },
@@ -96,7 +93,6 @@ type DeleteReportPayload = {
 export function useDeleteReportMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id }: DeleteReportPayload) => {
@@ -107,7 +103,7 @@ export function useDeleteReportMutation() {
       console.error('Error deleting report:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error deleting the report. Please try again.'),
+        'There was an error deleting the report. Please try again.',
         error,
       );
     },
@@ -121,7 +117,6 @@ type CreateReportMutationPayload = {
 export function useCreateReportMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ report }: CreateReportMutationPayload) => {
@@ -132,7 +127,7 @@ export function useCreateReportMutation() {
       console.error('Error creating report:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error creating the report. Please try again.'),
+        'There was an error creating the report. Please try again.',
         error,
       );
     },
@@ -146,7 +141,6 @@ type CreateDashboardPageMutationPayload = {
 export function useCreateDashboardPageMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ name }: CreateDashboardPageMutationPayload) => {
@@ -157,7 +151,7 @@ export function useCreateDashboardPageMutation() {
       console.error('Error creating dashboard page:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error creating the dashboard page. Please try again.'),
+        'There was an error creating the dashboard page. Please try again.',
         error,
       );
     },
@@ -171,7 +165,6 @@ type DeleteDashboardPageMutationPayload = {
 export function useDeleteDashboardPageMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id }: DeleteDashboardPageMutationPayload) => {
@@ -182,7 +175,7 @@ export function useDeleteDashboardPageMutation() {
       console.error('Error deleting dashboard page:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error deleting the dashboard page. Please try again.'),
+        'There was an error deleting the dashboard page. Please try again.',
         error,
       );
     },
@@ -197,7 +190,6 @@ type RenameDashboardPageMutationPayload = {
 export function useRenameDashboardPageMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id, name }: RenameDashboardPageMutationPayload) => {
@@ -208,7 +200,7 @@ export function useRenameDashboardPageMutation() {
       console.error('Error renaming dashboard page:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error renaming the dashboard page. Please try again.'),
+        'There was an error renaming the dashboard page. Please try again.',
         error,
       );
     },
@@ -222,7 +214,6 @@ type UpdateDashboardWidgetsMutationPayload = {
 export function useUpdateDashboardWidgetsMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ widgets }: UpdateDashboardWidgetsMutationPayload) => {
@@ -233,9 +224,7 @@ export function useUpdateDashboardWidgetsMutation() {
       console.error('Error updating dashboard widgets:', error);
       dispatchErrorNotification(
         dispatch,
-        t(
-          'There was an error updating the dashboard widgets. Please try again.',
-        ),
+        'There was an error updating the dashboard widgets. Please try again.',
         error,
       );
     },
@@ -249,7 +238,6 @@ type UpdateDashboardWidgetMutationPayload = {
 export function useUpdateDashboardWidgetMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ widget }: UpdateDashboardWidgetMutationPayload) => {
@@ -260,9 +248,7 @@ export function useUpdateDashboardWidgetMutation() {
       console.error('Error updating dashboard widget:', error);
       dispatchErrorNotification(
         dispatch,
-        t(
-          'There was an error updating the dashboard widget. Please try again.',
-        ),
+        'There was an error updating the dashboard widget. Please try again.',
         error,
       );
     },
@@ -276,7 +262,6 @@ type ResetDashboardPageMutationPayload = {
 export function useResetDashboardPageMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id }: ResetDashboardPageMutationPayload) => {
@@ -287,7 +272,7 @@ export function useResetDashboardPageMutation() {
       console.error('Error resetting dashboard page:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error resetting the dashboard page. Please try again.'),
+        'There was an error resetting the dashboard page. Please try again.',
         error,
       );
     },
@@ -304,7 +289,6 @@ type AddDashboardWidgetMutationPayload = {
 export function useAddDashboardWidgetMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ widget }: AddDashboardWidgetMutationPayload) => {
@@ -315,7 +299,7 @@ export function useAddDashboardWidgetMutation() {
       console.error('Error adding dashboard widget:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error adding the dashboard widget. Please try again.'),
+        'There was an error adding the dashboard widget. Please try again.',
         error,
       );
     },
@@ -329,7 +313,6 @@ type RemoveDashboardWidgetMutationPayload = {
 export function useRemoveDashboardWidgetMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id }: RemoveDashboardWidgetMutationPayload) => {
@@ -340,9 +323,7 @@ export function useRemoveDashboardWidgetMutation() {
       console.error('Error removing dashboard widget:', error);
       dispatchErrorNotification(
         dispatch,
-        t(
-          'There was an error removing the dashboard widget. Please try again.',
-        ),
+        'There was an error removing the dashboard widget. Please try again.',
         error,
       );
     },
@@ -357,7 +338,6 @@ type CopyDashboardWidgetMutationPayload = {
 export function useCopyDashboardWidgetMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -374,7 +354,7 @@ export function useCopyDashboardWidgetMutation() {
       console.error('Error copying dashboard widget:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error copying the dashboard widget. Please try again.'),
+        'There was an error copying the dashboard widget. Please try again.',
         error,
       );
     },
@@ -389,7 +369,6 @@ type ImportDashboardPageMutationPayload = {
 export function useImportDashboardPageMutation() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({
@@ -403,7 +382,7 @@ export function useImportDashboardPageMutation() {
       console.error('Error importing dashboard page:', error);
       dispatchErrorNotification(
         dispatch,
-        t('There was an error importing the dashboard page. Please try again.'),
+        'There was an error importing the dashboard page. Please try again.',
         error,
       );
     },

@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useMemo } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SpaceBetween } from '@actual-app/components/space-between';
@@ -30,8 +29,6 @@ type ScheduleEditModalProps = Extract<
 >['options'];
 
 export function ScheduleEditModal({ id, transaction }: ScheduleEditModalProps) {
-  const { t } = useTranslation();
-
   const adding = id == null;
   const fromTrans = transaction != null;
   const { data: payees } = usePayeesById();
@@ -105,7 +102,7 @@ export function ScheduleEditModal({ id, transaction }: ScheduleEditModalProps) {
       if (sameName.length > 0 && sameName[0].id !== state.schedule.id) {
         dispatch({
           type: 'form-error',
-          error: t('There is already a schedule with this name'),
+          error: 'There is already a schedule with this name',
         });
         return;
       }
@@ -137,9 +134,8 @@ export function ScheduleEditModal({ id, transaction }: ScheduleEditModalProps) {
     if (res.error) {
       dispatch({
         type: 'form-error',
-        error: t(
+        error:
           'An error occurred while saving. Please visit https://actualbudget.org/contact/ for support.',
-        ),
       });
       return;
     }
@@ -218,11 +214,7 @@ export function ScheduleEditModal({ id, transaction }: ScheduleEditModalProps) {
       {({ state: modalState }) => (
         <>
           <ModalHeader
-            title={
-              payee
-                ? t(`Schedule: {{name}}`, { name: payee.name })
-                : t('Schedule')
-            }
+            title={payee ? `Schedule: ${payee.name}` : 'Schedule'}
             rightContent={
               <ModalCloseButton onPress={() => modalState.close()} />
             }
@@ -252,14 +244,12 @@ export function ScheduleEditModal({ id, transaction }: ScheduleEditModalProps) {
               alignItems: 'center',
             }}
           >
-            <Button onPress={() => modalState.close()}>
-              <Trans>Cancel</Trans>
-            </Button>
+            <Button onPress={() => modalState.close()}>Cancel</Button>
             <Button
               variant="primary"
               onPress={() => onSave(() => modalState.close())}
             >
-              {adding ? t('Add') : t('Save')}
+              {adding ? 'Add' : 'Save'}
             </Button>
           </SpaceBetween>
         </>

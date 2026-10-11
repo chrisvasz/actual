@@ -7,7 +7,6 @@ import type {
   PayeeEntity,
 } from '@actual-app/core/types/models';
 import { queryOptions } from '@tanstack/react-query';
-import { t } from 'i18next';
 
 import { getAccountsById } from '#accounts/accountsSlice';
 
@@ -88,7 +87,7 @@ export const getPayeesById = memoizeOne(
 function translatePayees(payees: PayeeEntity[]): PayeeEntity[] {
   return payees.map(payee =>
     payee.name === 'Starting Balance'
-      ? { ...payee, name: t('Starting Balance') }
+      ? { ...payee, name: 'Starting Balance' }
       : payee,
   );
 }

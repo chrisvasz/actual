@@ -1,6 +1,5 @@
 import { Children, isValidElement } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { ExtraProps } from 'react-markdown';
 
 import {
@@ -79,7 +78,6 @@ export function MarkdownBlockquote({
   node,
   children,
 }: MarkdownBlockquoteProps) {
-  const { t } = useTranslation();
   const marker = parseAdmonitionMarker(firstParagraphText(node));
 
   if (!marker) {
@@ -87,11 +85,11 @@ export function MarkdownBlockquote({
   }
 
   const defaultTitles: Record<AdmonitionType, string> = {
-    note: t('Note'),
-    tip: t('Tip'),
-    info: t('Info'),
-    warning: t('Warning'),
-    danger: t('Danger'),
+    note: 'Note',
+    tip: 'Tip',
+    info: 'Info',
+    warning: 'Warning',
+    danger: 'Danger',
   };
 
   return (

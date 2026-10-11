@@ -1,5 +1,4 @@
 import React, { useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Input } from '@actual-app/components/input';
@@ -31,7 +30,6 @@ type CategoryGoalChipProps = {
 };
 
 export function CategoryGoalChip({ category }: CategoryGoalChipProps) {
-  const { t } = useTranslation();
   const format = useFormat();
   const triggerRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -51,13 +49,10 @@ export function CategoryGoalChip({ category }: CategoryGoalChipProps) {
   function getLabel(amount: number) {
     const formatted = formatGoalAmount(format, amount);
     if (goalType === 'budgeted') {
-      return t('{{amount}}/mo', { amount: formatted });
+      return `${formatted}/mo`;
     }
     if (targetMonth) {
-      return t('{{amount}} by {{month}}', {
-        amount: formatted,
-        month: formatTargetMonth(targetMonth, locale),
-      });
+      return `${formatted} by ${formatTargetMonth(targetMonth, locale)}`;
     }
     return formatted;
   }
@@ -75,7 +70,7 @@ export function CategoryGoalChip({ category }: CategoryGoalChipProps) {
     targetMonths.unshift(category.goal_target_month);
   }
   const targetOptions: Array<readonly [string, string]> = [
-    ['', t('No target date')],
+    ['', 'No target date'],
     ...targetMonths.map(
       month => [month, monthUtils.format(month, 'MMMM yyyy', locale)] as const,
     ),
@@ -116,7 +111,7 @@ export function CategoryGoalChip({ category }: CategoryGoalChipProps) {
       <Button
         ref={triggerRef}
         variant="bare"
-        aria-label={hasGoal ? t('Edit goal') : t('Set goal')}
+        aria-label={hasGoal ? 'Edit goal' : 'Set goal'}
         className={hasGoal || isOpen ? undefined : 'hover-visible'}
         onPress={open}
         style={{
@@ -140,7 +135,7 @@ export function CategoryGoalChip({ category }: CategoryGoalChipProps) {
         {hasGoal ? (
           <FinancialText style={styles.tnum}>{getLabel(goal)}</FinancialText>
         ) : (
-          <Trans>Goal</Trans>
+          'Goal'
         )}
       </Button>
 
@@ -151,20 +146,18 @@ export function CategoryGoalChip({ category }: CategoryGoalChipProps) {
         placement="bottom start"
         style={{ padding: 10, width: 200 }}
       >
-        <Text style={{ fontWeight: 600, marginBottom: 6 }}>
-          <Trans>Goal</Trans>
-        </Text>
+        <Text style={{ fontWeight: 600, marginBottom: 6 }}>Goal</Text>
         <Input
           autoFocus
           value={draft}
-          placeholder={t('No goal')}
+          placeholder="No goal"
           onChangeValue={setDraft}
           onEnter={value => save(value)}
           style={styles.tnum}
         />
         <View
           role="radiogroup"
-          aria-label={t('Goal type')}
+          aria-label="Goal type"
           style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}
         >
           {GOAL_TYPES.map(type => (
@@ -184,7 +177,7 @@ export function CategoryGoalChip({ category }: CategoryGoalChipProps) {
                 onChange={() => setTypeDraft(type)}
                 style={{ margin: 0, accentColor: theme.budgetGoalChipText }}
               />
-              {type === 'budgeted' ? t('Budgeted') : t('Balance')}
+              {type === 'budgeted' ? 'Budgeted' : 'Balance'}
             </label>
           ))}
         </View>
@@ -197,7 +190,7 @@ export function CategoryGoalChip({ category }: CategoryGoalChipProps) {
                 color: theme.pageTextSubdued,
               }}
             >
-              <Trans>Reach it by</Trans>
+              Reach it by
             </Text>
             <Select
               value={targetDraft}

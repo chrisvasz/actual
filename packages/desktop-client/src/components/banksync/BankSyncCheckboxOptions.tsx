@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgQuestion } from '@actual-app/components/icons/v1';
@@ -80,7 +79,6 @@ function CheckboxOptionWithHelp({
   helpMode,
   children,
 }: CheckboxOptionWithHelpProps) {
-  const { t } = useTranslation();
   const [showHelp, setShowHelp] = useState(false);
 
   if (helpMode === 'desktop') {
@@ -112,7 +110,7 @@ function CheckboxOptionWithHelp({
           <Text>{children}</Text>
           <Button
             variant="bare"
-            aria-label={t('Help')}
+            aria-label="Help"
             onPress={() => setShowHelp(!showHelp)}
             style={{
               padding: 0,
@@ -171,8 +169,6 @@ export function BankSyncCheckboxOptions({
   setUpdateDates,
   helpMode = 'desktop',
 }: BankSyncCheckboxOptionsProps) {
-  const { t } = useTranslation();
-
   return (
     <>
       <CheckboxOption
@@ -182,7 +178,7 @@ export function BankSyncCheckboxOptions({
         disabled={!importTransactions}
         helpMode={helpMode}
       >
-        <Trans>Import pending transactions</Trans>
+        Import pending transactions
       </CheckboxOption>
 
       <CheckboxOption
@@ -192,7 +188,7 @@ export function BankSyncCheckboxOptions({
         disabled={!importTransactions}
         helpMode={helpMode}
       >
-        <Trans>Import transaction notes</Trans>
+        Import transaction notes
       </CheckboxOption>
 
       <CheckboxOptionWithHelp
@@ -200,12 +196,10 @@ export function BankSyncCheckboxOptions({
         checked={reimportDeleted}
         onChange={() => setReimportDeleted(!reimportDeleted)}
         disabled={!importTransactions}
-        helpText={t(
-          'By default imported transactions that you delete will be re-imported with the next bank sync operation. To disable this behaviour - untick this box.',
-        )}
+        helpText="By default imported transactions that you delete will be re-imported with the next bank sync operation. To disable this behaviour - untick this box."
         helpMode={helpMode}
       >
-        <Trans>Reimport deleted transactions</Trans>
+        Reimport deleted transactions
       </CheckboxOptionWithHelp>
 
       <CheckboxOptionWithHelp
@@ -213,24 +207,20 @@ export function BankSyncCheckboxOptions({
         checked={updateDates}
         onChange={() => setUpdateDates(!updateDates)}
         disabled={!importTransactions}
-        helpText={t(
-          'By enabling this, the transaction date will be overwritten by the one provided by the bank.',
-        )}
+        helpText="By enabling this, the transaction date will be overwritten by the one provided by the bank."
         helpMode={helpMode}
       >
-        <Trans>Update Dates</Trans>
+        Update Dates
       </CheckboxOptionWithHelp>
 
       <CheckboxOptionWithHelp
         id="form_import_transactions"
         checked={!importTransactions}
         onChange={() => setImportTransactions(!importTransactions)}
-        helpText={t(
-          'Selecting this option will disable importing transactions and only import the account balance for use in reconciliation',
-        )}
+        helpText="Selecting this option will disable importing transactions and only import the account balance for use in reconciliation"
         helpMode={helpMode}
       >
-        <Trans>Investment Account</Trans>
+        Investment Account
       </CheckboxOptionWithHelp>
     </>
   );

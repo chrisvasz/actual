@@ -1,6 +1,5 @@
 import React from 'react';
 import type { ComponentPropsWithoutRef, CSSProperties } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Menu } from '@actual-app/components/menu';
 import { styles } from '@actual-app/components/styles';
@@ -82,7 +81,6 @@ function BudgetPageMenu({
         throw new Error(`Unrecognized menu item: ${name}`);
     }
   };
-  const { t } = useTranslation();
 
   return (
     <Menu
@@ -91,15 +89,15 @@ function BudgetPageMenu({
       items={[
         {
           name: 'add-category-group',
-          text: t('Add category group'),
+          text: 'Add category group',
         },
         {
           name: 'toggle-hidden-categories',
-          text: `${!showHiddenCategories ? t('Show hidden categories') : t('Hide hidden categories')}`,
+          text: `${!showHiddenCategories ? 'Show hidden categories' : 'Hide hidden categories'}`,
         },
         {
           name: 'switch-budget-file',
-          text: t('Switch budget file'),
+          text: 'Switch budget file',
         },
       ]}
     />

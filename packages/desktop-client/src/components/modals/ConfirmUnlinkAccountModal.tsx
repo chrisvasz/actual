@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { InitialFocus } from '@actual-app/components/initial-focus';
@@ -19,8 +18,6 @@ export function ConfirmUnlinkAccountModal({
   isViewBankSyncSettings,
   onUnlink,
 }: ConfirmUnlinkAccountModalProps) {
-  const { t } = useTranslation();
-
   return (
     <Modal
       name="confirm-unlink-account"
@@ -29,24 +26,18 @@ export function ConfirmUnlinkAccountModal({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Confirm Unlink')} // Use translation for title
+            title="Confirm Unlink"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ lineHeight: 1.5 }}>
             <Paragraph>
-              <Trans>
-                Are you sure you want to unlink <strong>{accountName}</strong>?
-              </Trans>
+              Are you sure you want to unlink <strong>{accountName}</strong>?
             </Paragraph>
 
             <Paragraph>
               {isViewBankSyncSettings
-                ? t(
-                    'Transactions will no longer be synchronized with this account and must be manually entered. You will not be able to edit the bank sync settings for this account and the settings will close.',
-                  )
-                : t(
-                    'Transactions will no longer be synchronized with this account and must be manually entered.',
-                  )}
+                ? 'Transactions will no longer be synchronized with this account and must be manually entered. You will not be able to edit the bank sync settings for this account and the settings will close.'
+                : 'Transactions will no longer be synchronized with this account and must be manually entered.'}
             </Paragraph>
 
             <View
@@ -56,7 +47,7 @@ export function ConfirmUnlinkAccountModal({
               }}
             >
               <Button style={{ marginRight: 10 }} onPress={() => state.close()}>
-                <Trans>Cancel</Trans>
+                Cancel
               </Button>
               <InitialFocus>
                 <Button
@@ -66,7 +57,7 @@ export function ConfirmUnlinkAccountModal({
                     state.close();
                   }}
                 >
-                  <Trans>Unlink</Trans>
+                  Unlink
                 </Button>
               </InitialFocus>
             </View>

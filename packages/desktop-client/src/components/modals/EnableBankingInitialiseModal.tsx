@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { ButtonWithLoading } from '@actual-app/components/button';
 import { SvgCheckCircle1 } from '@actual-app/components/icons/v2';
@@ -31,14 +30,13 @@ type EnableBankingInitialiseProps = Extract<
 export function EnableBankingInitialiseModal({
   onSuccess,
 }: EnableBankingInitialiseProps) {
-  const { t } = useTranslation();
   const [applicationId, setApplicationId] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [isValid, setIsValid] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [keyFileName, setKeyFileName] = useState('');
   const [error, setError] = useState(
-    t('It is required to provide both the Application ID and the secret key.'),
+    'It is required to provide both the Application ID and the secret key.',
   );
 
   async function onFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -54,7 +52,7 @@ export function EnableBankingInitialiseModal({
       setSecretKey('');
       setKeyFileName('');
       setIsValid(false);
-      setError(t('Failed to read the key file. Please try again.'));
+      setError('Failed to read the key file. Please try again.');
     }
   }
 
@@ -62,9 +60,7 @@ export function EnableBankingInitialiseModal({
     if (!applicationId || !secretKey) {
       setIsValid(false);
       setError(
-        t(
-          'It is required to provide both the Application ID and the secret key.',
-        ),
+        'It is required to provide both the Application ID and the secret key.',
       );
       return;
     }
@@ -87,9 +83,7 @@ export function EnableBankingInitialiseModal({
         setIsValid(false);
         setError(
           result.data.error_type ||
-            t(
-              'Could not validate the credentials. Please check your Application ID and secret key.',
-            ),
+            'Could not validate the credentials. Please check your Application ID and secret key.',
         );
         return;
       }
@@ -100,9 +94,7 @@ export function EnableBankingInitialiseModal({
     } catch {
       setIsValid(false);
       setError(
-        t(
-          'Could not validate the credentials. Please check your Application ID and secret key.',
-        ),
+        'Could not validate the credentials. Please check your Application ID and secret key.',
       );
     } finally {
       setIsLoading(false);
@@ -117,46 +109,40 @@ export function EnableBankingInitialiseModal({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Set up Enable Banking')}
+            title="Set up Enable Banking"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ display: 'flex', gap: 10 }}>
             <Text>
-              <Trans>
-                In order to enable bank sync via Enable Banking (for EU banks)
-                you will need to create application credentials. This can be
-                done by creating an account at{' '}
-                <Link
-                  variant="external"
-                  to="https://enablebanking.com/cp/applications"
-                  linkColor="purple"
-                >
-                  Enable Banking
-                </Link>
-                .
-              </Trans>
+              In order to enable bank sync via Enable Banking (for EU banks) you
+              will need to create application credentials. This can be done by
+              creating an account at{' '}
+              <Link
+                variant="external"
+                to="https://enablebanking.com/cp/applications"
+                linkColor="purple"
+              >
+                Enable Banking
+              </Link>
+              .
             </Text>
 
             <Text>
-              <Trans>
-                When setting up your application, use the following as the
-                redirect URL:
-              </Trans>{' '}
+              When setting up your application, use the following as the
+              redirect URL:{' '}
               <code>{window.location.origin}/enablebanking/auth_callback</code>
             </Text>
 
             {window.location.protocol === 'http:' && (
               <ErrorAlert>
-                <Trans>
-                  Enable Banking requires HTTPS for the redirect URL. Your
-                  current connection is not secure.
-                </Trans>
+                Enable Banking requires HTTPS for the redirect URL. Your current
+                connection is not secure.
               </ErrorAlert>
             )}
 
             <FormField>
               <FormLabel
-                title={t('Application ID:')}
+                title="Application ID:"
                 htmlFor="application-id-field"
               />
               <InitialFocus>
@@ -174,7 +160,7 @@ export function EnableBankingInitialiseModal({
 
             <FormField>
               <FormLabel
-                title={t('Secret Key (.pem file):')}
+                title="Secret Key (.pem file):"
                 htmlFor="secret-key-field"
               />
               <input
@@ -213,7 +199,7 @@ export function EnableBankingInitialiseModal({
                 void onSubmit(() => state.close());
               }}
             >
-              <Trans>Save and continue</Trans>
+              Save and continue
             </ButtonWithLoading>
           </ModalButtons>
         </>
