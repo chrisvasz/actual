@@ -1,7 +1,7 @@
 import { aqlQuery } from '#server/aql';
+import { loadBudgetState } from '#server/budget/state';
 import * as db from '#server/db';
 import { handlers } from '#server/main';
-import * as sheet from '#server/sheet';
 import { q } from '#shared/query';
 
 import { createTestBudget } from './budget';
@@ -10,7 +10,7 @@ vi.mock('#server/post');
 
 beforeEach(async () => {
   await global.emptyDatabase()();
-  await sheet.loadSpreadsheet(db);
+  await loadBudgetState();
 });
 
 describe('createTestBudget', () => {
