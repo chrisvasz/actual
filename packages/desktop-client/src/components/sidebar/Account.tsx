@@ -10,7 +10,6 @@ import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import type { AccountEntity } from '@actual-app/core/types/models';
-import { css, cx } from '@emotion/css';
 
 import { useReopenAccountMutation, useUpdateAccountMutation } from '#accounts';
 import { Link } from '#components/common/Link';
@@ -43,9 +42,6 @@ type AccountProps<FieldName extends SheetFields<'account'>> = {
   to: string;
   query: Binding<'account', FieldName>;
   account?: AccountEntity;
-  connected?: boolean;
-  pending?: boolean;
-  failed?: boolean;
   updated?: boolean;
   style?: CSSProperties;
   outerStyle?: CSSProperties;
@@ -58,9 +54,6 @@ type AccountProps<FieldName extends SheetFields<'account'>> = {
 export function Account<FieldName extends SheetFields<'account'>>({
   name,
   account,
-  connected,
-  pending = false,
-  failed,
   updated,
   to,
   query,
@@ -162,43 +155,8 @@ export function Account<FieldName extends SheetFields<'account'>>({
               // unbolds it, but it still "flashes" bold so this just
               // ignores it if it's active
               fontWeight: (style && style.fontWeight) || 'normal',
-              '& .dot': {
-                backgroundColor: theme.sidebarItemAccentSelected,
-                transform: 'translateX(-4.5px)',
-              },
             }}
           >
-            <View
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
-            >
-              <div
-                className={cx(
-                  'dot',
-                  css({
-                    marginRight: 3,
-                    width: 5,
-                    height: 5,
-                    borderRadius: 5,
-                    backgroundColor: pending
-                      ? theme.sidebarItemBackgroundPending
-                      : failed
-                        ? theme.sidebarItemBackgroundFailed
-                        : theme.sidebarItemBackgroundPositive,
-                    marginLeft: 2,
-                    transition: 'transform .3s',
-                    opacity: connected ? 1 : 0,
-                  }),
-                )}
-              />
-            </View>
-
             <AlignedText
               left={
                 isEditing ? (

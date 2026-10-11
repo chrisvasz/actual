@@ -43,7 +43,6 @@ import {
 import type {
   DbAccount,
   DbAccountGroup,
-  DbBank,
   DbCategory,
   DbCategoryGroup,
   DbCategoryMapping,
@@ -730,16 +729,8 @@ export async function getPayeeByName(name: DbPayee['name']) {
 }
 
 export function getAccounts() {
-  return all<
-    DbAccount & {
-      bankName: DbBank['name'];
-      bankId: DbBank['id'];
-    }
-  >(
-    `SELECT a.*, b.name as bankName, b.id as bankId FROM accounts a
-       LEFT JOIN banks b ON a.bank = b.id
-       WHERE a.tombstone = 0
-       ORDER BY sort_order, name`,
+  return all<DbAccount>(
+    `SELECT * FROM accounts WHERE tombstone = 0 ORDER BY sort_order, name`,
   );
 }
 

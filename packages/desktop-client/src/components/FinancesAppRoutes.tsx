@@ -6,7 +6,6 @@ import { Permissions } from '#auth/types';
 
 import { UserAccessPage } from './admin/UserAccess/UserAccessPage';
 import { UserDirectoryPage } from './admin/UserDirectory/UserDirectoryPage';
-import { EnableBankingCallback } from './EnableBankingCallback';
 import { FeatureErrorFallback } from './FeatureErrorFallback';
 import { NotificationsPage } from './news/NotificationsPage';
 import { Reports } from './reports';
@@ -80,30 +79,9 @@ export function FinancesAppRoutes() {
           </ErrorBoundary>
         }
       />
-      <Route
-        path="/bank-sync"
-        element={
-          <ErrorBoundary
-            FallbackComponent={FeatureErrorFallback}
-            resetKeys={[location.pathname]}
-          >
-            <WideComponent name="BankSync" />
-          </ErrorBoundary>
-        }
-      />
       <Route path="/tags" element={<ManageTagsPage />} />
       <Route path="/notifications" element={<NotificationsPage />} />
       <Route path="/settings" element={<Settings />} />
-
-      <Route
-        path="/gocardless/link"
-        element={<WideComponent name="GoCardlessLink" />}
-      />
-
-      <Route
-        path="/enablebanking/auth_callback"
-        element={<EnableBankingCallback />}
-      />
 
       <Route
         path="/accounts"

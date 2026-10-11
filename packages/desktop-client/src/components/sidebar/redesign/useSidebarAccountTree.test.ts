@@ -66,19 +66,17 @@ describe('buildAccountSide', () => {
     ]);
   });
 
-  it('omits empty buckets and counts failed syncs per bucket', () => {
+  it('omits empty buckets', () => {
     const groups = [makeGroup('g1', 'Savings'), makeGroup('g2', 'Empty')];
-    const failed = makeAccount('Broken', {
-      account_group_id: 'g1',
-      bank_sync_status: 'reauth-required',
-    });
     const side = buildAccountSide(
-      [makeAccount('Fine', { account_group_id: 'g1' }), failed],
+      [
+        makeAccount('Fine', { account_group_id: 'g1' }),
+        makeAccount('Also fine', { account_group_id: 'g1' }),
+      ],
       groups,
     );
 
     expect(side.buckets.map(bucket => bucket.group?.id)).toEqual(['g1']);
-    expect(side.buckets[0].failedCount).toBe(1);
-    expect(side.failedCount).toBe(1);
+    expect(side.accountCount).toBe(2);
   });
 });

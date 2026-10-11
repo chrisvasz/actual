@@ -2,7 +2,6 @@ import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
 import { AccountPage } from './account-page';
-import { BankSyncPage } from './bank-sync-page';
 import { BudgetPage } from './budget-page';
 import { PayeesPage } from './payees-page';
 import { ReportsPage } from './reports-page';
@@ -131,16 +130,6 @@ export class Navigation {
     await payeesLink.click();
 
     return new PayeesPage(this.page);
-  }
-
-  async goToBankSyncPage() {
-    // The sidebar has no Bank Sync link in this fork, so route client-side
-    await this.page.evaluate(() => {
-      window.history.pushState({}, '', '/bank-sync');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    });
-
-    return new BankSyncPage(this.page);
   }
 
   async goToSettingsPage() {

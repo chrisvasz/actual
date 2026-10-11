@@ -6,9 +6,6 @@ export type OutputFormat = 'json' | 'table' | 'csv';
 const AMOUNT_FIELDS = new Set([
   'amount',
   'balance',
-  'balance_available',
-  'balance_current',
-  'balance_limit',
   'budgeted',
   'spent',
   'carryover',

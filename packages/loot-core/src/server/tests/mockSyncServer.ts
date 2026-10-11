@@ -15,10 +15,7 @@ import type { Clock } from '@actual-app/crdt';
 
 import type { Message } from '#server/sync';
 
-import { basic as defaultMockData } from './mockData.json';
-
 const handlers = {};
-let currentMockData = defaultMockData;
 let currentClock = makeClock(new Timestamp(0, 0, '0000000000000000'));
 let currentMessages: {
   timestamp: string;
@@ -84,18 +81,7 @@ handlers['/sync/sync'] = async (data: Uint8Array): Promise<Uint8Array> => {
   return toBinary(SyncResponseSchema, responsePb);
 };
 
-handlers['/gocardless/accounts'] = () => {
-  // Ignore the parameters and just return the accounts.
-  return { accounts: currentMockData.accounts };
-};
-
-export const filterMockData = func => {
-  const copied = JSON.parse(JSON.stringify(defaultMockData));
-  currentMockData = func(copied);
-};
-
 export const reset = () => {
-  currentMockData = defaultMockData;
   currentClock = makeClock(new Timestamp(0, 0, '0000000000000000'));
   currentMessages = [];
 };

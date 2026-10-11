@@ -47,8 +47,6 @@ function createUnassignedRuleAccountStub(): DbAccountForRules {
     closed: 0,
     tombstone: 0,
     sort_order: -1,
-    bankName: '',
-    bankId: '',
   } as DbAccountForRules;
 }
 

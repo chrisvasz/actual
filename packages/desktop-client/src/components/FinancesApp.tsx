@@ -17,7 +17,6 @@ import { payeeQueries } from '#payees/queries';
 import { useDispatch } from '#redux';
 
 import { AppShellEffects } from './AppShellEffects';
-import { BankSyncStatus } from './BankSyncStatus';
 import { CommandBar } from './CommandBar';
 import { ContextMenu } from './ContextMenu';
 import { FinancesAppRoutes } from './FinancesAppRoutes';
@@ -154,7 +153,6 @@ export function FinancesApp() {
                 >
                   <FloatingSidebarButton />
                   <Notifications />
-                  <BankSyncStatus />
                   {isNarrowWidth && <MobilePageHeaderSlot />}
 
                   <KeptBudgetPage />

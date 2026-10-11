@@ -14,7 +14,6 @@ type AccountTreeProps = {
   label: string;
   side: AccountTreeSide;
   buckets: GroupBucket[];
-  showSyncDot: boolean;
   isBucketOpen?: (bucket: GroupBucket) => boolean;
   onToggleBucket?: (bucket: GroupBucket) => void;
 };
@@ -23,7 +22,6 @@ export function AccountTree({
   label,
   side,
   buckets,
-  showSyncDot,
   isBucketOpen,
   onToggleBucket,
 }: AccountTreeProps) {
@@ -62,7 +60,6 @@ export function AccountTree({
               key={treeKeys.account(account.id)}
               account={account}
               isClosed={side === 'closed'}
-              showSyncDot={showSyncDot}
             />
           ))
         ) : (
@@ -71,8 +68,6 @@ export function AccountTree({
             group={bucket.group}
             side={side === 'off' ? 'off' : 'on'}
             accounts={bucket.accounts}
-            failedCount={bucket.failedCount}
-            showSyncDot={showSyncDot}
             isDropZoneActive={isGroupDropZoneActive(bucket.group.id)}
           />
         ),

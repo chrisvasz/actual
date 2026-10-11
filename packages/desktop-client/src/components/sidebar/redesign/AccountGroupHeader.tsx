@@ -36,7 +36,6 @@ import { CountPill } from './CountPill';
 import { DragHandle } from './DragHandle';
 import { SidebarBalance } from './SidebarBalance';
 import { dropZoneStyle, groupLabelStyle } from './styles';
-import { SyncErrorRollup } from './SyncErrorRollup';
 import { treeKeys } from './treeKeys';
 import { useSidebarBalanceMode } from './useSidebarBalanceMode';
 
@@ -44,8 +43,6 @@ type AccountGroupHeaderProps = {
   group: AccountGroupEntity;
   side: 'on' | 'off';
   accounts: AccountEntity[];
-  failedCount: number;
-  showSyncDot: boolean;
   isDropZoneActive: boolean;
 };
 
@@ -53,8 +50,6 @@ export function AccountGroupHeader({
   group,
   side,
   accounts,
-  failedCount,
-  showSyncDot,
   isDropZoneActive,
 }: AccountGroupHeaderProps) {
   const { t } = useTranslation();
@@ -181,7 +176,6 @@ export function AccountGroupHeader({
                   {name}
                 </Text>
                 {!isExpanded && <CountPill count={accounts.length} />}
-                <SyncErrorRollup count={failedCount} />
                 <View style={{ flex: 1 }} />
                 <SidebarBalance
                   binding={bindings.accountGroupBalanceByMode(
@@ -198,11 +192,7 @@ export function AccountGroupHeader({
         )}
       </TreeItemContent>
       {accounts.map(account => (
-        <AccountRow
-          key={treeKeys.account(account.id)}
-          account={account}
-          showSyncDot={showSyncDot}
-        />
+        <AccountRow key={treeKeys.account(account.id)} account={account} />
       ))}
     </TreeItem>
   );

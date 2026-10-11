@@ -1,6 +1,5 @@
 import * as db from '#server/db';
 import * as sheet from '#server/sheet';
-import { getBankSyncError } from '#shared/errors';
 import type { ServerHandlers } from '#types/server-handlers';
 
 import { app as accountGroupsApp } from './account-groups/app';
@@ -8,10 +7,6 @@ import { app as accountsApp } from './accounts/app';
 import { installAPI } from './api';
 import { createBudget } from './budget/base';
 import * as prefs from './prefs';
-
-vi.mock('#shared/errors', () => ({
-  getBankSyncError: vi.fn(error => `Bank sync error: ${error}`),
-}));
 
 describe('API handlers', () => {
   const handlers = installAPI({} as unknown as ServerHandlers);
@@ -29,31 +24,6 @@ describe('API handlers', () => {
       await expect(handlers['api/get-server-version']()).resolves.toEqual({
         version: '26.6.0',
       });
-    });
-  });
-
-  describe('api/bank-sync', () => {
-    it('should sync a single account when accountId is provided', async () => {
-      handlers['accounts-bank-sync'] = vi
-        .fn()
-        .mockResolvedValue({ errors: [] });
-
-      await handlers['api/bank-sync']({ accountId: 'account1' });
-      expect(handlers['accounts-bank-sync']).toHaveBeenCalledWith({
-        ids: ['account1'],
-      });
-    });
-
-    it('should handle errors in non batch sync', async () => {
-      handlers['accounts-bank-sync'] = vi.fn().mockResolvedValue({
-        errors: ['connection-failed'],
-      });
-
-      await expect(
-        handlers['api/bank-sync']({ accountId: 'account2' }),
-      ).rejects.toThrow('Bank sync error: connection-failed');
-
-      expect(getBankSyncError).toHaveBeenCalledWith('connection-failed');
     });
   });
 

@@ -81,7 +81,7 @@ export function TourHost({ tourId }: TourHostProps) {
         return;
       }
       if (
-        activeModal === 'add-account' &&
+        activeModal === 'add-local-account' &&
         steps[state.index]?.id === ADD_ACCOUNT_STEP_ID
       ) {
         stopTour();

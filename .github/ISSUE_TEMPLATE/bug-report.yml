@@ -14,8 +14,6 @@ body:
     attributes:
       value: |
         **IMPORTANT:** we use GitHub Issues only for BUG REPORTS and FEATURE REQUESTS. If you are looking for help/support - please reach out to the [community on Discord](https://discord.gg/pRYNYr4W5A). All non-bug and non-feature-request issues will be closed.
-
-        **Bank-sync problems (SimpleFin / GoCardless)?** Reach out via the [community Discord](https://discord.gg/pRYNYr4W5A) first and open an issue only if the community deems the issue to be a legitimate bug in Actual.
   - type: textarea
     id: what-happened
     attributes:

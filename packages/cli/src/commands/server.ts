@@ -46,23 +46,4 @@ export function registerServerCommand(program: Command) {
         { mutates: false },
       );
     });
-
-  server
-    .command('bank-sync')
-    .description('Run bank synchronization')
-    .option('--account <id>', 'Specific account ID to sync')
-    .action(async cmdOpts => {
-      const opts = program.opts();
-      await withConnection(
-        opts,
-        async () => {
-          const args = cmdOpts.account
-            ? { accountId: cmdOpts.account }
-            : undefined;
-          await api.runBankSync(args);
-          printOutput({ success: true }, opts.format);
-        },
-        { mutates: true },
-      );
-    });
 }

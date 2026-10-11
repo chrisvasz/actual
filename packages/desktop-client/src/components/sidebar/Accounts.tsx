@@ -5,14 +5,12 @@ import { View } from '@actual-app/components/view';
 import type { AccountEntity } from '@actual-app/core/types/models';
 
 import { useMoveAccountMutation } from '#accounts';
-import { isAccountFailedSync } from '#accounts/syncStatus';
 import { useAccounts } from '#hooks/useAccounts';
 import { useClosedAccounts } from '#hooks/useClosedAccounts';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { useOffBudgetAccounts } from '#hooks/useOffBudgetAccounts';
 import { useOnBudgetAccounts } from '#hooks/useOnBudgetAccounts';
 import { useUpdatedAccounts } from '#hooks/useUpdatedAccounts';
-import { useSelector } from '#redux';
 import * as bindings from '#spreadsheet/bindings';
 
 import { Account } from './Account';
@@ -28,7 +26,6 @@ export function Accounts() {
   const { data: offbudgetAccounts = [] } = useOffBudgetAccounts();
   const { data: onBudgetAccounts = [] } = useOnBudgetAccounts();
   const { data: closedAccounts = [] } = useClosedAccounts();
-  const syncingAccountIds = useSelector(state => state.account.accountsSyncing);
 
   const getAccountPath = (account: AccountEntity) => `/accounts/${account.id}`;
 
@@ -107,9 +104,6 @@ export function Accounts() {
             key={account.id}
             name={account.name}
             account={account}
-            connected={!!account.bank}
-            pending={syncingAccountIds.includes(account.id)}
-            failed={isAccountFailedSync(account)}
             updated={updatedAccounts.includes(account.id)}
             to={getAccountPath(account)}
             query={bindings.accountBalanceCleared(account.id)}
@@ -137,9 +131,6 @@ export function Accounts() {
             key={account.id}
             name={account.name}
             account={account}
-            connected={!!account.bank}
-            pending={syncingAccountIds.includes(account.id)}
-            failed={isAccountFailedSync(account)}
             updated={updatedAccounts.includes(account.id)}
             to={getAccountPath(account)}
             query={bindings.accountBalanceCleared(account.id)}

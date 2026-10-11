@@ -27,9 +27,7 @@ const payees = [
   makePayee('This guy on the side of the road'),
 ];
 
-const accounts: AccountEntity[] = [
-  generateAccount('Bank of Montreal', false, false),
-];
+const accounts: AccountEntity[] = [generateAccount('Bank of Montreal')];
 const defaultProps = {
   value: null,
   embedded: true,

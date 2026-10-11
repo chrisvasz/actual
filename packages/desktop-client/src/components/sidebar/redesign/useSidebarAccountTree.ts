@@ -3,7 +3,6 @@ import type {
   AccountGroupEntity,
 } from '@actual-app/core/types/models';
 
-import { isAccountFailedSync } from '#accounts/syncStatus';
 import { useAccountGroups } from '#hooks/useAccountGroups';
 import { useClosedAccounts } from '#hooks/useClosedAccounts';
 import { useOffBudgetAccounts } from '#hooks/useOffBudgetAccounts';
@@ -12,13 +11,11 @@ import { useOnBudgetAccounts } from '#hooks/useOnBudgetAccounts';
 export type GroupBucket = {
   group: AccountGroupEntity | null;
   accounts: AccountEntity[];
-  failedCount: number;
 };
 
 export type SidebarAccountSide = {
   buckets: GroupBucket[];
   accountCount: number;
-  failedCount: number;
 };
 
 export type SidebarAccountTree = {
@@ -48,11 +45,7 @@ export function buildAccountSide(
     account => getEffectiveGroupId(account, liveGroupIds) == null,
   );
   if (ungrouped.length > 0) {
-    buckets.push({
-      group: null,
-      accounts: ungrouped,
-      failedCount: ungrouped.filter(isAccountFailedSync).length,
-    });
+    buckets.push({ group: null, accounts: ungrouped });
   }
 
   for (const group of groups) {
@@ -60,19 +53,11 @@ export function buildAccountSide(
       account => account.account_group_id === group.id,
     );
     if (members.length > 0) {
-      buckets.push({
-        group,
-        accounts: members,
-        failedCount: members.filter(isAccountFailedSync).length,
-      });
+      buckets.push({ group, accounts: members });
     }
   }
 
-  return {
-    buckets,
-    accountCount: accounts.length,
-    failedCount: accounts.filter(isAccountFailedSync).length,
-  };
+  return { buckets, accountCount: accounts.length };
 }
 
 export function useSidebarAccountTree(): SidebarAccountTree {
