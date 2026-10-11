@@ -13,11 +13,7 @@ import { toDateRepr } from '#server/models';
 import { mutator, runMutator } from '#server/mutators';
 import * as prefs from '#server/prefs';
 import { Rule } from '#server/rules';
-import {
-  addSyncListener,
-  batchMessages,
-  batchMessagesAsync,
-} from '#server/sync';
+import { addSyncListener, batchMessages } from '#server/sync';
 import {
   getRules,
   insertRule,
@@ -176,19 +172,19 @@ function updateActions(
   return changed ? updated : null;
 }
 
-export async function getRuleForSchedule(id: string | null): Promise<Rule> {
+export function getRuleForSchedule(id: string | null): Rule {
   if (id == null) {
     throw new Error('Schedule not attached to a rule');
   }
 
-  const { data: ruleId } = await aqlQuery(
+  const { data: ruleId } = aqlQuery(
     q('schedules').filter({ id }).calculate('rule'),
   );
   return getRules().find(rule => rule.id === ruleId);
 }
 
-async function fixRuleForSchedule(id) {
-  const { data: ruleId } = await aqlQuery(
+function fixRuleForSchedule(id) {
+  const { data: ruleId } = aqlQuery(
     q('schedules').filter({ id }).calculate('rule'),
   );
 
@@ -213,7 +209,7 @@ async function fixRuleForSchedule(id) {
   return getRules().find(rule => rule.id === newId);
 }
 
-export async function setNextDate({
+export function setNextDate({
   id,
   conditions,
   reset,
@@ -225,7 +221,7 @@ export async function setNextDate({
   advance?: boolean;
 }) {
   if (conditions == null) {
-    const rule = await getRuleForSchedule(id);
+    const rule = getRuleForSchedule(id);
     if (rule == null) {
       throw new Error('No rule found for schedule');
     }
@@ -234,7 +230,7 @@ export async function setNextDate({
 
   const { date: dateCond } = extractScheduleConds(conditions);
 
-  const { data: nextDate } = await aqlQuery(
+  const { data: nextDate } = aqlQuery(
     q('schedules').filter({ id }).calculate('next_date'),
   );
 
@@ -398,19 +394,18 @@ export async function updateSchedule({
 
     // We need to get the full rule to merge in the updated
     // conditions
-    rule = await getRuleForSchedule(schedule.id);
+    rule = getRuleForSchedule(schedule.id);
 
     if (rule == null) {
       // In the edge case that a rule gets corrupted (either by a bug in
       // the system or user messing with their data), don't crash. We
       // generate a new rule because schedules have to have a rule
       // attached to them.
-      rule = await fixRuleForSchedule(schedule.id);
+      rule = fixRuleForSchedule(schedule.id);
     }
   }
 
-  // setNextDate runs an AQL query, which is still async
-  await batchMessagesAsync(async () => {
+  batchMessages(() => {
     if (conditions) {
       const oldConditions = rule.serialize().conditions;
       const newConditions = updateConditions(oldConditions, conditions);
@@ -441,14 +436,14 @@ export async function updateSchedule({
           stripType(newConditions.find(c => c.field === 'date') || {}),
         )
       ) {
-        await setNextDate({
+        setNextDate({
           id: schedule.id,
           conditions: newConditions,
           reset: true,
         });
       }
     } else if (resetNextDate) {
-      await setNextDate({ id: schedule.id, reset: true });
+      setNextDate({ id: schedule.id, reset: true });
     }
 
     db.updateWithSchema('schedules', scheduleFields);
@@ -458,7 +453,7 @@ export async function updateSchedule({
 }
 
 export async function deleteSchedule({ id }) {
-  const { data: ruleId } = await aqlQuery(
+  const { data: ruleId } = aqlQuery(
     q('schedules').filter({ id }).calculate('rule'),
   );
 
@@ -472,7 +467,7 @@ export async function skipNextDate({ id }) {
   return setNextDate({ id, advance: true });
 }
 
-function discoverSchedules() {
+async function discoverSchedules() {
   return findSchedules();
 }
 
@@ -559,7 +554,7 @@ async function postTransactionForSchedule({
   id: string;
   today?: boolean;
 }) {
-  const { data } = await aqlQuery(q('schedules').filter({ id }).select('*'));
+  const { data } = aqlQuery(q('schedules').filter({ id }).select('*'));
   const schedule = data[0];
   if (schedule == null || schedule._account == null) {
     return;
@@ -579,16 +574,16 @@ async function postTransactionForSchedule({
   }
 }
 
-async function getSchedule(id: string): Promise<ScheduleEntity | null> {
+function getSchedule(id: string): ScheduleEntity | null {
   const {
     data: [schedule],
-  } = await aqlQuery(q('schedules').filter({ id }).select('*'));
+  } = aqlQuery(q('schedules').filter({ id }).select('*'));
 
   return schedule ?? null;
 }
 
-export async function getCompletedScheduleRuleIds(): Promise<string[]> {
-  const { data } = await aqlQuery(
+export function getCompletedScheduleRuleIds(): string[] {
+  const { data } = aqlQuery(
     q('schedules').filter({ completed: true }).select(['rule']),
   );
 
@@ -597,10 +592,8 @@ export async function getCompletedScheduleRuleIds(): Promise<string[]> {
     .filter((rule): rule is string => !!rule);
 }
 
-async function hasTransactionForSchedule(
-  schedule: ScheduleEntity,
-): Promise<boolean> {
-  const { data } = await aqlQuery(getHasTransactionsQuery([schedule]));
+function hasTransactionForSchedule(schedule: ScheduleEntity): boolean {
+  const { data } = aqlQuery(getHasTransactionsQuery([schedule]));
 
   return data.filter(Boolean).some(row => row.schedule === schedule.id);
 }
@@ -613,9 +606,9 @@ function isRecurringSchedule(schedule: ScheduleEntity): boolean {
   );
 }
 
-async function advanceRecurringScheduleFromNextDate(
+function advanceRecurringScheduleFromNextDate(
   schedule: ScheduleEntity,
-): Promise<ScheduleEntity | null> {
+): ScheduleEntity | null {
   if (!isRecurringSchedule(schedule)) {
     return null;
   }
@@ -623,13 +616,13 @@ async function advanceRecurringScheduleFromNextDate(
   const previousNextDate = schedule.next_date;
 
   try {
-    await setNextDate({ id: schedule.id, advance: true });
+    setNextDate({ id: schedule.id, advance: true });
   } catch {
     // This might error if the rule is corrupted and it can't find the rule.
     return null;
   }
 
-  const updatedSchedule = await getSchedule(schedule.id);
+  const updatedSchedule = getSchedule(schedule.id);
 
   if (
     updatedSchedule == null ||
@@ -645,15 +638,13 @@ async function advanceRecurringScheduleFromNextDate(
 
 export async function advanceSchedulesService(syncSuccess) {
   // Move all paid schedules
-  const { data: schedules } = await aqlQuery(
+  const { data: schedules } = aqlQuery(
     q('schedules')
       .filter({ completed: false, '_account.closed': false })
       .select('*'),
   );
 
-  const { data: hasTransData } = await aqlQuery(
-    getHasTransactionsQuery(schedules),
-  );
+  const { data: hasTransData } = aqlQuery(getHasTransactionsQuery(schedules));
   const hasTrans = new Set(
     hasTransData.filter(Boolean).map(row => row.schedule),
   );
@@ -661,7 +652,7 @@ export async function advanceSchedulesService(syncSuccess) {
   const failedToPost = [];
   let didPost = false;
 
-  const { data: upcomingLength } = await aqlQuery(
+  const { data: upcomingLength } = aqlQuery(
     q('preferences')
       .filter({ id: 'upcomingScheduledTransactionLength' })
       .select('value'),
@@ -699,7 +690,7 @@ export async function advanceSchedulesService(syncSuccess) {
           }
 
           const updatedSchedule =
-            await advanceRecurringScheduleFromNextDate(currentSchedule);
+            advanceRecurringScheduleFromNextDate(currentSchedule);
 
           if (updatedSchedule == null) {
             break;
@@ -709,7 +700,7 @@ export async function advanceSchedulesService(syncSuccess) {
           currentStatus = getStatus(
             currentSchedule.next_date,
             currentSchedule.completed,
-            await hasTransactionForSchedule(currentSchedule),
+            hasTransactionForSchedule(currentSchedule),
             currentSchedule.custom_upcoming_length ??
               upcomingLength[0]?.value ??
               DEFAULT_UPCOMING_SCHEDULE_DAYS,
@@ -737,7 +728,7 @@ export async function advanceSchedulesService(syncSuccess) {
         }
 
         const updatedSchedule =
-          await advanceRecurringScheduleFromNextDate(currentSchedule);
+          advanceRecurringScheduleFromNextDate(currentSchedule);
 
         if (updatedSchedule == null) {
           break;
@@ -747,7 +738,7 @@ export async function advanceSchedulesService(syncSuccess) {
         currentStatus = getStatus(
           currentSchedule.next_date,
           currentSchedule.completed,
-          await hasTransactionForSchedule(currentSchedule),
+          hasTransactionForSchedule(currentSchedule),
           currentSchedule.custom_upcoming_length ??
             upcomingLength[0]?.value ??
             DEFAULT_UPCOMING_SCHEDULE_DAYS,
@@ -758,7 +749,7 @@ export async function advanceSchedulesService(syncSuccess) {
         // Move forward recurring schedules
         if (isRecurringSchedule(schedule)) {
           try {
-            await setNextDate({ id: schedule.id });
+            setNextDate({ id: schedule.id });
           } catch {
             // This might error if the rule is corrupted and it can't
             // find the rule

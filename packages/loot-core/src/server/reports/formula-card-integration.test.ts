@@ -98,7 +98,7 @@ describe('Formula Card - Integration Tests with Queries', () => {
     }
 
     const summedQuery = transQuery.calculate({ $sum: '$amount' });
-    const { data } = await aqlQuery(summedQuery);
+    const { data } = aqlQuery(summedQuery);
     return data || 0;
   }
 

@@ -143,7 +143,7 @@ async function renameDashboardPage({ id, name }: { id: string; name: string }) {
 async function updateDashboard(
   widgets: EverythingButIdOptional<Omit<DashboardWidgetEntity, 'tombstone'>>[],
 ) {
-  const { data: dbWidgets } = await aqlQuery(
+  const { data: dbWidgets } = aqlQuery(
     q('dashboard')
       .filter({ id: { $oneof: widgets.map(({ id }) => id) } })
       .select('*'),

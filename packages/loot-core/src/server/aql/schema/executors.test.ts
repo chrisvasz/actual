@@ -107,7 +107,7 @@ async function expectPagedData(query, numTransactions, allData) {
     expect(i).toBeLessThanOrEqual(100);
 
     // Pull in all the data via pages
-    const { data } = await aqlQuery(
+    const { data } = aqlQuery(
       query.limit(pageCount).offset(pagedData.length).serialize(),
     );
 
@@ -167,7 +167,7 @@ describe('transaction executors', () => {
         async arr => {
           await insertTransactions(arr);
 
-          const { data } = await aqlQuery(
+          const { data } = aqlQuery(
             q('transactions')
               .filter({ amount: { $lt: 0 } })
               .select('*')
@@ -178,7 +178,7 @@ describe('transaction executors', () => {
           expect(data.filter(t => t.is_parent).length).toBe(0);
           expect(data.filter(t => t.tombstone).length).toBe(0);
 
-          const { data: defaultData } = await aqlQuery(
+          const { data: defaultData } = aqlQuery(
             q('transactions')
               .filter({ amount: { $lt: 0 } })
               .select('*')
@@ -204,7 +204,7 @@ describe('transaction executors', () => {
         async arr => {
           await insertTransactions(arr);
 
-          const { data } = await aqlQuery(
+          const { data } = aqlQuery(
             q('transactions')
               .filter({ amount: { $lt: 0 } })
               .select('*')
@@ -237,7 +237,7 @@ describe('transaction executors', () => {
               .options({ splits: 'grouped' })
               .calculate({ $sum: '$amount' });
 
-            const { data } = await aqlQuery(aggQuery.serialize());
+            const { data } = aqlQuery(aggQuery.serialize());
 
             const sum = aliveTransactions(arr).reduce((sum, trans) => {
               const amount = trans.amount || 0;
@@ -281,14 +281,14 @@ describe('transaction executors', () => {
 
       // First to a query without order to make sure the default
       // order works
-      const { data: defaultOrderData } = await aqlQuery(query.serialize());
+      const { data: defaultOrderData } = aqlQuery(query.serialize());
       expectTransactionOrder(defaultOrderData);
       expect(new Set(defaultOrderData.map(t => t.id))).toEqual(expectedIds);
 
       // Now do the full test, and add a custom order to make
       // sure that doesn't effect anything
       const orderedQuery = query.orderBy(orderFields);
-      const { data } = await aqlQuery(orderedQuery.serialize());
+      const { data } = aqlQuery(orderedQuery.serialize());
       expect(new Set(data.map(t => t.id))).toEqual(expectedIds);
 
       // Validate paging and ordering
@@ -497,7 +497,7 @@ describe('transaction executors', () => {
     );
 
     it('groups alive children under their parent', async () => {
-      const { data } = await aqlQuery(
+      const { data } = aqlQuery(
         q('transactions')
           .options({ splits: 'grouped' })
           .select('*')
@@ -514,7 +514,7 @@ describe('transaction executors', () => {
     });
 
     it('includes dead transactions with `withDead`', async () => {
-      const { data } = await aqlQuery(
+      const { data } = aqlQuery(
         q('transactions')
           .options({ splits: 'grouped' })
           .withDead()
@@ -530,7 +530,7 @@ describe('transaction executors', () => {
     });
 
     it('marks unmatched rows when filtering on a child', async () => {
-      const { data } = await aqlQuery(
+      const { data } = aqlQuery(
         q('transactions')
           .filter({ amount: -200 })
           .options({ splits: 'grouped' })
@@ -553,12 +553,10 @@ describe('transaction executors', () => {
         .select('*');
       const pages = [];
       for (let offset = 0; offset < 4; offset++) {
-        const { data } = await aqlQuery(
-          query.limit(1).offset(offset).serialize(),
-        );
+        const { data } = aqlQuery(query.limit(1).offset(offset).serialize());
         pages.push(...data);
       }
-      const { data: all } = await aqlQuery(query.serialize());
+      const { data: all } = aqlQuery(query.serialize());
       expect(pages).toEqual(all);
     });
   });
@@ -604,14 +602,12 @@ describe('transaction executors', () => {
         .options({ splits: 'grouped' })
         .select('*'),
     ]) {
-      const { data: all } = await aqlQuery(query.serialize());
+      const { data: all } = aqlQuery(query.serialize());
       expect(all.length).toBeGreaterThan(1000);
 
       const pages = [];
       for (let offset = 0; offset < all.length; offset += 150) {
-        const { data } = await aqlQuery(
-          query.limit(150).offset(offset).serialize(),
-        );
+        const { data } = aqlQuery(query.limit(150).offset(offset).serialize());
         pages.push(...data);
       }
       expect(pages).toEqual(all);

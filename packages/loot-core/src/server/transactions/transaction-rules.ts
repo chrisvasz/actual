@@ -334,7 +334,7 @@ export async function runRules(
     ),
   );
 
-  let finalTrans = await prepareTransactionForRules({ ...trans }, accountsMap, {
+  let finalTrans = prepareTransactionForRules({ ...trans }, accountsMap, {
     includeBalance: false,
   });
   let lastCategoryIdForGroup: string | null = finalTrans.category ?? null;
@@ -344,9 +344,9 @@ export async function runRules(
   // about to run and actually reads it. `rules` is only the candidates
   // from the indexers, so checking their actions up front isn't enough.
   let hasBalance = false;
-  async function ensureBalanceFor(rule: { actions: Action[] }) {
+  function ensureBalanceFor(rule: { actions: Action[] }) {
     if (!hasBalance && trans.account && actionsReferenceBalance(rule.actions)) {
-      finalTrans.balance = await getRunningBalanceBeforeTransaction(
+      finalTrans.balance = getRunningBalanceBeforeTransaction(
         trans,
         trans.account,
       );
@@ -368,7 +368,7 @@ export async function runRules(
   const formulaStrings = rules.flatMap(rule =>
     collectFormulasFromActions(rule.actions),
   );
-  finalTrans._balanceOfPrefetched = await prefetchBalanceOfForTransaction(
+  finalTrans._balanceOfPrefetched = prefetchBalanceOfForTransaction(
     finalTrans,
     accountsMap,
     formulaStrings,
@@ -379,7 +379,7 @@ export async function runRules(
     if (scheduleRuleID !== '') {
       if (rules[i].id === scheduleRuleID) {
         // bypass condition checking to run the rule even if the transaction date falls outside of the schedule's date range.
-        await ensureBalanceFor(rules[i]);
+        ensureBalanceFor(rules[i]);
         const changes = rules[i].execActions(finalTrans);
         finalTrans = Object.assign({}, finalTrans, changes);
         resolvePayeeNameForRules(finalTrans);
@@ -393,7 +393,7 @@ export async function runRules(
       } else {
         // if a rule is not linked to a schedule, run it.
         if (rules[i].evalConditions(finalTrans)) {
-          await ensureBalanceFor(rules[i]);
+          ensureBalanceFor(rules[i]);
           finalTrans = Object.assign(
             {},
             finalTrans,
@@ -409,7 +409,7 @@ export async function runRules(
     } else {
       // if there is no scheduleRuleID then just run all rules.
       if (rules[i].evalConditions(finalTrans)) {
-        await ensureBalanceFor(rules[i]);
+        ensureBalanceFor(rules[i]);
         finalTrans = Object.assign(
           {},
           finalTrans,
@@ -781,21 +781,18 @@ export async function applyActions(
   const accounts: db.DbAccount[] = db.getAccounts();
   const accountsMap = new Map(accounts.map(account => [account.id, account]));
   const includeBalance = actionsReferenceBalance(parsedActions);
-  const transactionsForRules = await Promise.all(
-    transactions.map(transaction =>
-      prepareTransactionForRules(transaction, accountsMap, { includeBalance }),
-    ),
+  const transactionsForRules = transactions.map(transaction =>
+    prepareTransactionForRules(transaction, accountsMap, { includeBalance }),
   );
 
   const formulaStrings = collectFormulasFromActions(parsedActions);
-  const balanceOfPrefetchResults = await Promise.all(
-    transactionsForRules.map(trans =>
-      prefetchBalanceOfForTransaction(trans, accountsMap, formulaStrings),
-    ),
-  );
-  transactionsForRules.forEach((trans, i) => {
-    trans._balanceOfPrefetched = balanceOfPrefetchResults[i];
-  });
+  for (const trans of transactionsForRules) {
+    trans._balanceOfPrefetched = prefetchBalanceOfForTransaction(
+      trans,
+      accountsMap,
+      formulaStrings,
+    );
+  }
 
   const updated = transactionsForRules.flatMap(trans => {
     return ungroupTransaction(execActions(parsedActions, trans));
@@ -1042,10 +1039,10 @@ export type TransactionForRules = TransactionEntity & {
 /**
  * Running balance for `accountId` before the current transaction row (same cutoff as `balance`).
  */
-export async function getRunningBalanceBeforeTransaction(
+export function getRunningBalanceBeforeTransaction(
   trans: TransactionEntity,
   accountId: string,
-): Promise<number> {
+): number {
   const dateBoundary = trans.date ?? currentDay();
   let query = q('transactions')
     .filter({ account: accountId, is_parent: false })
@@ -1075,7 +1072,7 @@ export async function getRunningBalanceBeforeTransaction(
           ],
         };
 
-  const { data: balance } = await aqlQuery(
+  const { data: balance } = aqlQuery(
     query
       .filter({ $or: [{ date: { $lt: dateBoundary } }, sameDayFilter] })
       .calculate({ $sum: '$amount' }),
@@ -1084,11 +1081,11 @@ export async function getRunningBalanceBeforeTransaction(
   return balance ?? 0;
 }
 
-export async function prefetchBalanceOfForTransaction(
+export function prefetchBalanceOfForTransaction(
   trans: TransactionEntity,
   accountsMap: Map<string, db.DbAccount>,
   formulas: string[],
-): Promise<Map<string, number>> {
+): Map<string, number> {
   const map = new Map<string, number>();
   const literals = new Set<string>();
   for (const f of formulas) {
@@ -1099,10 +1096,7 @@ export async function prefetchBalanceOfForTransaction(
   for (const literal of literals) {
     const accountId = resolveAccountIdForBalanceOf(literal, accountsMap);
     if (accountId) {
-      map.set(
-        literal,
-        await getRunningBalanceBeforeTransaction(trans, accountId),
-      );
+      map.set(literal, getRunningBalanceBeforeTransaction(trans, accountId));
     } else {
       map.set(literal, 0);
     }
@@ -1128,11 +1122,11 @@ export function actionsReferenceBalance(
   });
 }
 
-export async function prepareTransactionForRules(
+export function prepareTransactionForRules(
   trans: TransactionEntity,
   accounts: Map<string, db.DbAccount> | null = null,
   { includeBalance = true }: { includeBalance?: boolean } = {},
-): Promise<TransactionForRules> {
+): TransactionForRules {
   const r: TransactionForRules = { ...trans };
   if (trans.payee) {
     const payee = getPayee(trans.payee);
@@ -1153,10 +1147,7 @@ export async function prepareTransactionForRules(
     }
 
     if (includeBalance) {
-      r.balance = await getRunningBalanceBeforeTransaction(
-        trans,
-        trans.account,
-      );
+      r.balance = getRunningBalanceBeforeTransaction(trans, trans.account);
     }
   }
 

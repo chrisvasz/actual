@@ -541,7 +541,7 @@ describe('forecast app', () => {
       ] satisfies RuleConditionEntity[],
     });
 
-    const scheduleRule = await getRuleForSchedule(scheduleId);
+    const scheduleRule = getRuleForSchedule(scheduleId);
     updateRule({
       ...scheduleRule.serialize(),
       actions: [

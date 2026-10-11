@@ -1,6 +1,7 @@
 // @ts-strict-ignore
 import { generateTransaction } from '#mocks';
 import * as db from '#server/db';
+import { q } from '#shared/query';
 
 import { Spreadsheet } from './spreadsheet';
 
@@ -187,5 +188,38 @@ describe('Spreadsheet', () => {
 
     expect(spreadsheet.getValue('foo!x')).toBe(1);
     expect(spreadsheet.getValue('foo!y')).toBe(2);
+  });
+
+  test('a failing query cell does not stop the computations', async () => {
+    const spreadsheet = new Spreadsheet();
+    await insertTransactions();
+
+    spreadsheet.transaction(() => {
+      // Never given its `:amount` parameter, so running it throws
+      spreadsheet.createQuery(
+        'g',
+        'failing',
+        q('transactions')
+          .filter({ amount: ':amount' })
+          .calculate({ $sum: '$amount' })
+          .serialize(),
+      );
+      spreadsheet.createDynamic('g', 'dependent', {
+        initialValue: 0,
+        dependencies: ['failing'],
+        run: () => 1,
+      });
+      spreadsheet.createQuery(
+        'g',
+        'total',
+        q('transactions').calculate({ $sum: '$amount' }).serialize(),
+      );
+    });
+
+    await new Promise(resolve => spreadsheet.onFinish(resolve));
+
+    expect(spreadsheet.getValue('g!failing')).toBe(null);
+    expect(spreadsheet.getValue('g!dependent')).toBe(1);
+    expect(spreadsheet.getValue('g!total')).toBe(-15832);
   });
 });

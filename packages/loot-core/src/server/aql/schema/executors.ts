@@ -111,7 +111,7 @@ export function isHappyPathQuery(queryState) {
   return queryState.filterExpressions.find(_isUnhappy) == null;
 }
 
-async function execTransactionsGrouped(
+function execTransactionsGrouped(
   compilerState: CompilerState,
   queryState: QueryState,
   sqlPieces: SqlPieces,
@@ -266,7 +266,7 @@ async function execTransactionsGrouped(
   return toGroup(parents, children, mapper);
 }
 
-async function execTransactionsBasic(
+function execTransactionsBasic(
   compilerState: CompilerState,
   queryState: QueryState,
   sqlPieces: SqlPieces,
@@ -295,7 +295,7 @@ function isValidSplitsOption(splits: string): splits is SplitsOption {
 
 type CategoriesOption = 'all' | 'none';
 
-async function execCategoryGroups(
+function execCategoryGroups(
   compilerState: CompilerState,
   queryState: QueryState,
   sqlPieces: SqlPieces,
@@ -331,7 +331,7 @@ async function execCategoryGroups(
   );
 }
 
-async function execCategoryGroupsWithCategories(
+function execCategoryGroupsWithCategories(
   compilerState: CompilerState,
   queryState: QueryState,
   sqlPieces: SqlPieces,
@@ -339,7 +339,7 @@ async function execCategoryGroupsWithCategories(
   categoriesOption: CategoriesOption,
   outputTypes: OutputTypes,
 ) {
-  const categoryGroups = await execCategoryGroupsBasic(
+  const categoryGroups = execCategoryGroupsBasic(
     compilerState,
     queryState,
     sqlPieces,
@@ -351,7 +351,7 @@ async function execCategoryGroupsWithCategories(
     return categoryGroups;
   }
 
-  const { data: categories }: { data: CategoryEntity[] } = await aqlQuery(
+  const { data: categories }: { data: CategoryEntity[] } = aqlQuery(
     q('categories')
       .filter({
         group: { $oneof: categoryGroups.map(cg => cg.id) },
@@ -368,7 +368,7 @@ async function execCategoryGroupsWithCategories(
   });
 }
 
-async function execCategoryGroupsBasic(
+function execCategoryGroupsBasic(
   compilerState: CompilerState,
   queryState: QueryState,
   sqlPieces: SqlPieces,

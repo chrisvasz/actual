@@ -21,8 +21,8 @@ function takeDates(config) {
     .map(d => d.date);
 }
 
-async function getTransactions(date, account) {
-  const { data } = await aqlQuery(
+function getTransactions(date, account) {
+  const { data } = aqlQuery(
     q('transactions')
       .filter({
         account,
@@ -105,7 +105,7 @@ function matchSchedules(allOccurs, config) {
   return schedules;
 }
 
-async function schedulesForPattern(baseStart, numDays, baseConfig, accountId) {
+function schedulesForPattern(baseStart, numDays, baseConfig, accountId) {
   let schedules = [];
 
   for (let i = 0; i < numDays; i++) {
@@ -130,7 +130,7 @@ async function schedulesForPattern(baseStart, numDays, baseConfig, accountId) {
     for (const date of dates) {
       data.push({
         date: dayFromDate(date),
-        transactions: await getTransactions(date, accountId),
+        transactions: getTransactions(date, accountId),
       });
     }
 
@@ -139,7 +139,7 @@ async function schedulesForPattern(baseStart, numDays, baseConfig, accountId) {
   return schedules;
 }
 
-async function weekly(startDate, accountId) {
+function weekly(startDate, accountId) {
   return schedulesForPattern(
     d.subWeeks(parseDate(startDate), 4),
     7 * 2,
@@ -148,7 +148,7 @@ async function weekly(startDate, accountId) {
   );
 }
 
-async function every2weeks(startDate, accountId) {
+function every2weeks(startDate, accountId) {
   return schedulesForPattern(
     // 6 weeks would cover 3 instances, but we also scan an addition
     // week back
@@ -159,7 +159,7 @@ async function every2weeks(startDate, accountId) {
   );
 }
 
-async function monthly(startDate, accountId) {
+function monthly(startDate, accountId) {
   return schedulesForPattern(
     d.subMonths(parseDate(startDate), 4),
     31 * 2,
@@ -178,17 +178,17 @@ async function monthly(startDate, accountId) {
   );
 }
 
-async function monthlyLastDay(startDate, accountId) {
+function monthlyLastDay(startDate, accountId) {
   // We do two separate calls because this pattern doesn't fit into
   // how `schedulesForPattern` works
-  const s1 = await schedulesForPattern(
+  const s1 = schedulesForPattern(
     d.subMonths(parseDate(startDate), 3),
     1,
     { frequency: 'monthly', patterns: [{ type: 'day', value: -1 }] },
     accountId,
   );
 
-  const s2 = await schedulesForPattern(
+  const s2 = schedulesForPattern(
     d.subMonths(parseDate(startDate), 4),
     1,
     { frequency: 'monthly', patterns: [{ type: 'day', value: -1 }] },
@@ -198,7 +198,7 @@ async function monthlyLastDay(startDate, accountId) {
   return s1.concat(s2);
 }
 
-async function monthly1stor3rd(startDate, accountId) {
+function monthly1stor3rd(startDate, accountId) {
   return schedulesForPattern(
     d.subWeeks(parseDate(startDate), 8),
     14,
@@ -219,7 +219,7 @@ async function monthly1stor3rd(startDate, accountId) {
   );
 }
 
-async function monthly2ndor4th(startDate, accountId) {
+function monthly2ndor4th(startDate, accountId) {
   return schedulesForPattern(
     d.subMonths(parseDate(startDate), 8),
     14,
@@ -240,7 +240,7 @@ async function monthly2ndor4th(startDate, accountId) {
   );
 }
 
-async function findStartDate(schedule) {
+function findStartDate(schedule) {
   const conditions = schedule._conditions;
   const dateCond = conditions.find(c => c.field === 'date');
   let currentConfig = dateCond.value;
@@ -293,7 +293,7 @@ async function findStartDate(schedule) {
       break;
     }
 
-    const { data } = await aqlQuery(
+    const { data } = aqlQuery(
       q('transactions').filter({ $and: filters }).select('*'),
     );
 
@@ -316,7 +316,7 @@ async function findStartDate(schedule) {
   return schedule;
 }
 
-export async function findSchedules() {
+export function findSchedules() {
   // Patterns to look for:
   // * Weekly
   // * Every two weeks
@@ -327,7 +327,7 @@ export async function findSchedules() {
   // Search for them approx (+- 2 days) but track which transactions
   // and find the best one...
 
-  const { data: accounts } = await aqlQuery(
+  const { data: accounts } = aqlQuery(
     q('accounts').filter({ closed: false }).select('*'),
   );
 
@@ -343,12 +343,12 @@ export async function findSchedules() {
     if (latestTrans) {
       const latestDate = fromDateRepr(latestTrans.date);
       allSchedules = allSchedules.concat(
-        await weekly(latestDate, account.id),
-        await every2weeks(latestDate, account.id),
-        await monthly(latestDate, account.id),
-        await monthlyLastDay(latestDate, account.id),
-        await monthly1stor3rd(latestDate, account.id),
-        await monthly2ndor4th(latestDate, account.id),
+        weekly(latestDate, account.id),
+        every2weeks(latestDate, account.id),
+        monthly(latestDate, account.id),
+        monthlyLastDay(latestDate, account.id),
+        monthly1stor3rd(latestDate, account.id),
+        monthly2ndor4th(latestDate, account.id),
       );
     }
   }
@@ -383,9 +383,5 @@ export async function findSchedules() {
     },
   );
 
-  const finalized: Awaited<ReturnType<typeof findStartDate>> = [];
-  for (const schedule of schedules) {
-    finalized.push(await findStartDate(schedule));
-  }
-  return finalized;
+  return schedules.map(findStartDate);
 }

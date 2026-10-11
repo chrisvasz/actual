@@ -135,8 +135,10 @@ export class Spreadsheet {
     this.computeQueue = this.computeQueue.concat(cellNames);
 
     // Begin running on the next tick so we guarantee that it doesn't finish
-    // within the same tick. Since some computations are async, this makes it
-    // consistent (otherwise it would only sometimes finish sync)
+    // within the same tick. A dynamic cell can still return a promise, so
+    // this keeps it consistent (otherwise it would only sometimes finish
+    // sync). It also lets a caller make several changes before anything is
+    // recomputed
     void Promise.resolve().then(() => {
       if (!this.running) {
         this.runComputations();
@@ -168,11 +170,20 @@ export class Spreadsheet {
             );
           }
         } else if (node.sql) {
-          result = aqlCompiledQuery(
-            node.query,
-            node.sql.sqlPieces,
-            node.sql.state,
-          );
+          // A failed query leaves the cell's value as it was and doesn't
+          // stop the rest of the computations
+          try {
+            node.value = aqlCompiledQuery(
+              node.query,
+              node.sql.sqlPieces,
+              node.sql.state,
+            );
+          } catch (e) {
+            // TODO: use captureException here
+            logger.warn(`Failed running ${node.name}!`, e);
+          }
+          idx++;
+          continue;
         } else {
           idx++;
           continue;
@@ -208,8 +219,8 @@ export class Spreadsheet {
       idx++;
     }
 
-    // If everything computed in one loop (no async operations) notify
-    // the user and empty the queue
+    // If everything computed in one loop (no dynamic cell returned a
+    // promise) notify the user and empty the queue
     if (idx === this.computeQueue.length) {
       this.events.emit('change', { names: this.computeQueue });
 

@@ -40,7 +40,7 @@ async function handleBatchUpdateTransactions({
   learnCategories,
   runTransfers = true,
 }: Parameters<typeof batchUpdateTransactions>[0]) {
-  const result = await batchUpdateTransactions({
+  const result = batchUpdateTransactions({
     added,
     updated,
     deleted,
@@ -129,7 +129,7 @@ async function exportTransactionsQuery({
 }
 
 async function getEarliestTransaction() {
-  const { data } = await aqlQuery(
+  const { data } = aqlQuery(
     q('transactions')
       .options({ splits: 'none' })
       .orderBy({ date: 'asc' })
@@ -140,7 +140,7 @@ async function getEarliestTransaction() {
 }
 
 async function getLatestTransaction() {
-  const { data } = await aqlQuery(
+  const { data } = aqlQuery(
     q('transactions')
       .options({ splits: 'none' })
       .orderBy({ date: 'desc' })

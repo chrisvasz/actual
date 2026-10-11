@@ -150,7 +150,7 @@ describe('schedule app', () => {
 
       const {
         data: [row],
-      } = await aqlQuery(q('schedules').filter({ id }).select('*'));
+      } = aqlQuery(q('schedules').filter({ id }).select('*'));
 
       expect(row).toBeTruthy();
       expect(row.rule).toBeTruthy();
@@ -167,7 +167,7 @@ describe('schedule app', () => {
       const id = await createSchedule({
         conditions: [{ op: 'is', field: 'date', value: '2020-12-20' }],
       });
-      const { data: ruleId } = await aqlQuery(
+      const { data: ruleId } = aqlQuery(
         q('schedules').filter({ id }).calculate('rule'),
       );
 
@@ -184,7 +184,7 @@ describe('schedule app', () => {
         ],
       });
 
-      const { data: parentActionMatches } = await aqlQuery(
+      const { data: parentActionMatches } = aqlQuery(
         q('schedules').filter({ _has_splits: true }).select(['id']),
       );
       expect(parentActionMatches).toEqual([]);
@@ -202,7 +202,7 @@ describe('schedule app', () => {
         ],
       });
 
-      const { data: splitActionMatches } = await aqlQuery(
+      const { data: splitActionMatches } = aqlQuery(
         q('schedules').filter({ _has_splits: true }).select(['id']),
       );
 
@@ -221,14 +221,14 @@ describe('schedule app', () => {
         ],
       });
 
-      let res = await aqlQuery(q('schedules').filter({ id }).select(['name']));
+      let res = aqlQuery(q('schedules').filter({ id }).select(['name']));
       expect(res.data[0].name).toBe('Rent');
 
       await updateSchedule({
         schedule: { id, name: '  Mortgage  ' },
       });
 
-      res = await aqlQuery(q('schedules').filter({ id }).select(['name']));
+      res = aqlQuery(q('schedules').filter({ id }).select(['name']));
       expect(res.data[0].name).toBe('Mortgage');
     });
 
@@ -277,7 +277,7 @@ describe('schedule app', () => {
         ],
       });
 
-      let res = await aqlQuery(
+      let res = aqlQuery(
         q('schedules')
           .filter({ id })
           .select(['next_date', 'posts_transaction']),
@@ -307,7 +307,7 @@ describe('schedule app', () => {
         ],
       });
 
-      res = await aqlQuery(
+      res = aqlQuery(
         q('schedules')
           .filter({ id })
           .select(['next_date', 'posts_transaction']),
@@ -347,7 +347,7 @@ describe('schedule app', () => {
 
       const {
         data: [row],
-      } = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+      } = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
 
       expect(row.next_date).toBe('2020-12-30');
     });
@@ -393,7 +393,7 @@ describe('schedule app', () => {
 
       const {
         data: [row],
-      } = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+      } = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
 
       expect(row.next_date).toBe('2020-12-30');
     });
@@ -416,11 +416,11 @@ describe('schedule app', () => {
         ],
       });
 
-      const { data: schedules } = await aqlQuery(q('schedules').select('*'));
+      const { data: schedules } = aqlQuery(q('schedules').select('*'));
       expect(schedules.length).toBe(1);
 
       await deleteSchedule({ id });
-      const { data: schedules2 } = await aqlQuery(q('schedules').select('*'));
+      const { data: schedules2 } = aqlQuery(q('schedules').select('*'));
       expect(schedules2.length).toBe(0);
     });
 
@@ -442,7 +442,7 @@ describe('schedule app', () => {
         ],
       });
 
-      const { data: ruleId } = await aqlQuery(
+      const { data: ruleId } = aqlQuery(
         q('schedules').filter({ id }).calculate('rule'),
       );
 
@@ -465,16 +465,14 @@ describe('schedule app', () => {
         ],
       });
 
-      let res = await aqlQuery(
-        q('schedules').filter({ id }).select(['next_date']),
-      );
+      let res = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
       let row = res.data[0];
 
       expect(row.next_date).toBe('2020-12-30');
 
-      await setNextDate({ id });
+      setNextDate({ id });
 
-      res = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+      res = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
       row = res.data[0];
 
       expect(row.next_date).toBe('2021-05-18');
@@ -503,16 +501,14 @@ describe('schedule app', () => {
         ],
       });
 
-      let res = await aqlQuery(
-        q('schedules').filter({ id }).select(['next_date']),
-      );
+      let res = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
       let row = res.data[0];
 
       expect(row.next_date).toBe('2020-12-05');
 
       await skipNextDate({ id });
 
-      res = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+      res = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
       row = res.data[0];
 
       expect(row.next_date).toBe('2020-12-12');
@@ -543,16 +539,14 @@ describe('schedule app', () => {
         ],
       });
 
-      let res = await aqlQuery(
-        q('schedules').filter({ id }).select(['next_date']),
-      );
+      let res = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
       let row = res.data[0];
 
       expect(row.next_date).toBe('2020-12-07');
 
       await skipNextDate({ id });
 
-      res = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+      res = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
       row = res.data[0];
 
       expect(row.next_date).toBe('2020-12-14');
@@ -583,16 +577,14 @@ describe('schedule app', () => {
         ],
       });
 
-      let res = await aqlQuery(
-        q('schedules').filter({ id }).select(['next_date']),
-      );
+      let res = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
       let row = res.data[0];
 
       expect(row.next_date).toBe('2020-12-04');
 
       await skipNextDate({ id });
 
-      res = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+      res = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
       row = res.data[0];
 
       expect(row.next_date).toBe('2020-12-11');
@@ -623,16 +615,14 @@ describe('schedule app', () => {
         ],
       });
 
-      let res = await aqlQuery(
-        q('schedules').filter({ id }).select(['next_date']),
-      );
+      let res = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
       let row = res.data[0];
 
       expect(row.next_date).toBe('2020-12-04');
 
       await skipNextDate({ id });
 
-      res = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+      res = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
       row = res.data[0];
 
       expect(row.next_date).toBe('2020-12-07');
@@ -688,7 +678,7 @@ describe('schedule app', () => {
 
         await advanceSchedulesService(true);
 
-        const { data: transactions } = await aqlQuery(
+        const { data: transactions } = aqlQuery(
           q('transactions')
             .filter({ schedule: id })
             .select(['date', 'amount'])
@@ -704,7 +694,7 @@ describe('schedule app', () => {
 
         const {
           data: [schedule],
-        } = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+        } = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
 
         expect(schedule.next_date).toBe('2017-01-02');
       } finally {
@@ -769,7 +759,7 @@ describe('schedule app', () => {
 
         await advanceSchedulesService(true);
 
-        const { data: transactions } = await aqlQuery(
+        const { data: transactions } = aqlQuery(
           q('transactions')
             .filter({ schedule: id })
             .select(['date', 'amount'])
@@ -785,7 +775,7 @@ describe('schedule app', () => {
 
         const {
           data: [schedule],
-        } = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+        } = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
 
         expect(schedule.next_date).toBe('2017-01-02');
       } finally {
@@ -858,7 +848,7 @@ describe('schedule app', () => {
 
         await advanceSchedulesService(true);
 
-        const { data: transactions } = await aqlQuery(
+        const { data: transactions } = aqlQuery(
           q('transactions')
             .filter({ schedule: id })
             .select(['date', 'amount'])
@@ -874,7 +864,7 @@ describe('schedule app', () => {
 
         const {
           data: [schedule],
-        } = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+        } = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
 
         expect(schedule.next_date).toBe('2017-01-06');
       } finally {
@@ -925,11 +915,11 @@ describe('schedule app', () => {
 
         const {
           data: [schedule],
-        } = await aqlQuery(q('schedules').filter({ id }).select(['completed']));
+        } = aqlQuery(q('schedules').filter({ id }).select(['completed']));
 
         expect(schedule.completed).toBe(true);
 
-        const { data: transactions } = await aqlQuery(
+        const { data: transactions } = aqlQuery(
           q('transactions').filter({ schedule: id }).select(['date']),
         );
 
@@ -974,7 +964,7 @@ describe('schedule app', () => {
 
         await advanceSchedulesService(true);
 
-        const { data: transactions } = await aqlQuery(
+        const { data: transactions } = aqlQuery(
           q('transactions').filter({ schedule: id }).select(['date', 'amount']),
         );
 
@@ -1038,7 +1028,7 @@ describe('schedule app', () => {
 
         await advanceSchedulesService(true);
 
-        const { data: transactions } = await aqlQuery(
+        const { data: transactions } = aqlQuery(
           q('transactions')
             .filter({ schedule: id })
             .select(['date', 'amount'])
@@ -1051,7 +1041,7 @@ describe('schedule app', () => {
 
         const {
           data: [schedule],
-        } = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+        } = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
 
         expect(schedule.next_date).toBe('2017-01-01');
 
@@ -1060,7 +1050,7 @@ describe('schedule app', () => {
         // a later day is covered by the catch-up tests above.
         await advanceSchedulesService(true);
 
-        const { data: transactionsAfter } = await aqlQuery(
+        const { data: transactionsAfter } = aqlQuery(
           q('transactions')
             .filter({ schedule: id })
             .select(['date', 'amount'])
@@ -1071,7 +1061,7 @@ describe('schedule app', () => {
 
         const {
           data: [scheduleAfter],
-        } = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+        } = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
 
         expect(scheduleAfter.next_date).toBe('2017-01-01');
       } finally {
@@ -1103,7 +1093,7 @@ describe('schedule app', () => {
         // Some schedules have a rule that also *sets* the amount (e.g. a rule
         // customized via "Edit as rule"). Posting runs the rule, so the action
         // value must track the amount condition.
-        const { data: ruleId } = await aqlQuery(
+        const { data: ruleId } = aqlQuery(
           q('schedules').filter({ id }).calculate('rule'),
         );
         const ruleRow = db.first<Pick<db.DbRule, 'actions'>>(
@@ -1130,7 +1120,7 @@ describe('schedule app', () => {
 
         await advanceSchedulesService(true);
 
-        const { data: transactions } = await aqlQuery(
+        const { data: transactions } = aqlQuery(
           q('transactions').filter({ schedule: id }).select(['amount']),
         );
 
@@ -1169,7 +1159,7 @@ describe('schedule queries in the spreadsheet', () => {
     await skipNextDate({ id });
     await sheet.waitOnSpreadsheet();
 
-    const { data: after } = await aqlQuery(
+    const { data: after } = aqlQuery(
       q('schedules').filter({ id }).calculate('next_date'),
     );
     expect(after).not.toBe(before);

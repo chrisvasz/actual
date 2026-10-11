@@ -66,8 +66,8 @@ export async function exportToCSV(
   return csvStringify(transactionsForExport, csvStringifyOptions);
 }
 
-export async function exportQueryToCSV(query) {
-  const { data: transactions } = await aqlQuery(
+export function exportQueryToCSV(query) {
+  const { data: transactions } = aqlQuery(
     query
       .select([
         { Id: 'id' },

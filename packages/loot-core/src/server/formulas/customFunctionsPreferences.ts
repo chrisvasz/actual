@@ -108,7 +108,7 @@ export async function loadUserPreferencesForFormulas({
   browserLocale,
 }: FormulaPreferencesOptions = {}): Promise<UserPreferences> {
   try {
-    const preferencesQuery = await aqlQuery(
+    const preferencesQuery = aqlQuery(
       q('preferences')
         .filter({ id: { $oneof: FORMULA_PREFERENCE_IDS } })
         .select('*'),

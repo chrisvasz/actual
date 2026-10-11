@@ -235,7 +235,7 @@ export function doTransfer(categoryIds, transferId) {
 }
 
 export async function createBudget(months) {
-  const { data: groups }: { data: CategoryGroupEntity[] } = await aqlQuery(
+  const { data: groups }: { data: CategoryGroupEntity[] } = aqlQuery(
     q('category_groups').select('*'),
   );
   const categories = groups.flatMap(group => group.categories);

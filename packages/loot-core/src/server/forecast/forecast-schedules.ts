@@ -69,13 +69,13 @@ export type ForecastScheduleOccurrence = {
   scheduleName: string;
 };
 
-async function getSchedules() {
+function getSchedules() {
   const filter: Record<string, unknown> = {
     tombstone: false,
     completed: false,
   };
 
-  const result = await aqlQuery(q('schedules').filter(filter).select('*'));
+  const result = aqlQuery(q('schedules').filter(filter).select('*'));
   return result.data as RawScheduleData[];
 }
 
@@ -108,8 +108,8 @@ export function normalizeSchedule(
   };
 }
 
-export async function getNormalizedSchedules() {
-  const rawSchedules = await getSchedules();
+export function getNormalizedSchedules() {
+  const rawSchedules = getSchedules();
 
   return rawSchedules.flatMap(schedule => {
     const normalizedSchedule = normalizeSchedule(schedule);
@@ -117,12 +117,12 @@ export async function getNormalizedSchedules() {
   });
 }
 
-async function getTransferPayeesByAccountIds(accountIds: string[]) {
+function getTransferPayeesByAccountIds(accountIds: string[]) {
   if (accountIds.length === 0) {
     return new Map<string, TransferPayee>();
   }
 
-  const { data: payees } = await aqlQuery(
+  const { data: payees } = aqlQuery(
     q('payees')
       .filter({ transfer_acct: { $oneof: accountIds } })
       .select(['id', 'name', 'transfer_acct']),
@@ -186,7 +186,7 @@ export async function buildFutureScheduleOccurrences(
 ) {
   const postedByScheduleId =
     indexPostedScheduleTransactions(postedTransactions);
-  const transferPayeesByAccountId = await getTransferPayeesByAccountIds([
+  const transferPayeesByAccountId = getTransferPayeesByAccountIds([
     ...ruleAccountsById.keys(),
   ]);
   const payeesById = new Map<string, Awaited<ReturnType<typeof db.getPayee>>>();
@@ -300,7 +300,7 @@ export async function buildFutureScheduleOccurrences(
     }
   }
 
-  const filterObjectsByTransactionId = await enrichForecastFilterObjects(
+  const filterObjectsByTransactionId = enrichForecastFilterObjects(
     simulatedTransactions,
     accountsById,
   );
