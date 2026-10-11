@@ -14,7 +14,6 @@ import {
 } from '@actual-app/components/icons/v1';
 import {
   SvgCalendar3,
-  SvgHelp,
   SvgNotesPaperText,
 } from '@actual-app/components/icons/v2';
 import { styles } from '@actual-app/components/styles';
@@ -38,7 +37,6 @@ import {
 } from '#spreadsheet/bindings';
 
 import { CellValue, CellValueText } from './spreadsheet/CellValue';
-import { useTour } from './tour/TourContext';
 
 type SearchableItem = {
   id: string;
@@ -99,7 +97,6 @@ export function CommandBar() {
   const navigate = useNavigate();
   const [budgetName] = useMetadataPref('budgetName');
   const { modalStack } = useModalState();
-  const { startTour } = useTour();
 
   const navigationItems = useMemo(
     () => [
@@ -238,21 +235,6 @@ export function CommandBar() {
         Icon: SvgNotesPaperText,
       })),
       onSelect: ({ id }) => handleNavigate(`/reports/custom/${id}`),
-    },
-    {
-      key: 'help',
-      heading: t('Help'),
-      items: [
-        {
-          id: 'start-tour',
-          name: t('Take a tour of {{appName}}', { appName: 'Actual' }),
-          Icon: SvgHelp,
-        },
-      ],
-      onSelect: () => {
-        setOpen(false);
-        startTour();
-      },
     },
   ];
 

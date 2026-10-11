@@ -30,8 +30,6 @@ import { KeptBudgetPage } from './KeptBudgetPage';
 import { Notifications } from './Notifications';
 import { MobilePageHeaderProvider, MobilePageHeaderSlot } from './Page';
 import { FloatableSidebar } from './sidebar';
-import { Tour } from './tour/Tour';
-import { TourProvider } from './tour/TourProvider';
 
 /**
  * Location-dependent side effects live here, in a component that renders
@@ -108,69 +106,66 @@ export function FinancesApp() {
   const scrollableRef = useRef<HTMLDivElement>(null);
 
   return (
-    <TourProvider>
-      <View style={{ height: '100%' }}>
-        <RouterBehaviors />
-        <GlobalKeys />
-        <AppShellEffects />
-        <CommandBar />
-        <ContextMenu />
-        <Tour />
+    <View style={{ height: '100%' }}>
+      <RouterBehaviors />
+      <GlobalKeys />
+      <AppShellEffects />
+      <CommandBar />
+      <ContextMenu />
+      <View
+        style={{
+          flexDirection: 'row',
+          backgroundColor: theme.pageBackground,
+          flex: 1,
+        }}
+      >
+        <FloatableSidebar />
+
         <View
           style={{
-            flexDirection: 'row',
+            color: theme.pageText,
             backgroundColor: theme.pageBackground,
             flex: 1,
+            overflow: 'hidden',
+            width: '100%',
           }}
         >
-          <FloatableSidebar />
-
-          <View
-            style={{
-              color: theme.pageText,
-              backgroundColor: theme.pageBackground,
-              flex: 1,
-              overflow: 'hidden',
-              width: '100%',
-            }}
+          <ScrollProvider
+            isDisabled={!isNarrowWidth}
+            scrollableRef={scrollableRef}
           >
-            <ScrollProvider
-              isDisabled={!isNarrowWidth}
-              scrollableRef={scrollableRef}
-            >
-              <MobilePageHeaderProvider>
-                <View
-                  ref={scrollableRef}
-                  style={{
-                    flex: 1,
-                    overflow: 'auto',
-                    position: 'relative',
-                    // Pages pad their top by this (see `styles.page`); make
-                    // room for the floating sidebar button only while it shows.
-                    [`&:has([${FLOATING_SIDEBAR_BUTTON_ATTR}])`]: {
-                      '--page-top-inset': '36px',
-                    },
-                  }}
-                >
-                  <FloatingSidebarButton />
-                  <Notifications />
-                  <BankSyncStatus />
-                  {isNarrowWidth && <MobilePageHeaderSlot />}
+            <MobilePageHeaderProvider>
+              <View
+                ref={scrollableRef}
+                style={{
+                  flex: 1,
+                  overflow: 'auto',
+                  position: 'relative',
+                  // Pages pad their top by this (see `styles.page`); make
+                  // room for the floating sidebar button only while it shows.
+                  [`&:has([${FLOATING_SIDEBAR_BUTTON_ATTR}])`]: {
+                    '--page-top-inset': '36px',
+                  },
+                }}
+              >
+                <FloatingSidebarButton />
+                <Notifications />
+                <BankSyncStatus />
+                {isNarrowWidth && <MobilePageHeaderSlot />}
 
-                  <KeptBudgetPage />
-                  {/* One boundary above every route, never remounted.
+                <KeptBudgetPage />
+                {/* One boundary above every route, never remounted.
                       Navigations run in a transition, so a screen that
                       suspends on its data keeps the current one up until it's
                       ready; the fallback only shows on a direct load. */}
-                  <Suspense fallback={null}>
-                    <FinancesAppRoutes />
-                  </Suspense>
-                </View>
-              </MobilePageHeaderProvider>
-            </ScrollProvider>
-          </View>
+                <Suspense fallback={null}>
+                  <FinancesAppRoutes />
+                </Suspense>
+              </View>
+            </MobilePageHeaderProvider>
+          </ScrollProvider>
         </View>
       </View>
-    </TourProvider>
+    </View>
   );
 }
