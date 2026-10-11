@@ -60,7 +60,7 @@ describe('Transfer', () => {
       date: '2017-01-01',
     };
     db.insertTransaction(transaction);
-    await transfer.onInsert(transaction);
+    transfer.onInsert(transaction);
 
     const differ = expectSnapshotWithDiffer(getAllTransactions());
 
@@ -78,7 +78,7 @@ describe('Transfer', () => {
       date: '2017-01-01',
     };
     transaction.id = db.insertTransaction(transaction);
-    await transfer.onInsert(transaction);
+    transfer.onInsert(transaction);
     differ.expectToMatchDiff(getAllTransactions());
 
     // Fill the transaction out
@@ -91,7 +91,7 @@ describe('Transfer', () => {
       notes: 'This is a note',
     };
     db.updateTransaction(transaction);
-    await transfer.onUpdate(transaction);
+    transfer.onUpdate(transaction);
     differ.expectToMatchDiff(getAllTransactions());
 
     transaction = {
@@ -99,7 +99,7 @@ describe('Transfer', () => {
       payee: transferThree.id,
     };
     db.updateTransaction(transaction);
-    await transfer.onUpdate(transaction);
+    transfer.onUpdate(transaction);
     differ.expectToMatchDiff(getAllTransactions());
 
     transaction = {
@@ -107,7 +107,7 @@ describe('Transfer', () => {
       payee: db.insertPayee({ name: 'Not transferred anymore' }),
     };
     db.updateTransaction(transaction);
-    await transfer.onUpdate(transaction);
+    transfer.onUpdate(transaction);
     differ.expectToMatchDiff(getAllTransactions());
 
     // Make sure it's not a linked transaction anymore
@@ -120,7 +120,7 @@ describe('Transfer', () => {
       payee: transferTwo.id,
     };
     db.updateTransaction(transaction);
-    await transfer.onUpdate(transaction);
+    transfer.onUpdate(transaction);
     differ.expectToMatchDiff(getAllTransactions());
 
     transaction = db.getTransaction(transaction.id);
@@ -149,7 +149,7 @@ describe('Transfer', () => {
       category: '1',
     };
     transaction.id = db.insertTransaction(transaction);
-    await transfer.onInsert(transaction);
+    transfer.onInsert(transaction);
 
     const differ = expectSnapshotWithDiffer(getAllTransactions());
 
@@ -159,7 +159,7 @@ describe('Transfer', () => {
       notes: 'hi',
     };
     db.updateTransaction(transaction);
-    await transfer.onUpdate(transaction);
+    transfer.onUpdate(transaction);
     differ.expectToMatchDiff(getAllTransactions());
 
     transaction = {
@@ -167,7 +167,7 @@ describe('Transfer', () => {
       payee: transferTwo.id,
     };
     db.updateTransaction(transaction);
-    await transfer.onUpdate(transaction);
+    transfer.onUpdate(transaction);
     differ.expectToMatchDiff(getAllTransactions());
   });
 
@@ -192,14 +192,14 @@ describe('Transfer', () => {
       date: '2017-01-01',
     };
     parent.id = db.insertTransaction(parent);
-    await transfer.onInsert(parent);
+    transfer.onInsert(parent);
     parent = db.getTransaction(parent.id);
 
     const differ = expectSnapshotWithDiffer(getAllTransactions());
 
     // mark the txn as parent
     db.updateTransaction({ id: parent.id, is_parent: true });
-    await transfer.onUpdate(parent);
+    transfer.onUpdate(parent);
     differ.expectToMatchDiff(getAllTransactions());
 
     // add a child txn
@@ -212,7 +212,7 @@ describe('Transfer', () => {
       parent_id: parent.id,
     };
     child.id = db.insertTransaction(child);
-    await transfer.onInsert(child);
+    transfer.onInsert(child);
     differ.expectToMatchDiff(getAllTransactions());
 
     // ensure that the child txn has the correct transfer acct payee

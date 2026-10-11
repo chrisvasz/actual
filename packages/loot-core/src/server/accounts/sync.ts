@@ -296,7 +296,7 @@ export async function reconcileTransactions(
 
   if (!isPreview) {
     createNewPayees(payeesToCreate, [...added, ...updated]);
-    await batchUpdateTransactions({ added, updated });
+    batchUpdateTransactions({ added, updated });
   }
 
   logger.log('Debug data for the operations:', {
@@ -345,7 +345,7 @@ export async function matchTransactions(
     subtransactions,
   } of normalized) {
     // Run the rules
-    const trans = await runRules(originalTrans, accountsMap);
+    const trans = runRules(originalTrans, accountsMap);
 
     let match = null;
     let fuzzyDataset = null;
@@ -528,7 +528,7 @@ export async function addTransactions(
 
   for (const { trans: originalTrans, subtransactions } of normalized) {
     // Run the rules
-    const trans = await runRules(originalTrans, accountsMap);
+    const trans = runRules(originalTrans, accountsMap);
 
     const finalTransaction = {
       id: uuidv4(),
@@ -561,7 +561,7 @@ export async function addTransactions(
 
   let newTransactions;
   if (runTransfers || learnCategories) {
-    const res = await batchUpdateTransactions({
+    const res = batchUpdateTransactions({
       added,
       learnCategories,
       runTransfers,

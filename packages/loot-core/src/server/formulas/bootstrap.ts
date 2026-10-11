@@ -3,25 +3,19 @@ import {
   setCachedUserPreferences,
 } from '#shared/formulas/customFunctions';
 
-import { loadUserPreferencesForFormulas } from './customFunctionsPreferences';
+import { getUserPreferencesForFormulas } from './customFunctionsPreferences';
 
-let formulaPreferencesPromise: Promise<void> | null = null;
-let formulaPreferencesCacheVersion = 0;
+let isCached = false;
 
 export function resetFormulaPreferencesCache(): void {
-  formulaPreferencesCacheVersion += 1;
-  formulaPreferencesPromise = null;
+  isCached = false;
   clearCachedUserPreferences();
 }
 
-export function ensureFormulaPreferencesLoaded(): Promise<void> {
-  const cacheVersion = formulaPreferencesCacheVersion;
-
-  formulaPreferencesPromise ??= loadUserPreferencesForFormulas().then(prefs => {
-    if (cacheVersion === formulaPreferencesCacheVersion) {
-      setCachedUserPreferences(prefs);
-    }
-  });
-
-  return formulaPreferencesPromise;
+export function ensureFormulaPreferencesLoaded(): void {
+  if (isCached) {
+    return;
+  }
+  setCachedUserPreferences(getUserPreferencesForFormulas());
+  isCached = true;
 }

@@ -712,38 +712,9 @@ export function batchMessages(func: () => void): void {
   }
 }
 
-// Like `batchMessages`, for the few bodies that still await real async
-// work (AQL queries, rules). The batch stays open across those awaits,
-// so messages from any handler that runs meanwhile join it. Prefer
-// `batchMessages`.
-export async function batchMessagesAsync(
-  func: () => Promise<void>,
-): Promise<void> {
-  if (IS_BATCHING) {
-    await func();
-    return;
-  }
-
-  IS_BATCHING = true;
-  let batched: Message[] = [];
-
-  try {
-    await func();
-  } catch (e) {
-    void errorHandler(e);
-    throw e;
-  } finally {
-    batched = takeBatched();
-  }
-
-  if (batched.length > 0) {
-    _sendMessages(batched);
-  }
-}
-
 // Batches messages until `endMessageBatch`, across any number of
-// handler calls. Only for the API's batch-budget-start/end, which spans
-// a caller's own async work; use `batchMessages` everywhere else.
+// handler calls. Only for work that awaits handlers in between, like the
+// API's batch-budget-start/end; use `batchMessages` everywhere else.
 // Returns false when a batch is already open: the messages then join
 // it, and the caller must not end it
 export function startMessageBatch(): boolean {

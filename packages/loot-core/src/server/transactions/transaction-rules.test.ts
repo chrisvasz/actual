@@ -127,7 +127,7 @@ describe('Transaction rules', () => {
     spy.mockRestore();
 
     // Finally make sure the rule is actually in place and runs
-    const transaction = await runRules({
+    const transaction = runRules({
       date: '2019-05-10',
       notes: '',
       category: null,
@@ -150,7 +150,7 @@ describe('Transaction rules', () => {
     });
     expect(getRules().length).toBe(1);
 
-    let transaction = await runRules({
+    let transaction = runRules({
       imported_payee: 'Kroger',
       notes: '',
       category: null,
@@ -166,7 +166,7 @@ describe('Transaction rules', () => {
     });
     expect(getRules().length).toBe(1);
 
-    transaction = await runRules({
+    transaction = runRules({
       imported_payee: 'Kroger',
       notes: '',
       category: null,
@@ -180,7 +180,7 @@ describe('Transaction rules', () => {
       id,
       conditions: [{ op: 'is', field: 'imported_payee', value: 'ABC' }],
     });
-    transaction = await runRules({
+    transaction = runRules({
       imported_payee: 'ABC',
       notes: '',
       category: null,
@@ -202,7 +202,7 @@ describe('Transaction rules', () => {
     });
     expect(getRules().length).toBe(1);
 
-    let transaction = await runRules({
+    let transaction = runRules({
       payee: 'Kroger',
       notes: '',
       category: null,
@@ -212,7 +212,7 @@ describe('Transaction rules', () => {
 
     deleteRule(id);
     expect(getRules().length).toBe(0);
-    transaction = await runRules({
+    transaction = runRules({
       payee: 'Kroger',
       notes: '',
       category: null,
@@ -247,7 +247,7 @@ describe('Transaction rules', () => {
       actions: [{ op: 'set', field: 'category', value: 'shopping' }],
     });
 
-    const transaction = await runRules({
+    const transaction = runRules({
       imported_payee: 'AMZN MKTP',
       payee: null,
       category: null,
@@ -279,14 +279,14 @@ describe('Transaction rules', () => {
     loadRules();
     expect(getRules().length).toBe(2);
 
-    let transaction = await runRules({
+    let transaction = runRules({
       imported_payee: 'blah Lowes blah',
       payee: null,
       category: null,
     });
     expect(transaction.payee).toBe('lowes');
 
-    transaction = await runRules({
+    transaction = runRules({
       imported_payee: 'kroger',
       category: null,
     });
@@ -391,7 +391,7 @@ describe('Transaction rules', () => {
     });
 
     expect(
-      await runRules({
+      runRules({
         imported_payee: '123 kroger',
         date: '2020-08-11',
         amount: 50,
@@ -420,7 +420,7 @@ describe('Transaction rules', () => {
       actions: [{ op: 'set', field: 'notes', value: 'bills-matched' }],
     });
 
-    const transaction = await runRules({
+    const transaction = runRules({
       date: '2020-01-01',
       category: electricId,
       notes: '',
@@ -446,7 +446,7 @@ describe('Transaction rules', () => {
       actions: [{ op: 'set', field: 'notes', value: 'bills-matched' }],
     });
 
-    const transaction = await runRules({
+    const transaction = runRules({
       date: '2020-01-01',
       category: moviesId,
       notes: '',
@@ -484,7 +484,7 @@ describe('Transaction rules', () => {
       actions: [{ op: 'set', field: 'notes', value: 'bills-matched' }],
     });
 
-    const transaction = await runRules({
+    const transaction = runRules({
       date: '2020-01-01',
       payee: 'power_co_id',
       category: null,
@@ -1385,7 +1385,7 @@ describe('Running balance for rules', () => {
     });
 
     const queries = countRunningBalanceQueries();
-    const transaction = await runRules({
+    const transaction = runRules({
       imported_payee: 'kroger',
       account,
       date: '2020-01-03',
@@ -1423,7 +1423,7 @@ describe('Running balance for rules', () => {
     });
 
     const queries = countRunningBalanceQueries();
-    const transaction = await runRules({
+    const transaction = runRules({
       imported_payee: 'kroger',
       account,
       date: '2020-01-03',
@@ -1453,7 +1453,7 @@ describe('Running balance for rules', () => {
     });
 
     const queries = countRunningBalanceQueries();
-    const transaction = await runRules({
+    const transaction = runRules({
       imported_payee: 'kroger',
       account,
       date: '2020-01-03',

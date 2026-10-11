@@ -31,7 +31,7 @@ describe('formula preference bootstrap', () => {
   });
 
   it('reloads cached user preferences after reset', async () => {
-    await ensureFormulaPreferencesLoaded();
+    ensureFormulaPreferencesLoaded();
     expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1,234.50');
 
     db.update('preferences', {
@@ -40,7 +40,7 @@ describe('formula preference bootstrap', () => {
     });
 
     resetFormulaPreferencesCache();
-    await ensureFormulaPreferencesLoaded();
+    ensureFormulaPreferencesLoaded();
 
     expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1.234,50');
   });
@@ -76,33 +76,33 @@ describe('formula preference bootstrap', () => {
   });
 
   it('reloads cached user preferences after relevant synced preferences change', async () => {
-    await ensureFormulaPreferencesLoaded();
+    ensureFormulaPreferencesLoaded();
     expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1,234.50');
 
     await runHandler(handlers['preferences/save'], {
       id: 'numberFormat',
       value: 'dot-comma',
     });
-    await ensureFormulaPreferencesLoaded();
+    ensureFormulaPreferencesLoaded();
 
     expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1.234,50');
   });
 
   it('reloads cached user preferences after hide fraction changes', async () => {
-    await ensureFormulaPreferencesLoaded();
+    ensureFormulaPreferencesLoaded();
     expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1,234.50');
 
     await runHandler(handlers['preferences/save'], {
       id: 'hideFraction',
       value: 'true',
     });
-    await ensureFormulaPreferencesLoaded();
+    ensureFormulaPreferencesLoaded();
 
     expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1,235');
   });
 
   it('keeps cached user preferences after unrelated synced preferences change', async () => {
-    await ensureFormulaPreferencesLoaded();
+    ensureFormulaPreferencesLoaded();
     db.update('preferences', {
       id: 'numberFormat',
       value: 'dot-comma',
@@ -112,25 +112,21 @@ describe('formula preference bootstrap', () => {
       id: 'dateFormat',
       value: 'dd/MM/yyyy',
     });
-    await ensureFormulaPreferencesLoaded();
+    ensureFormulaPreferencesLoaded();
 
     expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1,234.50');
   });
 
-  it('reloads cached user preferences after language changes', async () => {
-    await ensureFormulaPreferencesLoaded();
-    expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1,234.50');
-
+  it('ignores the stored language', async () => {
+    vi.mocked(asyncStorage.getItem).mockResolvedValue('de-DE');
     await runHandler(handlers['save-global-prefs'], {
       language: 'de-DE',
     });
-    vi.mocked(asyncStorage.getItem).mockResolvedValue('de-DE');
-    await ensureFormulaPreferencesLoaded();
+    ensureFormulaPreferencesLoaded();
 
-    expect(vi.mocked(asyncStorage.setItem)).toHaveBeenCalledWith(
+    expect(vi.mocked(asyncStorage.getItem)).not.toHaveBeenCalledWith(
       'language',
-      'de-DE',
     );
-    expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1.234,50');
+    expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1,234.50');
   });
 });

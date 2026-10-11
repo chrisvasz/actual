@@ -22,7 +22,7 @@ describe('batchUpdateTransactions', () => {
       date: '2024-01-02',
     });
 
-    const result = await batchUpdateTransactions({
+    const result = batchUpdateTransactions({
       added: [{ id: 'added', account: 'one', amount: 300, date: '2024-01-03' }],
       updated: [{ id: 'to-update', amount: 150 }],
       deleted: [{ id: 'to-delete' }],
@@ -58,7 +58,7 @@ describe('batchUpdateTransactions', () => {
       date: '2024-01-01',
     });
 
-    const result = await batchUpdateTransactions({
+    const result = batchUpdateTransactions({
       updated: [{ id: 't1', notes: 'hello' }],
       runTransfers: false,
     });

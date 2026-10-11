@@ -41,7 +41,7 @@ async function fixSplitTransactions(): Promise<{
       id: row.id,
       payee: row.parentPayee,
     }));
-    await batchUpdateTransactions({ updated });
+    batchUpdateTransactions({ updated });
   });
 
   // 2. Make sure the "cleared" flag is synced up with the parent
@@ -60,7 +60,7 @@ async function fixSplitTransactions(): Promise<{
       id: row.id,
       cleared: row.cleared === 1,
     }));
-    await batchUpdateTransactions({ updated });
+    batchUpdateTransactions({ updated });
   });
 
   // 3. Mark the `tombstone` field as true on any child transactions
@@ -73,7 +73,7 @@ async function fixSplitTransactions(): Promise<{
 
   await runMutator(async () => {
     const updated = deletedRows.map(row => ({ id: row.id, tombstone: true }));
-    await batchUpdateTransactions({ updated });
+    batchUpdateTransactions({ updated });
   });
 
   const splitTransactions = aqlQuery(
@@ -107,7 +107,7 @@ async function fixSplitTransactions(): Promise<{
       id: row.id,
       category: null,
     }));
-    await batchUpdateTransactions({ updated });
+    batchUpdateTransactions({ updated });
   });
 
   // 6. Remove transaction errors from non-parent transactions
@@ -117,7 +117,7 @@ async function fixSplitTransactions(): Promise<{
 
   await runMutator(async () => {
     const updated = errorRows.map(({ id }) => ({ id, error: null }));
-    await batchUpdateTransactions({ updated });
+    batchUpdateTransactions({ updated });
   });
 
   // 7. Clear categories of parent transactions
@@ -132,7 +132,7 @@ async function fixSplitTransactions(): Promise<{
       id,
       category: null,
     }));
-    await batchUpdateTransactions({ updated });
+    batchUpdateTransactions({ updated });
   });
 
   return {
