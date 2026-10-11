@@ -143,6 +143,8 @@ export function getSpendingChanges(
     return { reloadAll: false, pairs: [] };
   }
 
+  // Rows from sync come with their category already mapped, which maps to
+  // itself; split children read below don't.
   const keys = new Map<string, [string, string]>();
   const mappedCategories = new Map<string, string | null>();
   function mapCategory(id: string): string | null {

@@ -5,9 +5,9 @@ import { addTransactions } from '#server/accounts/sync';
 import { aqlQuery } from '#server/aql';
 import * as budgetActions from '#server/budget/actions';
 import * as budget from '#server/budget/base';
+import { getBudgetCellValue, reloadBudgetState } from '#server/budget/state';
 import * as db from '#server/db';
 import { runHandler, runMutator } from '#server/mutators';
-import * as sheet from '#server/sheet';
 import {
   batchMessages,
   batchMessagesAsync,
@@ -642,7 +642,7 @@ async function createBudget(accounts, payees, groups) {
   }
 
   function setBudgetIfSpent(month, cat) {
-    const spent: number = sheet.getCellValue(
+    const spent: number = getBudgetCellValue(
       monthUtils.sheetForMonth(month),
       `sum-amount-${cat.id}`,
     ) as number;
@@ -691,8 +691,6 @@ async function createBudget(accounts, payees, groups) {
     }),
   );
 
-  await sheet.waitOnSpreadsheet();
-
   await runMutator(async () =>
     batchMessages(() => {
       let prevSaved = 0;
@@ -703,7 +701,7 @@ async function createBudget(accounts, payees, groups) {
           month <= monthUtils.currentMonth()
         ) {
           const sheetName = monthUtils.sheetForMonth(month);
-          const toBudget: number = sheet.getCellValue(
+          const toBudget: number = getBudgetCellValue(
             sheetName,
             'to-budget',
           ) as number;
@@ -722,10 +720,8 @@ async function createBudget(accounts, payees, groups) {
     }),
   );
 
-  await sheet.waitOnSpreadsheet();
-
   const sheetName = monthUtils.sheetForMonth(monthUtils.currentMonth());
-  const toBudget: number = sheet.getCellValue(sheetName, 'to-budget') as number;
+  const toBudget: number = getBudgetCellValue(sheetName, 'to-budget') as number;
   if (toBudget < 0) {
     await addTransactions(primaryAccount.id, [
       {
@@ -737,10 +733,8 @@ async function createBudget(accounts, payees, groups) {
   }
 
   // let sheetName = monthUtils.sheetForMonth(monthUtils.currentMonth());
-  // let toBudget = sheet.getCellValue(sheetName, 'to-budget');
+  // let toBudget = getBudgetCellValue(sheetName, 'to-budget');
   // setBudget(monthUtils.currentMonth(), category('Savings'), toBudget);
-
-  await sheet.waitOnSpreadsheet();
 }
 
 export async function createTestBudget(handlers: Handlers) {
@@ -934,12 +928,10 @@ export async function createTestBudget(handlers: Handlers) {
     });
   }
 
-  // Reload the spreadsheet so it picks up everything written above
+  // Reload the budget values so they pick up everything written above
   setSyncingMode('disabled');
-  await sheet.reloadSpreadsheet(db);
+  reloadBudgetState();
   await budget.createAllBudgets();
-
-  await sheet.waitOnSpreadsheet();
 
   // Create some schedules
   await runMutator(() =>

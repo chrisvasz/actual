@@ -5,6 +5,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { expectSnapshotWithDiffer } from '#mocks/util';
 import * as connection from '#platform/server/connection';
 import * as fs from '#platform/server/fs';
+import {
+  extendBudgetMonths,
+  flush,
+  getBudgetCellValue,
+  getBudgetMonths,
+  loadBudgetState,
+} from '#server/budget/state';
 import * as monthUtils from '#shared/months';
 
 import * as budgetActions from './budget/actions';
@@ -18,7 +25,6 @@ import {
   runMutator,
 } from './mutators';
 import * as prefs from './prefs';
-import * as sheet from './sheet';
 
 vi.mock('./post');
 
@@ -156,7 +162,7 @@ describe('Accounts', () => {
 
 describe('Budget', () => {
   test('new budgets should be created', async () => {
-    const spreadsheet = await sheet.loadSpreadsheet(db);
+    await loadBudgetState();
 
     await runMutator(async () => {
       db.insertCategoryGroup({
@@ -172,7 +178,9 @@ describe('Budget', () => {
     let bounds = await runHandler(handlers['get-budget-bounds']);
     expect(bounds.start).toBe('2016-10');
     expect(bounds.end).toBe('2018-01');
-    expect(spreadsheet.meta().createdMonths).toMatchSnapshot();
+    expect(getBudgetMonths()).toEqual(
+      monthUtils.rangeInclusive('2016-10', '2018-01'),
+    );
 
     // Add a transaction (which needs an account) earlier then the
     // current earliest budget to test if it creates the necessary
@@ -192,34 +200,25 @@ describe('Budget', () => {
     bounds = await runHandler(handlers['get-budget-bounds']);
     expect(bounds.start).toBe('2016-02');
     expect(bounds.end).toBe('2018-02');
-    expect(spreadsheet.meta().createdMonths).toMatchSnapshot();
-
-    await new Promise(resolve => spreadsheet.onFinish(resolve));
+    expect(getBudgetMonths()).toEqual(
+      monthUtils.rangeInclusive('2016-02', '2018-02'),
+    );
   });
 
   test('budget updates when changing a category', async () => {
-    const spreadsheet = await sheet.loadSpreadsheet(db);
-    function captureChangedCells(func) {
-      return new Promise<unknown[]>(resolve => {
-        let changed = [];
-        const remove = spreadsheet.addEventListener('change', ({ names }) => {
-          changed = changed.concat(names);
-        });
-        func().then(() => {
-          remove();
-          spreadsheet.onFinish(() => {
-            resolve(changed);
-          });
-        });
-      });
+    let notified: string[] = [];
+    await loadBudgetState(changes => {
+      notified = notified.concat(changes.map(change => change.name));
+    });
+    async function captureChangedCells(func: () => Promise<unknown>) {
+      notified = [];
+      await func();
+      flush();
+      return notified;
     }
 
-    // Force the system to start tracking these months so budgets are
-    // automatically updated when adding/deleting categories
-    db.runQuery('INSERT INTO created_budgets (month) VALUES (?)', ['2017-01']);
-    db.runQuery('INSERT INTO created_budgets (month) VALUES (?)', ['2017-02']);
-    db.runQuery('INSERT INTO created_budgets (month) VALUES (?)', ['2017-03']);
-    db.runQuery('INSERT INTO created_budgets (month) VALUES (?)', ['2017-04']);
+    // Only the cells whose values changed are reported
+    extendBudgetMonths(monthUtils.rangeInclusive('2017-01', '2017-04'));
 
     let categories;
     await captureChangedCells(async () => {
@@ -283,7 +282,7 @@ describe('Budget', () => {
 
 describe('Categories', () => {
   test('can be deleted', async () => {
-    await sheet.loadSpreadsheet(db);
+    await loadBudgetState();
 
     await runMutator(async () => {
       db.insertCategoryGroup({ id: 'group1', name: 'group1' });
@@ -303,7 +302,7 @@ describe('Categories', () => {
   });
 
   test('transfers properly when deleted', async () => {
-    await sheet.loadSpreadsheet(db);
+    await loadBudgetState();
 
     const transId = await runMutator(async () => {
       db.insertCategoryGroup({ id: 'group1', name: 'group1' });
@@ -345,9 +344,8 @@ describe('Categories', () => {
       month: '2018-01',
       amount: 1000,
     });
-    await sheet.waitOnSpreadsheet();
-    expect(sheet.getCellValue(sheetName, 'group-budget-group1')).toBe(1000);
-    expect(sheet.getCellValue(sheetName, 'group-budget-group1b')).toBe(0);
+    expect(getBudgetCellValue(sheetName, 'group-budget-group1')).toBe(1000);
+    expect(getBudgetCellValue(sheetName, 'group-budget-group1b')).toBe(0);
 
     // Make sure the transaction has a category of `foo`
     let trans = db.getTransaction(transId);
@@ -363,8 +361,8 @@ describe('Categories', () => {
     expect(trans.category).toBe('bar');
 
     // Make sure the budget value was transferred
-    expect(sheet.getCellValue(sheetName, 'group-budget-group1')).toBe(0);
-    expect(sheet.getCellValue(sheetName, 'group-budget-group1b')).toBe(1000);
+    expect(getBudgetCellValue(sheetName, 'group-budget-group1')).toBe(0);
+    expect(getBudgetCellValue(sheetName, 'group-budget-group1b')).toBe(1000);
 
     // Transfering an income category to an expense just doesn't make
     // sense. Make sure this doesn't do anything.
@@ -389,7 +387,7 @@ describe('Categories', () => {
   });
 
   test('do not count as overspent when deleted', async () => {
-    await sheet.loadSpreadsheet(db);
+    await loadBudgetState();
 
     await runMutator(async () => {
       db.insertCategoryGroup({ id: 'group1', name: 'group1' });
@@ -425,20 +423,18 @@ describe('Categories', () => {
       month: '2017-01',
       amount: 1000,
     });
-    await sheet.waitOnSpreadsheet();
 
     const nextSheetName = monthUtils.sheetForMonth('2017-02');
-    expect(sheet.getCellValue(nextSheetName, 'last-month-overspent')).toBe(0);
-    const toBudget = sheet.getCellValue(nextSheetName, 'to-budget');
+    expect(getBudgetCellValue(nextSheetName, 'last-month-overspent')).toBe(0);
+    const toBudget = getBudgetCellValue(nextSheetName, 'to-budget');
 
     await runHandler(handlers['category-delete'], {
       id: 'foo',
       transferId: 'bar',
     });
-    await sheet.waitOnSpreadsheet();
 
     // The deleted category should not leave any overspending behind
-    expect(sheet.getCellValue(nextSheetName, 'last-month-overspent')).toBe(0);
-    expect(sheet.getCellValue(nextSheetName, 'to-budget')).toBe(toBudget);
+    expect(getBudgetCellValue(nextSheetName, 'last-month-overspent')).toBe(0);
+    expect(getBudgetCellValue(nextSheetName, 'to-budget')).toBe(toBudget);
   });
 });

@@ -2,18 +2,12 @@
 // budget. Run with:
 //   BUDGET_BENCH=1 yarn workspace @actual-app/core vitest --run src/server/budget/budget.bench.test.ts
 import * as db from '#server/db';
-import * as sheet from '#server/sheet';
-import { addSyncListener } from '#server/sync';
 
 import { createAllBudgets } from './base';
 import { computeBudget } from './compute';
 import { loadBudgetGroups, loadBudgetRows, loadBufferedRows } from './inputs';
-import {
-  getSpendingChanges,
-  loadSpending,
-  querySpent,
-  refreshSpending,
-} from './spending';
+import { loadSpending, querySpent } from './spending';
+import { flush, getBudgetMonths, loadBudgetState } from './state';
 import { generateBudget, seededRandom } from './test-helpers/generate-budget';
 
 beforeEach(global.emptyDatabase());
@@ -64,55 +58,24 @@ describe.skipIf(!process.env.BUDGET_BENCH)('budget benchmark', () => {
     const pickEdits = () =>
       Array.from({ length: edits }, () => random.pick(ids));
 
-    // The spreadsheet engine
-    report.spreadsheetLoad = await timeAsync(async () => {
-      await sheet.loadSpreadsheet(db);
+    // Opening the budget: everything `load-budget` does for budget values.
+    report.load = await timeAsync(async () => {
+      await loadBudgetState();
       await createAllBudgets();
-      await sheet.waitOnSpreadsheet();
+      flush();
     });
-    report.spreadsheetCells = sheet.get().getNodes().size;
-    const months = [...sheet.get().meta().createdMonths].sort();
+    const months = getBudgetMonths();
     report.months = months.length;
-    const spreadsheetEdits: number[] = [];
-    for (const id of pickEdits()) {
-      spreadsheetEdits.push(
-        await timeAsync(async () => {
-          db.updateTransaction({ id, amount: -random.int(100, 9000) });
-          await sheet.waitOnSpreadsheet();
-        }),
-      );
-    }
-    report.spreadsheetEditMedian = median(spreadsheetEdits);
-    sheet.unloadSpreadsheet();
-
-    // The spending map and `computeBudget`
-    const [inputs, loadTime] = time(() => {
-      const spending = loadSpending();
-      return {
-        spending,
-        groups: loadBudgetGroups(),
-        budgets: loadBudgetRows(),
-        buffered: loadBufferedRows(),
-      };
-    });
-    let spending = inputs.spending;
-    const compute = () =>
-      computeBudget({
-        months,
-        groups: inputs.groups,
-        spent: spending,
-        budgets: inputs.budgets,
-        buffered: inputs.buffered,
-      });
-    const [, firstCompute] = time(compute);
-    report.computedLoad = loadTime + firstCompute;
     report.spendingQuery = time(loadSpending)[1];
-    report.spendingEntries = [...spending.values()].reduce(
-      (total, byCategory) => total + byCategory.size,
-      0,
-    );
+    const inputs = {
+      months,
+      groups: loadBudgetGroups(),
+      spent: loadSpending(),
+      budgets: loadBudgetRows(),
+      buffered: loadBufferedRows(),
+    };
     report.computeBudgetMedian = median(
-      Array.from({ length: 30 }, () => time(compute)[1]),
+      Array.from({ length: 30 }, () => time(() => computeBudget(inputs))[1]),
     );
     report.perPairQueryMedian = median(
       Array.from(
@@ -121,25 +84,18 @@ describe.skipIf(!process.env.BUDGET_BENCH)('budget benchmark', () => {
       ),
     );
 
-    const removeListener = addSyncListener((oldData, newData) => {
-      const changes = getSpendingChanges(oldData, newData);
-      if (changes.reloadAll) {
-        spending = loadSpending();
-      } else {
-        refreshSpending(spending, changes.pairs);
-      }
-      compute();
-    });
-    const computedEdits: number[] = [];
+    // A single edit: the write, the applied change, and computing the budget
+    // again.
+    const editTimes: number[] = [];
     for (const id of pickEdits()) {
-      computedEdits.push(
-        time(() =>
-          db.updateTransaction({ id, amount: -random.int(100, 9000) }),
-        )[1],
+      editTimes.push(
+        time(() => {
+          db.updateTransaction({ id, amount: -random.int(100, 9000) });
+          flush();
+        })[1],
       );
     }
-    removeListener();
-    report.computedEditMedian = median(computedEdits);
+    report.editMedian = median(editTimes);
 
     report.spendingQueryPlan = db
       .runQuery<{ detail: string }>(

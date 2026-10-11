@@ -1,8 +1,7 @@
 import { createTestBudget } from '#mocks/budget';
 import * as db from '#server/db';
 import { handlers } from '#server/main';
-import * as sheet from '#server/sheet';
-import { addSyncListener, batchMessages } from '#server/sync';
+import { batchMessages } from '#server/sync';
 import * as monthUtils from '#shared/months';
 
 import * as actions from './actions';
@@ -10,29 +9,31 @@ import { createAllBudgets } from './base';
 import { forEachBudgetCell, getBudgetCell } from './cells';
 import { computeBudget } from './compute';
 import { loadBudgetGroups, loadBudgetRows, loadBufferedRows } from './inputs';
-import { getSpendingChanges, loadSpending, refreshSpending } from './spending';
-import type { Spending } from './spending';
+import { loadSpending } from './spending';
+import {
+  flush,
+  getBudgetCellValue,
+  getBudgetMonths,
+  loadBudgetState,
+  unloadBudgetState,
+} from './state';
 import { generateBudget } from './test-helpers/generate-budget';
 import type { GeneratedBudget } from './test-helpers/generate-budget';
 import { createReferenceBudget } from './test-helpers/reference-budget';
 
 beforeEach(global.emptyDatabase());
 
-function createdMonths(): string[] {
-  const months = [...sheet.get().meta().createdMonths].sort();
-  // `computeBudget` relies on the months being consecutive.
-  expect(months).toEqual(
-    monthUtils.rangeInclusive(months[0], months[months.length - 1]),
-  );
-  return months;
-}
+// The reference (`test-helpers/reference-budget.ts`) transcribes the cell
+// formulas of the spreadsheet engine these values used to come from, and was
+// checked equal to that engine on all of the budgets and changes below before
+// the engine was removed.
 
-function computeFromDb(months: string[], spending = loadSpending()) {
+function computeFromDb(months: string[]) {
   const rows = { budgets: loadBudgetRows(), buffered: loadBufferedRows() };
   const computed = computeBudget({
     months,
     groups: loadBudgetGroups(),
-    spent: spending,
+    spent: loadSpending(),
     ...rows,
   });
   return {
@@ -44,14 +45,6 @@ function computeFromDb(months: string[], spending = loadSpending()) {
       return names;
     },
   };
-}
-
-function flatten(spending: Spending) {
-  return [...spending]
-    .flatMap(([month, byCategory]) =>
-      [...byCategory].map(([id, amount]) => `${month} ${id} ${amount}`),
-    )
-    .sort();
 }
 
 function splitName(full: string): [string, string] {
@@ -81,39 +74,27 @@ function expectSameValues(names: Iterable<string>, sources: Source[]) {
   expect(count).toBeGreaterThan(0);
 }
 
-function spreadsheetSource(): Source {
-  return {
-    label: 'spreadsheet',
-    get: (sheetName, name) => sheet.getCellValue(sheetName, name),
-  };
+const stateSource: Source = { label: 'state', get: getBudgetCellValue };
+
+function budgetMonths(): string[] {
+  const months = getBudgetMonths();
+  expect(months.length).toBeGreaterThan(0);
+  return months;
 }
 
-// The budget cells the spreadsheet has right now, leaving out client-bound
-// query cells.
-function spreadsheetBudgetCells(): string[] {
-  return [...sheet.get().getNodes().values()]
-    .filter(node => node.name.startsWith('budget') && !node.sql)
-    .map(node => node.name);
-}
-
-async function loadEverything() {
-  await sheet.loadSpreadsheet(db);
-  await createAllBudgets();
-  await sheet.waitOnSpreadsheet();
-}
-
-// Fresh from the database: the spreadsheet, the reference transcription of
-// its cells, and `computeBudget` agree on every cell any of them has.
+// The budget values as loaded, the reference evaluated from the database, and
+// `computeBudget` on freshly read inputs agree on every cell any of them has.
 async function expectFreshLoadMatches() {
-  sheet.unloadSpreadsheet();
-  await loadEverything();
-  const months = createdMonths();
+  unloadBudgetState();
+  await loadBudgetState();
+  await createAllBudgets();
+  const months = budgetMonths();
   const reference = createReferenceBudget(months);
   const computed = computeFromDb(months);
   expectSameValues(
-    [...spreadsheetBudgetCells(), ...reference.names(), ...computed.names()],
+    [...reference.names(), ...computed.names()],
     [
-      spreadsheetSource(),
+      stateSource,
       { label: 'reference', get: reference.get },
       { label: 'computed', get: computed.get },
     ],
@@ -122,15 +103,15 @@ async function expectFreshLoadMatches() {
 
 describe('computeBudget', () => {
   it.each([1, 2, 3])(
-    'matches the spreadsheet on a generated budget (seed %i)',
+    'matches the reference on a generated budget (seed %i)',
     async seed => {
       await generateBudget({ seed, years: 4 });
       await expectFreshLoadMatches();
     },
   );
 
-  it('matches the spreadsheet on the demo budget', async () => {
-    await sheet.loadSpreadsheet(db);
+  it('matches the reference on the demo budget', async () => {
+    await loadBudgetState();
     await createTestBudget(handlers);
     const transactions = db.first<{ count: number }>(
       'SELECT COUNT(*) AS count FROM transactions',
@@ -139,7 +120,7 @@ describe('computeBudget', () => {
     await expectFreshLoadMatches();
   });
 
-  it('matches the spreadsheet on a budget with no transactions', async () => {
+  it('matches the reference on a budget with no transactions', async () => {
     db.insertCategoryGroup({ id: 'group1', name: 'group1' });
     db.insertCategoryGroup({
       id: 'income',
@@ -152,63 +133,53 @@ describe('computeBudget', () => {
 
   describe('after changes', () => {
     let budget: GeneratedBudget;
-    let spending: Spending;
-    let removeListener: () => void;
+    // What a client that read every cell at load would show, kept current
+    // only by the changes the budget notifies.
+    let client: Map<string, unknown>;
 
     beforeEach(async () => {
       budget = await generateBudget({ seed: 7, years: 3 });
-      await loadEverything();
-
-      // Keep a spending map current the way the budget will: re-read only
-      // what each applied change can have touched.
-      spending = loadSpending();
-      removeListener = addSyncListener((oldData, newData) => {
-        const changes = getSpendingChanges(oldData, newData);
-        if (changes.reloadAll) {
-          spending = loadSpending();
-        } else {
-          refreshSpending(spending, changes.pairs);
+      client = new Map();
+      await loadBudgetState(changes => {
+        for (const { name, value } of changes) {
+          client.set(name, value);
         }
       });
+      await createAllBudgets();
+      const months = budgetMonths();
+      for (const full of createReferenceBudget(months).names()) {
+        const [sheetName, name] = splitName(full);
+        client.set(full, getBudgetCellValue(sheetName, name));
+      }
     });
 
-    afterEach(() => removeListener());
-
-    // The reference evaluated from scratch and `computeBudget` on the
-    // incrementally kept spending agree, and the kept spending matches a full
-    // reload. They also agree with the spreadsheet as it updated itself on
-    // every cell the client shows. (The spreadsheet's own in-session updates
-    // left a few cells nothing reads different from a fresh load: the empty
-    // month before the first one, and budgeted amounts of income categories,
-    // which it set to 0 instead of null.)
-    async function expectMatches({ spreadsheet = true } = {}) {
-      await sheet.waitOnSpreadsheet();
-      const months = createdMonths();
-      expect(flatten(spending)).toEqual(flatten(loadSpending()));
+    // The values the budget kept current as changes were applied match the
+    // reference and `computeBudget` evaluated from scratch, and so does what
+    // the notified client shows in the budget's months.
+    async function expectMatches() {
+      flush();
+      const months = budgetMonths();
       const reference = createReferenceBudget(months);
-      const computed = computeFromDb(months, spending);
+      const computed = computeFromDb(months);
       const names = [...reference.names(), ...computed.names()];
       expectSameValues(names, [
+        stateSource,
         { label: 'reference', get: reference.get },
         { label: 'computed', get: computed.get },
       ]);
 
-      if (spreadsheet) {
-        const sheets = new Set(months.map(monthUtils.sheetForMonth));
-        const incomeBudgets = new Set(
-          loadBudgetGroups()
-            .flatMap(group => group.categories)
-            .filter(cat => cat.is_income)
-            .map(cat => 'budget-' + cat.id),
-        );
-        expectSameValues(
-          names.filter(full => {
-            const [sheetName, name] = splitName(full);
-            return sheets.has(sheetName) && !incomeBudgets.has(name);
-          }),
-          [spreadsheetSource(), { label: 'computed', get: computed.get }],
-        );
-      }
+      const sheets = new Set(months.map(monthUtils.sheetForMonth));
+      expectSameValues(
+        names.filter(full => sheets.has(splitName(full)[0])),
+        [
+          stateSource,
+          {
+            label: 'client',
+            get: (sheetName, name) =>
+              client.get(`${sheetName}!${name}`) ?? null,
+          },
+        ],
+      );
     }
 
     const month = () => monthUtils.subMonths(monthUtils.currentMonth(), 2);
@@ -393,11 +364,7 @@ describe('computeBudget', () => {
         date: date(earlier),
       });
       await createAllBudgets();
-      // The spreadsheet replaced the stored amounts of the month that used to
-      // be the empty one before the first with zeros until the next load.
-      await expectMatches({ spreadsheet: false });
-      removeListener();
-      await expectFreshLoadMatches();
+      await expectMatches();
     });
   });
 });

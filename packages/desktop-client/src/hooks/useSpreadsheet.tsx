@@ -22,7 +22,8 @@ export function useSpreadsheet() {
 // TODO: Make this generic and replace the Binding type in the desktop-client package.
 type Binding = string | { name: string; query?: Query | undefined };
 
-type CellCacheValue = { name: string; value: string | number | boolean | null };
+// A cell bound to a query can hold any query result, e.g. a list of rows.
+type CellCacheValue = { name: string; value: unknown };
 type CellCache = { [name: string]: Promise<CellCacheValue> | null };
 type CellObserverCallback = (node: CellCacheValue) => void;
 type CellObservers = { [name: string]: CellObserverCallback[] };
@@ -199,10 +200,6 @@ function makeSpreadsheet() {
         current.cells.push({ sheetName, name });
         current.waiting.push({ resolve, reject });
       });
-    }
-
-    getCellNames(sheetName: string) {
-      return send('get-cell-names', { sheetName });
     }
 
     createQuery(sheetName: string, name: string, query: Query) {

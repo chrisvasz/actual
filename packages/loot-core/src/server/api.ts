@@ -39,13 +39,13 @@ import {
 } from './api-models';
 import type { AmountOPType, APIScheduleEntity } from './api-models';
 import { aqlQuery } from './aql';
+import { getBudgetCellValue } from './budget/state';
 import * as cloudStorage from './cloud-storage';
 import type { RemoteFile } from './cloud-storage';
 import * as db from './db';
 import { APIError, withErrorCode } from './errors';
 import { runMutator } from './mutators';
 import * as prefs from './prefs';
-import * as sheet from './sheet';
 import { endMessageBatch, setSyncingMode, startMessageBatch } from './sync';
 
 let IMPORT_MODE = false;
@@ -132,7 +132,7 @@ handlers['api/batch-budget-start'] = async function () {
   }
 
   // If we are importing, all we need to do is start a raw database
-  // transaction. Updating spreadsheet cells doesn't go through the
+  // transaction. Updating budget values doesn't go through the
   // syncing layer in that case.
   if (IMPORT_MODE) {
     db.beginTransaction();
@@ -300,15 +300,14 @@ handlers['api/start-import'] = async function ({ budgetName }) {
 handlers['api/finish-import'] = async function () {
   checkFileOpen();
 
-  // We always need to fully reload the app. Importing doesn't touch
-  // the spreadsheet, but we can't just recreate the spreadsheet
-  // either; there is other internal state that isn't created
+  // We always need to fully reload the app. Importing doesn't update
+  // the budget values, but we can't just reload them either; there is
+  // other internal state that isn't created
   const { id } = prefs.getPrefs();
   await handlers['close-budget']();
   await handlers['load-budget']({ id });
 
   await handlers['get-budget-bounds']();
-  await sheet.waitOnSpreadsheet();
 
   await cloudStorage.upload().catch(err => {
     logger.warn('cloudStorage.upload failed during finish-import', err);
@@ -353,8 +352,7 @@ handlers['api/budget-month'] = async function ({ month }) {
   const sheetName = monthUtils.sheetForMonth(month);
 
   function value(name) {
-    const v = sheet.get().getCellValue(sheetName, name);
-    return v === '' ? 0 : v;
+    return getBudgetCellValue(sheetName, name);
   }
 
   // This is duplicated from main.js because the return format is

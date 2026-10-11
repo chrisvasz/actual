@@ -206,3 +206,123 @@ export function forEachBudgetCell(
     );
   }
 }
+
+function sameMonths(a: string[], b: string[]) {
+  return (
+    a.length === b.length &&
+    (a.length === 0 || (a[0] === b[0] && a[a.length - 1] === b[b.length - 1]))
+  );
+}
+
+// The cells whose values differ between two computed budgets, so only those
+// are sent to the client. Values are compared per month and per category, so
+// an edit doesn't re-render every cell of the budget.
+export function diffBudgetCells(
+  prev: ComputedBudget,
+  next: ComputedBudget,
+  rows: Rows,
+  callback: (name: string, value: CellValue) => void,
+) {
+  if (!sameMonths(prev.months, next.months)) {
+    // The budget grew: compare every cell either budget has.
+    const seen = new Set<string>();
+    const compare = (full: string) => {
+      if (seen.has(full)) {
+        return;
+      }
+      seen.add(full);
+      const idx = full.indexOf('!');
+      const sheetName = full.slice(0, idx);
+      const name = full.slice(idx + 1);
+      const value = getBudgetCell(next, rows, sheetName, name);
+      if (!Object.is(getBudgetCell(prev, rows, sheetName, name), value)) {
+        callback(full, value);
+      }
+    };
+    forEachBudgetCell(next, rows, compare);
+    forEachBudgetCell(prev, rows, compare);
+    return;
+  }
+
+  for (const month of next.months) {
+    const before = prev.values.get(month);
+    const after = next.values.get(month);
+    if (!before || !after) {
+      continue;
+    }
+    const prefix = monthUtils.sheetForMonth(month) + '!';
+    const emit = (name: string, a: CellValue, b: CellValue) => {
+      if (!Object.is(a, b)) {
+        callback(prefix + name, b);
+      }
+    };
+    // A cell that went away reads as whatever is left for it, if anything.
+    const emitGone = (name: string) =>
+      callback(
+        prefix + name,
+        getBudgetCell(next, rows, prefix.slice(0, -1), name),
+      );
+
+    for (const name of SUMMARY_NAMES) {
+      const key = SUMMARY_CELLS[name];
+      emit(name, before.summary[key], after.summary[key]);
+    }
+
+    for (const [id, group] of after.groups) {
+      const old = before.groups.get(id);
+      emit('group-sum-amount-' + id, old?.spent ?? null, group.spent);
+      if (group.budgeted != null || old?.budgeted != null) {
+        emit('group-budget-' + id, old?.budgeted ?? null, group.budgeted);
+        emit('group-leftover-' + id, old?.balance ?? null, group.balance);
+      }
+    }
+    for (const id of before.groups.keys()) {
+      if (!after.groups.has(id)) {
+        emitGone('group-sum-amount-' + id);
+        emitGone('group-budget-' + id);
+        emitGone('group-leftover-' + id);
+      }
+    }
+
+    for (const [id, cat] of after.categories) {
+      const old = before.categories.get(id);
+      emit('budget-' + id, old?.budgeted ?? null, cat.budgeted);
+      emit(
+        'sum-amount-' + id,
+        old?.spent ?? before.incomeCategories.get(id)?.spent ?? null,
+        cat.spent,
+      );
+      emit('carryover-' + id, old?.carryover ?? null, cat.carryover);
+      emit('leftover-' + id, old?.balance ?? null, cat.balance);
+      emit(
+        'leftover-pos-' + id,
+        old ? (old.balance < 0 ? 0 : old.balance) : null,
+        cat.balance < 0 ? 0 : cat.balance,
+      );
+    }
+    for (const [id, cat] of after.incomeCategories) {
+      const old = before.incomeCategories.get(id) ?? before.categories.get(id);
+      emit('sum-amount-' + id, old?.spent ?? null, cat.spent);
+    }
+    for (const id of before.categories.keys()) {
+      if (!after.categories.has(id)) {
+        for (const name of [
+          'budget-',
+          'carryover-',
+          'leftover-',
+          'leftover-pos-',
+        ]) {
+          emitGone(name + id);
+        }
+        if (!after.incomeCategories.has(id)) {
+          emitGone('sum-amount-' + id);
+        }
+      }
+    }
+    for (const id of before.incomeCategories.keys()) {
+      if (!after.incomeCategories.has(id) && !after.categories.has(id)) {
+        emitGone('sum-amount-' + id);
+      }
+    }
+  }
+}
