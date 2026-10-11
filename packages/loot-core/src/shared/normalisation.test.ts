@@ -36,4 +36,24 @@ describe('getNormalisedString', () => {
     expect(getNormalisedString('Œuf')).toBe('oeuf');
     expect(getNormalisedString('œuf')).toBe('oeuf');
   });
+
+  it('strips the ASCII characters that count as diacritics', () => {
+    expect(getNormalisedString('A^B`C')).toBe('abc');
+  });
+
+  it('normalises plain ASCII the same as other text', () => {
+    function fullNormalise(value: string) {
+      return value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '');
+    }
+
+    for (let code = 0; code < 128; code++) {
+      const value = `Ab${String.fromCharCode(code)}Z`;
+      expect(getNormalisedString(value)).toBe(fullNormalise(value));
+    }
+    // Lowercases to ASCII
+    expect(getNormalisedString('\u212A')).toBe('k');
+  });
 });

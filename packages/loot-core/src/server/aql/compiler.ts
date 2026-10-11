@@ -644,6 +644,47 @@ const compileFunction = saveStack('function', (state, func) => {
   }
 });
 
+// `UNICODE_LIKE` and `NORMALISE` are JavaScript functions, so calling
+// them is far more expensive than a native comparison. When matching a
+// column of a joined table (like `payee.name`), the same handful of
+// payees would be normalised and matched again for every transaction.
+// Instead, match the joined table once and check the joined id against
+// the result, which SQLite evaluates a single time per query.
+//
+// A row with no joined item compares against an empty string, so this
+// only applies to patterns that can't match an empty string.
+function compileJoinedLike(state, lhs, pattern) {
+  const match =
+    typeof lhs.value === 'string' && lhs.value.match(/^(\w+)\.(\w+)$/);
+  if (!match || state.tableRef == null) {
+    return null;
+  }
+  const [, tableId, field] = match;
+  const pathInfo = [...state.paths.values()].find(
+    desc => desc.tableId === tableId,
+  );
+  if (!pathInfo) {
+    return null;
+  }
+
+  return (
+    `${tableId}.id IN (SELECT id FROM ${state.tableRef(pathInfo.tableName, true)} ` +
+    `WHERE UNICODE_LIKE(${pattern}, NORMALISE(${quoteAlias(field)})))`
+  );
+}
+
+// Whether a `$like` pattern could match an empty (or missing) value.
+// Patterns that aren't known until the query runs are assumed to.
+function matchesEmptyString(state, rhs) {
+  const pattern = castInput(state, rhs, 'string');
+  if (!pattern.literal || typeof pattern.value !== 'string') {
+    return true;
+  }
+  // `?` and literal characters (including escaped ones) need at least
+  // one character to match, so only a pattern of `%`s matches ''
+  return pattern.value.replace(/%/g, '') === '';
+}
+
 const compileOp = saveStack('op', (state, fieldRef, opData) => {
   const { $transform, ...opExpr } = opData;
   const [op] = Object.keys(opExpr);
@@ -732,7 +773,16 @@ const compileOp = saveStack('op', (state, fieldRef, opData) => {
     }
     case '$like': {
       const [left, right] = valArray(state, [lhs, rhs], ['string', 'string']);
-      return `UNICODE_LIKE(${getNormalisedString(right)}, NORMALISE(${left}))`;
+      const pattern = getNormalisedString(right);
+      if (!matchesEmptyString(state, rhs)) {
+        const joinedLike = compileJoinedLike(state, lhs, pattern);
+        if (joinedLike) {
+          return joinedLike;
+        }
+        // Empty values can't match, so skip calling into JavaScript
+        return `(${left} != '' AND UNICODE_LIKE(${pattern}, NORMALISE(${left})))`;
+      }
+      return `UNICODE_LIKE(${pattern}, NORMALISE(${left}))`;
     }
     case '$regexp': {
       const [left, right] = valArray(state, [lhs, rhs], ['string', 'string']);
@@ -1065,6 +1115,7 @@ export type CompilerState = {
   implicitTableName: string;
   implicitTableId: string;
   paths: Map<string, unknown>;
+  tableRef?: (name: string, isJoin?: boolean) => string;
   dependencies: string[];
   viewDependencies: Record<string, string[]>;
   compileStack: CompileStack;
@@ -1144,6 +1195,7 @@ export function compileQuery(
     implicitTableName: tableName,
     implicitTableId: tableRef(tableName),
     paths: new Map(),
+    tableRef,
     dependencies: [],
     viewDependencies: schemaConfig.viewDependencies ?? {},
     compileStack: [],

@@ -5,6 +5,7 @@ import fc from 'fast-check';
 import * as arbs from '#mocks/arbitrary-schema';
 import * as db from '#server/db';
 import { batchMessages, setSyncingMode } from '#server/sync';
+import { getNormalisedString } from '#shared/normalisation';
 import { q } from '#shared/query';
 import { groupById } from '#shared/util';
 import { aqlQuery } from '..';
@@ -617,4 +618,164 @@ describe('transaction executors', () => {
       expect(pages).toEqual(all);
     }
   }, 20_000);
+});
+
+describe('`$like` filters', () => {
+  async function insertSearchData() {
+    const cafeAcct = await db.insertAccount({ name: 'Checking Café' });
+    const savingsAcct = await db.insertAccount({ name: 'Savings' });
+    const groupId = await db.insertCategoryGroup({ name: 'Group' });
+    const foodCat = await db.insertCategory({
+      name: 'Café Food',
+      cat_group: groupId,
+    });
+    const rentCat = await db.insertCategory({
+      name: 'Rent',
+      cat_group: groupId,
+    });
+    const cafePayee = await db.insertPayee({ name: 'CAFÉ Paris' });
+    const groceryPayee = await db.insertPayee({ name: 'Grocery 100%' });
+    const transferPayee = await db.insertPayee({
+      name: '',
+      transfer_acct: savingsAcct,
+    });
+    const deletedPayee = await db.insertPayee({ name: 'Deleted cafe' });
+    await db.deletePayee({ id: deletedPayee });
+
+    const rows = [
+      { payee: cafePayee, category: rentCat, notes: null },
+      { payee: groceryPayee, category: foodCat, notes: '' },
+      { payee: transferPayee, category: null, notes: 'back\\slash' },
+      { payee: deletedPayee, category: rentCat, notes: 'a?b' },
+      { payee: null, category: null, notes: 'Lunch at the café' },
+      { payee: null, category: rentCat, notes: null },
+      { payee: groceryPayee, category: null, notes: 'Straße' },
+    ];
+    await insertTransactions(
+      [cafeAcct, savingsAcct].flatMap((account, a) =>
+        rows.map((row, i) => ({
+          id: `t${a}-${i}`,
+          account,
+          date: '2020-01-01',
+          amount: -(i + 1),
+          ...row,
+        })),
+      ),
+    );
+
+    // A split whose child is the only part that matches
+    await insertTransactions([
+      {
+        id: 'split',
+        account: savingsAcct,
+        payee: groceryPayee,
+        date: '2020-01-02',
+        amount: -10,
+        is_parent: true,
+      },
+      {
+        id: 'split/1',
+        account: savingsAcct,
+        payee: groceryPayee,
+        date: '2020-01-02',
+        amount: -10,
+        is_child: true,
+        parent_id: 'split',
+        notes: 'Café au lait',
+      },
+    ]);
+  }
+
+  const fields = [
+    'payee.name',
+    'payee.transfer_acct.name',
+    'notes',
+    'category.name',
+    'account.name',
+  ];
+
+  const patterns = [
+    '%cafe%',
+    '%CAFÉ%',
+    '%café paris',
+    'cafe%',
+    '%sav%',
+    '%deleted%',
+    '%100\\%%',
+    '%\\\\%',
+    '%a\\?b%',
+    '%strasse%',
+    '%?%',
+    '%',
+    '%%',
+    '',
+    '%nothing%',
+  ];
+
+  function searchQuery(pattern: string) {
+    return q('transactions')
+      .options({ splits: 'grouped' })
+      .filter({
+        $or: Object.fromEntries(fields.map(f => [f, { $like: pattern }])),
+      })
+      .select('*');
+  }
+
+  it('match the same rows with literal and parameter patterns', async () => {
+    await insertSearchData();
+
+    // Patterns passed as parameters can't be inspected when compiling,
+    // so they always call `UNICODE_LIKE` on every row. Unlike literals,
+    // they aren't normalised by the compiler, so normalise them here
+    for (const pattern of patterns) {
+      for (const field of [...fields, null]) {
+        const literalQuery = field
+          ? q('transactions').filter({ [field]: { $like: pattern } })
+          : searchQuery(pattern);
+        const paramQuery = field
+          ? q('transactions').filter({ [field]: { $like: ':pattern' } })
+          : searchQuery(':pattern');
+
+        const { data: literal } = await aqlQuery(
+          literalQuery.select('*').serialize(),
+        );
+        const { data: param } = await aqlQuery(
+          paramQuery.select('*').serialize(),
+          { pattern: getNormalisedString(pattern) },
+        );
+        expect({ pattern, field, data: literal }).toEqual({
+          pattern,
+          field,
+          data: param,
+        });
+      }
+    }
+  });
+
+  it('match joined names, notes and split children', async () => {
+    await insertSearchData();
+
+    const ids = async (pattern: string) => {
+      const { data } = await aqlQuery(searchQuery(pattern).serialize());
+      return data.map(t => t.id).sort();
+    };
+
+    // Every transaction in the café account, the café payee, category
+    // and notes, and the split whose child mentions a café
+    expect(await ids('%cafe%')).toEqual([
+      'split',
+      ...[0, 1, 2, 3, 4, 5, 6].map(i => `t0-${i}`),
+      't1-0',
+      't1-1',
+      't1-4',
+    ]);
+    expect(await ids('%sav%')).toEqual(
+      [...[0, 1, 2, 3, 4, 5, 6].map(i => `t1-${i}`), 'split', 't0-2'].sort(),
+    );
+    expect(await ids('%deleted%')).toEqual([]);
+    expect(await ids('%100\\%%')).toEqual(
+      ['split', 't0-1', 't0-6', 't1-1', 't1-6'].sort(),
+    );
+    expect(await ids('%strasse%')).toEqual(['t0-6', 't1-6']);
+  });
 });

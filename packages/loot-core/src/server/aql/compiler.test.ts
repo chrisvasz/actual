@@ -130,9 +130,53 @@ describe('sheet language', () => {
         .serialize(),
       schemaWithRefs,
     );
-    expect(result.sql).toMatch(
-      `UNICODE_LIKE('%test%', NORMALISE(payees1.name))`,
+    expect(result.sql).toMatch(`UNICODE_LIKE('%test%', NORMALISE(name))`);
+  });
+
+  it('`like` on a joined table matches the joined rows once', () => {
+    const result = generateSQLWithState(
+      q('transactions')
+        .select('id')
+        .filter({ 'payee.name': { $like: `%TEST%` } })
+        .serialize(),
+      schemaWithRefs,
     );
+    expect(sqlLines(result.sql)).toEqual(
+      sqlLines(`
+        SELECT transactions.id AS id FROM transactions
+        LEFT JOIN payees payees1 ON payees1.id = transactions.payee
+        WHERE (payees1.id IN (SELECT id FROM payees WHERE UNICODE_LIKE('%test%', NORMALISE(name))))
+      `),
+    );
+  });
+
+  it('`like` skips empty values when the pattern needs a character', () => {
+    const result = generateSQLWithState(
+      q('payees')
+        .select('id')
+        .filter({ name: { $like: `%TEST%` } })
+        .serialize(),
+      schemaWithRefs,
+    );
+    expect(result.sql).toMatch(
+      `(payees.name != '' AND UNICODE_LIKE('%test%', NORMALISE(payees.name)))`,
+    );
+  });
+
+  it('`like` checks every row when the pattern could match nothing', () => {
+    for (const pattern of ['%', '%%', '', ':pattern']) {
+      const result = generateSQLWithState(
+        q('transactions')
+          .select('id')
+          .filter({ 'payee.name': { $like: pattern } })
+          .serialize(),
+        schemaWithRefs,
+      );
+      expect(result.sql).toMatch(
+        /WHERE \(UNICODE_LIKE\(.*, NORMALISE\(payees1.name\)\)\)/,
+      );
+      expect(result.sql).not.toMatch('IN (SELECT');
+    }
   });
 
   it('`notlike` should use unicode and normalise function', () => {
