@@ -5,6 +5,8 @@ import { theme } from '@actual-app/components/theme';
 import { radius } from '@actual-app/components/tokens';
 import { css } from '@emotion/css';
 
+import { aboveStretchedLinkStyle } from './styles';
+
 type SidebarIconButtonProps = {
   Icon:
     | ComponentType<SVGProps<SVGElement>>
@@ -24,11 +26,15 @@ export function SidebarIconButton({
       aria-label={label}
       onPress={onPress}
       className={css({
+        ...aboveStretchedLinkStyle,
         color: theme.sidebarTextSubdued,
         backgroundColor: 'transparent',
         '&[data-hovered], &[data-focus-visible]': {
-          backgroundColor: theme.sidebarControlBackground,
+          backgroundColor: 'transparent',
           color: theme.sidebarItemTextSelected,
+        },
+        '&[data-focus-visible]': {
+          boxShadow: `inset 0 0 0 1px ${theme.sidebarItemAccentSelected}`,
         },
       })}
       style={{

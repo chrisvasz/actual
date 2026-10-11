@@ -6,6 +6,7 @@ import {
 import { theme } from '@actual-app/components/theme';
 import { css } from '@emotion/css';
 
+import { aboveStretchedLinkStyle } from './styles';
 import { useSidebarBalanceMode } from './useSidebarBalanceMode';
 
 type BalanceModeToggleProps = {
@@ -29,6 +30,7 @@ export function BalanceModeToggle({ className }: BalanceModeToggleProps) {
       aria-label={label}
       onPress={() => setMode(isCleared ? 'all' : 'cleared')}
       className={`${className ?? ''} ${css({
+        ...aboveStretchedLinkStyle,
         color: iconColor,
         backgroundColor: 'transparent',
         border: '1px solid transparent',

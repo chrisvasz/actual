@@ -4,9 +4,14 @@ import { radius, spacing } from '@actual-app/components/tokens';
 
 type CountPillProps = {
   count: number;
+  isSelected?: boolean;
 };
 
-export function CountPill({ count }: CountPillProps) {
+export function CountPill({ count, isSelected = false }: CountPillProps) {
+  const color = isSelected
+    ? theme.sidebarItemTextSelected
+    : theme.sidebarTextMuted;
+
   return (
     <Text
       style={{
@@ -14,8 +19,10 @@ export function CountPill({ count }: CountPillProps) {
         fontWeight: 600,
         paddingInline: spacing.xs,
         borderRadius: radius.pill,
-        backgroundColor: theme.sidebarControlBackground,
-        color: theme.sidebarTextMuted,
+        // A translucent tint of the text color reads on the plain, hovered,
+        // and selected row backgrounds alike.
+        backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`,
+        color,
         flexShrink: 0,
       }}
     >

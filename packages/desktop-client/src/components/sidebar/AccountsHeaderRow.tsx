@@ -1,10 +1,12 @@
+import { useMatch } from 'react-router';
+
 import {
   SvgAdd,
   SvgCheveronDownUp,
   SvgCheveronUpDown,
 } from '@actual-app/components/icons/v1';
 import { theme } from '@actual-app/components/theme';
-import { spacing } from '@actual-app/components/tokens';
+import { radius, spacing } from '@actual-app/components/tokens';
 import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 
@@ -16,6 +18,7 @@ import * as bindings from '#spreadsheet/bindings';
 import { BalanceModeToggle } from './BalanceModeToggle';
 import { SidebarBalance } from './SidebarBalance';
 import { SidebarIconButton } from './SidebarIconButton';
+import { stretchedLinkStyle } from './styles';
 import { useSidebarBalanceMode } from './useSidebarBalanceMode';
 
 type AccountsHeaderRowProps = {
@@ -29,6 +32,7 @@ export function AccountsHeaderRow({
 }: AccountsHeaderRowProps) {
   const dispatch = useDispatch();
   const [balanceMode] = useSidebarBalanceMode();
+  const isActive = useMatch({ path: '/accounts', end: true }) != null;
 
   const onAddAccount = () => {
     dispatch(replaceModal({ modal: { name: 'add-local-account' } }));
@@ -40,14 +44,21 @@ export function AccountsHeaderRow({
         [`& .${balanceToggleClassName}`]: { display: 'none' },
         [`&:hover .${balanceToggleClassName}, &:focus-within .${balanceToggleClassName}`]:
           { display: 'flex' },
-      })}
-      style={{
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
         paddingBlock: spacing.xs,
         paddingInline: spacing.sm,
-      }}
+        borderRadius: radius.sm,
+        backgroundColor: isActive
+          ? theme.sidebarItemBackgroundSelected
+          : undefined,
+        '&:hover': {
+          backgroundColor: isActive
+            ? theme.sidebarItemBackgroundSelected
+            : theme.sidebarItemBackgroundHover,
+        },
+      })}
     >
       <Link
         variant="internal"
@@ -58,6 +69,7 @@ export function AccountsHeaderRow({
           fontWeight: 700,
           textDecoration: 'none',
           color: theme.sidebarHeaderText,
+          ...stretchedLinkStyle,
         }}
         activeStyle={{ color: theme.sidebarItemTextSelected }}
       >
@@ -75,19 +87,17 @@ export function AccountsHeaderRow({
       />
       <View style={{ flex: 1 }} />
       <BalanceModeToggle className={balanceToggleClassName} />
-      <Link
-        variant="internal"
-        to="/accounts"
-        isExactPathMatch
-        style={{ textDecoration: 'none', color: theme.sidebarItemText }}
-        activeStyle={{ color: theme.sidebarItemTextSelected }}
-      >
-        <SidebarBalance
-          binding={bindings.allAccountBalanceByMode(balanceMode)}
-          testId="sidebar-all-accounts-balance"
-          style={{ fontSize: 12, fontWeight: 600 }}
-        />
-      </Link>
+      <SidebarBalance
+        binding={bindings.allAccountBalanceByMode(balanceMode)}
+        testId="sidebar-all-accounts-balance"
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: isActive
+            ? theme.sidebarItemTextSelected
+            : theme.sidebarItemText,
+        }}
+      />
     </View>
   );
 }

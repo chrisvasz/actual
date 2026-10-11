@@ -1,3 +1,5 @@
+import { useMatch } from 'react-router';
+
 import { Button } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
@@ -12,7 +14,11 @@ import { AccountTree } from './AccountTree';
 import { CollapseChevron } from './CollapseChevron';
 import { CountPill } from './CountPill';
 import { SidebarBalance } from './SidebarBalance';
-import { sectionLabelStyle } from './styles';
+import {
+  aboveStretchedLinkStyle,
+  sectionLabelStyle,
+  stretchedLinkStyle,
+} from './styles';
 import type { GroupBucket, SidebarAccountSide } from './useSidebarAccountTree';
 import { useSidebarBalanceMode } from './useSidebarBalanceMode';
 
@@ -38,18 +44,29 @@ export function SideGroup({
   onToggleBucket,
 }: SideGroupProps) {
   const [balanceMode] = useSidebarBalanceMode();
+  const to = side === 'on' ? '/accounts/onbudget' : '/accounts/offbudget';
+  const isActive = useMatch({ path: to, end: true }) != null;
 
   return (
     <View style={{ marginTop: spacing.xxs }}>
       <View
-        style={{
+        className={css({
           flexDirection: 'row',
           alignItems: 'center',
           gap: spacing.xs,
           paddingBlock: spacing.xs,
           paddingLeft: spacing.xs,
           paddingRight: spacing.sm,
-        }}
+          borderRadius: radius.sm,
+          backgroundColor: isActive
+            ? theme.sidebarItemBackgroundSelected
+            : undefined,
+          '&:hover': {
+            backgroundColor: isActive
+              ? theme.sidebarItemBackgroundSelected
+              : theme.sidebarItemBackgroundHover,
+          },
+        })}
       >
         <Button
           variant="bare"
@@ -57,8 +74,14 @@ export function SideGroup({
           aria-label={isOpen ? `Collapse ${label}` : `Expand ${label}`}
           onPress={onToggle}
           className={css({
+            ...aboveStretchedLinkStyle,
+            color: theme.sidebarTextSubdued,
             '&[data-hovered], &[data-focus-visible]': {
-              backgroundColor: theme.sidebarItemBackgroundHover,
+              backgroundColor: 'transparent',
+              color: theme.sidebarItemTextSelected,
+            },
+            '&[data-focus-visible]': {
+              boxShadow: `inset 0 0 0 1px ${theme.sidebarItemAccentSelected}`,
             },
           })}
           style={{
@@ -67,11 +90,11 @@ export function SideGroup({
             borderRadius: radius.sm,
           }}
         >
-          <CollapseChevron isOpen={isOpen} />
+          <CollapseChevron isOpen={isOpen} color="currentColor" />
         </Button>
         <Link
           variant="internal"
-          to={side === 'on' ? '/accounts/onbudget' : '/accounts/offbudget'}
+          to={to}
           isExactPathMatch
           style={{
             display: 'flex',
@@ -82,11 +105,14 @@ export function SideGroup({
             minWidth: 0,
             textDecoration: 'none',
             color: theme.sidebarItemText,
+            ...stretchedLinkStyle,
           }}
           activeStyle={{ color: theme.sidebarItemTextSelected }}
         >
           <Text style={sectionLabelStyle}>{label}</Text>
-          {!isOpen && <CountPill count={sideData.accountCount} />}
+          {!isOpen && (
+            <CountPill count={sideData.accountCount} isSelected={isActive} />
+          )}
           <View style={{ flex: 1 }} />
           <SidebarBalance
             binding={
