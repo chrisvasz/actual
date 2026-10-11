@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { ButtonWithLoading } from '@actual-app/components/button';
@@ -15,7 +14,6 @@ import { useNavigate } from '#hooks/useNavigate';
 import { useDispatch } from '#redux';
 
 export function ImportActualModal() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [error, setError] = useState<string | null>(null);
@@ -24,29 +22,19 @@ export function ImportActualModal() {
   function getErrorMessage(error: string): string {
     switch (error) {
       case 'parse-error':
-        return t(
-          'Unable to parse file. Please select a JSON file exported from nYNAB.',
-        );
+        return 'Unable to parse file. Please select a JSON file exported from nYNAB.';
       case 'not-ynab5':
-        return t(
-          'This file is not valid. Please select a JSON file exported from nYNAB.',
-        );
+        return 'This file is not valid. Please select a JSON file exported from nYNAB.';
       case 'not-zip-file':
-        return t(
-          'This file is not valid. Please select an unencrypted archive of Actual data.',
-        );
+        return 'This file is not valid. Please select an unencrypted archive of Actual data.';
       case 'invalid-zip-file':
-        return t('This archive is not a valid Actual export file.');
+        return 'This archive is not a valid Actual export file.';
       case 'invalid-metadata-file':
-        return t('The metadata file in the given archive is corrupted.');
+        return 'The metadata file in the given archive is corrupted.';
       case 'zip-too-large':
-        return t(
-          'This file is too large to import, sorry! Visit https://actualbudget.org/contact/ for support.',
-        );
+        return 'This file is too large to import, sorry! Visit https://actualbudget.org/contact/ for support.';
       default:
-        return t(
-          'An unknown error occurred while importing. Please report this as a new issue on GitHub.',
-        );
+        return 'An unknown error occurred while importing. Please report this as a new issue on GitHub.';
     }
   }
 
@@ -74,7 +62,7 @@ export function ImportActualModal() {
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Import from Actual export')}
+            title="Import from Actual export"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ ...styles.smallText, lineHeight: 1.5, marginTop: 20 }}>
@@ -86,19 +74,15 @@ export function ImportActualModal() {
 
             <View style={{ '& > div': { lineHeight: '1.7em' } }}>
               <Paragraph>
-                <Trans>
-                  You can import data from another Actual account or instance.
-                  First export your data from a different account, and it will
-                  give you a compressed file. This file is a simple zip file
-                  that contains the <code>db.sqlite</code> and{' '}
-                  <code>metadata.json</code> files.
-                </Trans>
+                You can import data from another Actual account or instance.
+                First export your data from a different account, and it will
+                give you a compressed file. This file is a simple zip file that
+                contains the <code>db.sqlite</code> and{' '}
+                <code>metadata.json</code> files.
               </Paragraph>
 
               <Paragraph>
-                <Trans>
-                  Select one of these compressed files and import it here.
-                </Trans>
+                Select one of these compressed files and import it here.
               </Paragraph>
 
               <View style={{ alignSelf: 'center' }}>
@@ -108,7 +92,7 @@ export function ImportActualModal() {
                   isLoading={importing}
                   onPress={onImport}
                 >
-                  <Trans>Select file...</Trans>
+                  Select file...
                 </ButtonWithLoading>
               </View>
             </View>

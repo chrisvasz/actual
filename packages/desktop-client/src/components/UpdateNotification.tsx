@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgClose } from '@actual-app/components/icons/v1';
@@ -13,7 +12,6 @@ import { useDispatch, useSelector } from '#redux';
 import { Link } from './common/Link';
 
 export function UpdateNotification() {
-  const { t } = useTranslation();
   const updateInfo = useSelector(state => state.app.updateInfo);
   const showUpdateNotification = useSelector(
     state => state.app.showUpdateNotification,
@@ -44,9 +42,7 @@ export function UpdateNotification() {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View style={{ marginRight: 10, fontWeight: 700 }}>
-            <Text>
-              <Trans>App updated to {{ version: updateInfo.version }}</Trans>
-            </Text>
+            <Text>App updated to {updateInfo.version}</Text>
           </View>
           <View style={{ flex: 1 }} />
           <View style={{ marginTop: -1 }}>
@@ -59,7 +55,7 @@ export function UpdateNotification() {
                   textDecoration: 'underline',
                 }}
               >
-                <Trans>Restart</Trans>
+                Restart
               </Link>{' '}
               (
               <Link
@@ -74,12 +70,12 @@ export function UpdateNotification() {
                   )
                 }
               >
-                <Trans>notes</Trans>
+                notes
               </Link>
               )
               <Button
                 variant="bare"
-                aria-label={t('Close')}
+                aria-label="Close"
                 style={{ display: 'inline', padding: '1px 7px 2px 7px' }}
                 onPress={() => {
                   // Set a flag to never show an update notification again for this session

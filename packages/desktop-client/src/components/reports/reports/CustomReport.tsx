@@ -1,5 +1,4 @@
 import React, { useEffect, useEffectEvent, useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useLocation, useParams } from 'react-router';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
@@ -20,7 +19,6 @@ import type {
   sortByOpType,
   TransactionEntity,
 } from '@actual-app/core/types/models';
-import type { TransObjectLiteral } from '@actual-app/core/types/util';
 
 import { Warning } from '#components/alerts';
 import { BackButton } from '#components/common/BackButton';
@@ -132,7 +130,6 @@ type CustomReportInnerProps = {
 
 function CustomReportInner({ report: initialReport }: CustomReportInnerProps) {
   const locale = useLocale();
-  const { t } = useTranslation();
   const format = useFormat();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
 
@@ -835,29 +832,18 @@ function CustomReportInner({ report: initialReport }: CustomReportInnerProps) {
       header={
         isNarrowWidth ? (
           <MobilePageHeader
-            title={t('Custom Report: {{name}}', {
-              name: report.name ?? t('Unsaved report'),
-            })}
+            title={`Custom Report: ${report.name ?? 'Unsaved report'}`}
             leftContent={<BackButton onPress={onBackClick} />}
           />
         ) : (
           <PageHeader
             title={
-              <Trans>
-                <Text>
-                  <Trans>Custom Report:</Trans>
-                </Text>{' '}
+              <>
+                <Text>Custom Report:</Text>{' '}
                 <Text style={{ marginLeft: 5, color: theme.pageTextPositive }}>
-                  {
-                    {
-                      name:
-                        report.name?.length > 0
-                          ? report.name
-                          : t('Unsaved report'),
-                    } as TransObjectLiteral
-                  }
+                  {report.name?.length > 0 ? report.name : 'Unsaved report'}
                 </Text>
-              </Trans>
+              </>
             }
           />
         )
@@ -972,9 +958,8 @@ function CustomReportInner({ report: initialReport }: CustomReportInnerProps) {
 
               {hasWarning && (
                 <Warning style={{ paddingTop: 5, paddingBottom: 5 }}>
-                  {t(
-                    'This report is configured to use a non-existing filter value (i.e. category/account/payee).',
-                  )}
+                  This report is configured to use a non-existing filter value
+                  (i.e. category/account/payee).
                 </Warning>
               )}
             </View>
@@ -1037,7 +1022,7 @@ function CustomReportInner({ report: initialReport }: CustomReportInnerProps) {
                     intervalsCount={intervals.length}
                   />
                 ) : (
-                  <LoadingIndicator message={t('Loading report...')} />
+                  <LoadingIndicator message="Loading report..." />
                 )}
               </View>
             </View>

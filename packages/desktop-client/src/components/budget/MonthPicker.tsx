@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React, { useState } from 'react';
 import type { CSSProperties } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import {
   SvgArrowThinLeft,
@@ -34,7 +33,6 @@ export const MonthPicker = ({
   onSelect,
 }: MonthPickerProps) => {
   const locale = useLocale();
-  const { t } = useTranslation();
   const [hoverId, setHoverId] = useState(null);
   const [targetMonthCount, setTargetMonthCount] = useState(12);
 
@@ -105,7 +103,7 @@ export const MonthPicker = ({
             },
           }}
         >
-          <View title={t('Previous month')}>
+          <View title="Previous month">
             <SvgArrowThinLeft
               style={{
                 width: 13,
@@ -231,7 +229,7 @@ export const MonthPicker = ({
             },
           }}
         >
-          <View title={t('Next month')}>
+          <View title="Next month">
             <SvgArrowThinRight
               style={{
                 width: 13,

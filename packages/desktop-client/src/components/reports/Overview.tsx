@@ -3,7 +3,6 @@ import { Dialog, DialogTrigger } from 'react-aria-components';
 import { ErrorBoundary } from 'react-error-boundary';
 import ReactGridLayout from 'react-grid-layout';
 import type { Layout } from 'react-grid-layout';
-import { Trans, useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -108,7 +107,6 @@ type OverviewProps = {
 };
 
 export function Overview({ dashboard }: OverviewProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const [_firstDayOfWeekIdx] = useSyncedPref('firstDayOfWeekIdx');
   const firstDayOfWeekIdx = _firstDayOfWeekIdx || '0';
@@ -264,9 +262,7 @@ export function Overview({ dashboard }: OverviewProps) {
         },
         onSuccess: () => {
           onDispatchSucessNotification(
-            t(
-              "Dashboard has been successfully reset to default state. Don't like what you see? You can always press [ctrl+z](#undo) to undo.",
-            ),
+            "Dashboard has been successfully reset to default state. Don't like what you see? You can always press [ctrl+z](#undo) to undo.",
           );
         },
       },
@@ -340,7 +336,7 @@ export function Overview({ dashboard }: OverviewProps) {
     void window.Actual.saveFile(
       JSON.stringify(data, null, 2),
       'dashboard.json',
-      t('Export Dashboard'),
+      'Export Dashboard',
     );
   };
 
@@ -354,9 +350,7 @@ export function Overview({ dashboard }: OverviewProps) {
         addNotification({
           notification: {
             type: 'error',
-            message: t(
-              'Fatal error occurred: unable to open import file dialog.',
-            ),
+            message: 'Fatal error occurred: unable to open import file dialog.',
           },
         }),
       );
@@ -387,9 +381,7 @@ export function Overview({ dashboard }: OverviewProps) {
         },
         onSuccess: () => {
           onDispatchSucessNotification(
-            t(
-              "Dashboard has been successfully imported. Don't like what you see? You can always press [ctrl+z](#undo) to undo.",
-            ),
+            "Dashboard has been successfully imported. Don't like what you see? You can always press [ctrl+z](#undo) to undo.",
           );
         },
         onError: error => {
@@ -402,7 +394,7 @@ export function Overview({ dashboard }: OverviewProps) {
                     notification: {
                       id: 'import',
                       type: 'error',
-                      message: t('Failed parsing the imported JSON.'),
+                      message: 'Failed parsing the imported JSON.',
                     },
                   }),
                 );
@@ -426,7 +418,7 @@ export function Overview({ dashboard }: OverviewProps) {
                     notification: {
                       id: 'import',
                       type: 'error',
-                      message: t('Failed importing the dashboard file.'),
+                      message: 'Failed importing the dashboard file.',
                     },
                   }),
                 );
@@ -472,7 +464,7 @@ export function Overview({ dashboard }: OverviewProps) {
   const { data: accounts = [] } = useAccounts();
 
   if (isLoading) {
-    return <LoadingIndicator message={t('Loading reports...')} />;
+    return <LoadingIndicator message="Loading reports..." />;
   }
 
   return (
@@ -489,7 +481,7 @@ export function Overview({ dashboard }: OverviewProps) {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  <Trans>Reports</Trans>: {dashboard.name}
+                  Reports: {dashboard.name}
                 </View>
               }
             />
@@ -545,7 +537,7 @@ export function Overview({ dashboard }: OverviewProps) {
 
                   <DialogTrigger>
                     <Button variant="primary" isDisabled={isImporting}>
-                      <Trans>Add new widget</Trans>
+                      Add new widget
                     </Button>
 
                     <Popover>
@@ -573,7 +565,7 @@ export function Overview({ dashboard }: OverviewProps) {
 
                             if (item === 'markdown-card') {
                               onAddWidget<MarkdownWidget>(item, {
-                                content: `### ${t('Text Widget')}\n\n${t('Edit this widget to change the **markdown** content.')}`,
+                                content: `### ${'Text Widget'}\n\n${'Edit this widget to change the **markdown** content.'}`,
                               });
                               return;
                             }
@@ -583,29 +575,29 @@ export function Overview({ dashboard }: OverviewProps) {
                           items={[
                             {
                               name: 'cash-flow-card' as const,
-                              text: t('Cash flow graph'),
+                              text: 'Cash flow graph',
                             },
                             {
                               name: 'net-worth-card' as const,
-                              text: t('Net worth graph'),
+                              text: 'Net worth graph',
                             },
                             {
                               name: 'crossover-card' as const,
-                              text: t('Crossover point'),
+                              text: 'Crossover point',
                             },
                             {
                               name: 'age-of-money-card' as const,
-                              text: t('Age of Money'),
+                              text: 'Age of Money',
                             },
                             {
                               name: 'spending-card' as const,
-                              text: t('Spending analysis'),
+                              text: 'Spending analysis',
                             },
                             ...(budgetAnalysisReportEnabled
                               ? [
                                   {
                                     name: 'budget-analysis-card' as const,
-                                    text: t('Budget analysis'),
+                                    text: 'Budget analysis',
                                   },
                                 ]
                               : []),
@@ -613,7 +605,7 @@ export function Overview({ dashboard }: OverviewProps) {
                               ? [
                                   {
                                     name: 'balance-forecast-card' as const,
-                                    text: t('Balance forecast'),
+                                    text: 'Balance forecast',
                                   },
                                 ]
                               : []),
@@ -621,27 +613,27 @@ export function Overview({ dashboard }: OverviewProps) {
                               ? [
                                   {
                                     name: 'monte-carlo-card' as const,
-                                    text: t('Monte Carlo analysis'),
+                                    text: 'Monte Carlo analysis',
                                   },
                                 ]
                               : []),
                             {
                               name: 'markdown-card' as const,
-                              text: t('Text widget'),
+                              text: 'Text widget',
                             },
                             {
                               name: 'summary-card' as const,
-                              text: t('Summary card'),
+                              text: 'Summary card',
                             },
                             {
                               name: 'calendar-card' as const,
-                              text: t('Calendar card'),
+                              text: 'Calendar card',
                             },
                             ...(formulaMode
                               ? [
                                   {
                                     name: 'formula-card' as const,
-                                    text: t('Formula card'),
+                                    text: 'Formula card',
                                   },
                                 ]
                               : []),
@@ -649,13 +641,13 @@ export function Overview({ dashboard }: OverviewProps) {
                               ? [
                                   {
                                     name: 'sankey-card' as const,
-                                    text: t('Sankey card'),
+                                    text: 'Sankey card',
                                   },
                                 ]
                               : []),
                             {
                               name: 'custom-report' as const,
-                              text: t('New custom report'),
+                              text: 'New custom report',
                             },
                             ...(customReports.length
                               ? ([Menu.line] satisfies Array<typeof Menu.line>)
@@ -676,20 +668,20 @@ export function Overview({ dashboard }: OverviewProps) {
                       isDisabled={isImporting}
                       onPress={() => setIsEditing(false)}
                     >
-                      <Trans>Finish editing dashboard</Trans>
+                      Finish editing dashboard
                     </Button>
                   ) : (
                     <Button
                       isDisabled={isImporting}
                       onPress={() => setIsEditing(true)}
                     >
-                      <Trans>Edit dashboard</Trans>
+                      Edit dashboard
                     </Button>
                   )}
 
                   {/* The Menu */}
                   <DialogTrigger>
-                    <Button variant="bare" aria-label={t('Menu')}>
+                    <Button variant="bare" aria-label="Menu">
                       <SvgDotsHorizontalTriple
                         width={15}
                         height={15}
@@ -723,24 +715,24 @@ export function Overview({ dashboard }: OverviewProps) {
                           items={[
                             {
                               name: 'reset',
-                              text: t('Reset to default'),
+                              text: 'Reset to default',
                               disabled: isImporting,
                             },
                             Menu.line,
                             {
                               name: 'import',
-                              text: t('Import'),
+                              text: 'Import',
                               disabled: isImporting,
                             },
                             {
                               name: 'export',
-                              text: t('Export'),
+                              text: 'Export',
                               disabled: isImporting,
                             },
                             Menu.line,
                             {
                               name: 'delete',
-                              text: t('Delete dashboard'),
+                              text: 'Delete dashboard',
                               disabled:
                                 isImporting || dashboardPages.length <= 1,
                             },
@@ -758,7 +750,7 @@ export function Overview({ dashboard }: OverviewProps) {
       padding={10}
     >
       {isImporting ? (
-        <LoadingIndicator message={t('Import is running...')} />
+        <LoadingIndicator message="Import is running..." />
       ) : (
         <div>
           <View
@@ -800,7 +792,7 @@ export function Overview({ dashboard }: OverviewProps) {
                             widgetId={item.i}
                             isEditing={isEditing}
                           >
-                            <Trans>This widget has failed to load.</Trans>
+                            This widget has failed to load.
                           </MissingReportCard>
                         )}
                       >

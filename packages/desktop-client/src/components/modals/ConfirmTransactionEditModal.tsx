@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { Button } from '@actual-app/components/button';
@@ -22,8 +21,6 @@ export function ConfirmTransactionEditModal({
   onConfirm,
   confirmReason,
 }: ConfirmTransactionEditModalProps) {
-  const { t } = useTranslation();
-
   const { isNarrowWidth } = useResponsive();
   const narrowButtonStyle = isNarrowWidth
     ? {
@@ -39,66 +36,50 @@ export function ConfirmTransactionEditModal({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Reconciled Transaction')}
+            title="Reconciled Transaction"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ lineHeight: 1.5 }}>
             {confirmReason === 'batchDeleteWithReconciledTransfer' ? (
               <Block>
-                <Trans>
-                  This transfer has a linked transaction in another account that
-                  is reconciled. Deleting it may bring that account's
-                  reconciliation out of balance.
-                </Trans>
+                This transfer has a linked transaction in another account that
+                is reconciled. Deleting it may bring that account's
+                reconciliation out of balance.
               </Block>
             ) : confirmReason === 'batchDeleteWithReconciled' ? (
               <Block>
-                <Trans>
-                  Deleting reconciled transactions may bring your reconciliation
-                  out of balance.
-                </Trans>
+                Deleting reconciled transactions may bring your reconciliation
+                out of balance.
               </Block>
             ) : confirmReason === 'batchEditWithReconciledTransfer' ? (
               <Block>
-                <Trans>
-                  This transfer has a linked transaction in another account that
-                  is reconciled. Editing it may bring that account's
-                  reconciliation out of balance.
-                </Trans>
+                This transfer has a linked transaction in another account that
+                is reconciled. Editing it may bring that account's
+                reconciliation out of balance.
               </Block>
             ) : confirmReason === 'batchEditWithReconciled' ? (
               <Block>
-                <Trans>
-                  Editing reconciled transactions may bring your reconciliation
-                  out of balance.
-                </Trans>
+                Editing reconciled transactions may bring your reconciliation
+                out of balance.
               </Block>
             ) : confirmReason === 'editReconciled' ? (
               <Block>
-                <Trans>
-                  Saving your changes to this reconciled transaction may bring
-                  your reconciliation out of balance.
-                </Trans>
+                Saving your changes to this reconciled transaction may bring
+                your reconciliation out of balance.
               </Block>
             ) : confirmReason === 'unlockReconciled' ? (
               <Block>
-                <Trans>
-                  Unlocking this transaction means you won't be warned about
-                  changes that can impact your reconciled balance. (Changes to
-                  amount, account, payee, etc).
-                </Trans>
+                Unlocking this transaction means you won't be warned about
+                changes that can impact your reconciled balance. (Changes to
+                amount, account, payee, etc).
               </Block>
             ) : confirmReason === 'deleteReconciled' ? (
               <Block>
-                <Trans>
-                  Deleting reconciled transactions may bring your reconciliation
-                  out of balance.
-                </Trans>
+                Deleting reconciled transactions may bring your reconciliation
+                out of balance.
               </Block>
             ) : (
-              <Block>
-                <Trans>Are you sure you want to edit this transaction?</Trans>
-              </Block>
+              <Block>Are you sure you want to edit this transaction?</Block>
             )}
             <View
               style={{
@@ -108,7 +89,7 @@ export function ConfirmTransactionEditModal({
               }}
             >
               <Button
-                aria-label={t('Cancel')}
+                aria-label="Cancel"
                 style={{
                   marginRight: 10,
                   ...narrowButtonStyle,
@@ -118,11 +99,11 @@ export function ConfirmTransactionEditModal({
                   onCancel();
                 }}
               >
-                <Trans>Cancel</Trans>
+                Cancel
               </Button>
               <InitialFocus>
                 <Button
-                  aria-label={t('Confirm')}
+                  aria-label="Confirm"
                   variant="primary"
                   style={{
                     marginRight: 10,
@@ -133,7 +114,7 @@ export function ConfirmTransactionEditModal({
                     onConfirm();
                   }}
                 >
-                  <Trans>Confirm</Trans>
+                  Confirm
                 </Button>
               </InitialFocus>
             </View>

@@ -1,16 +1,13 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Page } from '#components/Page';
 
 import { UserAccess } from './UserAccess';
 
 export function UserAccessPage() {
-  const { t } = useTranslation();
-
   return (
     <Page
-      header={t('User Access')}
+      header="User Access"
       style={{
         borderRadius: '5px',
         marginBottom: '25px',

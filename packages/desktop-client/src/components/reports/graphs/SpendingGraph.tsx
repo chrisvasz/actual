@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React from 'react';
 import type { ComponentProps, CSSProperties } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
 import { theme } from '@actual-app/components/theme';
@@ -58,8 +57,6 @@ const CustomTooltip = ({
   compare,
   format,
 }: CustomTooltipProps) => {
-  const { t } = useTranslation();
-
   if (active && payload && payload.length) {
     const comparison = ['average', 'budget'].includes(selection)
       ? payload[0].payload[selection] * -1
@@ -79,21 +76,16 @@ const CustomTooltip = ({
         <div>
           <div style={{ marginBottom: 10 }}>
             <strong>
-              <Trans>
-                Day:{' '}
-                {{
-                  dayOfMonth:
-                    Number(payload[0].payload.day) >= 28
-                      ? t('28+')
-                      : payload[0].payload.day,
-                }}
-              </Trans>
+              Day:{' '}
+              {Number(payload[0].payload.day) >= 28
+                ? '28+'
+                : payload[0].payload.day}
             </strong>
           </div>
           <div style={{ lineHeight: 1.5 }}>
             {payload[0].payload.months[compare]?.cumulative ? (
               <AlignedText
-                left={t('Compare:')}
+                left="Compare:"
                 right={
                   <FinancialText>
                     {format(
@@ -108,10 +100,10 @@ const CustomTooltip = ({
               <AlignedText
                 left={
                   selection === 'average'
-                    ? t('Average:')
+                    ? 'Average:'
                     : selection === 'budget'
-                      ? t('Budgeted:')
-                      : t('To:')
+                      ? 'Budgeted:'
+                      : 'To:'
                 }
                 right={
                   <FinancialText>
@@ -122,7 +114,7 @@ const CustomTooltip = ({
             )}
             {payload[0].payload.months[compare]?.cumulative ? (
               <AlignedText
-                left={t('Difference:')}
+                left="Difference:"
                 right={
                   <FinancialText>
                     {format(

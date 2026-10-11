@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgLockOpen } from '@actual-app/components/icons/v1';
@@ -34,7 +33,6 @@ type ManageUserAccessContentProps = {
 };
 
 function UserAccessContent({ isModal }: ManageUserAccessContentProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const [allAccess, setAllAccess] = useState([]);
   const [page, setPage] = useState(0);
@@ -81,7 +79,7 @@ function UserAccessContent({ isModal }: ManageUserAccessContentProps) {
           notification: {
             type: 'error',
             id: 'error',
-            title: t('Error getting available users'),
+            title: 'Error getting available users',
             sticky: true,
             message: data.error,
           },
@@ -99,7 +97,7 @@ function UserAccessContent({ isModal }: ManageUserAccessContentProps) {
 
     setAllAccess(loadedAccess);
     return loadedAccess;
-  }, [cloudFileId, dispatch, t]);
+  }, [cloudFileId, dispatch]);
 
   useEffect(() => {
     async function loadData() {
@@ -144,21 +142,19 @@ function UserAccessContent({ isModal }: ManageUserAccessContentProps) {
           }}
         >
           <Text>
-            <Trans>
-              Determine which users can view and manage your budgets
-            </Trans>{' '}
+            Determine which users can view and manage your budgets{' '}
             <Link
               variant="external"
               to="https://actualbudget.org/docs/config/multi-user#user-access-management"
               linkColor="muted"
             >
-              <Trans>Learn more</Trans>
+              Learn more
             </Link>
           </Text>
         </View>
         <View style={{ flex: 1 }} />
         <Search
-          placeholder={t('Filter users...')}
+          placeholder="Filter users..."
           value={filter}
           onChange={onSearchChange}
         />
@@ -242,14 +238,13 @@ type LockToggleProps = {
 function LockToggle({ style, onToggleSave }: LockToggleProps) {
   const [hover, setHover] = useState(false);
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   return (
     <Button
       onHoverStart={() => setHover(true)}
       onHoverEnd={() => setHover(false)}
       variant="primary"
-      aria-label={t('Menu')}
+      aria-label="Menu"
       onPress={() =>
         dispatch(
           pushModal({
@@ -265,7 +260,7 @@ function LockToggle({ style, onToggleSave }: LockToggleProps) {
     >
       {hover && <SvgLockOpen style={{ ...style, marginRight: 5 }} />}
       {!hover && <SvgLockClosed style={{ ...style, marginRight: 5 }} />}{' '}
-      <Trans>Transfer ownership</Trans>
+      Transfer ownership
     </Button>
   );
 }

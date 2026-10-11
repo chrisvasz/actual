@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Trans } from 'react-i18next';
 
 import { ButtonWithLoading } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
@@ -31,26 +30,21 @@ export function ResetSync() {
           isDisabled={!isEnabled}
           onPress={onResetSync}
         >
-          <Trans>Reset sync</Trans>
+          Reset sync
         </ButtonWithLoading>
       }
     >
       {isEnabled ? (
         <Text>
-          <Trans>
-            <strong>Reset sync</strong> will remove all local data used to track
-            changes for syncing, and create a fresh sync ID on the server. This
-            file on other devices will have to be re-downloaded to use the new
-            sync ID. Use this if there is a problem with syncing and you want to
-            start fresh.
-          </Trans>
+          <strong>Reset sync</strong> will remove all local data used to track
+          changes for syncing, and create a fresh sync ID on the server. This
+          file on other devices will have to be re-downloaded to use the new
+          sync ID. Use this if there is a problem with syncing and you want to
+          start fresh.
         </Text>
       ) : (
         <Text>
-          <Trans>
-            <strong>Reset sync</strong> is only available when syncing is
-            enabled.
-          </Trans>
+          <strong>Reset sync</strong> is only available when syncing is enabled.
         </Text>
       )}
     </Setting>

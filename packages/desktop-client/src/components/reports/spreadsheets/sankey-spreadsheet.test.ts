@@ -1,5 +1,5 @@
 import type { RuleConditionEntity } from '@actual-app/core/types/models';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   addHiddenNodes,
@@ -28,19 +28,6 @@ import {
   sortGraph,
 } from './sankey-spreadsheet';
 import type { Graph, NodeData } from './sankey-spreadsheet';
-
-// Mock i18n
-vi.mock('i18next', () => ({
-  t: (key: string, params?: Record<string, string>) => {
-    if (params && params.month) {
-      return `translated: ${key} (${params.month})`;
-    }
-    if (params && params.category) {
-      return `translated: ${key} (${params.category})`;
-    }
-    return `translated: ${key}`;
-  },
-}));
 
 describe('sankey-spreadsheet', () => {
   describe('isGraphLayer', () => {
@@ -565,7 +552,7 @@ describe('sankey-spreadsheet', () => {
       const toBudgetNode = graph.get('to_budget');
 
       expect(toBudgetNode?.isNegative).toBe(true);
-      expect(toBudgetNode?.labelKey).toBe('Overbudgeted');
+      expect(toBudgetNode?.name).toBe('Overbudgeted');
     });
   });
 
@@ -947,16 +934,6 @@ describe('sankey-spreadsheet', () => {
       const result = convertToSankeyData(graph, new Map());
 
       expect(result.nodes[0].percentageLabel).toBe('100.0%');
-    });
-
-    it('translates labelKey nodes', () => {
-      const graph: Graph = new Map();
-      addNode(graph, 'node1', GraphLayers.Budget, 'Node 1');
-      graph.get('node1')!.labelKey = 'Budgeted';
-
-      const result = convertToSankeyData(graph, new Map());
-
-      expect(result.nodes[0].name).toBe('translated: Budgeted');
     });
   });
 });

@@ -1,6 +1,5 @@
 import { Fragment, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import {
@@ -76,14 +75,13 @@ export function MonteCarloRunDetailTable({
   cashflowGraph,
   onBack,
 }: MonteCarloRunDetailTableProps) {
-  const { t } = useTranslation();
   const format = useFormat();
   const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
   // Years whose detailed working is shown under the summary
   const [workingYears, setWorkingYears] = useState<Set<number>>(new Set());
 
   const hasIncome = incomeStreams.length > 0;
-  const surplusPotName = getMonteCarloSurplusPotLabel(pots, t);
+  const surplusPotName = getMonteCarloSurplusPotLabel(pots);
   const hasSurplusPot = pots.some(pot => pot.isSurplus);
   const lastRow = rows[rows.length - 1];
   const hasSurvived = lastRow != null && lastRow.endBalance > 0;
@@ -137,15 +135,9 @@ export function MonteCarloRunDetailTable({
     const total = format(totalIncome, 'financial');
     const tax = format(totalIncomeTax, 'financial');
     if (totalIncomeTax > 0) {
-      return t(
-        'Income received over this run: {{total}}, of which {{tax}} tax.',
-        {
-          total,
-          tax,
-        },
-      );
+      return `Income received over this run: ${total}, of which ${tax} tax.`;
     }
-    return t('Income received over this run: {{total}}.', { total });
+    return `Income received over this run: ${total}.`;
   }
 
   // How the year's actual spending compares with the plan: on target or a
@@ -154,45 +146,25 @@ export function MonteCarloRunDetailTable({
     const spent = format(row.spent, 'financial');
     const planned = format(row.plannedSpending, 'financial');
     if (row.spent < row.plannedSpending) {
-      return t(
-        'Spent: {{spent}} of the {{planned}} planned - {{shortfall}} short.',
-        {
-          spent,
-          planned,
-          shortfall: format(row.plannedSpending - row.spent, 'financial'),
-        },
-      );
+      return `Spent: ${spent} of the ${planned} planned - ${format(row.plannedSpending - row.spent, 'financial')} short.`;
     }
     if (row.spent > row.plannedSpending) {
-      return t(
-        'Spent: {{spent}} - {{extra}} more than the {{planned}} planned.',
-        {
-          spent,
-          planned,
-          extra: format(row.spent - row.plannedSpending, 'financial'),
-        },
-      );
+      return `Spent: ${spent} - ${format(row.spent - row.plannedSpending, 'financial')} more than the ${planned} planned.`;
     }
-    return t('Spent: {{spent}}, as planned.', { spent });
+    return `Spent: ${spent}, as planned.`;
   }
 
   function getSavedSentence(row: MonteCarloRunDetailRow) {
-    return t(
-      'Saved into {{pot}}: {{amount}} - income beyond what the plan spends.',
-      { pot: surplusPotName, amount: format(row.surplusSaved, 'financial') },
-    );
+    return `Saved into ${surplusPotName}: ${format(row.surplusSaved, 'financial')} - income beyond what the plan spends.`;
   }
 
   // "State pension: 12,000.00" - the per-stream lines under a year's
   // income sentence when more than one stream is configured
   function getIncomeStreamLine(incomeIndex: number, amount: number) {
     const incomeStream = incomeStreams[incomeIndex];
-    return t('{{name}}: {{amount}}', {
-      name:
-        incomeStream.name ||
-        t('Income {{number}}', { number: incomeIndex + 1 }),
-      amount: format(amount, 'financial'),
-    });
+    return `${
+      incomeStream.name || `Income ${incomeIndex + 1}`
+    }: ${format(amount, 'financial')}`;
   }
 
   // Four sentence variants so each language can phrase the combinations
@@ -202,38 +174,22 @@ export function MonteCarloRunDetailTable({
     const tax = format(totalTax, 'financial');
     const fees = format(totalFees, 'financial');
     if (totalTax > 0 && totalFees > 0) {
-      return t(
-        'Total withdrawn over this run: {{total}}, of which {{tax}} tax, plus {{fees}} paid in fees.',
-        { total, tax, fees },
-      );
+      return `Total withdrawn over this run: ${total}, of which ${tax} tax, plus ${fees} paid in fees.`;
     }
     if (totalTax > 0) {
-      return t(
-        'Total withdrawn over this run: {{total}}, of which {{tax}} tax.',
-        { total, tax },
-      );
+      return `Total withdrawn over this run: ${total}, of which ${tax} tax.`;
     }
     if (totalFees > 0) {
-      return t(
-        'Total withdrawn over this run: {{total}}, plus {{fees}} paid in fees.',
-        { total, fees },
-      );
+      return `Total withdrawn over this run: ${total}, plus ${fees} paid in fees.`;
     }
-    return t('Total withdrawn over this run: {{total}}.', { total });
+    return `Total withdrawn over this run: ${total}.`;
   }
 
   // One sentence per rule outcome, phrased with the numbers the user
   // configured so each year's working reads like the setup sentence
   function getRuleExplanationSentence(explanation: MonteCarloRuleExplanation) {
     if (explanation.kind === 'anchor') {
-      return t(
-        "Floor & ceiling: the first spending year takes the planned amount and sets the rule's rate at {{rate}} of the accessible balance; future years stay within {{floorPct}} below and {{ceilingPct}} above the planned amount.",
-        {
-          rate: formatRuleRate(explanation.rate),
-          floorPct: formatRuleRate(withdrawalRule.floorPct),
-          ceilingPct: formatRuleRate(withdrawalRule.ceilingPct),
-        },
-      );
+      return `Floor & ceiling: the first spending year takes the planned amount and sets the rule's rate at ${formatRuleRate(explanation.rate)} of the accessible balance; future years stay within ${formatRuleRate(withdrawalRule.floorPct)} below and ${formatRuleRate(withdrawalRule.ceilingPct)} above the planned amount.`;
     }
     if (explanation.kind === 'floor-ceiling') {
       const values = {
@@ -245,21 +201,12 @@ export function MonteCarloRunDetailTable({
         ceilingPct: formatRuleRate(withdrawalRule.ceilingPct),
       };
       if (explanation.applied === 'floor') {
-        return t(
-          'Floor & ceiling: {{rate}} of the accessible balance = {{amount}}, below the floor ({{floorPct}} under the planned amount: {{floor}}) - the floor applied.',
-          values,
-        );
+        return `Floor & ceiling: ${values.rate} of the accessible balance = ${values.amount}, below the floor (${values.floorPct} under the planned amount: ${values.floor}) - the floor applied.`;
       }
       if (explanation.applied === 'ceiling') {
-        return t(
-          'Floor & ceiling: {{rate}} of the accessible balance = {{amount}}, above the ceiling ({{ceilingPct}} over the planned amount: {{ceiling}}) - the ceiling applied.',
-          values,
-        );
+        return `Floor & ceiling: ${values.rate} of the accessible balance = ${values.amount}, above the ceiling (${values.ceilingPct} over the planned amount: ${values.ceiling}) - the ceiling applied.`;
       }
-      return t(
-        'Floor & ceiling: {{rate}} of the accessible balance = {{amount}}, within {{floorPct}} below ({{floor}}) and {{ceilingPct}} above ({{ceiling}}) the planned amount.',
-        values,
-      );
+      return `Floor & ceiling: ${values.rate} of the accessible balance = ${values.amount}, within ${values.floorPct} below (${values.floor}) and ${values.ceilingPct} above (${values.ceiling}) the planned amount.`;
     }
     // Concrete money beats abstractions: every outcome shows the rule's
     // result next to the planned amount (any minimum floor is reported
@@ -279,27 +226,15 @@ export function MonteCarloRunDetailTable({
         adjusted,
       };
       if (explanation.action === 'cut') {
-        return t(
-          'Guardrails: the withdrawal rate ({{currentRate}}) rose more than {{trigger}} above the planned rate ({{referenceRate}}), so withdrawals were cut by {{cut}}: {{adjusted}} instead of the planned {{planned}}.',
-          values,
-        );
+        return `Guardrails: the withdrawal rate (${values.currentRate}) rose more than ${values.trigger} above the planned rate (${values.referenceRate}), so withdrawals were cut by ${values.cut}: ${values.adjusted} instead of the planned ${values.planned}.`;
       }
       if (explanation.action === 'raise') {
-        return t(
-          'Guardrails: the withdrawal rate ({{currentRate}}) fell more than {{prosperityTrigger}} below the planned rate ({{referenceRate}}), so withdrawals were raised by {{raise}}: {{adjusted}} instead of the planned {{planned}}.',
-          values,
-        );
+        return `Guardrails: the withdrawal rate (${values.currentRate}) fell more than ${values.prosperityTrigger} below the planned rate (${values.referenceRate}), so withdrawals were raised by ${values.raise}: ${values.adjusted} instead of the planned ${values.planned}.`;
       }
       if (hasEarlierAdjustments) {
-        return t(
-          'Guardrails: the withdrawal rate ({{currentRate}}) stayed close to the planned rate ({{referenceRate}}) - no new change, but earlier adjustments still apply: {{adjusted}} instead of the planned {{planned}}.',
-          values,
-        );
+        return `Guardrails: the withdrawal rate (${values.currentRate}) stayed close to the planned rate (${values.referenceRate}) - no new change, but earlier adjustments still apply: ${values.adjusted} instead of the planned ${values.planned}.`;
       }
-      return t(
-        'Guardrails: the withdrawal rate ({{currentRate}}) stayed close to the planned rate ({{referenceRate}}) - no change, taking the planned {{planned}}.',
-        values,
-      );
+      return `Guardrails: the withdrawal rate (${values.currentRate}) stayed close to the planned rate (${values.referenceRate}) - no change, taking the planned ${values.planned}.`;
     }
     if (explanation.rule === 'ratcheting') {
       const values = {
@@ -311,31 +246,16 @@ export function MonteCarloRunDetailTable({
         adjusted,
       };
       if (explanation.action === 'raise') {
-        return t(
-          'Ratcheting: the accessible balance stayed above {{multiple}} its starting level for {{years}} years in a row, so withdrawals were raised by {{raise}}: {{adjusted}} instead of the planned {{planned}}.',
-          values,
-        );
+        return `Ratcheting: the accessible balance stayed above ${values.multiple} its starting level for ${values.years} years in a row, so withdrawals were raised by ${values.raise}: ${values.adjusted} instead of the planned ${values.planned}.`;
       }
       if (explanation.ratchetStreak != null && explanation.ratchetStreak > 0) {
         return hasEarlierAdjustments
-          ? t(
-              'Ratcheting: balance above {{multiple}} its starting level for {{streak}} of {{years}} years - no raise yet, but earlier raises still apply: {{adjusted}} instead of the planned {{planned}}.',
-              values,
-            )
-          : t(
-              'Ratcheting: balance above {{multiple}} its starting level for {{streak}} of {{years}} years - no raise yet, taking the planned {{planned}}.',
-              values,
-            );
+          ? `Ratcheting: balance above ${values.multiple} its starting level for ${values.streak} of ${values.years} years - no raise yet, but earlier raises still apply: ${values.adjusted} instead of the planned ${values.planned}.`
+          : `Ratcheting: balance above ${values.multiple} its starting level for ${values.streak} of ${values.years} years - no raise yet, taking the planned ${values.planned}.`;
       }
       return hasEarlierAdjustments
-        ? t(
-            'Ratcheting: balance below {{multiple}} its starting level - the streak reset, but earlier raises still apply: {{adjusted}} instead of the planned {{planned}}.',
-            values,
-          )
-        : t(
-            'Ratcheting: balance below {{multiple}} its starting level - the streak reset, taking the planned {{planned}}.',
-            values,
-          );
+        ? `Ratcheting: balance below ${values.multiple} its starting level - the streak reset, but earlier raises still apply: ${values.adjusted} instead of the planned ${values.planned}.`
+        : `Ratcheting: balance below ${values.multiple} its starting level - the streak reset, taking the planned ${values.planned}.`;
     }
     const boundaryValues = {
       currentRate: formatRuleRate(explanation.currentRate ?? 0),
@@ -347,27 +267,15 @@ export function MonteCarloRunDetailTable({
       adjusted,
     };
     if (explanation.action === 'cut') {
-      return t(
-        'Boundaries: the withdrawal rate ({{currentRate}}) rose above {{upper}}, so withdrawals were cut by {{cut}}: {{adjusted}} instead of the planned {{planned}}.',
-        boundaryValues,
-      );
+      return `Boundaries: the withdrawal rate (${boundaryValues.currentRate}) rose above ${boundaryValues.upper}, so withdrawals were cut by ${boundaryValues.cut}: ${boundaryValues.adjusted} instead of the planned ${boundaryValues.planned}.`;
     }
     if (explanation.action === 'raise') {
-      return t(
-        'Boundaries: the withdrawal rate ({{currentRate}}) fell below {{lower}}, so withdrawals were raised by {{raise}}: {{adjusted}} instead of the planned {{planned}}.',
-        boundaryValues,
-      );
+      return `Boundaries: the withdrawal rate (${boundaryValues.currentRate}) fell below ${boundaryValues.lower}, so withdrawals were raised by ${boundaryValues.raise}: ${boundaryValues.adjusted} instead of the planned ${boundaryValues.planned}.`;
     }
     if (hasEarlierAdjustments) {
-      return t(
-        'Boundaries: the withdrawal rate ({{currentRate}}) stayed between {{lower}} and {{upper}} - no new change, but earlier adjustments still apply: {{adjusted}} instead of the planned {{planned}}.',
-        boundaryValues,
-      );
+      return `Boundaries: the withdrawal rate (${boundaryValues.currentRate}) stayed between ${boundaryValues.lower} and ${boundaryValues.upper} - no new change, but earlier adjustments still apply: ${boundaryValues.adjusted} instead of the planned ${boundaryValues.planned}.`;
     }
-    return t(
-      'Boundaries: the withdrawal rate ({{currentRate}}) stayed between {{lower}} and {{upper}} - no change, taking the planned {{planned}}.',
-      boundaryValues,
-    );
+    return `Boundaries: the withdrawal rate (${boundaryValues.currentRate}) stayed between ${boundaryValues.lower} and ${boundaryValues.upper} - no change, taking the planned ${boundaryValues.planned}.`;
   }
 
   return (
@@ -380,23 +288,11 @@ export function MonteCarloRunDetailTable({
           marginBottom: 10,
         }}
       >
-        <Button onPress={onBack}>
-          <Trans>Back to all runs</Trans>
-        </Button>
+        <Button onPress={onBack}>Back to all runs</Button>
         <Text style={{ fontWeight: 600 }}>
           {hasSurvived
-            ? t('Run {{number}} of {{total}} - survived to age {{age}}', {
-                number: simulationIndex + 1,
-                total: simulationCount,
-                age: lastRow ? startAge + lastRow.year : startAge,
-              })
-            : t('Run {{number}} of {{total}} - ran out at age {{age}}', {
-                number: simulationIndex + 1,
-                total: simulationCount,
-                // The failure row's own age: the year the withdrawal
-                // couldn't be funded
-                age: lastRow ? startAge + lastRow.year - 1 : startAge,
-              })}
+            ? `Run ${simulationIndex + 1} of ${simulationCount} - survived to age ${lastRow ? startAge + lastRow.year : startAge}`
+            : `Run ${simulationIndex + 1} of ${simulationCount} - ran out at age ${lastRow ? startAge + lastRow.year - 1 : startAge}`}
         </Text>
         <Button
           variant="bare"
@@ -410,11 +306,7 @@ export function MonteCarloRunDetailTable({
           }}
           style={{ marginLeft: 'auto', color: theme.pageText }}
         >
-          {allExpanded ? (
-            <Trans>Collapse all years</Trans>
-          ) : (
-            <Trans>Expand all years</Trans>
-          )}
+          {allExpanded ? 'Collapse all years' : 'Expand all years'}
         </Button>
       </View>
 
@@ -442,35 +334,33 @@ export function MonteCarloRunDetailTable({
             }}
           >
             <View style={{ width: 36 }} />
-            <Text style={{ ...GROUP_HEADING_STYLE, width: 60 }}>
-              <Trans>Age</Trans>
-            </Text>
+            <Text style={{ ...GROUP_HEADING_STYLE, width: 60 }}>Age</Text>
             <Text style={{ ...GROUP_HEADING_STYLE, ...AMOUNT_CELL_STYLE }}>
-              <Trans>Starting balance</Trans>
+              Starting balance
             </Text>
             {hasContributions && (
               <Text style={{ ...GROUP_HEADING_STYLE, ...AMOUNT_CELL_STYLE }}>
-                <Trans>Contributions</Trans>
+                Contributions
               </Text>
             )}
             {hasIncome && (
               <Text style={{ ...GROUP_HEADING_STYLE, ...AMOUNT_CELL_STYLE }}>
-                <Trans>Income (net)</Trans>
+                Income (net)
               </Text>
             )}
             <Text style={{ ...GROUP_HEADING_STYLE, ...AMOUNT_CELL_STYLE }}>
-              <Trans>Withdrawal</Trans>
+              Withdrawal
             </Text>
             <Text style={{ ...GROUP_HEADING_STYLE, ...AMOUNT_CELL_STYLE }}>
-              <Trans>Spent</Trans>
+              Spent
             </Text>
             <Text style={{ ...GROUP_HEADING_STYLE, ...AMOUNT_CELL_STYLE }}>
-              <Trans>Investment growth</Trans>
+              Investment growth
             </Text>
             <Text
               style={{ ...GROUP_HEADING_STYLE, width: 90, textAlign: 'right' }}
             >
-              <Trans>Return (%)</Trans>
+              Return (%)
             </Text>
             {showInflation && (
               <Text
@@ -480,11 +370,11 @@ export function MonteCarloRunDetailTable({
                   textAlign: 'right',
                 }}
               >
-                <Trans>Inflation (%)</Trans>
+                Inflation (%)
               </Text>
             )}
             <Text style={{ ...GROUP_HEADING_STYLE, ...AMOUNT_CELL_STYLE }}>
-              <Trans>Ending balance</Trans>
+              Ending balance
             </Text>
           </View>
 
@@ -521,8 +411,8 @@ export function MonteCarloRunDetailTable({
                       variant="bare"
                       aria-label={
                         isExpanded
-                          ? t("Hide this year's breakdown")
-                          : t("Show this year's breakdown")
+                          ? "Hide this year's breakdown"
+                          : "Show this year's breakdown"
                       }
                       onPress={() => toggleYear(row.year)}
                       style={{ padding: 4 }}
@@ -660,7 +550,6 @@ export function MonteCarloRunDetailTable({
                           surplusPotName,
                           hasSurplusPot,
                           format,
-                          translate: t,
                         }).join(' ')}
                       </FinancialText>
                     </Text>
@@ -674,11 +563,7 @@ export function MonteCarloRunDetailTable({
                         textDecoration: 'underline',
                       }}
                     >
-                      {showsWorking ? (
-                        <Trans>Hide the working</Trans>
-                      ) : (
-                        <Trans>Show the working</Trans>
-                      )}
+                      {showsWorking ? 'Hide the working' : 'Show the working'}
                     </Button>
                     {showsWorking && (
                       <View style={{ gap: 4, marginTop: 6 }}>
@@ -692,15 +577,10 @@ export function MonteCarloRunDetailTable({
                         {row.minimumApplied && (
                           <Text style={{ fontSize: 13, color: theme.pageText }}>
                             <FinancialText as="span">
-                              {t(
-                                'Raised to the minimum spending: {{amount}}.',
-                                {
-                                  amount: format(
-                                    row.plannedSpending,
-                                    'financial',
-                                  ),
-                                },
-                              )}
+                              {`Raised to the minimum spending: ${format(
+                                row.plannedSpending,
+                                'financial',
+                              )}.`}
                             </FinancialText>
                           </Text>
                         )}
@@ -708,20 +588,11 @@ export function MonteCarloRunDetailTable({
                           <Text style={{ fontSize: 13, color: theme.pageText }}>
                             <FinancialText as="span">
                               {row.incomeTax > 0
-                                ? t(
-                                    'Income: {{gross}} gross − {{tax}} tax = {{net}} received.',
-                                    {
-                                      gross: format(row.income, 'financial'),
-                                      tax: format(row.incomeTax, 'financial'),
-                                      net: format(
-                                        row.income - row.incomeTax,
-                                        'financial',
-                                      ),
-                                    },
-                                  )
-                                : t('Income: {{gross}}, untaxed.', {
-                                    gross: format(row.income, 'financial'),
-                                  })}
+                                ? `Income: ${format(row.income, 'financial')} gross − ${format(row.incomeTax, 'financial')} tax = ${format(
+                                    row.income - row.incomeTax,
+                                    'financial',
+                                  )} received.`
+                                : `Income: ${format(row.income, 'financial')}, untaxed.`}
                               {incomeStreams.length > 1 &&
                                 ` (${row.incomeAmounts
                                   .map((amount, incomeIndex) =>
@@ -737,17 +608,8 @@ export function MonteCarloRunDetailTable({
                         <Text style={{ fontSize: 13, color: theme.pageText }}>
                           <FinancialText as="span">
                             {row.taxPaid > 0
-                              ? t(
-                                  'Withdrawal: {{gross}} gross − {{tax}} tax = {{net}} to spend.',
-                                  {
-                                    gross: format(row.withdrawal, 'financial'),
-                                    tax: format(row.taxPaid, 'financial'),
-                                    net: format(netSpending, 'financial'),
-                                  },
-                                )
-                              : t('Withdrawal: {{gross}}, untaxed.', {
-                                  gross: format(row.withdrawal, 'financial'),
-                                })}
+                              ? `Withdrawal: ${format(row.withdrawal, 'financial')} gross − ${format(row.taxPaid, 'financial')} tax = ${format(netSpending, 'financial')} to spend.`
+                              : `Withdrawal: ${format(row.withdrawal, 'financial')}, untaxed.`}
                           </FinancialText>
                         </Text>
                         <Text style={{ fontSize: 13, color: theme.pageText }}>
@@ -765,57 +627,37 @@ export function MonteCarloRunDetailTable({
                         {row.unspentIncome > 0 && row.surplusSaved === 0 && (
                           <Text style={{ fontSize: 13, color: theme.pageText }}>
                             <FinancialText as="span">
-                              {t(
-                                'Unspent income: {{amount}} - more came in than the plan spends, and it leaves the plan.',
-                                {
-                                  amount: format(
-                                    row.unspentIncome,
-                                    'financial',
-                                  ),
-                                },
-                              )}
+                              {`Unspent income: ${format(
+                                row.unspentIncome,
+                                'financial',
+                              )} - more came in than the plan spends, and it leaves the plan.`}
                             </FinancialText>
                           </Text>
                         )}
                         {row.contributions > 0 && (
                           <Text style={{ fontSize: 13, color: theme.pageText }}>
                             <FinancialText as="span">
-                              {t(
-                                'Contributions: {{amount}}, added at the start of the year.',
-                                {
-                                  amount: format(
-                                    row.contributions,
-                                    'financial',
-                                  ),
-                                },
-                              )}
+                              {`Contributions: ${format(
+                                row.contributions,
+                                'financial',
+                              )}, added at the start of the year.`}
                             </FinancialText>
                           </Text>
                         )}
                         {row.feesPaid > 0 && (
                           <Text style={{ fontSize: 13, color: theme.pageText }}>
                             <FinancialText as="span">
-                              {t(
-                                'Fees paid: {{amount}}, charged at the end of the year.',
-                                {
-                                  amount: format(row.feesPaid, 'financial'),
-                                },
-                              )}
+                              {`Fees paid: ${format(row.feesPaid, 'financial')}, charged at the end of the year.`}
                             </FinancialText>
                           </Text>
                         )}
                         {row.inaccessibleBalance != null && (
                           <Text style={{ fontSize: 13, color: theme.pageText }}>
                             <FinancialText as="span">
-                              {t(
-                                '{{amount}} remained locked in pots that had not reached their access age.',
-                                {
-                                  amount: format(
-                                    row.inaccessibleBalance,
-                                    'financial',
-                                  ),
-                                },
-                              )}
+                              {`${format(
+                                row.inaccessibleBalance,
+                                'financial',
+                              )} remained locked in pots that had not reached their access age.`}
                             </FinancialText>
                           </Text>
                         )}
@@ -844,7 +686,7 @@ export function MonteCarloRunDetailTable({
                               minWidth: 120,
                             }}
                           >
-                            <Trans>Pot</Trans>
+                            Pot
                           </Text>
                           <Text
                             style={{
@@ -853,7 +695,7 @@ export function MonteCarloRunDetailTable({
                               width: 130,
                             }}
                           >
-                            <Trans>Start balance</Trans>
+                            Start balance
                           </Text>
                           {hasContributions && (
                             <View
@@ -867,15 +709,13 @@ export function MonteCarloRunDetailTable({
                               }}
                             >
                               <Text style={GROUP_HEADING_STYLE}>
-                                <Trans>Contributed</Trans>
+                                Contributed
                               </Text>
                               {hasSurplusPot && (
                                 <MonteCarloHelpTooltip placement="bottom end">
-                                  <Trans>
-                                    For the {{ surplusPotName }} pot this is the
-                                    money the plan didn&apos;t spend that year,
-                                    saved into it before growth.
-                                  </Trans>
+                                  For the {surplusPotName} pot this is the money
+                                  the plan didn&apos;t spend that year, saved
+                                  into it before growth.
                                 </MonteCarloHelpTooltip>
                               )}
                             </View>
@@ -887,7 +727,7 @@ export function MonteCarloRunDetailTable({
                               width: 130,
                             }}
                           >
-                            <Trans>Withdrawn</Trans>
+                            Withdrawn
                           </Text>
                           <Text
                             style={{
@@ -896,7 +736,7 @@ export function MonteCarloRunDetailTable({
                               width: 110,
                             }}
                           >
-                            <Trans>Taxable</Trans>
+                            Taxable
                           </Text>
                           <View
                             style={{
@@ -908,19 +748,15 @@ export function MonteCarloRunDetailTable({
                               gap: 4,
                             }}
                           >
-                            <Text style={GROUP_HEADING_STYLE}>
-                              <Trans>Tax paid</Trans>
-                            </Text>
+                            <Text style={GROUP_HEADING_STYLE}>Tax paid</Text>
                             <MonteCarloHelpTooltip placement="bottom end">
-                              <Trans>
-                                With tax bands, the year&apos;s tax is worked
-                                out on all pots&apos; taxable income together,
-                                then shared here in proportion to each
-                                pot&apos;s taxable income - so every taxable
-                                pound bears the year&apos;s average rate, even
-                                from a small pot. With a flat rate per pot, each
-                                pot&apos;s tax is exact.
-                              </Trans>
+                              With tax bands, the year&apos;s tax is worked out
+                              on all pots&apos; taxable income together, then
+                              shared here in proportion to each pot&apos;s
+                              taxable income - so every taxable pound bears the
+                              year&apos;s average rate, even from a small pot.
+                              With a flat rate per pot, each pot&apos;s tax is
+                              exact.
                             </MonteCarloHelpTooltip>
                           </View>
                           <View
@@ -933,17 +769,12 @@ export function MonteCarloRunDetailTable({
                               gap: 4,
                             }}
                           >
-                            <Text style={GROUP_HEADING_STYLE}>
-                              <Trans>Fees</Trans>
-                            </Text>
+                            <Text style={GROUP_HEADING_STYLE}>Fees</Text>
                             <MonteCarloHelpTooltip placement="bottom end">
-                              <Trans>
-                                Charged at the end of the year, on the
-                                pot&apos;s balance after that year&apos;s growth
-                                but before the fee itself is deducted - so the
-                                end balance is the post-growth balance minus
-                                this fee.
-                              </Trans>
+                              Charged at the end of the year, on the pot&apos;s
+                              balance after that year&apos;s growth but before
+                              the fee itself is deducted - so the end balance is
+                              the post-growth balance minus this fee.
                             </MonteCarloHelpTooltip>
                           </View>
                           <Text
@@ -953,7 +784,7 @@ export function MonteCarloRunDetailTable({
                               width: 90,
                             }}
                           >
-                            <Trans>Return (%)</Trans>
+                            Return (%)
                           </Text>
                           <Text
                             style={{
@@ -962,7 +793,7 @@ export function MonteCarloRunDetailTable({
                               width: 130,
                             }}
                           >
-                            <Trans>End balance</Trans>
+                            End balance
                           </Text>
                         </View>
                         {pots.map((pot, potIndex) => {
@@ -977,7 +808,7 @@ export function MonteCarloRunDetailTable({
                               }}
                             >
                               <Text style={{ flex: 1, minWidth: 120 }}>
-                                {getMonteCarloPotLabel(pots, potIndex, t)}
+                                {getMonteCarloPotLabel(pots, potIndex)}
                               </Text>
                               <Text style={{ ...POT_CELL_STYLE, width: 130 }}>
                                 <FinancialText as="span">
@@ -1071,13 +902,7 @@ export function MonteCarloRunDetailTable({
 
       {lastRow?.inaccessibleBalance != null && (
         <Text style={{ marginTop: 10, color: theme.pageText }}>
-          {t(
-            'The plan failed at age {{age}} with {{amount}} still locked in pots that had not reached their access age.',
-            {
-              age: startAge + lastRow.year - 1,
-              amount: format(lastRow.inaccessibleBalance, 'financial'),
-            },
-          )}
+          {`The plan failed at age ${startAge + lastRow.year - 1} with ${format(lastRow.inaccessibleBalance, 'financial')} still locked in pots that had not reached their access age.`}
         </Text>
       )}
     </View>

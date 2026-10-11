@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
@@ -14,8 +13,6 @@ import { Title } from './common';
 import { ConfirmPasswordForm } from './ConfirmPasswordForm';
 
 export function ChangePassword() {
-  const { t } = useTranslation();
-
   const navigate = useNavigate();
   const [error, setError] = useState(null);
   const [msg, setMessage] = useState(null);
@@ -23,13 +20,13 @@ export function ChangePassword() {
   function getErrorMessage(error) {
     switch (error) {
       case 'invalid-password':
-        return t('Password cannot be empty');
+        return 'Password cannot be empty';
       case 'password-match':
-        return t('Passwords do not match');
+        return 'Passwords do not match';
       case 'network-failure':
-        return t('Unable to contact the server');
+        return 'Unable to contact the server';
       default:
-        return t('Internal error');
+        return 'Internal error';
     }
   }
 
@@ -40,7 +37,7 @@ export function ChangePassword() {
     if (error) {
       setError(error);
     } else {
-      setMessage(t('Password successfully changed'));
+      setMessage('Password successfully changed');
       await send('subscribe-sign-in', { password });
       void navigate('/');
     }
@@ -48,7 +45,7 @@ export function ChangePassword() {
 
   return (
     <View style={{ maxWidth: 500, marginTop: -30 }}>
-      <Title text={t('Change server password')} />
+      <Title text="Change server password" />
       <Text
         style={{
           fontSize: 16,
@@ -56,10 +53,8 @@ export function ChangePassword() {
           lineHeight: 1.4,
         }}
       >
-        <Trans>
-          This will change the password for this server instance. All existing
-          sessions will stay logged in.
-        </Trans>
+        This will change the password for this server instance. All existing
+        sessions will stay logged in.
       </Text>
 
       {error && (
@@ -95,7 +90,7 @@ export function ChangePassword() {
             style={{ fontSize: 15, marginRight: 10 }}
             onPress={() => navigate('/')}
           >
-            <Trans>Cancel</Trans>
+            Cancel
           </Button>
         }
         onSetPassword={onSetPassword}

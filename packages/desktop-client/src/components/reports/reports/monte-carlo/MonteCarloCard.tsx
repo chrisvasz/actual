@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -36,7 +35,6 @@ export function MonteCarloCard({
   meta = EMPTY_META,
   onMetaChange,
 }: MonteCarloCardProps) {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
 
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
@@ -70,7 +68,7 @@ export function MonteCarloCard({
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
-              name={meta?.name || t('Monte Carlo Analysis')}
+              name={meta?.name || 'Monte Carlo Analysis'}
               isEditing={nameMenuOpen}
               onChange={newName => {
                 onMetaChange({
@@ -98,7 +96,7 @@ export function MonteCarloCard({
                 color: theme.pageTextSubdued,
               }}
             >
-              <Trans>Success rate to age {{ age: endAge }}</Trans>
+              Success rate to age {endAge}
             </Block>
           </View>
         </View>

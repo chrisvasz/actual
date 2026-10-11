@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Select } from '@actual-app/components/select';
@@ -31,8 +30,6 @@ type TransferOwnershipProps = Extract<
 export function TransferOwnership({
   onSave: originalOnSave,
 }: TransferOwnershipProps) {
-  const { t } = useTranslation();
-
   const userData = useSelector(state => state.user.data);
   const [userId, setUserId] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -56,10 +53,9 @@ export function TransferOwnership({
             addNotification({
               notification: {
                 type: 'error',
-                title: t('Error getting users'),
-                message: t(
+                title: 'Error getting users',
+                message:
                   'Failed to complete ownership transfer. Please try again.',
-                ),
                 sticky: true,
               },
             }),
@@ -78,7 +74,7 @@ export function TransferOwnership({
         }
       },
     );
-  }, [userData?.userId, currentFile?.owner, t, dispatch]);
+  }, [userData?.userId, currentFile?.owner, dispatch]);
 
   async function onSave() {
     if (cloudFileId) {
@@ -93,7 +89,7 @@ export function TransferOwnership({
         setError(getUserAccessErrors(error));
       }
     } else {
-      setError(t('Cloud file ID is missing.'));
+      setError('Cloud file ID is missing.');
     }
   }
 
@@ -102,12 +98,12 @@ export function TransferOwnership({
       {({ state: { close } }: { state: { close: () => void } }) => (
         <>
           <ModalHeader
-            title={t('Transfer ownership')}
+            title="Transfer ownership"
             rightContent={<ModalCloseButton onPress={close} />}
           />
           <SpaceBetween style={{ marginTop: 10 }}>
             <FormField style={{ flex: 1 }}>
-              <FormLabel title={t('User')} htmlFor="user-field" />
+              <FormLabel title="User" htmlFor="user-field" />
               {availableUsers.length > 0 && (
                 <View>
                   <Select
@@ -116,7 +112,7 @@ export function TransferOwnership({
                       setUserId(newValue);
                     }}
                     value={userId}
-                    defaultLabel={t('Select a user')}
+                    defaultLabel="Select a user"
                   />
                   <Text
                     style={{
@@ -125,10 +121,8 @@ export function TransferOwnership({
                       marginTop: 5,
                     }}
                   >
-                    <Trans>
-                      Select a user from the directory to designate as the new
-                      budget owner.
-                    </Trans>
+                    Select a user from the directory to designate as the new
+                    budget owner.
                   </Text>
                   <Text
                     style={{
@@ -137,9 +131,9 @@ export function TransferOwnership({
                       marginTop: 5,
                     }}
                   >
-                    {t(
-                      'This action is irreversible, ownership of this budget file will only be able to be transferred by the server administrator or new owner.',
-                    )}
+                    This action is irreversible, ownership of this budget file
+                    will only be able to be transferred by the server
+                    administrator or new owner.
                   </Text>
                   <Text
                     style={{
@@ -148,7 +142,7 @@ export function TransferOwnership({
                       marginTop: 5,
                     }}
                   >
-                    <Trans>Proceed with caution.</Trans>
+                    Proceed with caution.
                   </Text>
                 </View>
               )}
@@ -160,7 +154,7 @@ export function TransferOwnership({
                     marginTop: 5,
                   }}
                 >
-                  <Trans>No users available</Trans>
+                  No users available
                 </Text>
               )}
             </FormField>
@@ -178,7 +172,7 @@ export function TransferOwnership({
               style={{ marginRight: 10 }}
               onPress={() => dispatch(popModal())}
             >
-              <Trans>Cancel</Trans>
+              Cancel
             </Button>
 
             <Button
@@ -199,10 +193,9 @@ export function TransferOwnership({
                     addNotification({
                       notification: {
                         type: 'error',
-                        title: t('Failed to transfer ownership'),
-                        message: t(
+                        title: 'Failed to transfer ownership',
+                        message:
                           'Failed to complete ownership transfer. Please try again.',
-                        ),
                         sticky: true,
                       },
                     }),
@@ -211,7 +204,7 @@ export function TransferOwnership({
                 }
               }}
             >
-              {isTransferring ? t('Transferring...') : t('Transfer ownership')}
+              {isTransferring ? 'Transferring...' : 'Transfer ownership'}
             </Button>
           </SpaceBetween>
         </>

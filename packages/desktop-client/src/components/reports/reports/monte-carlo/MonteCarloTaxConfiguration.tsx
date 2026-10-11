@@ -1,5 +1,3 @@
-import { Trans, useTranslation } from 'react-i18next';
-
 import { Button } from '@actual-app/components/button';
 import { SvgDelete } from '@actual-app/components/icons/v0';
 import { SvgAdd } from '@actual-app/components/icons/v1';
@@ -46,8 +44,6 @@ export function MonteCarloTaxConfiguration({
   taxBands,
   onConfigChange,
 }: MonteCarloTaxConfigurationProps) {
-  const { t } = useTranslation();
-
   function updateBand(bandId: string, changes: Partial<MonteCarloTaxBand>) {
     onConfigChange({
       taxBands: sortBands(
@@ -81,23 +77,19 @@ export function MonteCarloTaxConfiguration({
     <View style={{ gap: 10 }}>
       <View style={{ width: 250 }}>
         <View style={FIELD_LABEL_ROW_STYLE}>
-          <Text style={FIELD_LABEL_STYLE}>
-            <Trans>Tax model</Trans>
-          </Text>
+          <Text style={FIELD_LABEL_STYLE}>Tax model</Text>
           <MonteCarloHelpTooltip>
-            <Trans>
-              Your yearly spending is what you keep after tax; the simulation
-              withdraws extra to cover the tax.
-              <br />
-              <br />
-              Flat rate: each pot has one effective tax rate on its withdrawals
-              - simple and jurisdiction-free.
-              <br />
-              <br />
-              Tax bands: enter your own progressive bands, and each pot declares
-              how much of a withdrawal counts as taxable income. The bands apply
-              to each year&apos;s combined taxable withdrawals.
-            </Trans>
+            Your yearly spending is what you keep after tax; the simulation
+            withdraws extra to cover the tax.
+            <br />
+            <br />
+            Flat rate: each pot has one effective tax rate on its withdrawals -
+            simple and jurisdiction-free.
+            <br />
+            <br />
+            Tax bands: enter your own progressive bands, and each pot declares
+            how much of a withdrawal counts as taxable income. The bands apply
+            to each year&apos;s combined taxable withdrawals.
           </MonteCarloHelpTooltip>
         </View>
         <Select
@@ -106,36 +98,32 @@ export function MonteCarloTaxConfiguration({
             onConfigChange({ taxModel: value as MonteCarloTaxModel })
           }
           options={[
-            ['flat', t('Flat rate per pot')],
-            ['bands', t('Tax bands (progressive)')],
+            ['flat', 'Flat rate per pot'],
+            ['bands', 'Tax bands (progressive)'],
           ]}
         />
       </View>
 
       {taxModel === 'flat' ? (
         <Text style={{ color: theme.pageText }}>
-          <Trans>
-            Set each pot&apos;s Tax (%) on the Investment pots tab. Leave it at
-            0 for tax-free pots.
-          </Trans>
+          Set each pot&apos;s Tax (%) on the Investment pots tab. Leave it at 0
+          for tax-free pots.
         </Text>
       ) : (
         <>
           <Text style={{ color: theme.pageText }}>
-            <Trans>
-              Amounts are yearly taxable income in today&apos;s money - the
-              thresholds rise with inflation. Set each pot&apos;s Taxable
-              portion (%) on the Investment pots tab.
-            </Trans>
+            Amounts are yearly taxable income in today&apos;s money - the
+            thresholds rise with inflation. Set each pot&apos;s Taxable portion
+            (%) on the Investment pots tab.
           </Text>
 
           <View style={{ ...styles.tableContainer, flex: 'unset' }}>
             <TableHeader>
               <Field width="flex" style={{ minWidth: 160 }}>
-                <Trans>Income from</Trans>
+                Income from
               </Field>
               <Field width="flex" style={{ minWidth: 140 }}>
-                <Trans>Taxed at (%)</Trans>
+                Taxed at (%)
               </Field>
               <Field width={36} />
             </TableHeader>
@@ -153,7 +141,7 @@ export function MonteCarloTaxConfiguration({
                 <Field width="flex" style={{ minWidth: 160 }} truncate={false}>
                   {index === 0 ? (
                     <Text style={{ color: theme.tableText }}>
-                      <Trans>First earnings</Trans>
+                      First earnings
                     </Text>
                   ) : (
                     <FinancialInput
@@ -174,7 +162,7 @@ export function MonteCarloTaxConfiguration({
                 <Field width="flex" style={{ minWidth: 140 }} truncate={false}>
                   <MonteCarloNumberInput
                     value={band.rate}
-                    aria-label={t('Taxed at (%)')}
+                    aria-label="Taxed at (%)"
                     scale={100}
                     min={0}
                     max={MAX_TAX_BAND_RATE * 100}
@@ -192,7 +180,7 @@ export function MonteCarloTaxConfiguration({
                   {taxBands.length > 1 && (
                     <Button
                       variant="bare"
-                      aria-label={t('Remove band')}
+                      aria-label="Remove band"
                       onPress={() => removeBand(band.id)}
                       style={{ padding: 6 }}
                     >
@@ -207,7 +195,7 @@ export function MonteCarloTaxConfiguration({
           <View style={{ flexDirection: 'row' }}>
             <Button onPress={addBand}>
               <SvgAdd width={10} height={10} style={{ marginRight: 5 }} />
-              <Trans>Add band</Trans>
+              Add band
             </Button>
           </View>
         </>

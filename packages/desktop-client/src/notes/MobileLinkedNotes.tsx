@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
@@ -29,7 +28,6 @@ export function MobileLinkedNotes({
   isFilePath,
 }: MobileLinkedNotesProps) {
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   const handleClick = async () => {
     if (isFilePath) {
@@ -39,7 +37,7 @@ export function MobileLinkedNotes({
         addNotification({
           notification: {
             type: 'message',
-            message: t('File path copied to clipboard'),
+            message: 'File path copied to clipboard',
           },
         }),
       );

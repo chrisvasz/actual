@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React, { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import {
@@ -44,7 +43,6 @@ export function CategoryMenuModal({
   onToggleVisibility,
   onClose,
 }: CategoryMenuModalProps) {
-  const { t } = useTranslation();
   const { data: category } = useCategory(categoryId);
   const { data: categoryGroup } = useCategoryGroup(category?.group);
   const originalNotes = useNotes(category.id);
@@ -119,9 +117,7 @@ export function CategoryMenuModal({
               }}
             >
               <Notes
-                notes={
-                  originalNotes?.length > 0 ? originalNotes : t('No notes')
-                }
+                notes={originalNotes?.length > 0 ? originalNotes : 'No notes'}
                 editable={false}
                 focused={false}
                 getStyle={() => ({
@@ -150,7 +146,7 @@ export function CategoryMenuModal({
                   height={20}
                   style={{ paddingRight: 5 }}
                 />
-                <Trans>Edit notes</Trans>
+                Edit notes
               </Button>
             </View>
           </View>
@@ -166,7 +162,6 @@ function AdditionalCategoryMenu({
   onDelete,
   onToggleVisibility,
 }) {
-  const { t } = useTranslation();
   const triggerRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const itemStyle: CSSProperties = {
@@ -184,7 +179,7 @@ function AdditionalCategoryMenu({
       <Button
         ref={triggerRef}
         variant="bare"
-        aria-label={t('Menu')}
+        aria-label="Menu"
         onPress={() => {
           setMenuOpen(true);
         }}
@@ -205,14 +200,14 @@ function AdditionalCategoryMenu({
             items={[
               !categoryGroup?.hidden && {
                 name: 'toggleVisibility',
-                text: category.hidden ? t('Show') : t('Hide'),
+                text: category.hidden ? 'Show' : 'Hide',
                 icon: category.hidden ? SvgViewShow : SvgViewHide,
                 iconSize: 16,
               },
               !categoryGroup?.hidden && Menu.line,
               {
                 name: 'delete',
-                text: t('Delete'),
+                text: 'Delete',
                 icon: SvgTrash,
                 iconSize: 15,
               },

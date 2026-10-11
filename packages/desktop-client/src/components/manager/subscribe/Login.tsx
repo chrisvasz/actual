@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useEffect, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router';
 
 import { Button, ButtonWithLoading } from '@actual-app/components/button';
@@ -32,7 +31,6 @@ import { OpenIdForm } from './OpenIdForm';
 function PasswordLogin({ setError, dispatch }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
 
   async function onSubmitPassword() {
@@ -65,7 +63,7 @@ function PasswordLogin({ setError, dispatch }) {
     >
       <BigInput
         autoFocus
-        placeholder={t('Password')}
+        placeholder="Password"
         type="password"
         onChangeValue={setPassword}
         style={{ flex: 1 }}
@@ -81,14 +79,13 @@ function PasswordLogin({ setError, dispatch }) {
         }}
         onPress={onSubmitPassword}
       >
-        <Trans>Sign in</Trans>
+        Sign in
       </ButtonWithLoading>
     </View>
   );
 }
 
 function OpenIdLogin({ setError }) {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
   const [warnMasterCreation, setWarnMasterCreation] = useState(false);
   const loginMethods = useAvailableLoginMethods();
@@ -151,7 +148,7 @@ function OpenIdLogin({ setError }) {
             {warnMasterCreation && askForPassword && (
               <ResponsiveInput
                 autoFocus
-                placeholder={t('Enter server password')}
+                placeholder="Enter server password"
                 type="password"
                 onChangeValue={newValue => {
                   setFirstLoginPassword(newValue);
@@ -173,21 +170,17 @@ function OpenIdLogin({ setError }) {
                 warnMasterCreation
               }
             >
-              {warnMasterCreation ? (
-                <Trans>Start using OpenID</Trans>
-              ) : (
-                <Trans>Sign in with OpenID</Trans>
-              )}
+              {warnMasterCreation
+                ? 'Start using OpenID'
+                : 'Sign in with OpenID'}
             </Button>
           </View>
           {warnMasterCreation && (
             <>
               <label style={{ color: theme.warningText, marginTop: 10 }}>
-                <Trans>
-                  The first user to login with OpenID will be the{' '}
-                  <Text style={{ fontWeight: 'bold' }}>server owner</Text>. This
-                  can&apos;t be changed using UI.
-                </Trans>
+                The first user to login with OpenID will be the{' '}
+                <Text style={{ fontWeight: 'bold' }}>server owner</Text>. This
+                can&apos;t be changed using UI.
               </label>
               {askForPassword && (
                 <Button
@@ -211,7 +204,7 @@ function OpenIdLogin({ setError }) {
                     ...(isNarrowWidth ? { padding: 10 } : null),
                   }}
                 >
-                  <Trans>Review OpenID configuration</Trans>
+                  Review OpenID configuration
                 </Button>
               )}
             </>
@@ -229,7 +222,7 @@ function OpenIdLogin({ setError }) {
               textAlign: 'center',
             }}
           >
-            <Trans>Review OpenID configuration</Trans>
+            Review OpenID configuration
           </Text>
           <OpenIdForm
             openIdData={openIdConfig}
@@ -247,7 +240,7 @@ function OpenIdLogin({ setError }) {
                   setFirstLoginPassword('');
                 }}
               >
-                <Trans>Cancel</Trans>
+                Cancel
               </Button>,
             ]}
             onSetOpenId={async config => {
@@ -276,11 +269,11 @@ function HeaderLogin({ error }) {
           style={{ fontSize: 15 }}
           to={'/login/password?error=' + error}
         >
-          <Trans>Log in with password</Trans>
+          Log in with password
         </Link>
       ) : (
         <span>
-          <Trans>Checking Header Token Login ...</Trans>{' '}
+          Checking Header Token Login ...{' '}
           <AnimatedLoading style={{ width: 20, height: 20 }} />
         </span>
       )}
@@ -289,7 +282,6 @@ function HeaderLogin({ error }) {
 }
 
 export function Login() {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
 
   const dispatch = useDispatch();
@@ -329,17 +321,17 @@ export function Login() {
   function getErrorMessage(error) {
     switch (error) {
       case 'invalid-header':
-        return t('Auto login failed - No header sent');
+        return 'Auto login failed - No header sent';
       case 'proxy-not-trusted':
-        return t('Auto login failed - Proxy not trusted');
+        return 'Auto login failed - Proxy not trusted';
       case 'invalid-password':
-        return t('Invalid password');
+        return 'Invalid password';
       case 'network-failure':
-        return t('Unable to contact the server');
+        return 'Unable to contact the server';
       case 'internal-error':
-        return t('Internal error');
+        return 'Internal error';
       default:
-        return t(`An unknown error occurred: {{error}}`, { error });
+        return `An unknown error occurred: ${error}`;
     }
   }
 
@@ -349,7 +341,7 @@ export function Login() {
 
   return (
     <View style={{ maxWidth: 450, marginTop: -30, color: theme.pageText }}>
-      <Title text={t('Sign in to this Actual instance')} />
+      <Title text="Sign in to this Actual instance" />
 
       {loginMethods?.length > 1 && (
         <Text
@@ -360,10 +352,8 @@ export function Login() {
             marginBottom: 10,
           }}
         >
-          <Trans>
-            If you lost your password, you likely still have access to your
-            server to manually reset it.
-          </Trans>
+          If you lost your password, you likely still have access to your server
+          to manually reset it.
         </Text>
       )}
 
@@ -396,8 +386,7 @@ export function Login() {
                 ...(isNarrowWidth ? { padding: 10 } : null),
               }}
             >
-              <Trans>Select the login method</Trans>{' '}
-              <SvgCheveronDown width={12} height={12} />
+              Select the login method <SvgCheveronDown width={12} height={12} />
             </Button>
           </View>
           <Popover

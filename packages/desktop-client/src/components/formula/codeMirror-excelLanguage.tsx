@@ -1,6 +1,5 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { Trans } from 'react-i18next';
 
 import { SpaceBetween } from '@actual-app/components/space-between';
 import { styles } from '@actual-app/components/styles';
@@ -30,7 +29,6 @@ import {
 } from '@codemirror/view';
 import type { DecorationSet, Tooltip, ViewUpdate } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
-import { t } from 'i18next';
 
 import {
   cacheFormulaBadgeRanges,
@@ -84,9 +82,7 @@ function FunctionTooltip({
         align="stretch"
         style={{ ...styles.smallText, color: theme.pageTextSubdued }}
       >
-        <View style={{ display: 'block' }}>
-          <Trans>Parameters:</Trans>
-        </View>
+        <View style={{ display: 'block' }}>Parameters:</View>
         {parameters.map((p, i) => (
           <View key={i} style={{ display: 'block' }}>
             •{' '}
@@ -420,7 +416,7 @@ function createContextFunctionCompletion(
     info: [
       func.description,
       '',
-      `${t('Parameters:')} ${func.parameters.map(p => p.name).join(', ')}`,
+      `${'Parameters:'} ${func.parameters.map(p => p.name).join(', ')}`,
       '',
       func.parameters.map(p => `- ${p.name}: ${p.description}`).join('\n'),
     ].join('\n'),
@@ -612,7 +608,7 @@ export function excelFormulaAutocomplete(
           label: dimension,
           type: 'constant',
           section: getBudgetDimensionCompletionSection(),
-          info: t('Budget query dimension.'),
+          info: 'Budget query dimension.',
           apply: applyFormulaStringCompletion(dimension),
           boost: 18,
         }))
@@ -624,7 +620,7 @@ export function excelFormulaAutocomplete(
           type: 'constant',
           section: getBudgetCategoryCompletionSection(),
           detail: categoryId,
-          info: t('Budget category for BUDGET_QUERY category arrays.'),
+          info: 'Budget category for BUDGET_QUERY category arrays.',
           apply: applyFormulaStringCompletion(categoryId),
           boost: 17,
         }))

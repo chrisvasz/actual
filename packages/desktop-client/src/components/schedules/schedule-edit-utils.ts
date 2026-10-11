@@ -4,7 +4,6 @@ import type {
   RuleConditionOp,
   ScheduleEntity,
 } from '@actual-app/core/types/models';
-import { t } from 'i18next';
 
 import type { ScheduleFormFields } from './ScheduleEditForm';
 
@@ -35,11 +34,11 @@ export function updateScheduleConditions(
 
   // Validate
   if (fields.date == null) {
-    return { error: t('Date is required'), conditions: [] };
+    return { error: 'Date is required', conditions: [] };
   }
 
   if (fields.amount == null) {
-    return { error: t('A valid amount is required'), conditions: [] };
+    return { error: 'A valid amount is required', conditions: [] };
   }
 
   return {

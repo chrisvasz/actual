@@ -1,5 +1,4 @@
 import { useId } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import type { CSSProperties } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
@@ -29,8 +28,6 @@ type CustomTooltipProps = {
 };
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
-  const { t } = useTranslation();
-
   if (active && payload && payload.length) {
     return (
       <div
@@ -47,11 +44,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
         <div style={{ marginBottom: 5 }}>
           <strong>{payload[0].payload.date}</strong>
         </div>
-        <div>
-          {t('Age of Money: {{days}} days', {
-            days: payload[0].payload.ageOfMoney,
-          })}
-        </div>
+        <div>{`Age of Money: ${payload[0].payload.ageOfMoney} days`}</div>
       </div>
     );
   }
@@ -74,7 +67,6 @@ export function AgeOfMoneyGraph({
   compact = false,
   showTooltip = true,
 }: AgeOfMoneyGraphProps) {
-  const { t } = useTranslation();
   const id = useId();
   const gradientId = `aom-gradient-${id}`;
 
@@ -152,7 +144,7 @@ export function AgeOfMoneyGraph({
                   stroke={theme.reportsGreen}
                   strokeDasharray="5 5"
                   label={{
-                    value: t('30 days'),
+                    value: '30 days',
                     position: 'insideTopRight',
                     fill: theme.reportsGreen,
                     fontSize: 10,
@@ -182,7 +174,7 @@ export function AgeOfMoneyGraph({
               color: theme.pageTextSubdued,
             }}
           >
-            <Trans>No data available</Trans>
+            No data available
           </div>
         )
       }

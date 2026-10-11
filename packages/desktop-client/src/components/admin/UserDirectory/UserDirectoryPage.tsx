@@ -1,6 +1,5 @@
 import React from 'react';
 import type { ReactNode } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { View } from '@actual-app/components/view';
@@ -15,11 +14,9 @@ export function UserDirectoryPage({
 }: {
   bottomContent?: ReactNode;
 }) {
-  const { t } = useTranslation();
-
   return (
     <Page
-      header={t('User Directory')}
+      header="User Directory"
       style={{
         borderRadius: '5px',
         marginBottom: '25px',
@@ -45,7 +42,7 @@ export function BackToFileListButton() {
 
   return (
     <Button style={{ maxWidth: '200px' }} onPress={() => navigate('/')}>
-      <Trans>Back to file list</Trans>
+      Back to file list
     </Button>
   );
 }

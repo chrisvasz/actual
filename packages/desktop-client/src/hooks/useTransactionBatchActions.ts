@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { send } from '@actual-app/core/platform/client/connection';
 import * as monthUtils from '@actual-app/core/shared/months';
 import { q } from '@actual-app/core/shared/query';
@@ -77,7 +75,6 @@ type BatchUnlinkScheduleProps = {
 
 export function useTransactionBatchActions() {
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   const onBatchEdit = async ({ name, ids, onSuccess }: BatchEditProps) => {
     const { data } = await aqlQuery(
@@ -326,11 +323,8 @@ export function useTransactionBatchActions() {
             options: {
               message:
                 ids.length > 1
-                  ? t(
-                      'Are you sure you want to delete these {{count}} transactions?',
-                      { count: ids.length },
-                    )
-                  : t('Are you sure you want to delete the transaction?'),
+                  ? `Are you sure you want to delete these ${ids.length} transactions?`
+                  : 'Are you sure you want to delete the transaction?',
               onConfirm: async () => {
                 const { data } = await aqlQuery(
                   q('transactions')

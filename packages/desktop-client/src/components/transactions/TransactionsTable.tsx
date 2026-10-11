@@ -20,7 +20,6 @@ import type {
 } from 'react';
 import { DragPreview } from 'react-aria';
 import type { DragPreviewRenderer } from 'react-aria';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgSplit } from '@actual-app/components/icons/v0';
@@ -261,7 +260,6 @@ const TransactionHeader = memo(
     amountColumnWidths,
   }: TransactionHeaderProps) => {
     const dispatchSelected = useSelectedDispatch();
-    const { t } = useTranslation();
     const columnLabels = useTransactionTableColumnLabels();
 
     useHotkeys(
@@ -311,7 +309,7 @@ const TransactionHeader = memo(
         sortDirection: 'asc',
       },
       group: {
-        value: t('Group'),
+        value: 'Group',
         width: 'flex',
         alignItems: 'flex',
         marginLeft: -5,
@@ -338,7 +336,7 @@ const TransactionHeader = memo(
         sortDirection: 'desc',
       },
       balance: {
-        value: t('Balance'),
+        value: 'Balance',
         width: amountColumnWidths.balance,
         alignItems: 'flex-end',
         marginRight: -5,
@@ -435,40 +433,38 @@ function ClearedColumnLegend() {
     {
       Icon: SvgCheckCircleHollow,
       color: theme.pageTextSubdued,
-      label: <Trans>Uncleared: not yet verified</Trans>,
+      label: 'Uncleared: not yet verified',
     },
     {
       Icon: SvgCheckCircle1,
       color: theme.noticeTextLight,
-      label: <Trans>Cleared: verified against your account</Trans>,
+      label: 'Cleared: verified against your account',
     },
     {
       Icon: SvgLockClosed,
       color: theme.noticeTextLight,
-      label: <Trans>Reconciled: locked after reconciliation</Trans>,
+      label: 'Reconciled: locked after reconciliation',
     },
     {
       Icon: SvgCalendar3,
       color: theme.pageTextSubdued,
-      label: <Trans>Upcoming scheduled transaction</Trans>,
+      label: 'Upcoming scheduled transaction',
     },
     {
       Icon: SvgAlertTriangle,
       color: theme.warningText,
-      label: <Trans>Due scheduled transaction</Trans>,
+      label: 'Due scheduled transaction',
     },
     {
       Icon: SvgEditSkull1,
       color: theme.errorText,
-      label: <Trans>Missed scheduled transaction</Trans>,
+      label: 'Missed scheduled transaction',
     },
   ];
 
   return (
     <View style={{ maxWidth: 260, padding: 4 }}>
-      <Text style={{ fontWeight: 600 }}>
-        <Trans>Transaction status</Trans>
-      </Text>
+      <Text style={{ fontWeight: 600 }}>Transaction status</Text>
       {legendItems.map(({ Icon, color, label }, index) => (
         <View
           key={index}
@@ -684,7 +680,6 @@ function PayeeCell({
   onNavigateToSchedule,
 }: PayeeCellProps) {
   const isCreatingPayee = useRef(false);
-  const { t } = useTranslation();
 
   const dispatch = useDispatch();
 
@@ -792,7 +787,7 @@ function PayeeCell({
       }}
       formatter={() => {
         if (!displayPayee && isPreview) {
-          return t('(No payee)');
+          return '(No payee)';
         }
         return displayPayee;
       }}
@@ -874,8 +869,6 @@ function PayeeIcons({
   onNavigateToTransferAccount,
   onNavigateToSchedule,
 }: PayeeIconsProps) {
-  const { t } = useTranslation();
-
   if (schedule == null && transferAccount == null) {
     // Neither a valid scheduled transaction nor a transfer.
     return null;
@@ -894,7 +887,7 @@ function PayeeIcons({
         <Button
           variant="bare"
           data-testid="schedule-icon"
-          aria-label={t('See schedule details')}
+          aria-label="See schedule details"
           style={payeeIconButtonStyle}
           onPress={() => onNavigateToSchedule(schedule.id)}
         >
@@ -909,7 +902,7 @@ function PayeeIcons({
         <Button
           variant="bare"
           data-testid="transfer-icon"
-          aria-label={t('See transfer account')}
+          aria-label="See transfer account"
           style={payeeIconButtonStyle}
           onPress={() => {
             if (!isTemporaryId(transaction.id)) {
@@ -1067,8 +1060,6 @@ const Transaction = memo(function Transaction({
   index,
   amountColumnWidths,
 }: TransactionProps) {
-  const { t } = useTranslation();
-
   const dispatch = useDispatch();
   const dispatchSelected = useSelectedDispatch();
   const triggerRef = useRef(null);
@@ -1825,7 +1816,7 @@ const Transaction = memo(function Transaction({
                       userSelect: 'none',
                     }}
                   >
-                    <Trans>Split</Trans>
+                    Split
                   </Text>
                 )}
               </View>
@@ -1843,11 +1834,11 @@ const Transaction = memo(function Transaction({
             onExpose={name => onEdit(id, name)}
             value={
               isOffBudget
-                ? t('Off budget')
+                ? 'Off budget'
                 : isBudgetTransfer
                   ? categoryId != null
-                    ? t('Needs Repair')
-                    : t('Transfer')
+                    ? 'Needs Repair'
+                    : 'Transfer'
                   : ''
             }
             valueStyle={valueStyle}
@@ -1873,7 +1864,7 @@ const Transaction = memo(function Transaction({
               value
                 ? (getCategoriesById(categoryGroups)[value]?.name ?? '')
                 : transaction.id
-                  ? t('Categorize')
+                  ? 'Categorize'
                   : ''
             }
             exposed={focusedField === 'category'}
@@ -2140,7 +2131,7 @@ const Transaction = memo(function Transaction({
                 whiteSpace: 'nowrap',
               }}
             >
-              {payee?.name || importedPayee || <Trans>No payee</Trans>}
+              {payee?.name || importedPayee || 'No payee'}
             </Text>
             <Text
               style={{
@@ -2154,7 +2145,7 @@ const Transaction = memo(function Transaction({
               }}
             >
               {isParent ? (
-                <Trans>Split ({{ count: subtransactions?.length ?? 0 }})</Trans>
+                <>Split ({subtransactions?.length ?? 0})</>
               ) : categoryId ? (
                 (getCategoriesById(categoryGroups)[categoryId]?.name ?? '')
               ) : (
@@ -2356,7 +2347,7 @@ function TransactionError({
             data-testid="transaction-error"
           >
             <Text style={{ whiteSpace: 'nowrap' }}>
-              <Trans>Amount left:</Trans>{' '}
+              Amount left:{' '}
               <Text style={{ fontWeight: 500 }}>
                 {integerToCurrency(
                   isDeposit ? error.difference : -error.difference,
@@ -2369,7 +2360,7 @@ function TransactionError({
               onPress={onDistributeRemainder}
               data-testid="distribute-split-button"
             >
-              <Trans>Distribute</Trans>
+              Distribute
             </Button>
             <Button
               variant="primary"
@@ -2377,7 +2368,7 @@ function TransactionError({
               onPress={onAddSplit}
               data-testid="add-split-button"
             >
-              <Trans>Add Split</Trans>
+              Add Split
             </Button>
           </View>
         );
@@ -2555,7 +2546,7 @@ function NewTransaction({
           data-testid="cancel-button"
           ref={cancelButtonRef}
         >
-          <Trans>Cancel</Trans>
+          Cancel
         </Button>
         {isFuture && (
           <Button
@@ -2564,7 +2555,7 @@ function NewTransaction({
             data-testid="schedule-button"
             ref={scheduleButtonRef}
           >
-            <Trans>Schedule</Trans>
+            Schedule
           </Button>
         )}
         {error ? (
@@ -2584,7 +2575,7 @@ function NewTransaction({
             data-testid="add-button"
             ref={addButtonRef}
           >
-            <Trans>Add</Trans>
+            Add
           </Button>
         )}
       </View>
@@ -3084,8 +3075,6 @@ export const TransactionTable = forwardRef(
     props: TransactionTableProps,
     ref: ForwardedRef<TableHandleRef<TransactionEntity>>,
   ) => {
-    const { t } = useTranslation();
-
     const dispatch = useDispatch();
     const [showHiddenCategories] = useLocalPref('budget.showHiddenCategories');
     const [upcomingLength = DEFAULT_UPCOMING_SCHEDULE_DAYS] = useSyncedPref(
@@ -3339,7 +3328,7 @@ export const TransactionTable = forwardRef(
           addNotification({
             notification: {
               type: 'error',
-              message: t('Account is a required field'),
+              message: 'Account is a required field',
             },
           }),
         );
@@ -3377,7 +3366,7 @@ export const TransactionTable = forwardRef(
           addNotification({
             notification: {
               type: 'error',
-              message: t('Account is a required field'),
+              message: 'Account is a required field',
             },
           }),
         );
@@ -3400,7 +3389,7 @@ export const TransactionTable = forwardRef(
                 addNotification({
                   notification: {
                     type: 'message',
-                    message: t('Schedule created successfully'),
+                    message: 'Schedule created successfully',
                   },
                 }),
               );
@@ -3417,7 +3406,7 @@ export const TransactionTable = forwardRef(
                 addNotification({
                   notification: {
                     type: 'error',
-                    message: t('Failed to create schedule'),
+                    message: 'Failed to create schedule',
                   },
                 }),
               );

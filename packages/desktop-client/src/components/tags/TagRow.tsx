@@ -1,6 +1,5 @@
 import React, { memo, useRef } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { SvgArrowThinRight } from '@actual-app/components/icons/v1';
 import { Text } from '@actual-app/components/text';
@@ -38,7 +37,6 @@ type TagRowProps = {
 
 export const TagRow = memo(
   ({ tag, hovered, onHover, focusedField, onEdit }: TagRowProps) => {
-    const { t } = useTranslation();
     const dispatchSelected = useSelectedDispatch();
     const selectedIds = useSelectedItems();
     const selected = selectedIds.has(tag.id);
@@ -107,23 +105,23 @@ export const TagRow = memo(
       items: [
         isSingleTagAction && {
           name: 'rename',
-          text: t('Rename'),
+          text: 'Rename',
           onClick: () => onEdit(tag.id, 'tag'),
         },
         {
           name: 'delete',
-          text: t('Delete'),
+          text: 'Delete',
           onClick: () => deleteTags({ ids: contextActionIds }),
         },
         tag.hidden
           ? {
               name: 'unhide',
-              text: t('Unhide'),
+              text: 'Unhide',
               onClick: () => unhideTags({ ids: contextActionIds }),
             }
           : {
               name: 'hide',
-              text: t('Hide'),
+              text: 'Hide',
               onClick: () => hideTags({ ids: contextActionIds }),
             },
       ],
@@ -182,7 +180,7 @@ export const TagRow = memo(
           textAlign="flex"
           exposed={focusedField === 'description'}
           onExpose={name => onEdit(tag.id, name)}
-          value={tag.description || t('No description')}
+          value={tag.description || 'No description'}
           valueStyle={{
             opacity: tag.hidden ? 0.5 : undefined,
             fontStyle: !tag.description ? 'italic' : undefined,
@@ -191,7 +189,7 @@ export const TagRow = memo(
           inputProps={{
             value: tag.description || '',
             onUpdate,
-            placeholder: t('No description'),
+            placeholder: 'No description',
           }}
         />
 
@@ -210,9 +208,7 @@ export const TagRow = memo(
             }}
             onSelect={onShowActivity}
           >
-            <Text style={{ paddingRight: 5 }}>
-              <Trans>View Transactions</Trans>
-            </Text>
+            <Text style={{ paddingRight: 5 }}>View Transactions</Text>
             <SvgArrowThinRight style={{ width: 8, height: 8 }} />
           </CellButton>
         </Cell>

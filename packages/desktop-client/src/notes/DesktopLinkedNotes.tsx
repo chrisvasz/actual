@@ -1,5 +1,4 @@
 import type { MouseEvent } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { theme } from '@actual-app/components/theme';
 
@@ -23,7 +22,6 @@ export function DesktopLinkedNotes({
   isFilePath,
 }: DesktopLinkedNotesProps) {
   const dispatch = useDispatch();
-  const { t } = useTranslation();
 
   const handleClick = async (e: MouseEvent) => {
     e.stopPropagation();
@@ -36,7 +34,7 @@ export function DesktopLinkedNotes({
         addNotification({
           notification: {
             type: 'message',
-            message: t('File path copied to clipboard'),
+            message: 'File path copied to clipboard',
           },
         }),
       );

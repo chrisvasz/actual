@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { View } from '@actual-app/components/view';
 import type {
@@ -33,7 +32,6 @@ export function FormulaCard({
   meta,
   onMetaChange,
 }: FormulaCardProps) {
-  const { t } = useTranslation();
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
   const themeColors = useThemeColors();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -102,7 +100,7 @@ export function FormulaCard({
         {showTitle && (
           <View style={{ flexGrow: 0, flexShrink: 0, padding: 20 }}>
             <ReportCardName
-              name={meta?.name || t('Formula')}
+              name={meta?.name || 'Formula'}
               isEditing={nameMenuOpen}
               onChange={newName => {
                 onMetaChange({

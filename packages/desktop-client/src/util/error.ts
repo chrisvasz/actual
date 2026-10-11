@@ -4,7 +4,6 @@ import {
   toMB,
 } from '@actual-app/core/shared/errors';
 import type { UnsafeZipMeta } from '@actual-app/core/shared/errors';
-import { t } from 'i18next';
 
 type ErrorWithMeta = {
   reason: string;
@@ -19,41 +18,24 @@ export function getUnsafeZipError({
   const maxSizeMB = toMB(maxSize);
   switch (zipReason) {
     case 'archive-size':
-      return t(
-        'This file is larger than the maximum supported size of {{maxSizeMB}} MB, sorry! Visit https://actualbudget.org/contact/ for support.',
-        { maxSizeMB },
-      );
+      return `This file is larger than the maximum supported size of ${maxSizeMB} MB, sorry! Visit https://actualbudget.org/contact/ for support.`;
     case 'entry-size':
-      return t(
-        'The file "{{entryName}}" in this archive is larger than the maximum supported size of {{maxSizeMB}} MB, sorry! Visit https://actualbudget.org/contact/ for support.',
-        { entryName, maxSizeMB },
-      );
+      return `The file "${entryName}" in this archive is larger than the maximum supported size of ${maxSizeMB} MB, sorry! Visit https://actualbudget.org/contact/ for support.`;
     case 'total-size':
-      return t(
-        'The uncompressed contents of this archive are larger than the maximum supported size of {{maxSizeMB}} MB, sorry! Visit https://actualbudget.org/contact/ for support.',
-        { maxSizeMB },
-      );
+      return `The uncompressed contents of this archive are larger than the maximum supported size of ${maxSizeMB} MB, sorry! Visit https://actualbudget.org/contact/ for support.`;
     case 'unsafe-entry-name':
-      return t(
-        'This archive contains an entry with an unsafe file name: "{{entryName}}".',
-        { entryName },
-      );
+      return `This archive contains an entry with an unsafe file name: "${entryName}".`;
     case 'duplicate-entry':
-      return t(
-        'This archive contains more than one entry named "{{entryName}}".',
-        { entryName },
-      );
+      return `This archive contains more than one entry named "${entryName}".`;
     default:
-      return t(
-        'This file could not be imported, sorry! Visit https://actualbudget.org/contact/ for support.',
-      );
+      return 'This file could not be imported, sorry! Visit https://actualbudget.org/contact/ for support.';
   }
 }
 
 export function getUploadError({ reason, meta }: ErrorWithMeta) {
   switch (reason) {
     case 'unauthorized':
-      return t('You are not logged in.');
+      return 'You are not logged in.';
     case 'encrypt-failure':
       if (
         meta != null &&
@@ -61,38 +43,25 @@ export function getUploadError({ reason, meta }: ErrorWithMeta) {
         'isMissingKey' in meta &&
         meta.isMissingKey
       ) {
-        return t(
-          'Encrypting your file failed because you are missing your encryption key. Create your key in the next step.',
-        );
+        return 'Encrypting your file failed because you are missing your encryption key. Create your key in the next step.';
       }
-      return t(
-        'Encrypting the file failed. You have the correct key so this is an internal bug. To fix this, generate a new key in the next step.',
-      );
+      return 'Encrypting the file failed. You have the correct key so this is an internal bug. To fix this, generate a new key in the next step.';
     case 'file-has-reset':
       // Something really weird happened - during reset a sanity
       // check on the server failed. The user just needs to
       // restart the whole process.
-      return t(
-        'Something went wrong while resetting your file. Please try again.',
-      );
+      return 'Something went wrong while resetting your file. Please try again.';
     case 'file-has-new-key':
-      return t(
-        'Unable to encrypt your data because you are missing the key. Create the latest key in the next step.',
-      );
+      return 'Unable to encrypt your data because you are missing the key. Create the latest key in the next step.';
     case 'network':
-      return t('Uploading the file failed. Check your network connection.');
+      return 'Uploading the file failed. Check your network connection.';
     default:
-      return t(
-        'An internal error occurred, sorry! Visit https://actualbudget.org/contact/ for support. (ref: {{reason}})',
-        { reason },
-      );
+      return `An internal error occurred, sorry! Visit https://actualbudget.org/contact/ for support. (ref: ${reason})`;
   }
 }
 
 function getSchemaMismatchError() {
-  return t(
-    'This budget could not be loaded because it uses a newer database schema than this version of Actual supports. Make sure you are using the latest version, then try again.',
-  );
+  return 'This budget could not be loaded because it uses a newer database schema than this version of Actual supports. Make sure you are using the latest version, then try again.';
 }
 
 export function getDownloadError({
@@ -111,47 +80,33 @@ export function getDownloadError({
   switch (reason) {
     case 'network':
     case 'download-failure':
-      return t('Downloading the file failed. Check your network connection.');
+      return 'Downloading the file failed. Check your network connection.';
     case 'not-zip-file':
     case 'invalid-zip-file':
     case 'invalid-meta-file':
-      return t(
-        'Downloaded file is invalid, sorry! Visit https://actualbudget.org/contact/ for support.',
-      );
+      return 'Downloaded file is invalid, sorry! Visit https://actualbudget.org/contact/ for support.';
     case 'zip-too-large': {
       const zipMeta = getUnsafeZipMeta(meta);
       if (zipMeta) {
         return getUnsafeZipError(zipMeta);
       }
-      return t(
-        'This file is too large to import, sorry! Visit https://actualbudget.org/contact/ for support.',
-      );
+      return 'This file is too large to import, sorry! Visit https://actualbudget.org/contact/ for support.';
     }
     case 'decrypt-failure':
-      return t(
-        'Unable to decrypt file {{fileName}}. To change your key, first download this file with the proper password.',
-        { fileName: fileName || t('(unknown)') },
-      );
+      return `Unable to decrypt file ${fileName || '(unknown)'}. To change your key, first download this file with the proper password.`;
 
     case 'out-of-sync-migrations':
-      return t(
-        'This budget cannot be loaded with this version of the app. Make sure the app is up-to-date.',
-      );
+      return 'This budget cannot be loaded with this version of the app. Make sure the app is up-to-date.';
 
     case 'clock-drift':
-      return t(
-        'Failed to download the budget because your device time differs too much from the server. Please check your device time settings and ensure they are correct.',
-      );
+      return 'Failed to download the budget because your device time differs too much from the server. Please check your device time settings and ensure they are correct.';
 
     default: {
       const info =
         meta && typeof meta === 'object' && 'fileId' in meta && meta.fileId
           ? `, fileId: ${String(meta.fileId)}`
           : '';
-      return t(
-        'Something went wrong trying to download that file, sorry! Visit https://actualbudget.org/contact/ for support. reason: {{reason}}{{info}}',
-        { reason, info },
-      );
+      return `Something went wrong trying to download that file, sorry! Visit https://actualbudget.org/contact/ for support. reason: ${reason}${info}`;
     }
   }
 }
@@ -163,89 +118,67 @@ export function getCreateKeyError(error: ErrorWithMeta) {
 export function getTestKeyError({ reason }: ErrorWithMeta) {
   switch (reason) {
     case 'network':
-      return t(
-        'Unable to connect to the server. We need to access the server to get some information about your keys.',
-      );
+      return 'Unable to connect to the server. We need to access the server to get some information about your keys.';
     case 'old-key-style':
-      return t(
-        'This file is encrypted with an old unsupported key style. Recreate the key on a device where the file is available, or use an older version of Actual to download it.',
-      );
+      return 'This file is encrypted with an old unsupported key style. Recreate the key on a device where the file is available, or use an older version of Actual to download it.';
     case 'decrypt-failure':
-      return t('Unable to decrypt file with this password. Please try again.');
+      return 'Unable to decrypt file with this password. Please try again.';
     default:
-      return t(
-        'Something went wrong trying to create a key, sorry! Visit https://actualbudget.org/contact/ for support.',
-      );
+      return 'Something went wrong trying to create a key, sorry! Visit https://actualbudget.org/contact/ for support.';
   }
 }
 
 export function getSyncError(error: string, id: string) {
   if (error === 'out-of-sync-migrations' || error === 'out-of-sync-data') {
-    return t('This budget cannot be loaded with this version of the app.');
+    return 'This budget cannot be loaded with this version of the app.';
   } else if (error === 'budget-not-found') {
-    return t(
-      'Budget "{{id}}" not found. Check the ID of your budget in the Advanced section of the settings page.',
-      { id },
-    );
+    return `Budget "${id}" not found. Check the ID of your budget in the Advanced section of the settings page.`;
   } else if (error === 'clock-drift') {
-    return t(
-      'Failed to sync because your device time differs too much from the server. Please check your device time settings and ensure they are correct.',
-    );
+    return 'Failed to sync because your device time differs too much from the server. Please check your device time settings and ensure they are correct.';
   } else {
-    return t('We had an unknown problem opening "{{id}}".', { id });
+    return `We had an unknown problem opening "${id}".`;
   }
 }
 
 export function getUserAccessErrors(reason: string) {
   switch (reason) {
     case 'unauthorized':
-      return t('You are not logged in.');
+      return 'You are not logged in.';
     case 'token-expired':
-      return t('Login expired, please log in again.');
+      return 'Login expired, please log in again.';
     case 'user-cant-be-empty':
-      return t('Please select a user.');
+      return 'Please select a user.';
     case 'invalid-file-id':
-      return t('This file is invalid.');
+      return 'This file is invalid.';
     case 'file-denied':
-      return t('You don`t have permissions over this file.');
+      return 'You don`t have permissions over this file.';
     case 'user-already-have-access':
-      return t('User already has access.');
+      return 'User already has access.';
     default:
-      return t(
-        'An internal error occurred, sorry! Visit https://actualbudget.org/contact/ for support. (ref: {{reason}})',
-        { reason },
-      );
+      return `An internal error occurred, sorry! Visit https://actualbudget.org/contact/ for support. (ref: ${reason})`;
   }
 }
 
 export function getSecretsError(error: string, reason: string) {
   switch (reason) {
     case 'unauthorized':
-      return t('You are not logged in.');
+      return 'You are not logged in.';
     case 'not-admin':
-      return t('You have to be admin to set secrets');
+      return 'You have to be admin to set secrets';
     default:
-      return t(
-        'An error occurred while setting the secret. Please try again. (ref: {{error}})',
-        { error },
-      );
+      return `An error occurred while setting the secret. Please try again. (ref: ${error})`;
   }
 }
 
 export function getOpenIdErrors(reason: string) {
   switch (reason) {
     case 'unauthorized':
-      return t('You are not logged in.');
+      return 'You are not logged in.';
     case 'configuration-error':
-      return t('This configuration is not valid. Please check it again.');
+      return 'This configuration is not valid. Please check it again.';
     case 'unable-to-change-file-config-enabled':
-      return t(
-        'Unable to enable OpenID. Please update the config.json file in this case.',
-      );
+      return 'Unable to enable OpenID. Please update the config.json file in this case.';
     default:
-      return t(
-        'An internal error occurred, sorry! Visit https://actualbudget.org/contact/ for support. (ref: {{reason}})',
-        { reason },
-      );
+      return `An internal error occurred, sorry! Visit https://actualbudget.org/contact/ for support. (ref: ${reason})`;
   }
 }

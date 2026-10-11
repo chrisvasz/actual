@@ -1,5 +1,4 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { DateRangePicker } from '@actual-app/components/date-range-picker';
@@ -95,13 +94,11 @@ export function Header({
   filterExclude,
   filterInclude,
 }: HeaderProps) {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
   const language = useLanguage();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
 
   const presets: DateRangePreset[] = buildDateRangePresets({
-    t,
     onSelectRange: range => onChangeDates(...range),
     earliestTransaction,
     latestTransaction,
@@ -140,7 +137,7 @@ export function Header({
                 onChangeDates(newStart, newEnd, newMode);
               }}
             >
-              {mode === 'static' ? t('Static') : t('Live')}
+              {mode === 'static' ? 'Static' : 'Live'}
             </Button>
           )}
 
@@ -165,16 +162,16 @@ export function Header({
             locale={language}
             formatDayLabel={date => monthUtils.format(date, dateFormat)}
             labels={{
-              selectBy: t('Select by'),
-              quickSelect: t('Quick select'),
-              month: t('Month'),
-              day: t('Day'),
-              previous: t('Previous'),
-              next: t('Next'),
-              previousMonth: t('Previous month'),
-              nextMonth: t('Next month'),
-              year: t('Year'),
-              dateRange: t('Date range'),
+              selectBy: 'Select by',
+              quickSelect: 'Quick select',
+              month: 'Month',
+              day: 'Day',
+              previous: 'Previous',
+              next: 'Next',
+              previousMonth: 'Previous month',
+              nextMonth: 'Next month',
+              year: 'Year',
+              dateRange: 'Date range',
             }}
             presets={presets}
             onChangeDates={(newStart, newEnd) =>

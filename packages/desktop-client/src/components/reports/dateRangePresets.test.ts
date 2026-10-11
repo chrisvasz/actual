@@ -9,12 +9,10 @@ const LATEST_TRANSACTION = '2017-01-01';
 
 describe('buildDateRangePresets', () => {
   const mockOnSelectRange = vi.fn();
-  const mockT = (text: string) => text;
 
   describe('past presets (default, non-future)', () => {
     it('builds 1-month preset when show1Month is true', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -29,7 +27,6 @@ describe('buildDateRangePresets', () => {
 
     it('omits 1-month preset when show1Month is false', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -43,7 +40,6 @@ describe('buildDateRangePresets', () => {
 
     it('includes standard past presets (3-month, 6-month, 1-year)', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -59,7 +55,6 @@ describe('buildDateRangePresets', () => {
 
     it('includes live presets (year-to-date, last-month, last-year, prior-year-to-date)', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -78,7 +73,6 @@ describe('buildDateRangePresets', () => {
 
     it('includes all-time preset when includeAllTime is true', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -92,7 +86,6 @@ describe('buildDateRangePresets', () => {
 
     it('omits all-time preset when includeAllTime is false', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -106,7 +99,6 @@ describe('buildDateRangePresets', () => {
 
     it('preset getRange returns month-shaped range for past presets', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -124,7 +116,6 @@ describe('buildDateRangePresets', () => {
     it('preset onSelect triggers callback with range and mode', () => {
       const onSelect = vi.fn();
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: onSelect,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -147,7 +138,6 @@ describe('buildDateRangePresets', () => {
   describe('future presets (showFutureRange=true)', () => {
     it('builds next-month preset when show1Month is true', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -162,7 +152,6 @@ describe('buildDateRangePresets', () => {
 
     it('omits next-month preset when show1Month is false', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -177,7 +166,6 @@ describe('buildDateRangePresets', () => {
 
     it('includes future presets (next-3-months, next-6-months, next-year, all-future)', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -195,7 +183,6 @@ describe('buildDateRangePresets', () => {
 
     it('does not include past presets when showFutureRange is true', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -215,7 +202,6 @@ describe('buildDateRangePresets', () => {
   describe('live range presets clamped to transaction bounds', () => {
     it('year-to-date returns range clamped to earliest transaction', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: '2016-06-15',
         latestTransaction: LATEST_TRANSACTION,
@@ -232,7 +218,6 @@ describe('buildDateRangePresets', () => {
 
     it('last-month returns correct month regardless of transaction bounds', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -248,7 +233,6 @@ describe('buildDateRangePresets', () => {
 
     it('all-time returns full transaction range as month bounds', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: '2015-03-15',
         latestTransaction: '2017-01-20',
@@ -266,7 +250,6 @@ describe('buildDateRangePresets', () => {
     it('live presets include mode in onSelect callback', () => {
       const onSelect = vi.fn();
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: onSelect,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -285,7 +268,6 @@ describe('buildDateRangePresets', () => {
     it('past presets include sliding-window mode in onSelect callback', () => {
       const onSelect = vi.fn();
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: onSelect,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -304,7 +286,6 @@ describe('buildDateRangePresets', () => {
     it('all-time preset includes full mode in onSelect callback', () => {
       const onSelect = vi.fn();
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: onSelect,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -323,7 +304,6 @@ describe('buildDateRangePresets', () => {
     it('quarter presets return quarter month bounds and preserve their modes', () => {
       const onSelect = vi.fn();
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: onSelect,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: LATEST_TRANSACTION,
@@ -353,7 +333,6 @@ describe('buildDateRangePresets', () => {
     it('clamps current-quarter preset selection to latest transaction month in unfinished quarters', () => {
       const onSelect = vi.fn();
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: onSelect,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: '2017-02-10',
@@ -378,7 +357,6 @@ describe('buildDateRangePresets', () => {
 
     it('returns latestMonth for both endpoints when the current quarter lies entirely beyond the latest transaction', () => {
       const presets = buildDateRangePresets({
-        t: mockT,
         onSelectRange: mockOnSelectRange,
         earliestTransaction: EARLIEST_TRANSACTION,
         latestTransaction: '2016-12-15',

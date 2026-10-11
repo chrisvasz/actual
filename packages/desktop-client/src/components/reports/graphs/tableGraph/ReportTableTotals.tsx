@@ -1,6 +1,5 @@
 import React, { useLayoutEffect, useState } from 'react';
 import type { CSSProperties, ReactNode, RefObject } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
@@ -55,7 +54,6 @@ export function ReportTableTotals({
   style,
   renderTotals,
 }: ReportTableTotalsProps) {
-  const { t } = useTranslation();
   const [scrollWidthTotals, setScrollWidthTotals] = useState(0);
 
   useLayoutEffect(() => {
@@ -74,7 +72,7 @@ export function ReportTableTotals({
 
   const metadata: GroupedEntity = {
     id: '',
-    name: t('Totals'),
+    name: 'Totals',
     intervalData: data.intervalData,
     totalAssets: data.totalAssets,
     totalDebts: data.totalDebts,

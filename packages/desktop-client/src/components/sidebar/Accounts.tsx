@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { View } from '@actual-app/components/view';
 import type { AccountEntity } from '@actual-app/core/types/models';
@@ -19,7 +18,6 @@ import { SecondaryItem } from './SecondaryItem';
 const fontWeight = 600;
 
 export function Accounts() {
-  const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const { data: accounts = [] } = useAccounts();
   const updatedAccounts = useUpdatedAccounts();
@@ -78,7 +76,7 @@ export function Accounts() {
     >
       <View style={{ overflow: 'auto' }}>
         <Account
-          name={t('All accounts')}
+          name="All accounts"
           to="/accounts"
           query={bindings.allAccountBalanceCleared()}
           style={{ fontWeight, marginTop: 31 }}
@@ -88,7 +86,7 @@ export function Accounts() {
 
         {onBudgetAccounts.length > 0 && (
           <Account
-            name={t('On budget')}
+            name="On budget"
             to="/accounts/onbudget"
             query={bindings.onBudgetAccountBalanceCleared()}
             style={{
@@ -115,7 +113,7 @@ export function Accounts() {
 
         {offbudgetAccounts.length > 0 && (
           <Account
-            name={t('Off budget')}
+            name="Off budget"
             to="/accounts/offbudget"
             query={bindings.offBudgetAccountBalanceCleared()}
             style={{
@@ -144,9 +142,7 @@ export function Accounts() {
           <SecondaryItem
             style={{ marginTop: 15 }}
             title={
-              showClosedAccounts
-                ? t('Closed accounts')
-                : t('Closed accounts...')
+              showClosedAccounts ? 'Closed accounts' : 'Closed accounts...'
             }
             onClick={onToggleClosedAccounts}
             bold

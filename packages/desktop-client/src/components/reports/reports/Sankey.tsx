@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -27,7 +26,6 @@ import type {
   TimeFrame,
 } from '@actual-app/core/types/models';
 import { debounce } from 'es-toolkit/compat';
-import type { TFunction } from 'i18next';
 import type { SankeyData } from 'recharts/types/chart/Sankey';
 
 import { BackButton } from '#components/common/BackButton';
@@ -182,12 +180,11 @@ type TopNSelectorProps = {
   onChange: (value: number) => void;
 };
 
-function displayN(n: number, t: TFunction): string {
-  return n === 1e5 ? t('All') : String(n);
+function displayN(n: number): string {
+  return n === 1e5 ? 'All' : String(n);
 }
 
 function TopNSelector({ value, onChange }: TopNSelectorProps) {
-  const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -197,12 +194,10 @@ function TopNSelector({ value, onChange }: TopNSelectorProps) {
         ref={triggerRef}
         variant="bare"
         onPress={() => setIsOpen(true)}
-        aria-label={t('Change category limit')}
+        aria-label="Change category limit"
       >
         <SvgList style={{ width: 12, height: 12 }} />
-        <span style={{ marginLeft: 5 }}>
-          {t('Show up to {{n}}', { n: displayN(value, t) })}
-        </span>
+        <span style={{ marginLeft: 5 }}>{`Show up to ${displayN(value)}`}</span>
       </Button>
       <Popover
         triggerRef={triggerRef}
@@ -217,7 +212,7 @@ function TopNSelector({ value, onChange }: TopNSelectorProps) {
           }}
           items={TOP_N_OPTIONS.map(n => ({
             name: String(n),
-            text: t('Show up to {{n}}', { n: displayN(n, t) }),
+            text: `Show up to ${displayN(n)}`,
           }))}
         />
       </Popover>
@@ -231,7 +226,6 @@ type CategorySortSelectorProps = {
 };
 
 function CategorySortSelector({ value, onChange }: CategorySortSelectorProps) {
-  const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -239,17 +233,17 @@ function CategorySortSelector({ value, onChange }: CategorySortSelectorProps) {
     key: 'per-group' | 'global' | 'budget-order';
     label: string;
   }> = [
-    { key: 'per-group', label: t('Sort per group') },
-    { key: 'global', label: t('Sort all') },
-    { key: 'budget-order', label: t('Sort as budget') },
+    { key: 'per-group', label: 'Sort per group' },
+    { key: 'global', label: 'Sort all' },
+    { key: 'budget-order', label: 'Sort as budget' },
   ];
 
   const currentLabel =
     value === 'global'
-      ? t('Sort all')
+      ? 'Sort all'
       : value === 'budget-order'
-        ? t('Sort as budget')
-        : t('Sort per group');
+        ? 'Sort as budget'
+        : 'Sort per group';
 
   return (
     <>
@@ -257,7 +251,7 @@ function CategorySortSelector({ value, onChange }: CategorySortSelectorProps) {
         ref={triggerRef}
         variant="bare"
         onPress={() => setIsOpen(true)}
-        aria-label={t('Change category sort order')}
+        aria-label="Change category sort order"
       >
         <SvgArrowDown style={{ width: 12, height: 12 }} />
         <span style={{ marginLeft: 5 }}>{currentLabel}</span>
@@ -298,11 +292,9 @@ function LayerSelector({
   menuItems,
   onChange,
 }: LayerSelectorProps) {
-  const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const translatedDirection = direction === 'from' ? t('from') : t('to');
 
   return (
     <>
@@ -310,9 +302,7 @@ function LayerSelector({
         ref={triggerRef}
         variant="bare"
         onPress={() => setIsOpen(true)}
-        aria-label={t('Change layer {{direction}}', {
-          direction: translatedDirection,
-        })}
+        aria-label={`Change layer ${direction}`}
       >
         <span style={{ marginLeft: 5 }}>{layerLabels[value]}</span>
       </Button>
@@ -354,7 +344,7 @@ function GraphModeSelector({ mode, onChange }: GraphModeSelectorProps) {
           onChange('spent');
         }}
       >
-        <Trans>Spent</Trans>
+        Spent
       </ModeButton>
       <ModeButton
         selected={mode === 'budgeted'}
@@ -365,7 +355,7 @@ function GraphModeSelector({ mode, onChange }: GraphModeSelectorProps) {
           backgroundColor: 'inherit',
         }}
       >
-        <Trans>Budgeted</Trans>
+        Budgeted
       </ModeButton>
     </SpaceBetween>
   );
@@ -388,13 +378,12 @@ function OptionsButton({
   showTransfers,
   onToggleShowTransfers,
 }: OptionsButtonProps) {
-  const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
       <Button ref={triggerRef} onPress={() => setIsOpen(true)}>
-        <Trans>Options</Trans>
+        Options
       </Button>
       <Popover
         triggerRef={triggerRef}
@@ -411,17 +400,17 @@ function OptionsButton({
           items={[
             {
               name: 'show-percentages',
-              text: t('Show as percentages'),
+              text: 'Show as percentages',
               toggle: showPercentages,
             },
             {
               name: 'group-accounts',
-              text: t('Group accounts in Spent view'),
+              text: 'Group accounts in Spent view',
               toggle: groupAccounts,
             },
             {
               name: 'show-transfers',
-              text: t('Show transfers in Spent view'),
+              text: 'Show transfers in Spent view',
               toggle: showTransfers,
             },
           ]}
@@ -437,7 +426,6 @@ type SankeyInnerProps = {
 function SankeyInner({ widget }: SankeyInnerProps) {
   const locale = useLocale();
   const dispatch = useDispatch();
-  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { isNarrowWidth } = useResponsive();
 
@@ -540,14 +528,14 @@ function SankeyInner({ widget }: SankeyInnerProps) {
 
   const layerLabels = useMemo<Record<GraphLayers, string>>(
     () => ({
-      [GraphLayers.IncomePayee]: t('Payee'),
-      [GraphLayers.IncomeCategory]: t('Income category'),
-      [GraphLayers.Account]: t('Account'),
-      [GraphLayers.Budget]: t('Budget'),
-      [GraphLayers.CategoryGroup]: t('Category group'),
-      [GraphLayers.Category]: t('Category'),
+      [GraphLayers.IncomePayee]: 'Payee',
+      [GraphLayers.IncomeCategory]: 'Income category',
+      [GraphLayers.Account]: 'Account',
+      [GraphLayers.Budget]: 'Budget',
+      [GraphLayers.CategoryGroup]: 'Category group',
+      [GraphLayers.Category]: 'Category',
     }),
-    [t],
+    [],
   );
 
   const fromLayerMenuItems = useMemo(
@@ -737,7 +725,7 @@ function SankeyInner({ widget }: SankeyInnerProps) {
             addNotification({
               notification: {
                 type: 'message',
-                message: t('Dashboard widget successfully saved.'),
+                message: 'Dashboard widget successfully saved.',
               },
             }),
           );
@@ -751,7 +739,7 @@ function SankeyInner({ widget }: SankeyInnerProps) {
       throw new Error('No widget that could be saved.');
     }
 
-    const name = newName || t('Sankey');
+    const name = newName || 'Sankey';
     updateDashboardWidgetMutation.mutate({
       widget: {
         id: widget.id,
@@ -763,7 +751,7 @@ function SankeyInner({ widget }: SankeyInnerProps) {
     });
   };
 
-  const title = widget?.meta?.name || t('Sankey');
+  const title = widget?.meta?.name || 'Sankey';
 
   const ignoredFilterFields =
     graphMode === 'budgeted'
@@ -778,10 +766,7 @@ function SankeyInner({ widget }: SankeyInnerProps) {
         ]
       : [];
 
-  const ignoredFilterFieldsList = useFormatList(
-    ignoredFilterFields,
-    i18n.language,
-  );
+  const ignoredFilterFieldsList = useFormatList(ignoredFilterFields);
 
   if (!datesInitialized || !displayData) {
     return <LoadingIndicator />;
@@ -878,7 +863,7 @@ function SankeyInner({ widget }: SankeyInnerProps) {
             <Button
               variant="bare"
               onPress={onResetLayers}
-              aria-label={t('Reset layers')}
+              aria-label="Reset layers"
             >
               <SvgRefresh style={{ width: 12, height: 12 }} />
             </Button>
@@ -897,7 +882,7 @@ function SankeyInner({ widget }: SankeyInnerProps) {
         </View>
         {widget && (
           <Button variant="primary" onPress={onSaveWidget}>
-            <Trans>Save widget</Trans>
+            Save widget
           </Button>
         )}
       </Header>
@@ -966,18 +951,10 @@ function SankeyInner({ widget }: SankeyInnerProps) {
                     }}
                   >
                     <Text style={{ fontSize: 16, textAlign: 'center' }}>
-                      {graphMode === 'budgeted' && (
-                        <Trans>
-                          No data available for this period. Try budgeting
-                          categories or selecting a different period.
-                        </Trans>
-                      )}
-                      {graphMode === 'spent' && (
-                        <Trans>
-                          No data available for this period. Try adding
-                          transactions or selecting a different period.
-                        </Trans>
-                      )}
+                      {graphMode === 'budgeted' &&
+                        'No data available for this period. Try budgeting categories or selecting a different period.'}
+                      {graphMode === 'spent' &&
+                        'No data available for this period. Try adding transactions or selecting a different period.'}
                     </Text>
                   </View>
                 )}
@@ -993,49 +970,45 @@ function SankeyInner({ widget }: SankeyInnerProps) {
                     }}
                   >
                     <Text style={{ fontSize: 13 }}>
-                      <Trans>
-                        Filters on <strong>{ignoredFilterFieldsList}</strong>{' '}
-                        are ignored in <strong>Budgeted</strong> mode.
-                      </Trans>
+                      Filters on <strong>{ignoredFilterFieldsList}</strong> are
+                      ignored in <strong>Budgeted</strong> mode.
                     </Text>
                   </View>
                 )}
 
                 {!isNarrowWidth && (
                   <View style={{ marginTop: 30 }}>
-                    <Trans>
-                      <Paragraph>
-                        <strong>What is a Sankey plot?</strong>
-                      </Paragraph>
-                      <Paragraph>
-                        A Sankey plot visualizes the flow of quantities between
-                        multiple categories, emphasizing the distribution and
-                        proportional relationships of data streams.
-                      </Paragraph>
-                      <Paragraph>
-                        <strong>View options:</strong>
-                      </Paragraph>
-                      <Paragraph>
-                        <ul style={{ marginTop: 0, paddingLeft: 20 }}>
-                          <li style={{ marginBottom: 5 }}>
-                            <strong>Spent:</strong> Displays actual spending by
-                            category from transactions.
-                          </li>
-                          <li style={{ marginBottom: 5 }}>
-                            <strong>Budgeted:</strong> Shows how your budget is
-                            allocated across categories.
-                          </li>
-                        </ul>
-                        <strong>Disclaimer:</strong> A Sankey chart cannot
-                        directly represent negative numbers. In some cases, such
-                        as when funds are reallocated from categories with
-                        negative budgeting (e.g. using savings to cover
-                        overspending), the chart structure may differ from the
-                        main budget overview. As a result, some category totals
-                        and flows in this diagram may not exactly match the
-                        summary figures elsewhere in the app.
-                      </Paragraph>
-                    </Trans>
+                    <Paragraph>
+                      <strong>What is a Sankey plot?</strong>
+                    </Paragraph>
+                    <Paragraph>
+                      A Sankey plot visualizes the flow of quantities between
+                      multiple categories, emphasizing the distribution and
+                      proportional relationships of data streams.
+                    </Paragraph>
+                    <Paragraph>
+                      <strong>View options:</strong>
+                    </Paragraph>
+                    <Paragraph>
+                      <ul style={{ marginTop: 0, paddingLeft: 20 }}>
+                        <li style={{ marginBottom: 5 }}>
+                          <strong>Spent:</strong> Displays actual spending by
+                          category from transactions.
+                        </li>
+                        <li style={{ marginBottom: 5 }}>
+                          <strong>Budgeted:</strong> Shows how your budget is
+                          allocated across categories.
+                        </li>
+                      </ul>
+                      <strong>Disclaimer:</strong> A Sankey chart cannot
+                      directly represent negative numbers. In some cases, such
+                      as when funds are reallocated from categories with
+                      negative budgeting (e.g. using savings to cover
+                      overspending), the chart structure may differ from the
+                      main budget overview. As a result, some category totals
+                      and flows in this diagram may not exactly match the
+                      summary figures elsewhere in the app.
+                    </Paragraph>
                   </View>
                 )}
               </View>

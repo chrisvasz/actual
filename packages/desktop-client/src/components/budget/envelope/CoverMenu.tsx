@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { Form } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Input } from '@actual-app/components/input';
@@ -36,8 +35,6 @@ export function CoverMenu({
   onSubmit,
   onClose,
 }: CoverMenuProps) {
-  const { t } = useTranslation();
-
   const { data: { grouped: originalCategoryGroups } = { grouped: [] } } =
     useCategories();
 
@@ -72,9 +69,7 @@ export function CoverMenu({
       }}
     >
       <View style={{ padding: 10 }}>
-        <View style={{ marginBottom: 5 }}>
-          <Trans>Cover this amount:</Trans>
-        </View>
+        <View style={{ marginBottom: 5 }}>Cover this amount:</View>
         <View>
           <Input
             defaultValue={_initialAmount}
@@ -83,9 +78,7 @@ export function CoverMenu({
             style={styles.tnum}
           />
         </View>
-        <View style={{ margin: '10px 0 5px 0' }}>
-          <Trans>From:</Trans>
-        </View>
+        <View style={{ margin: '10px 0 5px 0' }}>From:</View>
 
         <CategoryAutocomplete
           categoryGroups={filteredCategoryGroups}
@@ -94,7 +87,7 @@ export function CoverMenu({
           openOnFocus
           onSelect={(id: string | undefined) => setFromCategoryId(id || null)}
           inputProps={{
-            placeholder: t('(none)'),
+            placeholder: '(none)',
           }}
           showHiddenCategories={false}
         />
@@ -113,7 +106,7 @@ export function CoverMenu({
               paddingTop: 3,
             }}
           >
-            <Trans>Transfer</Trans>
+            Transfer
           </Button>
         </View>
       </View>

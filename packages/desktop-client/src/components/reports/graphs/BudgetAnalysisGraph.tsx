@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
 import type { CSSProperties } from '@actual-app/components/styles';
@@ -77,7 +76,6 @@ function CustomTooltip({
   balanceOnly,
 }: CustomTooltipProps) {
   const locale = useLocale();
-  const { t } = useTranslation();
 
   if (!active || !payload || !Array.isArray(payload) || !payload[0]) {
     return null;
@@ -119,7 +117,7 @@ function CustomTooltip({
                       display: 'inline-block',
                     }}
                   />
-                  <Trans>Budgeted:</Trans>
+                  Budgeted:
                 </span>
               }
               right={
@@ -141,7 +139,7 @@ function CustomTooltip({
                       display: 'inline-block',
                     }}
                   />
-                  <Trans>Spent:</Trans>
+                  Spent:
                 </span>
               }
               right={
@@ -161,7 +159,7 @@ function CustomTooltip({
                       display: 'inline-block',
                     }}
                   />
-                  {t('Overspending Adjustment:')}
+                  Overspending Adjustment:
                 </span>
               }
               right={
@@ -183,7 +181,7 @@ function CustomTooltip({
                       display: 'inline-block',
                     }}
                   />
-                  <Trans>Balance:</Trans>
+                  Balance:
                 </span>
               }
               right={
@@ -207,15 +205,13 @@ export function BudgetAnalysisGraph({
   balanceOnly = false,
   isConcise = true,
 }: BudgetAnalysisGraphProps) {
-  const { t } = useTranslation();
   const format = useFormat();
   const locale = useLocale();
 
-  // Centralize translated labels to avoid repetition
-  const budgetedLabel = t('Budgeted');
-  const spentLabel = t('Spent');
-  const balanceLabel = t('Balance');
-  const overspendingLabel = t('Overspending Adjustment');
+  const budgetedLabel = 'Budgeted';
+  const spentLabel = 'Spent';
+  const balanceLabel = 'Balance';
+  const overspendingLabel = 'Overspending Adjustment';
 
   const graphData = data.intervalData;
 

@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { Form } from 'react-aria-components';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Input } from '@actual-app/components/input';
@@ -25,7 +24,6 @@ export function NameFilter({
   onAddUpdate: () => void;
   err: string | null;
 }) {
-  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -52,7 +50,7 @@ export function NameFilter({
           >
             <FormField style={{ flex: 1 }}>
               <FormLabel
-                title={t('Filter name')}
+                title="Filter name"
                 htmlFor="name-field"
                 style={{ userSelect: 'none' }}
               />
@@ -64,7 +62,7 @@ export function NameFilter({
               />
             </FormField>
             <Button variant="primary" type="submit" style={{ marginTop: 18 }}>
-              {adding ? t('Add') : t('Update')}
+              {adding ? 'Add' : 'Update'}
             </Button>
           </SpaceBetween>
         </Form>

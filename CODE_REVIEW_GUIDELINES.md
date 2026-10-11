@@ -59,16 +59,6 @@ The use of `any` or `unknown` should be rare and well-justified. Before approvin
 
 Only approve `any` or `unknown` if there's a documented, exceptional reason (e.g., interop with untyped external libraries, gradual migration).
 
-## Internationalization (i18n)
-
-**All user-facing strings must be translated.**
-
-The project has custom ESLint rules (`actual/no-untranslated-strings`) that enforce i18n usage, but reviewers should actively flag untranslated strings:
-
-- Use `Trans` component instead of `t()` function when possible
-- All text visible to users must use i18n functions
-- Flag hardcoded strings that should be translated
-
 ## Test Mocking
 
 **Minimize mocked dependencies; prefer real implementations.**

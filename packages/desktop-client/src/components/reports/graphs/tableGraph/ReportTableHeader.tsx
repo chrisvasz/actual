@@ -1,6 +1,5 @@
 import React from 'react';
 import type { CSSProperties, RefObject, UIEventHandler } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -37,7 +36,6 @@ export function ReportTableHeader({
   compactStyle,
   mode,
 }: ReportTableHeaderProps) {
-  const { t } = useTranslation();
   return (
     <Row
       collapsed
@@ -98,7 +96,7 @@ export function ReportTableHeader({
                     minWidth: compact ? 50 : 85,
                   }}
                   valueStyle={compactStyle}
-                  value={t('Deposits')}
+                  value="Deposits"
                   textAlign="right"
                   width="flex"
                 />
@@ -107,7 +105,7 @@ export function ReportTableHeader({
                     minWidth: compact ? 50 : 85,
                   }}
                   valueStyle={compactStyle}
-                  value={t('Payments')}
+                  value="Payments"
                   textAlign="right"
                   width="flex"
                 />
@@ -118,7 +116,7 @@ export function ReportTableHeader({
             minWidth: compact ? 50 : 85,
           }}
           valueStyle={compactStyle}
-          value={t('Totals')}
+          value="Totals"
           textAlign="right"
           width="flex"
         />
@@ -127,7 +125,7 @@ export function ReportTableHeader({
             minWidth: compact ? 50 : 85,
           }}
           valueStyle={compactStyle}
-          value={t('Average')}
+          value="Average"
           textAlign="right"
           width="flex"
         />

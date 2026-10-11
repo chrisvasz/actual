@@ -1,6 +1,5 @@
 // oxlint-disable typescript-paths/absolute-parent-import
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -69,7 +68,6 @@ type BalanceForecastInnerProps = {
 };
 
 function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
-  const { t } = useTranslation();
   const format = useFormat();
   const locale = useLocale();
   const dispatch = useDispatch();
@@ -134,7 +132,7 @@ function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
     error instanceof Error
       ? error.message
       : error
-        ? t('Failed to load forecast')
+        ? 'Failed to load forecast'
         : null;
   const normalizedForecastData = forecastData ?? null;
   const hasFilters = conditions.length > 0;
@@ -165,7 +163,7 @@ function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
       addNotification({
         notification: {
           type: 'message',
-          message: t('Dashboard widget successfully saved.'),
+          message: 'Dashboard widget successfully saved.',
         },
       }),
     );
@@ -302,22 +300,19 @@ function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
       value={granularity}
       onChange={setGranularity}
       options={[
-        ['Monthly', t('Monthly')],
-        ['Daily', t('Daily')],
+        ['Monthly', 'Monthly'],
+        ['Daily', 'Daily'],
       ]}
     />
   );
   const headerChildren = widget ? (
     <Button variant="primary" onPress={onSaveWidget}>
-      <Trans>Save widget</Trans>
+      Save widget
     </Button>
   ) : null;
 
   return (
-    <Page
-      header={<PageHeader title={<Trans>Balance Forecast</Trans>} />}
-      padding={0}
-    >
+    <Page header={<PageHeader title="Balance Forecast" />} padding={0}>
       <Header
         allMonths={allMonths}
         start={start}
@@ -377,7 +372,7 @@ function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
               {format(endingPoint.balance, 'financial')}
             </View>
             <View style={{ color: theme.pageTextLight }}>
-              <Trans>Ending Balance</Trans>: {endingPoint.date}
+              Ending Balance: {endingPoint.date}
             </View>
             {lowestPoint && lowestPoint.date !== endingPoint.date ? (
               <View
@@ -387,8 +382,8 @@ function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
                   marginTop: 4,
                 }}
               >
-                <Trans>Lowest visible point</Trans>:{' '}
-                {format(lowestPoint.balance, 'financial')} ({lowestPoint.date})
+                Lowest visible point: {format(lowestPoint.balance, 'financial')}{' '}
+                ({lowestPoint.date})
               </View>
             ) : null}
           </View>
@@ -506,7 +501,7 @@ function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
                           stroke={theme.reportsBlue}
                           strokeDasharray="4 4"
                           label={{
-                            value: t('Today'),
+                            value: 'Today',
                             fill: theme.reportsBlue,
                             fontSize: 12,
                             position: 'insideTop',
@@ -539,22 +534,14 @@ function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
                 }}
               >
                 {scheduledOccurrenceCount === 0 ? (
-                  <Trans>
-                    This range shows posted transactions only; no scheduled
-                    occurrences fall in it.
-                  </Trans>
+                  'This range shows posted transactions only; no scheduled occurrences fall in it.'
                 ) : (
-                  <Trans count={scheduledOccurrenceCount}>
-                    {{ count: scheduledOccurrenceCount }} scheduled transactions
-                    included in this date range
-                  </Trans>
-                )}
-                {isUpdatingForecast ? (
                   <>
-                    {' '}
-                    <Trans>Updating...</Trans>
+                    {scheduledOccurrenceCount} scheduled transactions included
+                    in this date range
                   </>
-                ) : null}
+                )}
+                {isUpdatingForecast ? <> Updating...</> : null}
               </div>
             </>
           ) : (
@@ -568,10 +555,8 @@ function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
               }}
             >
               <div style={{ color: theme.pageTextLight }}>
-                <Trans>
-                  No transactions are included in this report. Adjust your
-                  filters, accounts, or date range to see a balance projection.
-                </Trans>
+                No transactions are included in this report. Adjust your
+                filters, accounts, or date range to see a balance projection.
               </div>
             </div>
           )}
@@ -581,19 +566,9 @@ function BalanceForecastInner({ widget }: BalanceForecastInnerProps) {
           <div
             style={{ marginTop: 20, fontSize: 12, color: theme.pageTextLight }}
           >
-            {hasFilters ? (
-              <Trans>
-                This forecast shows the running total of matching posted
-                transactions, plus upcoming scheduled transactions in the
-                future.
-              </Trans>
-            ) : (
-              <Trans>
-                This forecast shows your running balance from posted
-                transactions, plus upcoming scheduled transactions in the
-                future.
-              </Trans>
-            )}
+            {hasFilters
+              ? 'This forecast shows the running total of matching posted transactions, plus upcoming scheduled transactions in the future.'
+              : 'This forecast shows your running balance from posted transactions, plus upcoming scheduled transactions in the future.'}
           </div>
         )}
       </View>

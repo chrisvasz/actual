@@ -1,6 +1,5 @@
 import React, { memo, useRef, useState } from 'react';
 import type { ComponentProps, CSSProperties, MouseEvent } from 'react';
-import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Popover } from '@actual-app/components/popover';
@@ -90,9 +89,7 @@ export const BudgetTotalsMonth = memo(function BudgetTotalsMonth() {
       }}
     >
       <View style={totalsLabelStyle}>
-        <Text style={{ color: theme.tableHeaderText }}>
-          <Trans>Budgeted</Trans>
-        </Text>
+        <Text style={{ color: theme.tableHeaderText }}>Budgeted</Text>
         <EnvelopeCellValue
           binding={envelopeBudget.totalBudgeted}
           type="financial"
@@ -103,17 +100,13 @@ export const BudgetTotalsMonth = memo(function BudgetTotalsMonth() {
         </EnvelopeCellValue>
       </View>
       <View style={totalsLabelStyle}>
-        <Text style={{ color: theme.tableHeaderText }}>
-          <Trans>Spent</Trans>
-        </Text>
+        <Text style={{ color: theme.tableHeaderText }}>Spent</Text>
         <EnvelopeCellValue binding={envelopeBudget.totalSpent} type="financial">
           {props => <CellValueText {...props} style={cellStyle} />}
         </EnvelopeCellValue>
       </View>
       <View style={totalsLabelStyle}>
-        <Text style={{ color: theme.tableHeaderText }}>
-          <Trans>Balance</Trans>
-        </Text>
+        <Text style={{ color: theme.tableHeaderText }}>Balance</Text>
         <EnvelopeCellValue
           binding={envelopeBudget.totalBalance}
           type="financial"
@@ -135,9 +128,7 @@ export function IncomeHeaderMonth() {
         backgroundColor: theme.budgetCurrentMonth,
       }}
     >
-      <View style={{ flex: 1, textAlign: 'right' }}>
-        <Trans>Received</Trans>
-      </View>
+      <View style={{ flex: 1, textAlign: 'right' }}>Received</View>
     </Row>
   );
 }

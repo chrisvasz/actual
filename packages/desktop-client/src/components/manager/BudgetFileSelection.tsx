@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { ComponentPropsWithoutRef, CSSProperties } from 'react';
 import { GridList, GridListItem } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -53,19 +52,19 @@ import { pushModal } from '#modals/modalsSlice';
 import { useDispatch, useSelector } from '#redux';
 import { getUserData } from '#users/usersSlice';
 
-function getFileDescription(file: File, t: (key: string) => string) {
+function getFileDescription(file: File) {
   if (file.state === 'unknown') {
-    return t(
+    return (
       'This is a cloud-based file but its state is unknown because you ' +
-        'are offline.',
+      'are offline.'
     );
   }
 
   if (file.encryptKeyId) {
     if (file.hasKey) {
-      return t('This file is encrypted and you have key to access it.');
+      return 'This file is encrypted and you have key to access it.';
     }
-    return t('This file is encrypted and you do not have the key for it.');
+    return 'This file is encrypted and you do not have the key for it.';
   }
 
   return null;
@@ -100,11 +99,9 @@ function BudgetFileMenu({
     }
   }
 
-  const { t } = useTranslation();
-
   const items = [
-    ...(onDuplicate ? [{ name: 'duplicate', text: t('Duplicate') }] : []),
-    { name: 'delete', text: t('Delete') },
+    ...(onDuplicate ? [{ name: 'duplicate', text: 'Duplicate' }] : []),
+    { name: 'delete', text: 'Delete' },
   ];
 
   return <Menu onMenuSelect={onMenuSelect} items={items} />;
@@ -119,8 +116,6 @@ function BudgetFileMenuButton({
   onDelete,
   onDuplicate,
 }: BudgetFileMenuButtonProps) {
-  const { t } = useTranslation();
-
   const triggerRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -129,7 +124,7 @@ function BudgetFileMenuButton({
       <Button
         ref={triggerRef}
         variant="bare"
-        aria-label={t('Menu')}
+        aria-label="Menu"
         onPress={() => {
           setMenuOpen(true);
         }}
@@ -158,7 +153,6 @@ type BudgetFileStateProps = {
 };
 
 function BudgetFileState({ file, currentUserId }: BudgetFileStateProps) {
-  const { t } = useTranslation();
   const multiuserEnabled = useMultiuserEnabled();
 
   let Icon;
@@ -174,37 +168,37 @@ function BudgetFileState({ file, currentUserId }: BudgetFileStateProps) {
         return 'Server';
       }
 
-      return userFound?.displayName ?? userFound?.userName ?? t('Unassigned');
+      return userFound?.displayName ?? userFound?.userName ?? 'Unassigned';
     }
 
-    return t('Unknown');
-  }, [file, t]);
+    return 'Unknown';
+  }, [file]);
 
   switch (file.state) {
     case 'unknown':
       Icon = SvgCloudUnknown;
-      status = t('Network unavailable');
+      status = 'Network unavailable';
       color = theme.buttonNormalDisabledText;
-      ownerName = t('Unknown');
+      ownerName = 'Unknown';
       break;
     case 'remote':
       Icon = SvgCloudDownload;
-      status = t('Available for download');
+      status = 'Available for download';
       ownerName = getOwnerDisplayName();
       break;
     case 'local':
       Icon = SvgFileDouble;
-      status = t('Local');
-      ownerName = t('You');
+      status = 'Local';
+      ownerName = 'You';
       break;
     case 'broken':
       Icon = SvgFileDouble;
-      status = t('Local');
-      ownerName = t('Unknown');
+      status = 'Local';
+      ownerName = 'Unknown';
       break;
     default:
       Icon = SvgCloudCheck;
-      status = t('Syncing');
+      status = 'Syncing';
       ownerName = getOwnerDisplayName();
       break;
   }
@@ -242,7 +236,7 @@ function BudgetFileState({ file, currentUserId }: BudgetFileStateProps) {
                 color: theme.pageTextLight,
               }}
             >
-              <Trans>Owner:</Trans>
+              Owner:
             </Text>
             <Text
               style={{
@@ -278,7 +272,6 @@ function BudgetFileListItem({
   currentUserId,
   ...props
 }: BudgetFileListItemProps) {
-  const { t } = useTranslation();
   const multiuserEnabled = useMultiuserEnabled();
 
   const selecting = useRef(false);
@@ -322,7 +315,7 @@ function BudgetFileListItem({
         })}
       >
         <View
-          title={getFileDescription(file, t) || ''}
+          title={getFileDescription(file) || ''}
           style={{ alignItems: 'flex-start', width: '100%' }}
         >
           <View style={{ flexDirection: 'row', width: '100%' }}>
@@ -387,10 +380,9 @@ function BudgetFileList({
   onDuplicate,
   currentUserId,
 }: BudgetFileListProps) {
-  const { t } = useTranslation();
   return (
     <GridList
-      aria-label={t('Budget files')}
+      aria-label="Budget files"
       items={files}
       style={{
         overflow: 'auto',
@@ -406,7 +398,7 @@ function BudgetFileList({
             color: theme.pageTextSubdued,
           }}
         >
-          <Trans>No budget files</Trans>
+          No budget files
         </Text>
       )}
     >
@@ -435,8 +427,6 @@ type RefreshButtonProps = {
 };
 
 function RefreshButton({ style, onRefresh }: RefreshButtonProps) {
-  const { t } = useTranslation();
-
   const [loading, setLoading] = useState(false);
 
   async function _onRefresh() {
@@ -450,7 +440,7 @@ function RefreshButton({ style, onRefresh }: RefreshButtonProps) {
   return (
     <Button
       variant="bare"
-      aria-label={t('Refresh')}
+      aria-label="Refresh"
       style={{ padding: 10, ...style }}
       onPress={_onRefresh}
     >
@@ -481,7 +471,7 @@ function BudgetFileSelectionHeader({
           ...styles.veryLargeText,
         }}
       >
-        <Trans>Files</Trans>
+        Files
       </Text>
       {!quickSwitchMode && (
         <View
@@ -654,7 +644,7 @@ export function BudgetFileSelection({
               dispatch(pushModal({ modal: { name: 'import' } }));
             }}
           >
-            <Trans>Import file</Trans>
+            Import file
           </Button>
 
           <Button
@@ -665,7 +655,7 @@ export function BudgetFileSelection({
               marginLeft: 10,
             }}
           >
-            <Trans>Create new file</Trans>
+            Create new file
           </Button>
 
           {isNonProductionEnvironment() && (
@@ -677,7 +667,7 @@ export function BudgetFileSelection({
                 marginLeft: 10,
               }}
             >
-              <Trans>Create test file</Trans>
+              Create test file
             </Button>
           )}
         </View>
@@ -692,8 +682,6 @@ type UserAccessForFileProps = {
 };
 
 function UserAccessForFile({ fileId, currentUserId }: UserAccessForFileProps) {
-  const { t } = useTranslation();
-
   const allFiles = useSelector(state => state.budgetfiles.allFiles || []);
   const remoteFiles = allFiles.filter(
     f => f.state === 'remote' || f.state === 'synced' || f.state === 'detached',
@@ -706,9 +694,9 @@ function UserAccessForFile({ fileId, currentUserId }: UserAccessForFileProps) {
 
   const sortedUsersAccess = [...usersAccess].sort((a, b) => {
     const textA =
-      a.userId === currentUserId ? t('You') : (a.displayName ?? a.userName);
+      a.userId === currentUserId ? 'You' : (a.displayName ?? a.userName);
     const textB =
-      b.userId === currentUserId ? t('You') : (b.displayName ?? b.userName);
+      b.userId === currentUserId ? 'You' : (b.displayName ?? b.userName);
     return textA.localeCompare(textB);
   });
 
@@ -764,7 +752,7 @@ function UserAccessForFile({ fileId, currentUserId }: UserAccessForFileProps) {
                           }}
                         >
                           {user.userId === currentUserId
-                            ? t('You')
+                            ? 'You'
                             : (user.displayName ?? user.userName)}
                         </View>
                       </View>

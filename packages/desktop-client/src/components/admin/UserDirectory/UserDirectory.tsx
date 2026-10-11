@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SpaceBetween } from '@actual-app/components/space-between';
@@ -30,49 +29,31 @@ type ManageUserDirectoryContentProps = {
 };
 
 function useGetUserDirectoryErrors() {
-  const { t } = useTranslation();
-
-  const getUserDirectoryErrors = useCallback(
-    reason => {
-      switch (reason) {
-        case 'unauthorized':
-          return t('You are not logged in.');
-        case 'token-expired':
-          return t('Login expired, please log in again.');
-        case 'user-cant-be-empty':
-          return t(
-            'Please enter a value for the username; the field cannot be empty.',
-          );
-        case 'role-cant-be-empty':
-          return t('Select a role; the field cannot be empty.');
-        case 'user-already-exists':
-          return t(
-            'The username you entered already exists. Please choose a different username.',
-          );
-        case 'not-all-deleted':
-          return t(
-            'Not all users were deleted. Check if one of the selected users is the server owner.',
-          );
-        case 'role-does-not-exists':
-          return t(
-            'Selected role does not exist, possibly a bug? Visit https://actualbudget.org/contact/ for support.',
-          );
-        default:
-          return t(
-            'An internal error occurred, sorry! Visit https://actualbudget.org/contact/ for support. (ref: {{reason}})',
-            { reason },
-          );
-      }
-    },
-    [t],
-  );
+  const getUserDirectoryErrors = useCallback(reason => {
+    switch (reason) {
+      case 'unauthorized':
+        return 'You are not logged in.';
+      case 'token-expired':
+        return 'Login expired, please log in again.';
+      case 'user-cant-be-empty':
+        return 'Please enter a value for the username; the field cannot be empty.';
+      case 'role-cant-be-empty':
+        return 'Select a role; the field cannot be empty.';
+      case 'user-already-exists':
+        return 'The username you entered already exists. Please choose a different username.';
+      case 'not-all-deleted':
+        return 'Not all users were deleted. Check if one of the selected users is the server owner.';
+      case 'role-does-not-exists':
+        return 'Selected role does not exist, possibly a bug? Visit https://actualbudget.org/contact/ for support.';
+      default:
+        return `An internal error occurred, sorry! Visit https://actualbudget.org/contact/ for support. (ref: ${reason})`;
+    }
+  }, []);
 
   return { getUserDirectoryErrors };
 }
 
 function UserDirectoryContent({ isModal }: ManageUserDirectoryContentProps) {
-  const { t } = useTranslation();
-
   const [allUsers, setAllUsers] = useState([]);
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState('');
@@ -113,7 +94,7 @@ function UserDirectoryContent({ isModal }: ManageUserDirectoryContentProps) {
           notification: {
             type: 'error',
             id: 'error',
-            title: t('Error getting users'),
+            title: 'Error getting users',
             sticky: true,
             message: getUserDirectoryErrors(loadedUsers.error),
           },
@@ -124,7 +105,7 @@ function UserDirectoryContent({ isModal }: ManageUserDirectoryContentProps) {
 
     setAllUsers(loadedUsers);
     return loadedUsers;
-  }, [dispatch, getUserDirectoryErrors, t]);
+  }, [dispatch, getUserDirectoryErrors]);
 
   useEffect(() => {
     async function loadData() {
@@ -154,11 +135,11 @@ function UserDirectoryContent({ isModal }: ManageUserDirectoryContentProps) {
             notification: {
               type: 'error',
               id: 'login-expired',
-              title: t('Login expired'),
+              title: 'Login expired',
               sticky: true,
               message: getUserDirectoryErrors(error),
               button: {
-                title: t('Go to login'),
+                title: 'Go to login',
                 action: () => {
                   void dispatch(signOut());
                 },
@@ -171,7 +152,7 @@ function UserDirectoryContent({ isModal }: ManageUserDirectoryContentProps) {
           addNotification({
             notification: {
               type: 'error',
-              title: t('Something happened while deleting users'),
+              title: 'Something happened while deleting users',
               sticky: true,
               message: getUserDirectoryErrors(error),
             },
@@ -182,7 +163,7 @@ function UserDirectoryContent({ isModal }: ManageUserDirectoryContentProps) {
 
     await loadUsers();
     selectedInst.dispatch({ type: 'select-none' });
-  }, [selectedInst, loadUsers, dispatch, t, getUserDirectoryErrors]);
+  }, [selectedInst, loadUsers, dispatch, getUserDirectoryErrors]);
 
   const onEditUser = useCallback(
     user => {
@@ -250,22 +231,20 @@ function UserDirectoryContent({ isModal }: ManageUserDirectoryContentProps) {
             }}
           >
             <Text>
-              <Trans>
-                Manage and view users who can create new budgets or be invited
-                to access existing ones.
-              </Trans>{' '}
+              Manage and view users who can create new budgets or be invited to
+              access existing ones.{' '}
               <Link
                 variant="external"
                 to="https://actualbudget.org/docs/config/multi-user/"
                 linkColor="muted"
               >
-                <Trans>Learn more</Trans>
+                Learn more
               </Link>
             </Text>
           </View>
           <View style={{ flex: 1 }} />
           <Search
-            placeholder={t('Filter users...')}
+            placeholder="Filter users..."
             value={filter}
             onChange={onSearchChange}
           />
@@ -275,7 +254,7 @@ function UserDirectoryContent({ isModal }: ManageUserDirectoryContentProps) {
           <UserDirectoryHeader />
           <InfiniteScrollWrapper loadMore={loadMore}>
             {filteredUsers.length === 0 ? (
-              <EmptyMessage text={t('No users')} style={{ marginTop: 15 }} />
+              <EmptyMessage text="No users" style={{ marginTop: 15 }} />
             ) : (
               <UsersList
                 users={filteredUsers}
@@ -301,13 +280,11 @@ function UserDirectoryContent({ isModal }: ManageUserDirectoryContentProps) {
           >
             {selectedInst.items.size > 0 && (
               <Button onPress={onDeleteSelected}>
-                <Trans count={selectedCount}>
-                  Delete {{ selectedCount }} users
-                </Trans>
+                Delete {selectedCount} users
               </Button>
             )}
             <Button variant="primary" onPress={onAddUser}>
-              <Trans>Add new user</Trans>
+              Add new user
             </Button>
           </SpaceBetween>
         </View>

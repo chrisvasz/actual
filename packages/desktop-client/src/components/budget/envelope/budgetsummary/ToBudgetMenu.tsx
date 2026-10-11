@@ -1,6 +1,5 @@
 import React from 'react';
 import type { ComponentPropsWithoutRef } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Menu } from '@actual-app/components/menu';
 
@@ -28,8 +27,6 @@ export function ToBudgetMenu({
   month,
   ...props
 }: ToBudgetMenuProps) {
-  const { t } = useTranslation();
-
   const toBudget = useEnvelopeSheetValue(envelopeBudget.toBudget) ?? 0;
   const forNextMonth = useEnvelopeSheetValue(envelopeBudget.forNextMonth) ?? 0;
   const manualBuffered =
@@ -40,7 +37,7 @@ export function ToBudgetMenu({
       ? [
           {
             name: 'transfer',
-            text: t('Move to a category'),
+            text: 'Move to a category',
           },
         ]
       : []),
@@ -48,7 +45,7 @@ export function ToBudgetMenu({
       ? [
           {
             name: 'buffer',
-            text: t('Hold for next month'),
+            text: 'Hold for next month',
           },
         ]
       : []),
@@ -56,7 +53,7 @@ export function ToBudgetMenu({
       ? [
           {
             name: 'cover',
-            text: t('Cover from a category'),
+            text: 'Cover from a category',
           },
         ]
       : []),
@@ -64,7 +61,7 @@ export function ToBudgetMenu({
       ? [
           {
             name: 'disable-auto-buffer',
-            text: t('Disable current auto hold'),
+            text: 'Disable current auto hold',
           },
         ]
       : []),
@@ -72,7 +69,7 @@ export function ToBudgetMenu({
       ? [
           {
             name: 'reset-buffer',
-            text: t("Reset next month's buffer"),
+            text: "Reset next month's buffer",
           },
         ]
       : []),
@@ -109,7 +106,7 @@ export function ToBudgetMenu({
           : [
               {
                 name: 'none',
-                text: t('No actions available'),
+                text: 'No actions available',
                 disabled: true,
               },
             ]

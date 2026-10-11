@@ -1,5 +1,4 @@
 import type { RefObject } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgHash } from '@actual-app/components/icons/v0';
@@ -12,14 +11,13 @@ type NoteInsertHashButtonProps = {
 };
 
 export function NoteInsertHashButton({ inputRef }: NoteInsertHashButtonProps) {
-  const { t } = useTranslation();
   const [inputValue, setInputValue] = useInputRefValue(inputRef);
   const [_, setCursorPosition] = useCursorPosition(inputRef);
 
   return (
     <Button
       variant="bare"
-      aria-label={t('Add tag')}
+      aria-label="Add tag"
       style={{ color: 'inherit', padding: 1 }}
       onPointerDown={e => e.preventDefault()}
       onClick={() => {

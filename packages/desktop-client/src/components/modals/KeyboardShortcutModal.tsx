@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgArrowLeft } from '@actual-app/components/icons/v1';
@@ -145,7 +144,6 @@ type ShortcutCategories = {
 };
 
 export function KeyboardShortcutModal() {
-  const { t } = useTranslation();
   const ctrl = Platform.OS === 'mac' ? '⌘' : 'Ctrl';
   const [searchText, setSearchText] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
@@ -157,36 +155,36 @@ export function KeyboardShortcutModal() {
   const defaultShortcuts: ShortcutCategories[] = useMemo(
     () => [
       {
-        name: t('Global'),
+        name: 'Global',
         id: 'global',
         items: [
           {
             id: 'help',
             shortcut: '?',
-            description: t('Show keyboard shortcuts'),
+            description: 'Show keyboard shortcuts',
           },
           {
             id: 'command-palette',
             shortcut: 'K',
-            description: t('Open the Command Palette'),
+            description: 'Open the Command Palette',
             meta: ctrl,
           },
           {
             id: 'close-budget',
             shortcut: 'O',
-            description: t('Close the current budget and open another'),
+            description: 'Close the current budget and open another',
             meta: ctrl,
           },
           {
             id: 'undo-last-change',
             shortcut: 'Z',
-            description: t('Undo the last change'),
+            description: 'Undo the last change',
             meta: ctrl,
           },
           {
             id: 'redo-last-change',
             shortcut: 'Z',
-            description: t('Redo the last undone change'),
+            description: 'Redo the last undone change',
             shift: true,
             meta: ctrl,
           },
@@ -194,18 +192,18 @@ export function KeyboardShortcutModal() {
       },
       {
         id: 'budget-page',
-        name: t('Budget page'),
+        name: 'Budget page',
         items: [
           {
             id: 'budget-down',
             shortcut: 'Enter',
-            description: t('Move down to next category'),
+            description: 'Move down to next category',
           },
           {
             id: 'budget-up',
             shortcut: 'Enter',
             shift: true,
-            description: t('Move up to next category'),
+            description: 'Move up to next category',
           },
           {
             id: 'current-month',
@@ -213,205 +211,199 @@ export function KeyboardShortcutModal() {
             style: {
               fontVariantNumeric: 'slashed-zero',
             },
-            description: t('View current month'),
+            description: 'View current month',
           },
           {
             id: 'view-previous-month',
             shortcut: '←',
-            description: t('View previous month'),
+            description: 'View previous month',
           },
           {
             id: 'view-next-month',
             shortcut: '→',
-            description: t('View next month'),
+            description: 'View next month',
           },
         ],
       },
       {
         id: 'account-page-general',
-        name: t('Account page general'),
+        name: 'Account page general',
         items: [
           {
             id: 'import-transactions',
             shortcut: 'I',
             meta: ctrl,
-            description: t('Import transactions'),
+            description: 'Import transactions',
           },
           {
             id: 'add-new-transaction',
             shortcut: 'T',
-            description: t('Add new transaction'),
+            description: 'Add new transaction',
           },
           {
             id: 'filter-menu',
             shortcut: 'F',
-            description: t(
-              'Show filter dropdown when no transactions are selected',
-            ),
+            description: 'Show filter dropdown when no transactions are selected',
           },
         ],
       },
       {
         id: 'account-transaction-selection',
-        name: t('Account transaction selection'),
+        name: 'Account transaction selection',
         items: [
           {
             id: 'select-all-transactions',
             shortcut: 'A',
-            description: t('Select all transactions'),
+            description: 'Select all transactions',
             meta: ctrl,
           },
           {
             id: 'toggle-selection-current-transaction',
             shortcut: 'Space',
-            description: t('Toggle selection of current transaction'),
+            description: 'Toggle selection of current transaction',
           },
           {
             id: 'toggle-selection-all-transactions',
             shortcut: 'Space',
-            description: t(
-              'Toggle transactions between current and most recently selected transaction',
-            ),
+            description: 'Toggle transactions between current and most recently selected transaction',
             shift: true,
           },
           {
             id: 'move-next-transaction',
             shortcut: 'J',
-            description: t('Move down to the next transaction'),
+            description: 'Move down to the next transaction',
           },
           {
             id: 'move-next-transaction-scroll',
             shortcut: '↓',
-            description: t('Move down to the next transaction and scroll'),
+            description: 'Move down to the next transaction and scroll',
           },
           {
             id: 'move-previous-transaction',
             shortcut: 'K',
-            description: t('Move up to the next transaction'),
+            description: 'Move up to the next transaction',
           },
           {
             id: 'move-previous-transaction-scroll',
             shortcut: '↑',
-            description: t('Move up to the next transaction and scroll'),
+            description: 'Move up to the next transaction and scroll',
           },
         ],
       },
       {
         id: 'account-transaction-editing',
-        name: t('Account transaction editing'),
+        name: 'Account transaction editing',
         items: [
           {
             id: 'move-down',
             shortcut: 'Enter',
-            description: t('Move down when editing'),
+            description: 'Move down when editing',
           },
           {
             id: 'move-up',
             shortcut: 'Enter',
             shift: true,
-            description: t('Move up when editing'),
+            description: 'Move up when editing',
           },
           {
             id: 'add-transaction-and-close',
             shortcut: 'Enter',
             meta: ctrl,
-            description: t('Add transaction and close form'),
+            description: 'Add transaction and close form',
           },
           {
             id: 'create-schedule-in-new-transaction',
             shortcut: 'Enter',
             meta: ctrl,
             shift: true,
-            description: t('Turn the new transaction into a schedule'),
+            description: 'Turn the new transaction into a schedule',
           },
           {
             id: 'move-right-when-editing',
             shortcut: 'Tab',
-            description: t('Move right when editing'),
+            description: 'Move right when editing',
           },
           {
             id: 'move-left-when-editing',
             shortcut: 'Tab',
-            description: t('Move left when editing'),
+            description: 'Move left when editing',
             shift: true,
           },
         ],
       },
       {
         id: 'account-transaction-management',
-        name: t('Account transaction management'),
+        name: 'Account transaction management',
         items: [
           {
             id: 'set-date-for-selected-transactions',
             shortcut: 'E',
-            description: t('Set date for selected transactions'),
+            description: 'Set date for selected transactions',
           },
           {
             id: 'set-payee-for-selected-transactions',
             shortcut: 'P',
-            description: t('Set payee for selected transactions'),
+            description: 'Set payee for selected transactions',
           },
           {
             id: 'set-notes-for-selected-transactions',
             shortcut: 'N',
-            description: t('Set notes for selected transactions'),
+            description: 'Set notes for selected transactions',
           },
           {
             id: 'set-category-for-selected-transactions',
             shortcut: 'C',
-            description: t('Set category for selected transactions'),
+            description: 'Set category for selected transactions',
           },
           {
             id: 'set-amount-for-selected-transactions',
             shortcut: 'M',
-            description: t('Set amount for selected transactions'),
+            description: 'Set amount for selected transactions',
           },
           {
             id: 'toggle-cleared-for-selected-transactions',
             shortcut: 'L',
-            description: t('Toggle cleared status for selected transactions'),
+            description: 'Toggle cleared status for selected transactions',
           },
           {
             id: 'set-account-for-selected-transactions',
             shortcut: 'A',
-            description: t('Set account for selected transactions'),
+            description: 'Set account for selected transactions',
           },
           {
             id: 'link-or-view-schedule-for-selected-transactions',
             shortcut: 'S',
-            description: t('Link or view schedule for selected transactions'),
+            description: 'Link or view schedule for selected transactions',
           },
           {
             id: 'filter-selected-transactions',
             shortcut: 'F',
-            description: t('Filter to the selected transactions'),
+            description: 'Filter to the selected transactions',
           },
           {
             id: 'delete-selected-transactions',
             shortcut: 'D',
-            description: t('Delete the selected transactions'),
+            description: 'Delete the selected transactions',
           },
           {
             id: 'duplicate-selected-transactions',
             shortcut: 'U',
-            description: t('Duplicate the selected transactions'),
+            description: 'Duplicate the selected transactions',
           },
           {
             id: 'merge-selected-transactions',
             shortcut: 'G',
-            description: t('Merge the selected transactions'),
+            description: 'Merge the selected transactions',
           },
           {
             id: 'make-transfer-from-selected-transactions',
             shortcut: 'R',
-            description: t(
-              'Make a transfer from the two selected transactions',
-            ),
+            description: 'Make a transfer from the two selected transactions',
           },
         ],
       },
     ],
-    [t, ctrl],
+    [ctrl],
   );
 
   const { isSearching, isInCategory, currentCategory, itemsToShow } =
@@ -465,12 +457,10 @@ export function KeyboardShortcutModal() {
           <ModalHeader
             title={
               isSearching
-                ? t('Search results')
+                ? 'Search results'
                 : currentCategory
-                  ? t('{{categoryName}} shortcuts', {
-                      categoryName: currentCategory.name,
-                    })
-                  : t('Keyboard shortcuts')
+                  ? `${currentCategory.name} shortcuts`
+                  : 'Keyboard shortcuts'
             }
             leftContent={
               showingShortcuts ? (
@@ -487,7 +477,7 @@ export function KeyboardShortcutModal() {
                     height={10}
                     style={{ marginRight: 5, color: 'currentColor' }}
                   />
-                  <Trans>Back</Trans>
+                  Back
                 </Button>
               ) : null
             }
@@ -511,7 +501,7 @@ export function KeyboardShortcutModal() {
                     setSelectedCategoryId(null);
                   }
                 }}
-                placeholder={t('Search shortcuts')}
+                placeholder={'Search shortcuts'}
                 width="100%"
                 style={{
                   backgroundColor: theme.tableBackground,
@@ -540,13 +530,13 @@ export function KeyboardShortcutModal() {
                   }}
                 >
                   <Text style={{ fontSize: 15 }}>
-                    <Trans>
+                    
                       {isSearching
                         ? 'No matching shortcuts'
                         : isInCategory
                           ? 'No shortcuts in this category'
                           : 'No matching shortcuts'}
-                    </Trans>
+                    
                   </Text>
                 </View>
               ) : showingShortcuts ? (
@@ -583,8 +573,8 @@ export function KeyboardShortcutModal() {
                       <Text style={{ color: theme.pageTextLight }}>
                         {category.items.length}{' '}
                         {category.items.length === 1
-                          ? t('shortcut')
-                          : t('shortcuts')}{' '}
+                          ? 'shortcut'
+                          : 'shortcuts'}{' '}
                         ›
                       </Text>
                     </View>

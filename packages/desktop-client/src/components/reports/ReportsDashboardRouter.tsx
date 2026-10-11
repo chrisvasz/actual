@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
 import { Block } from '@actual-app/components/block';
@@ -14,7 +13,6 @@ import { LoadingIndicator } from './LoadingIndicator';
 import { Overview } from './Overview';
 
 export function ReportsDashboardRouter() {
-  const { t } = useTranslation();
   const { dashboardId } = useParams<{ dashboardId?: string }>();
   const navigate = useNavigate();
 
@@ -61,12 +59,12 @@ export function ReportsDashboardRouter() {
         }}
       >
         <Block style={{ marginBottom: 20, fontSize: 18 }}>
-          <Trans>Dashboard not found</Trans>
+          Dashboard not found
         </Block>
       </View>
     );
   }
 
   // No dashboards exist (NOTE: This should not happen invariant is we always should have at least 1 dashboard)
-  return <LoadingIndicator message={t('No dashboards available')} />;
+  return <LoadingIndicator message="No dashboards available" />;
 }

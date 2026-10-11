@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ComponentProps } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgExpandArrow, SvgSubtract } from '@actual-app/components/icons/v0';
@@ -31,8 +30,6 @@ import { PayeeTable } from './PayeeTable';
 const getPayeesById = memoizeOne((payees: PayeeEntity[]) => groupById(payees));
 
 function PayeeTableHeader() {
-  const { t } = useTranslation();
-
   const dispatchSelected = useSelectedDispatch();
   const selectedItems = useSelectedItems();
 
@@ -48,7 +45,7 @@ function PayeeTableHeader() {
             dispatchSelected({ type: 'select-all', isRangeSelect: e.shiftKey })
           }
         />
-        <Cell value={t('Name')} width="flex" />
+        <Cell value="Name" width="flex" />
       </TableHeader>
     </View>
   );
@@ -79,7 +76,6 @@ export const ManagePayees = ({
   const table = useRef(null);
   const triggerRef = useRef(null);
   const [orphanedOnly, setOrphanedOnly] = useState(false);
-  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const filteredPayees = useMemo(() => {
@@ -87,7 +83,7 @@ export const ManagePayees = ({
     if (filter) {
       filtered = filtered.filter(p =>
         getNormalisedString(
-          (p.transfer_acct ? t('Transfer: ') : '') + p.name,
+          (p.transfer_acct ? 'Transfer: ' : '') + p.name,
         ).includes(getNormalisedString(filter)),
       );
     }
@@ -97,7 +93,7 @@ export const ManagePayees = ({
       );
     }
     return filtered;
-  }, [payees, filter, orphanedOnly, orphanedPayees, t]);
+  }, [payees, filter, orphanedOnly, orphanedPayees]);
 
   const selected = useSelected('payees', filteredPayees, initialSelectedIds);
 
@@ -237,10 +233,8 @@ export const ManagePayees = ({
             onPress={() => setMenuOpen(true)}
           >
             {buttonsDisabled
-              ? t('No payees selected')
-              : t('{{count}} payees', {
-                  count: selected.items.size,
-                })}
+              ? 'No payees selected'
+              : `${selected.items.size} payees`}
             <SvgExpandArrow width={8} height={8} style={{ marginLeft: 5 }} />
           </Button>
 
@@ -274,16 +268,14 @@ export const ManagePayees = ({
               onPress={() => setOrphanedOnly(prev => !prev)}
             >
               {orphanedOnly
-                ? t('Show all payees')
-                : t('Show {{count}} unused payees', {
-                    count: orphanedPayees.length,
-                  })}
+                ? 'Show all payees'
+                : `Show ${orphanedPayees.length} unused payees`}
             </Button>
           )}
         </View>
         <View style={{ flex: 1 }} />
         <Search
-          placeholder={t('Filter payees...')}
+          placeholder="Filter payees..."
           value={filter}
           onChange={applyFilter}
         />
@@ -302,7 +294,7 @@ export const ManagePayees = ({
                 marginTop: 5,
               }}
             >
-              <Trans>No payees</Trans>
+              No payees
             </View>
           ) : (
             <PayeeTable
@@ -334,11 +326,11 @@ export const ManagePayees = ({
           }}
         >
           <Button
-            aria-label={t('Category learning settings')}
+            aria-label="Category learning settings"
             variant="normal"
             onPress={onChangeCategoryLearning}
           >
-            <Trans>Category learning settings</Trans>
+            Category learning settings
           </Button>
         </View>
       </View>

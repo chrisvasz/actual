@@ -1,6 +1,5 @@
 import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
 import { Button } from '@actual-app/components/button';
@@ -54,7 +53,6 @@ type FormulaInnerProps = {
 };
 
 function FormulaInner({ widget }: FormulaInnerProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isNarrowWidth } = useResponsive();
@@ -85,7 +83,7 @@ function FormulaInner({ widget }: FormulaInnerProps) {
     widget?.meta?.colorFormula || '',
   );
 
-  const title = widget?.meta?.name || t('Formula');
+  const title = widget?.meta?.name || 'Formula';
 
   const simpleAccounts = useMemo(
     () =>
@@ -161,14 +159,14 @@ function FormulaInner({ widget }: FormulaInnerProps) {
         addNotification({
           notification: {
             type: 'error',
-            message: t('Cannot save: No widget available.'),
+            message: 'Cannot save: No widget available.',
           },
         }),
       );
       return;
     }
 
-    const name = newName || t('Formula');
+    const name = newName || 'Formula';
     updateDashboardWidgetMutation.mutate({
       widget: {
         id: widget.id,
@@ -192,7 +190,7 @@ function FormulaInner({ widget }: FormulaInnerProps) {
         addNotification({
           notification: {
             type: 'error',
-            message: t('Cannot save: No widget available.'),
+            message: 'Cannot save: No widget available.',
           },
         }),
       );
@@ -220,7 +218,7 @@ function FormulaInner({ widget }: FormulaInnerProps) {
             addNotification({
               notification: {
                 type: 'message',
-                message: t('Dashboard widget successfully saved.'),
+                message: 'Dashboard widget successfully saved.',
               },
             }),
           );
@@ -273,7 +271,7 @@ function FormulaInner({ widget }: FormulaInnerProps) {
             onPress={onSaveWidget}
             style={{ width: 100 }}
           >
-            <Trans>Save widget</Trans>
+            Save widget
           </Button>
         </View>
       )}
@@ -301,9 +299,7 @@ function FormulaInner({ widget }: FormulaInnerProps) {
                 marginBottom: 5,
               }}
             >
-              <label htmlFor="formula-show-title">
-                <Trans>Show title:</Trans>
-              </label>
+              <label htmlFor="formula-show-title">Show title:</label>
             </div>
             <Toggle
               id="formula-show-title"
@@ -326,7 +322,7 @@ function FormulaInner({ widget }: FormulaInnerProps) {
                 color: theme.pageTextSubdued,
               }}
             >
-              <Trans>Result:</Trans>
+              Result:
             </div>
             <View
               style={{
@@ -366,7 +362,7 @@ function FormulaInner({ widget }: FormulaInnerProps) {
                 marginBottom: 5,
               }}
             >
-              <Trans>Formula:</Trans>
+              Formula:
             </div>
             <Suspense fallback={<div style={{ padding: 10 }}>Loading...</div>}>
               <FormulaEditor
@@ -397,7 +393,7 @@ function FormulaInner({ widget }: FormulaInnerProps) {
                   marginBottom: 5,
                 }}
               >
-                <Trans>Font size:</Trans>
+                Font size:
               </div>
               <Select
                 value={fontSizeMode}
@@ -405,8 +401,8 @@ function FormulaInner({ widget }: FormulaInnerProps) {
                   setFontSizeMode(value)
                 }
                 options={[
-                  ['dynamic', t('Dynamic')],
-                  ['static', t('Static')],
+                  ['dynamic', 'Dynamic'],
+                  ['static', 'Static'],
                 ]}
               />
             </View>
@@ -420,7 +416,7 @@ function FormulaInner({ widget }: FormulaInnerProps) {
                     marginBottom: 5,
                   }}
                 >
-                  <Trans>Font size (px):</Trans>
+                  Font size (px):
                 </div>
                 <Input
                   type="number"
@@ -445,7 +441,7 @@ function FormulaInner({ widget }: FormulaInnerProps) {
                 marginBottom: 5,
               }}
             >
-              <Trans>Conditional color (optional):</Trans>
+              Conditional color (optional):
             </div>
             <View
               style={{
@@ -475,11 +471,9 @@ function FormulaInner({ widget }: FormulaInnerProps) {
                 marginTop: 5,
               }}
             >
-              <Trans>
-                Formula that returns a color (e.g., &ldquo;red&rdquo;,
-                &ldquo;#ff0000&rdquo;). Leave blank for default. Use RESULT
-                variable to access the main formula result.
-              </Trans>
+              Formula that returns a color (e.g., &ldquo;red&rdquo;,
+              &ldquo;#ff0000&rdquo;). Leave blank for default. Use RESULT
+              variable to access the main formula result.
             </div>
           </View>
         </View>

@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Select } from '@actual-app/components/select';
 import { Text } from '@actual-app/components/text';
@@ -31,7 +30,6 @@ const dateFormats: { value: SyncedPrefs['dateFormat']; label: string }[] = [
 ];
 
 export function FormatSettings() {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const sidebar = useSidebar();
@@ -69,7 +67,7 @@ export function FormatSettings() {
             },
           }}
         >
-          <Column title={t('Numbers')}>
+          <Column title="Numbers">
             <Select
               key={String(hideFraction)} // needed because label does not update
               value={numberFormat}
@@ -93,13 +91,11 @@ export function FormatSettings() {
                   setHideFractionPref(String(e.currentTarget.checked))
                 }
               />
-              <label htmlFor="settings-textDecimal">
-                <Trans>Hide decimal places</Trans>
-              </label>
+              <label htmlFor="settings-textDecimal">Hide decimal places</label>
             </Text>
           </Column>
 
-          <Column title={t('Dates')}>
+          <Column title="Dates">
             <Select
               value={dateFormat}
               onChange={format => setDateFormatPref(format)}
@@ -108,7 +104,7 @@ export function FormatSettings() {
             />
           </Column>
 
-          <Column title={t('First day of the week')}>
+          <Column title="First day of the week">
             <Select
               value={firstDayOfWeekIdx}
               onChange={idx => setFirstDayOfWeekIdxPref(idx)}
@@ -120,10 +116,8 @@ export function FormatSettings() {
       }
     >
       <Text>
-        <Trans>
-          <strong>Formatting</strong> does not affect how budget data is stored,
-          and can be changed at any time.
-        </Trans>
+        <strong>Formatting</strong> does not affect how budget data is stored,
+        and can be changed at any time.
       </Text>
     </Setting>
   );

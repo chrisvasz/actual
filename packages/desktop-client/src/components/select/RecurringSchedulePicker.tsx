@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -17,10 +16,7 @@ import { View } from '@actual-app/components/view';
 import { sendCatch } from '@actual-app/core/platform/client/connection';
 import * as monthUtils from '@actual-app/core/shared/months';
 import type { RecurConfig, RecurPattern } from '@actual-app/core/types/models';
-import type {
-  TransObjectLiteral,
-  WithRequired,
-} from '@actual-app/core/types/util';
+import type { WithRequired } from '@actual-app/core/types/util';
 
 import { Modal } from '#components/common/Modal';
 import { Checkbox } from '#components/forms';
@@ -34,13 +30,11 @@ import { DateSelect } from './DateSelect';
 const MAX_DAY_OF_WEEK_INTERVAL = 5;
 
 function useFrequencyOptions() {
-  const { t } = useTranslation();
-
   const FREQUENCY_OPTIONS = [
-    { id: 'daily', name: t('Days') },
-    { id: 'weekly', name: t('Weeks') },
-    { id: 'monthly', name: t('Months') },
-    { id: 'yearly', name: t('Years') },
+    { id: 'daily', name: 'Days' },
+    { id: 'weekly', name: 'Weeks' },
+    { id: 'monthly', name: 'Months' },
+    { id: 'yearly', name: 'Years' },
   ] as const;
 
   return { FREQUENCY_OPTIONS };
@@ -49,16 +43,14 @@ function useFrequencyOptions() {
 const DAY_OF_MONTH_OPTIONS = [...Array(31).keys()].map(day => day + 1);
 
 function useDayOfWeekOptions() {
-  const { t } = useTranslation();
-
   const DAY_OF_WEEK_OPTIONS = [
-    { id: 'SU', name: t('Sunday') },
-    { id: 'MO', name: t('Monday') },
-    { id: 'TU', name: t('Tuesday') },
-    { id: 'WE', name: t('Wednesday') },
-    { id: 'TH', name: t('Thursday') },
-    { id: 'FR', name: t('Friday') },
-    { id: 'SA', name: t('Saturday') },
+    { id: 'SU', name: 'Sunday' },
+    { id: 'MO', name: 'Monday' },
+    { id: 'TU', name: 'Tuesday' },
+    { id: 'WE', name: 'Wednesday' },
+    { id: 'TH', name: 'Thursday' },
+    { id: 'FR', name: 'Friday' },
+    { id: 'SA', name: 'Saturday' },
   ] as const;
 
   return { DAY_OF_WEEK_OPTIONS };
@@ -251,9 +243,7 @@ function SchedulePreview({
   } else {
     content = (
       <View style={{ width: '100%' }}>
-        <Text style={{ fontWeight: 600 }}>
-          <Trans>Upcoming dates</Trans>
-        </Text>
+        <Text style={{ fontWeight: 600 }}>Upcoming dates</Text>
         <SpaceBetween gap={20} style={{ marginTop: 10 }}>
           {previewDates.map((d, idx) => (
             <View key={idx} style={{ flex: 1 }}>
@@ -293,7 +283,6 @@ function MonthlyPatterns({
   config: StateConfig;
   dispatch: Dispatch<ReducerAction>;
 }) {
-  const { t } = useTranslation();
   const { DAY_OF_WEEK_OPTIONS } = useDayOfWeekOptions();
 
   return (
@@ -309,7 +298,7 @@ function MonthlyPatterns({
         >
           <Select
             options={[
-              [-1, t('Last')],
+              [-1, 'Last'],
               Menu.line,
               ...DAY_OF_MONTH_OPTIONS.map(opt => [opt, String(opt)] as const),
             ]}
@@ -326,7 +315,7 @@ function MonthlyPatterns({
           />
           <Select
             options={[
-              ['day', t('Day')],
+              ['day', 'Day'],
               Menu.line,
               ...DAY_OF_WEEK_OPTIONS.map(opt => [opt.id, opt.name] as const),
             ]}
@@ -343,7 +332,7 @@ function MonthlyPatterns({
           />
           <Button
             variant="bare"
-            aria-label={t('Remove recurrence')}
+            aria-label="Remove recurrence"
             style={{ padding: 7 }}
             onPress={() =>
               dispatch({
@@ -356,7 +345,7 @@ function MonthlyPatterns({
           </Button>
           <Button
             variant="bare"
-            aria-label={t('Add recurrence')}
+            aria-label="Add recurrence"
             style={{ padding: 7, marginLeft: 5 }}
             onPress={() => dispatch({ type: 'add-recurrence' })}
           >
@@ -377,7 +366,6 @@ function RecurringScheduleTooltip({
   onClose: () => void;
   onSave: (config: RecurConfig) => void;
 }) {
-  const { t } = useTranslation();
   const [previewDates, setPreviewDates] = useState<string[] | string | null>(
     null,
   );
@@ -413,10 +401,10 @@ function RecurringScheduleTooltip({
         config: unparseConfig(config),
         count: 4,
       });
-      setPreviewDates(error ? t('Invalid rule') : data);
+      setPreviewDates(error ? 'Invalid rule' : data);
     }
     void run();
-  }, [config, t]);
+  }, [config]);
 
   if (previewDates == null) {
     return null;
@@ -425,13 +413,11 @@ function RecurringScheduleTooltip({
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-        <label htmlFor="start">
-          <Trans>From</Trans>
-        </label>
+        <label htmlFor="start">From</label>
         <InitialFocus>
           <DateSelect
             id="start"
-            inputProps={{ placeholder: t('Start Date') }}
+            inputProps={{ placeholder: 'Start Date' }}
             value={config.start}
             onSelect={value => updateField('start', value)}
             containerProps={{ style: { width: 100 } }}
@@ -441,9 +427,9 @@ function RecurringScheduleTooltip({
         <Select
           id="repeat_end_dropdown"
           options={[
-            ['never', t('indefinitely')],
-            ['after_n_occurrences', t('for')],
-            ['on_date', t('until')],
+            ['never', 'indefinitely'],
+            ['after_n_occurrences', 'for'],
+            ['on_date', 'until'],
           ]}
           value={config.endMode}
           onChange={value => updateField('endMode', value)}
@@ -458,17 +444,13 @@ function RecurringScheduleTooltip({
               onChangeValue={value => updateField('endOccurrences', value)}
               defaultValue={config.endOccurrences || 1}
             />
-            {config.endOccurrences === '1' ? (
-              <Trans>occurrence</Trans>
-            ) : (
-              <Trans>occurrences</Trans>
-            )}
+            {config.endOccurrences === '1' ? 'occurrence' : 'occurrences'}
           </>
         )}
         {config.endMode === 'on_date' && (
           <DateSelect
             id="end_date"
-            inputProps={{ placeholder: t('End Date') }}
+            inputProps={{ placeholder: 'End Date' }}
             value={config.endDate}
             onSelect={value => updateField('endDate', value)}
             containerProps={{ style: { width: 100 } }}
@@ -477,9 +459,7 @@ function RecurringScheduleTooltip({
         )}
       </div>
       <SpaceBetween style={{ marginTop: 10 }} gap={5}>
-        <Text style={{ whiteSpace: 'nowrap' }}>
-          <Trans>Repeat every</Trans>
-        </Text>
+        <Text style={{ whiteSpace: 'nowrap' }}>Repeat every</Text>
         <Input
           id="interval"
           style={{
@@ -505,7 +485,7 @@ function RecurringScheduleTooltip({
             }}
             onPress={() => dispatch({ type: 'add-recurrence' })}
           >
-            <Trans>Add specific days</Trans>
+            Add specific days
           </Button>
         ) : null}
       </SpaceBetween>
@@ -537,49 +517,46 @@ function RecurringScheduleTooltip({
               });
             }}
           />
-          <Trans>
-            <label
-              htmlFor="form_skipwe"
-              style={{
-                userSelect: 'none',
-                marginRight: 5,
-              }}
-            >
-              Move schedule{' '}
-            </label>
-            <Select
-              id="solve_dropdown"
-              options={[
-                ['before', t('before')],
-                ['after', t('after')],
-              ]}
-              value={state.config.weekendSolveMode}
-              onChange={value => dispatch({ type: 'set-weekend-solve', value })}
-              disabled={!skipWeekend}
-            />
-            <label
-              htmlFor="solve_dropdown"
-              style={{ userSelect: 'none', marginLeft: 5 }}
-            >
-              {' '}
-              {{ beforeOrAfter: '' } as TransObjectLiteral} weekend
-            </label>
-          </Trans>
+
+          <label
+            htmlFor="form_skipwe"
+            style={{
+              userSelect: 'none',
+              marginRight: 5,
+            }}
+          >
+            Move schedule{' '}
+          </label>
+          <Select
+            id="solve_dropdown"
+            options={[
+              ['before', 'before'],
+              ['after', 'after'],
+            ]}
+            value={state.config.weekendSolveMode}
+            onChange={value => dispatch({ type: 'set-weekend-solve', value })}
+            disabled={!skipWeekend}
+          />
+          <label
+            htmlFor="solve_dropdown"
+            style={{ userSelect: 'none', marginLeft: 5 }}
+          >
+            {' '}
+            weekend
+          </label>
         </View>
       </SpaceBetween>
       <SchedulePreview previewDates={previewDates} />
       <div
         style={{ display: 'flex', marginTop: 15, justifyContent: 'flex-end' }}
       >
-        <Button onPress={onClose}>
-          <Trans>Cancel</Trans>
-        </Button>
+        <Button onPress={onClose}>Cancel</Button>
         <Button
           variant="primary"
           onPress={() => onSave(unparseConfig(config))}
           style={{ marginLeft: 10 }}
         >
-          <Trans>Apply</Trans>
+          Apply
         </Button>
       </div>
     </>
@@ -597,7 +574,6 @@ export function RecurringSchedulePicker({
   buttonStyle,
   onChange,
 }: RecurringSchedulePickerProps) {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
   const triggerRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -629,7 +605,7 @@ export function RecurringSchedulePicker({
         style={{ textAlign: 'left', ...buttonStyle }}
         onPress={() => setIsOpen(true)}
       >
-        {value ? recurringDescription : t('No recurring date')}
+        {value ? recurringDescription : 'No recurring date'}
       </Button>
 
       {isNarrowWidth ? (

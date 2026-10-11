@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { styles } from '@actual-app/components/styles';
@@ -36,13 +35,12 @@ export function SpendingCard({
   meta = {},
   onMetaChange,
 }: SpendingCardProps) {
-  const { t } = useTranslation();
   const format = useFormat();
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
   const spendingReportMode = meta?.mode ?? 'single-month';
   const averageRange = normalizeSpendingAverageRange(meta?.averageRange);
-  const averageRangeLabel = getSpendingAverageRangeLabel(averageRange, t);
+  const averageRangeLabel = getSpendingAverageRangeLabel(averageRange);
 
   const [compare, compareTo] = calculateSpendingReportTimeRange(meta ?? {});
 
@@ -85,7 +83,7 @@ export function SpendingCard({
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
-              name={meta?.name || t('Monthly Spending')}
+              name={meta?.name || 'Monthly Spending'}
               isEditing={nameMenuOpen}
               onChange={newName => {
                 onMetaChange({

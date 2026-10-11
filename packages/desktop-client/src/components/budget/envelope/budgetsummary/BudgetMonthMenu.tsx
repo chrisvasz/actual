@@ -1,6 +1,5 @@
 import React from 'react';
 import type { ComponentPropsWithoutRef } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Menu } from '@actual-app/components/menu';
 
@@ -18,8 +17,6 @@ export function BudgetMonthMenu({
   onSetMonthsAverage,
   ...props
 }: BudgetMonthMenuProps) {
-  const { t } = useTranslation();
-
   return (
     <Menu
       {...props}
@@ -45,19 +42,19 @@ export function BudgetMonthMenu({
         }
       }}
       items={[
-        { name: 'copy-last', text: t("Copy last month's budget") },
-        { name: 'set-zero', text: t('Set budgets to zero') },
+        { name: 'copy-last', text: "Copy last month's budget" },
+        { name: 'set-zero', text: 'Set budgets to zero' },
         {
           name: 'set-3-avg',
-          text: t('Set budgets to 3 month average'),
+          text: 'Set budgets to 3 month average',
         },
         {
           name: 'set-6-avg',
-          text: t('Set budgets to 6 month average'),
+          text: 'Set budgets to 6 month average',
         },
         {
           name: 'set-12-avg',
-          text: t('Set budgets to 12 month average'),
+          text: 'Set budgets to 12 month average',
         },
       ]}
     />

@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { Menu } from '@actual-app/components/menu';
 import type { CategoryEntity } from '@actual-app/core/types/models';
 
@@ -22,7 +20,6 @@ export function IncomeMenu({
   onShowActivity,
   onClose,
 }: IncomeMenuProps) {
-  const { t } = useTranslation();
   const carryover = useEnvelopeSheetValue(
     envelopeBudget.catCarryover(categoryId),
   );
@@ -50,11 +47,11 @@ export function IncomeMenu({
         items={[
           {
             name: 'carryover',
-            text: carryover ? t('Disable auto hold') : t('Enable auto hold'),
+            text: carryover ? 'Disable auto hold' : 'Enable auto hold',
           },
           {
             name: 'view',
-            text: t('View transactions'),
+            text: 'View transactions',
           },
         ]}
       />

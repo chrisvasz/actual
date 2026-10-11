@@ -1,6 +1,5 @@
 import React from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { useTranslation } from 'react-i18next';
 
 import { q } from '@actual-app/core/shared/query';
 import { useSuspenseQueries } from '@tanstack/react-query';
@@ -17,7 +16,6 @@ import { ManageRules } from './ManageRules';
 import { Page } from './Page';
 
 export function ManageRulesPage() {
-  const { t } = useTranslation();
   const [upcomingLength] = useSyncedPref('upcomingScheduledTransactionLength');
 
   // Suspend until the list has what it draws, so navigating here keeps the
@@ -36,7 +34,7 @@ export function ManageRulesPage() {
 
   return (
     <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
-      <Page header={t('Rules')}>
+      <Page header="Rules">
         <ManageRules isModal={false} payeeId={null} />
       </Page>
     </ErrorBoundary>

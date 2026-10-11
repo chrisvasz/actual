@@ -1,6 +1,5 @@
 import { Fragment, useRef, useState } from 'react';
 import type { ComponentProps, CSSProperties } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import {
@@ -46,13 +45,12 @@ export function AccountMenuModal({
   onToggleRunningBalance,
   onToggleReconciled,
 }: AccountMenuModalProps) {
-  const { t } = useTranslation();
   const account = useAccount(accountId);
   const { data: accounts = [] } = useAccounts();
   const originalNotes = useNotes(`account-${accountId}`);
   const [accountNameError, setAccountNameError] = useState('');
   const [currentAccountName, setCurrentAccountName] = useState(
-    account?.name || t('New Account'),
+    account?.name || 'New Account',
   );
 
   const onRename = (newName: string) => {
@@ -61,7 +59,7 @@ export function AccountMenuModal({
       return;
     }
     if (!newName) {
-      setCurrentAccountName(t('Account'));
+      setCurrentAccountName('Account');
     } else {
       setCurrentAccountName(newName);
     }
@@ -160,7 +158,7 @@ export function AccountMenuModal({
                 notes={
                   originalNotes && originalNotes.length > 0
                     ? originalNotes
-                    : t('No notes')
+                    : 'No notes'
                 }
                 editable={false}
                 focused={false}
@@ -189,7 +187,7 @@ export function AccountMenuModal({
                   height={20}
                   style={{ paddingRight: 5 }}
                 />
-                <Trans>Edit notes</Trans>
+                Edit notes
               </Button>
               {canReconcile && (
                 <Button style={buttonStyle} onPress={() => onReconcile?.()}>
@@ -198,7 +196,7 @@ export function AccountMenuModal({
                     height={20}
                     style={{ paddingRight: 5 }}
                   />
-                  <Trans>Reconcile</Trans>
+                  Reconcile
                 </Button>
               )}
             </View>
@@ -224,7 +222,6 @@ function AdditionalAccountMenu({
   onToggleRunningBalance,
   onToggleReconciled,
 }: AdditionalAccountMenuProps) {
-  const { t } = useTranslation();
   const triggerRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const itemStyle: CSSProperties = {
@@ -244,7 +241,7 @@ function AdditionalAccountMenu({
       <Button
         ref={triggerRef}
         variant="bare"
-        aria-label={t('Menu')}
+        aria-label="Menu"
         onPress={() => {
           setMenuOpen(true);
         }}
@@ -267,26 +264,26 @@ function AdditionalAccountMenu({
                 name: 'balance',
                 text:
                   showBalances === 'true'
-                    ? t('Hide running balance')
-                    : t('Show running balance'),
+                    ? 'Hide running balance'
+                    : 'Show running balance',
               },
               {
                 name: 'toggle-reconciled',
                 text:
                   hideReconciled !== 'true'
-                    ? t('Hide reconciled transactions')
-                    : t('Show reconciled transactions'),
+                    ? 'Hide reconciled transactions'
+                    : 'Show reconciled transactions',
               },
               account.closed
                 ? {
                     name: 'reopen',
-                    text: t('Reopen account'),
+                    text: 'Reopen account',
                     icon: SvgLockOpen,
                     iconSize: 15,
                   }
                 : {
                     name: 'close',
-                    text: t('Close account'),
+                    text: 'Close account',
                     icon: SvgClose,
                     iconSize: 15,
                   },

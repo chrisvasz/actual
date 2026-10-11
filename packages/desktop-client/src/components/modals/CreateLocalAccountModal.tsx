@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Form } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { FormError } from '@actual-app/components/form-error';
@@ -31,7 +30,6 @@ import { closeModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 
 export function CreateLocalAccountModal() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { data: accounts = [] } = useAccounts();
@@ -85,7 +83,7 @@ export function CreateLocalAccountModal() {
       {({ state }) => (
         <>
           <ModalHeader
-            title={<ModalTitle title={t('Add account')} shrinkOnOverflow />}
+            title={<ModalTitle title={'Add account'} shrinkOnOverflow />}
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View>
@@ -96,7 +94,7 @@ export function CreateLocalAccountModal() {
                 marginBottom: 15,
               }}
             >
-              <Trans>
+              
                 Once the account is created, you can also{' '}
                 <Link
                   variant="external"
@@ -106,15 +104,15 @@ export function CreateLocalAccountModal() {
                   import QIF/OFX/QFX files
                 </Link>{' '}
                 into it.
-              </Trans>
+              
             </Text>
             <Form onSubmit={onSubmit}>
-              <InlineField label={t('Name')} width="100%">
+              <InlineField label={'Name'} width="100%">
                 <InitialFocus>
                   <Input
                     name="name"
                     value={name}
-                    placeholder={t('e.g. Bank, Savings, Credit Card, Cash')}
+                    placeholder={'e.g. Bank, Savings, Credit Card, Cash'}
                     onChangeValue={setName}
                     onUpdate={value => {
                       const name = value.trim();
@@ -157,7 +155,7 @@ export function CreateLocalAccountModal() {
                         verticalAlign: 'center',
                       }}
                     >
-                      <Trans>Off budget</Trans>
+                      Off budget
                     </label>
                   </View>
                   <div
@@ -169,13 +167,13 @@ export function CreateLocalAccountModal() {
                     }}
                   >
                     <Text style={{ display: 'block' }}>
-                      <Trans>
+                      
                         Off-budget accounts (like investments, loans, or your
                         house) are tracked but not part of your spending budget.
-                      </Trans>
+                      
                     </Text>
                     <Text style={{ display: 'block' }}>
-                      <Trans>
+                      
                         This cannot be changed later. See{' '}
                         <Link
                           variant="external"
@@ -185,13 +183,13 @@ export function CreateLocalAccountModal() {
                           Accounts Overview
                         </Link>{' '}
                         for more information.
-                      </Trans>
+                      
                     </Text>
                   </div>
                 </View>
               </View>
 
-              <InlineField label={t('Balance')} width="100%">
+              <InlineField label={'Balance'} width="100%">
                 <Input
                   name="balance"
                   inputMode="decimal"
@@ -209,20 +207,20 @@ export function CreateLocalAccountModal() {
               </InlineField>
               {balanceError && (
                 <FormError style={{ marginLeft: 75 }}>
-                  <Trans>Balance must be a number</Trans>
+                  Balance must be a number
                 </FormError>
               )}
 
               <ModalButtons>
                 <Button onPress={() => state.close()}>
-                  <Trans>Cancel</Trans>
+                  Cancel
                 </Button>
                 <Button
                   type="submit"
                   variant="primary"
                   style={{ marginLeft: 10 }}
                 >
-                  <Trans>Create</Trans>
+                  Create
                 </Button>
               </ModalButtons>
             </Form>

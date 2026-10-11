@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import type { RefObject } from 'react';
 import { Form } from 'react-aria-components';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Input } from '@actual-app/components/input';
@@ -38,8 +37,6 @@ export function SaveReportName({
   err,
   report,
 }: SaveReportNameProps) {
-  const { t } = useTranslation();
-
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
@@ -67,7 +64,7 @@ export function SaveReportName({
           >
             <FormField style={{ flex: 1 }}>
               <FormLabel
-                title={t('Report Name')}
+                title="Report Name"
                 htmlFor="name-field"
                 style={{ userSelect: 'none' }}
               />
@@ -80,7 +77,7 @@ export function SaveReportName({
               />
             </FormField>
             <Button variant="primary" type="submit" style={{ marginTop: 30 }}>
-              {menuItem === 'save-report' ? t('Add') : t('Update')}
+              {menuItem === 'save-report' ? 'Add' : 'Update'}
             </Button>
           </SpaceBetween>
         </Form>

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgPencil1 } from '@actual-app/components/icons/v2';
@@ -16,7 +15,6 @@ type DashboardHeaderProps = {
 };
 
 export function DashboardHeader({ dashboard }: DashboardHeaderProps) {
-  const { t } = useTranslation();
   const [editingName, setEditingName] = useState(false);
 
   const renameDashboardPageMutation = useRenameDashboardPageMutation();
@@ -70,7 +68,7 @@ export function DashboardHeader({ dashboard }: DashboardHeaderProps) {
           flexBasis: 'auto',
         }}
       >
-        <Trans>Reports</Trans>:
+        Reports:
       </View>
       {editingName ? (
         <InitialFocus>
@@ -109,7 +107,7 @@ export function DashboardHeader({ dashboard }: DashboardHeaderProps) {
           </View>
           <Button
             variant="bare"
-            aria-label={t('Rename dashboard')}
+            aria-label="Rename dashboard"
             className="hover-visible"
             style={{
               marginRight: 5,

@@ -12,7 +12,6 @@ import {
 } from 'react-aria-components';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useHotkeysContext } from 'react-hotkeys-hook';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -59,7 +58,6 @@ export const Modal = ({
   containerProps,
   ...props
 }: ModalProps) => {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
   const { enableScope, disableScope } = useHotkeysContext();
 
@@ -114,7 +112,7 @@ export const Modal = ({
           <ReactAriaModal>
             {modalProps => (
               <Dialog
-                aria-label={t('Modal dialog')}
+                aria-label="Modal dialog"
                 className={css(styles.lightScrollbar)}
                 style={{
                   outline: 'none', // remove focus outline
@@ -318,7 +316,6 @@ export function ModalHeader({
   title,
   rightContent,
 }: ModalHeaderProps) {
-  const { t } = useTranslation();
   return (
     <h1
       style={{
@@ -352,7 +349,7 @@ export function ModalHeader({
         >
           {showLogo && (
             <SvgLogo
-              aria-label={t('Modal logo')}
+              aria-label="Modal logo"
               width={30}
               height={30}
               style={{ justifyContent: 'center', alignSelf: 'center' }}
@@ -487,13 +484,12 @@ type ModalCloseButtonProps = {
 };
 
 export function ModalCloseButton({ onPress, style }: ModalCloseButtonProps) {
-  const { t } = useTranslation();
   return (
     <Button
       variant="bare"
       onPress={onPress}
       style={{ padding: '10px 10px' }}
-      aria-label={t('Close')}
+      aria-label="Close"
     >
       <SvgDelete width={10} style={style} />
     </Button>

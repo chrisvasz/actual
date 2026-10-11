@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React, { useEffect, useEffectEvent, useMemo, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
@@ -126,8 +125,6 @@ export function ManageRules({
   payeeId,
   setLoading = () => {},
 }: ManageRulesProps) {
-  const { t } = useTranslation();
-
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState('');
   const dispatch = useDispatch();
@@ -214,7 +211,7 @@ export function ManageRules({
 
     if (someDeletionsFailed) {
       alert(
-        t('Some rules were not deleted because they are linked to schedules.'),
+        'Some rules were not deleted because they are linked to schedules.',
       );
     }
 
@@ -298,21 +295,19 @@ export function ManageRules({
             }}
           >
             <Text>
-              <Trans>
-                Rules are always run in the order that you see them.
-              </Trans>{' '}
+              Rules are always run in the order that you see them.{' '}
               <Link
                 variant="external"
                 to="https://actualbudget.org/docs/budgeting/rules/"
                 linkColor="muted"
               >
-                <Trans>Learn more</Trans>
+                Learn more
               </Link>
             </Text>
           </View>
           <View style={{ flex: 1 }} />
           <Search
-            placeholder={t('Filter rules...')}
+            placeholder="Filter rules..."
             value={filter}
             onChange={onSearchChange}
           />
@@ -332,7 +327,7 @@ export function ManageRules({
                 <AnimatedLoading width={25} color={theme.tableText} />
               </View>
             ) : filteredRules.length === 0 ? (
-              <EmptyMessage text={t('No rules')} style={{ marginTop: 15 }} />
+              <EmptyMessage text="No rules" style={{ marginTop: 15 }} />
             ) : (
               <RulesList
                 rules={filteredRules}
@@ -356,13 +351,11 @@ export function ManageRules({
           <SpaceBetween gap={10} style={{ justifyContent: 'flex-end' }}>
             {selectedInst.items.size > 0 && (
               <Button onPress={onDeleteSelected}>
-                <Trans count={selectedInst.items.size}>
-                  Delete {{ count: selectedInst.items.size }} rules
-                </Trans>
+                Delete {selectedInst.items.size} rules
               </Button>
             )}
             <Button variant="primary" onPress={onCreateRule}>
-              <Trans>Create new rule</Trans>
+              Create new rule
             </Button>
           </SpaceBetween>
         </View>

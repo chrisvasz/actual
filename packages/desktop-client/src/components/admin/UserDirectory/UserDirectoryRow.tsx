@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { memo } from 'react';
-import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { theme } from '@actual-app/components/theme';
@@ -134,7 +133,7 @@ export const UserDirectoryRow = memo(
             variant="bare"
             onPress={() => onEditUser?.(user)}
           >
-            <Trans>Edit</Trans>
+            Edit
           </Button>
         </Cell>
       </Row>

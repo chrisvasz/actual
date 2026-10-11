@@ -7,7 +7,6 @@ import React, {
 } from 'react';
 import type { ReactElement, RefObject } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { Trans } from 'react-i18next';
 import { Navigate, useLocation, useParams } from 'react-router';
 
 import { styles } from '@actual-app/components/styles';
@@ -45,7 +44,6 @@ import {
 import type { QueryClient } from '@tanstack/react-query';
 import { parseISO } from 'date-fns';
 import { debounce, isEqual } from 'es-toolkit/compat';
-import { t } from 'i18next';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
@@ -821,7 +819,7 @@ class AccountInternal extends PureComponent<
       const res = await window.Actual.openFileDialog({
         filters: [
           {
-            name: t('Financial files'),
+            name: 'Financial files',
             extensions: ['qif', 'ofx', 'qfx', 'csv', 'tsv', 'xml'],
           },
         ],
@@ -861,7 +859,7 @@ class AccountInternal extends PureComponent<
     void window.Actual.saveFile(
       exportedTransactions,
       filename,
-      t('Export transactions'),
+      'Export transactions',
     );
   };
 
@@ -1203,13 +1201,13 @@ class AccountInternal extends PureComponent<
 
     if (!account) {
       if (id === 'onbudget') {
-        return t('On Budget Accounts');
+        return 'On Budget Accounts';
       } else if (id === 'offbudget') {
-        return t('Off Budget Accounts');
+        return 'Off Budget Accounts';
       } else if (id === 'uncategorized') {
-        return t('Uncategorized');
+        return 'Uncategorized';
       } else if (!id) {
-        return t('All Accounts');
+        return 'All Accounts';
       }
       return null;
     }
@@ -1338,7 +1336,7 @@ class AccountInternal extends PureComponent<
 
   onShowTransactions = async (ids: string[]) => {
     void this.onApplyFilter({
-      customName: t('Selected transactions'),
+      customName: 'Selected transactions',
       queryFilter: { id: { $oneof: ids } },
     });
   };
@@ -2142,7 +2140,7 @@ class AccountInternal extends PureComponent<
                           fontStyle: 'italic',
                         }}
                       >
-                        <Trans>No transactions</Trans>
+                        No transactions
                       </View>
                     ) : null
                   }

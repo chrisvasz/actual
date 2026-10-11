@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React, { useRef } from 'react';
 import type { CSSProperties, Ref } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { theme } from '@actual-app/components/theme';
@@ -55,8 +54,6 @@ export function SidebarCategory({
   onDelete,
   onHideNewCategory,
 }: SidebarCategoryProps) {
-  const { t } = useTranslation();
-
   const temporary = category.id === 'new';
   const { valueOr: pendingNameOr, showUntil: showNameUntil } =
     usePendingValue<string>();
@@ -67,19 +64,19 @@ export function SidebarCategory({
     items: [
       {
         name: 'rename',
-        text: t('Rename'),
+        text: 'Rename',
         onClick: () => onEditName(category.id),
       },
       !categoryGroup?.hidden && {
         name: 'toggle-visibility',
-        text: category.hidden ? t('Show') : t('Hide'),
+        text: category.hidden ? 'Show' : 'Hide',
         // Send the displayed name so a rename still saving isn't reverted
         onClick: () =>
           void onSave({ ...category, name, hidden: !category.hidden }),
       },
       {
         name: 'delete',
-        text: t('Delete'),
+        text: 'Delete',
         onClick: () => onDelete(category.id),
       },
     ],
@@ -167,7 +164,7 @@ export function SidebarCategory({
         onBlur={() => onEditName(null)}
         style={{ paddingLeft: 9, ...(isLast && { borderBottomWidth: 0 }) }}
         inputProps={{
-          placeholder: temporary ? t('New category name') : '',
+          placeholder: temporary ? 'New category name' : '',
         }}
       />
     </View>

@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { Fragment, useMemo, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import {
@@ -33,7 +32,6 @@ export function CategorySelector({
   setSelectedCategories,
   showHiddenCategories = true,
 }: CategorySelectorProps) {
-  const { t } = useTranslation();
   const [uncheckedHidden, setUncheckedHidden] = useState(false);
   const filteredGroup = (categoryGroup: CategoryGroupEntity) => {
     return categoryGroup.categories.filter(f => {
@@ -86,9 +84,7 @@ export function CategorySelector({
                   height={15}
                   style={{ marginRight: 5 }}
                 />
-                <Text>
-                  <Trans>Show unchecked</Trans>
-                </Text>
+                <Text>Show unchecked</Text>
               </View>
             ) : (
               <View
@@ -110,7 +106,7 @@ export function CategorySelector({
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  <Trans>Hide unchecked</Trans>
+                  Hide unchecked
                 </Text>
               </View>
             )}
@@ -120,7 +116,7 @@ export function CategorySelector({
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <GraphButton
             selected={allCategoriesSelected}
-            title={t('Select All')}
+            title="Select All"
             onSelect={() => {
               setSelectedCategories(selectAll);
             }}
@@ -130,7 +126,7 @@ export function CategorySelector({
           </GraphButton>
           <GraphButton
             selected={allCategoriesUnselected}
-            title={t('Unselect All')}
+            title="Unselect All"
             onSelect={() => {
               setSelectedCategories([]);
             }}

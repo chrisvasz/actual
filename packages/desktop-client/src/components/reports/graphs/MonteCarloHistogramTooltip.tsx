@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { theme } from '@actual-app/components/theme';
 import { css } from '@emotion/css';
 
@@ -22,8 +20,6 @@ export function MonteCarloHistogramTooltip({
   payload,
   simulationCount,
 }: MonteCarloHistogramTooltipProps) {
-  const { t } = useTranslation();
-
   if (active && payload && payload.length) {
     const point = payload[0].payload;
     return (
@@ -38,14 +34,7 @@ export function MonteCarloHistogramTooltip({
           padding: 10,
         })}
       >
-        {t(
-          '{{failedCount}} of {{total}} scenarios ran out of money at age {{age}}',
-          {
-            failedCount: point.count,
-            total: simulationCount,
-            age: point.age,
-          },
-        )}
+        {`${point.count} of ${simulationCount} scenarios ran out of money at age ${point.age}`}
       </div>
     );
   }

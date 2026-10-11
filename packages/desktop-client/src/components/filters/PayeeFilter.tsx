@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 import type { PayeeEntity } from '@actual-app/core/types/models';
 
@@ -29,7 +28,6 @@ type PayeeFilterProps = {
  * based on transfer payees of closed accounts.
  */
 export const PayeeFilter = ({ value, op, onChange }: PayeeFilterProps) => {
-  const { t } = useTranslation();
   const multi = ['oneOf', 'notOneOf'].includes(op);
 
   let coercedValue: PayeeFilterValue;
@@ -39,8 +37,7 @@ export const PayeeFilter = ({ value, op, onChange }: PayeeFilterProps) => {
     coercedValue = Array.isArray(value) ? (value[0] ?? null) : value;
   }
 
-  const placeholder =
-    multi && coercedValue.length > 0 ? undefined : t('nothing');
+  const placeholder = multi && coercedValue.length > 0 ? undefined : 'nothing';
 
   return (
     // @ts-expect-error: typing is not playing nicely with the union type of AutocompleteProps.

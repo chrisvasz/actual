@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trans } from 'react-i18next';
 
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
@@ -23,10 +22,8 @@ export function DeployedCommit() {
   return (
     <Setting>
       <Text>
-        <Trans>
-          <strong>Deployed commit</strong> is the revision of Actual this
-          instance was built from.
-        </Trans>
+        <strong>Deployed commit</strong> is the revision of Actual this instance
+        was built from.
       </Text>
       <Text style={{ color: theme.pageText }} data-vrt-mask>
         <Link

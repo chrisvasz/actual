@@ -35,11 +35,6 @@ These come from `CODE_REVIEW_GUIDELINES.md` and are non-negotiable unless the PR
 - No `@actual-app/web/*` imports inside `loot-core`.
 - Import order: React → built-ins → external → actual packages (`loot-core`, `@actual-app/components`) → parent → sibling → index. Keep blank lines between groups. Lint enforces this; flag violations as Suggestions.
 
-## Internationalization
-
-- All user-facing strings must be translated. Prefer `<Trans>` over `t()`.
-- The `actual/no-untranslated-strings` ESLint rule catches most of this, but the reviewer should still spot-check obvious misses (e.g., `<Button>Save</Button>`).
-
 ## Financial typography
 
 - Standalone financial numbers must be wrapped in `FinancialText`, or have `styles.tnum` applied directly when wrapping isn't possible. Tabular figures matter for legibility in budget UIs.
@@ -75,7 +70,6 @@ These are mandatory for AI-authored PRs. Verify and flag misses as Important.
 
 - Generated files: `packages/component-library/src/icons/` (auto-generated; don't review).
 - Build artifacts: `*/dist`, `*/build`, `*/lib-dist` (shouldn't be in PRs).
-- Translation source files: don't review machine-generated translations word by word.
 
 ## Output format reminder
 

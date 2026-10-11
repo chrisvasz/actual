@@ -1,6 +1,5 @@
 import { createContext, useContext, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { q } from '@actual-app/core/shared/query';
 import type {
@@ -30,7 +29,6 @@ export function DisplayPayeeProvider({
   transactions,
   children,
 }: DisplayPayeeProviderProps) {
-  const { t } = useTranslation();
   const subtransactionsQuery = useMemo(
     () =>
       q('transactions')
@@ -67,7 +65,6 @@ export function DisplayPayeeProvider({
 
         if (subtransactions.length === 0) {
           acc[transaction.id] = getPrettyPayee({
-            t,
             transaction,
             payee: payeesById[transaction?.payee || ''],
             transferAccount: accounts.find(
@@ -101,7 +98,7 @@ export function DisplayPayeeProvider({
           ) || {};
 
         if (!mostCommonPayeeTransaction) {
-          acc[transaction.id] = t('Split (no payee)');
+          acc[transaction.id] = 'Split (no payee)';
           return acc;
         }
 
@@ -109,14 +106,13 @@ export function DisplayPayeeProvider({
           payeesById[mostCommonPayeeTransaction.payee || ''];
 
         if (!mostCommonPayee) {
-          acc[transaction.id] = t('Split (no payee)');
+          acc[transaction.id] = 'Split (no payee)';
           return acc;
         }
 
         const numDistinctPayees = Object.keys(counts).length;
 
         acc[transaction.id] = getPrettyPayee({
-          t,
           transaction: mostCommonPayeeTransaction,
           payee: mostCommonPayee,
           transferAccount: accounts.find(
@@ -131,7 +127,7 @@ export function DisplayPayeeProvider({
       },
       {} as Record<TransactionEntity['id'], string>,
     );
-  }, [transactions, allSubtransactions, payeesById, accounts, t]);
+  }, [transactions, allSubtransactions, payeesById, accounts]);
 
   // A fresh context value on every render re-renders every consumer (one per
   // transaction row), so keep its identity tied to `displayPayees`.
@@ -167,7 +163,6 @@ export function useDisplayPayee({ transaction }: UseDisplayPayeeProps) {
 }
 
 type GetPrettyPayeeProps = {
-  t: ReturnType<typeof useTranslation>['t'];
   transaction?: TransactionEntity | undefined;
   payee?: PayeeEntity | undefined;
   transferAccount?: AccountEntity | undefined;
@@ -175,7 +170,6 @@ type GetPrettyPayeeProps = {
 };
 
 function getPrettyPayee({
-  t,
   transaction,
   payee,
   transferAccount,
@@ -187,9 +181,7 @@ function getPrettyPayee({
 
   const formatPayeeName = (payeeName: string) =>
     numHiddenPayees > 0
-      ? `${payeeName} ${t('(+{{numHiddenPayees}} more)', {
-          numHiddenPayees,
-        })}`
+      ? `${payeeName} ${`(+${numHiddenPayees} more)`}`
       : payeeName;
 
   const { payee: payeeId } = transaction;

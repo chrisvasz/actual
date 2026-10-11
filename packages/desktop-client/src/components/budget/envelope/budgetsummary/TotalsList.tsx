@@ -1,6 +1,5 @@
 import React from 'react';
 import type { CSSProperties } from 'react';
-import { Trans } from 'react-i18next';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
 import { Block } from '@actual-app/components/block';
@@ -142,21 +141,13 @@ export function TotalsList({ prevMonthName, style }: TotalsListProps) {
       </View>
 
       <View>
-        <Block>
-          <Trans>Available funds</Trans>
-        </Block>
+        <Block>Available funds</Block>
 
-        <Block>
-          <Trans>Overspent in {{ prevMonthName }}</Trans>
-        </Block>
+        <Block>Overspent in {prevMonthName}</Block>
 
-        <Block>
-          <Trans>Budgeted</Trans>
-        </Block>
+        <Block>Budgeted</Block>
 
-        <Block>
-          <Trans>For next month</Trans>
-        </Block>
+        <Block>For next month</Block>
       </View>
     </View>
   );

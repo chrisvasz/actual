@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { memo, useRef } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgRightArrow2 } from '@actual-app/components/icons/v0';
@@ -50,8 +49,6 @@ export const RuleRow = memo(
 
     const hasSchedule = rule.actions.some(({ op }) => op === 'link-schedule');
 
-    const { t } = useTranslation();
-
     const triggerRef = useRef(null);
 
     useContextMenu({
@@ -59,13 +56,13 @@ export const RuleRow = memo(
       items: [
         onEditRule && {
           name: 'edit',
-          text: t('Edit'),
+          text: 'Edit',
           onClick: () => onEditRule(rule),
         },
         onDeleteRule &&
           !hasSchedule && {
             name: 'delete',
-            text: t('Delete'),
+            text: 'Delete',
             onClick: () => onDeleteRule(rule),
           },
       ],
@@ -172,7 +169,7 @@ export const RuleRow = memo(
                           marginBottom: 6,
                         }}
                       >
-                        {i ? t('Split {{num}}', { num: i }) : t('Apply to all')}
+                        {i ? `Split ${i}` : 'Apply to all'}
                       </Text>
                       {split.actions.map((action, j) => (
                         <ActionExpression
@@ -195,9 +192,7 @@ export const RuleRow = memo(
         </Field>
 
         <Cell name="edit" plain style={{ padding: '0 15px', paddingLeft: 5 }}>
-          <Button onPress={() => onEditRule(rule)}>
-            <Trans>Edit</Trans>
-          </Button>
+          <Button onPress={() => onEditRule(rule)}>Edit</Button>
         </Cell>
       </Row>
     );

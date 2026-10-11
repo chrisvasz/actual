@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { InitialFocus } from '@actual-app/components/initial-focus';
@@ -20,7 +19,6 @@ type HoldBufferModalProps = Extract<
 >['options'];
 
 export function HoldBufferModal({ onSubmit }: HoldBufferModalProps) {
-  const { t } = useTranslation(); // Initialize i18next
   const [hideFraction] = useSyncedPref('hideFraction');
   const available = useEnvelopeSheetValue(envelopeBudget.toBudget) ?? 0;
   const [amount, setAmount] = useState<number>(0);
@@ -40,11 +38,11 @@ export function HoldBufferModal({ onSubmit }: HoldBufferModalProps) {
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Hold for next month')}
+            title="Hold for next month"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View>
-            <FieldLabel title={t('Hold this amount:')} />{' '}
+            <FieldLabel title="Hold this amount:" />{' '}
             <InitialFocus>
               <AmountInput
                 value={amount}
@@ -81,7 +79,7 @@ export function HoldBufferModal({ onSubmit }: HoldBufferModalProps) {
               }}
               onPress={() => _onSubmit(amount)}
             >
-              <Trans>Hold</Trans>
+              Hold
             </Button>
           </View>
         </>

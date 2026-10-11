@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { Button } from '@actual-app/components/button';
@@ -22,8 +21,6 @@ type BackupTableProps = {
 };
 
 function BackupTable({ backups, onSelect }: BackupTableProps) {
-  const { t } = useTranslation();
-
   return (
     <View style={{ flex: 1, maxHeight: 200, overflow: 'auto' }}>
       {backups.map((backup, idx) => (
@@ -35,7 +32,7 @@ function BackupTable({ backups, onSelect }: BackupTableProps) {
         >
           <Cell
             width="flex"
-            value={backup.date ? backup.date : t('Revert to Latest')}
+            value={backup.date ? backup.date : 'Revert to Latest'}
             valueStyle={{ paddingLeft: 20 }}
           />
         </Row>
@@ -77,14 +74,13 @@ export function LoadBackupModal({
   const previousBackups = backups.filter(
     backup => !('isLatest' in backup ? backup.isLatest : false),
   );
-  const { t } = useTranslation();
 
   return (
     <Modal name="load-backup" containerProps={{ style: { maxWidth: '30vw' } }}>
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Load Backup')}
+            title="Load Backup"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ marginBottom: 30 }}>
@@ -100,12 +96,10 @@ export function LoadBackupModal({
                 <Block>
                   <Block style={{ marginBottom: 10 }}>
                     <Text style={{ fontWeight: 600 }}>
-                      <Trans>You are currently working from a backup.</Trans>
+                      You are currently working from a backup.
                     </Text>{' '}
-                    <Trans>
-                      You can load a different backup or revert to the original
-                      version below.
-                    </Trans>
+                    You can load a different backup or revert to the original
+                    version below.
                   </Block>
                   <Button
                     variant="primary"
@@ -120,22 +114,18 @@ export function LoadBackupModal({
                       }
                     }}
                   >
-                    <Trans>Revert to original version</Trans>
+                    Revert to original version
                   </Button>
                 </Block>
               ) : (
                 <View style={{ alignItems: 'flex-start' }}>
                   <Block style={{ marginBottom: 10 }}>
-                    <Trans>
-                      Select a backup to load. After loading a backup, you will
-                      have a chance to revert to the current version in this
-                      screen.
-                    </Trans>{' '}
+                    Select a backup to load. After loading a backup, you will
+                    have a chance to revert to the current version in this
+                    screen.{' '}
                     <Text style={{ fontWeight: 600 }}>
-                      <Trans>
-                        If you use a backup, you will have to set up all your
-                        devices to sync from the new budget.
-                      </Trans>
+                      If you use a backup, you will have to set up all your
+                      devices to sync from the new budget.
                     </Text>
                   </Block>
                   <Button
@@ -143,14 +133,14 @@ export function LoadBackupModal({
                     isDisabled={backupDisabled}
                     onPress={() => dispatch(makeBackup())}
                   >
-                    <Trans>Back up now</Trans>
+                    Back up now
                   </Button>
                 </View>
               )}
             </View>
             {previousBackups.length === 0 ? (
               <Block style={{ color: theme.tableTextLight, marginLeft: 20 }}>
-                <Trans>No backups available</Trans>
+                No backups available
               </Block>
             ) : (
               <BackupTable

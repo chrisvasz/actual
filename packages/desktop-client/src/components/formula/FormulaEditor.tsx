@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
-import { Trans } from 'react-i18next';
 
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
@@ -421,7 +420,7 @@ export function FormulaEditor({
               onClick={closeBadgePickers}
               style={pickerActionButtonStyle}
             >
-              <Trans>Cancel</Trans>
+              Cancel
             </button>
             <button
               type="button"
@@ -432,7 +431,7 @@ export function FormulaEditor({
                 color: theme.buttonPrimaryText,
               }}
             >
-              <Trans>Apply</Trans>
+              Apply
             </button>
           </div>
         </BadgeMenuPopover>

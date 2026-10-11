@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React from 'react';
 import type { CSSProperties } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
 import { theme } from '@actual-app/components/theme';
@@ -36,8 +35,6 @@ type CustomTooltipProps = {
 };
 
 const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
-  const { t } = useTranslation();
-
   if (active && payload && payload.length) {
     return (
       <div
@@ -56,13 +53,10 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
             <strong>{payload[0].payload.date}</strong>
           </div>
           <div style={{ lineHeight: 1.5 }}>
+            <AlignedText left="Assets:" right={payload[0].payload.assets} />
+            <AlignedText left="Debt:" right={payload[0].payload.debt} />
             <AlignedText
-              left={t('Assets:')}
-              right={payload[0].payload.assets}
-            />
-            <AlignedText left={t('Debt:')} right={payload[0].payload.debt} />
-            <AlignedText
-              left={t('Change:')}
+              left="Change:"
               right={<strong>{payload[0].payload.change}</strong>}
             />
           </div>

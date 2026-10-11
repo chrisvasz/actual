@@ -1,5 +1,3 @@
-import type { TFunction } from 'i18next';
-
 import type {
   MonteCarloRuleExplanation,
   MonteCarloRunDetailRow,
@@ -22,7 +20,6 @@ type MonteCarloYearStoryInput = {
   surplusPotName: string;
   hasSurplusPot: boolean;
   format: (amount: number, type: 'financial') => string;
-  translate: TFunction;
 };
 
 /**
@@ -38,18 +35,12 @@ export function buildMonteCarloYearStory({
   surplusPotName,
   hasSurplusPot,
   format,
-  translate,
 }: MonteCarloYearStoryInput): string[] {
   const sentences: string[] = [];
 
   const ruleSentence =
     row.ruleExplanation != null
-      ? getRuleDecisionSentence(
-          row.ruleExplanation,
-          withdrawalRule,
-          format,
-          translate,
-        )
+      ? getRuleDecisionSentence(row.ruleExplanation, withdrawalRule, format)
       : null;
   if (ruleSentence != null) {
     sentences.push(ruleSentence);
@@ -59,25 +50,18 @@ export function buildMonteCarloYearStory({
     const planned = format(row.plannedSpending, 'financial');
     sentences.push(
       ruleSentence != null
-        ? translate(
-            'The minimum spending floor then lifted it to {{planned}}.',
-            { planned },
-          )
-        : translate(
-            "The minimum spending floor set this year's spending at {{planned}}.",
-            { planned },
-          ),
+        ? `The minimum spending floor then lifted it to ${planned}.`
+        : `The minimum spending floor set this year's spending at ${planned}.`,
     );
   }
 
-  sentences.push(...getFundingSentences(row, format, translate));
+  sentences.push(...getFundingSentences(row, format));
 
   const surplusSentence = getSurplusSentence(
     row,
     surplusPotName,
     hasSurplusPot,
     format,
-    translate,
   );
   if (surplusSentence != null) {
     sentences.push(surplusSentence);
@@ -86,17 +70,14 @@ export function buildMonteCarloYearStory({
   return sentences;
 }
 
-function getRuleName(
-  rule: 'guardrails' | 'ratcheting' | 'boundaries',
-  translate: TFunction,
-) {
+function getRuleName(rule: 'guardrails' | 'ratcheting' | 'boundaries') {
   if (rule === 'guardrails') {
-    return translate('Guardrails');
+    return 'Guardrails';
   }
   if (rule === 'ratcheting') {
-    return translate('Ratcheting');
+    return 'Ratcheting';
   }
-  return translate('Boundaries');
+  return 'Boundaries';
 }
 
 // What the rule decided, with the reason in words; null when the rule
@@ -105,12 +86,9 @@ function getRuleDecisionSentence(
   explanation: MonteCarloRuleExplanation,
   withdrawalRule: MonteCarloWithdrawalRuleConfig,
   format: MonteCarloYearStoryInput['format'],
-  translate: TFunction,
 ): string | null {
   if (explanation.kind === 'anchor') {
-    return translate(
-      "This is the first spending year, so the plan's withdrawal rate was set here.",
-    );
+    return "This is the first spending year, so the plan's withdrawal rate was set here.";
   }
   if (explanation.kind === 'floor-ceiling') {
     const values = {
@@ -123,74 +101,34 @@ function getRuleDecisionSentence(
       unclamped: format(explanation.unclamped, 'financial'),
     };
     if (explanation.applied === 'floor') {
-      return translate(
-        'Floor & ceiling held spending at {{amount}} - the rate-based amount ({{unclamped}}) fell below the floor.',
-        values,
-      );
+      return `Floor & ceiling held spending at ${values.amount} - the rate-based amount (${values.unclamped}) fell below the floor.`;
     }
     if (explanation.applied === 'ceiling') {
-      return translate(
-        'Floor & ceiling held spending at {{amount}} - the rate-based amount ({{unclamped}}) rose above the ceiling.',
-        values,
-      );
+      return `Floor & ceiling held spending at ${values.amount} - the rate-based amount (${values.unclamped}) rose above the ceiling.`;
     }
     return null;
   }
 
-  const rule = getRuleName(explanation.rule, translate);
+  const rule = getRuleName(explanation.rule);
   const planned = format(explanation.planned, 'financial');
   const adjusted = format(explanation.adjusted, 'financial');
   if (explanation.action === 'cut') {
     if (explanation.rule === 'boundaries') {
-      return translate(
-        "{{rule}} cut this year's spending from {{planned}} to {{adjusted}} because the withdrawal rate rose above {{upper}}.",
-        {
-          rule,
-          planned,
-          adjusted,
-          upper: formatRuleRate(withdrawalRule.upperRateThreshold),
-        },
-      );
+      return `${rule} cut this year's spending from ${planned} to ${adjusted} because the withdrawal rate rose above ${formatRuleRate(withdrawalRule.upperRateThreshold)}.`;
     }
-    return translate(
-      "{{rule}} cut this year's spending from {{planned}} to {{adjusted}} because the withdrawal rate had climbed too far above the plan.",
-      { rule, planned, adjusted },
-    );
+    return `${rule} cut this year's spending from ${planned} to ${adjusted} because the withdrawal rate had climbed too far above the plan.`;
   }
   if (explanation.action === 'raise') {
     if (explanation.rule === 'boundaries') {
-      return translate(
-        "{{rule}} raised this year's spending from {{planned}} to {{adjusted}} because the withdrawal rate fell below {{lower}}.",
-        {
-          rule,
-          planned,
-          adjusted,
-          lower: formatRuleRate(withdrawalRule.lowerRateThreshold),
-        },
-      );
+      return `${rule} raised this year's spending from ${planned} to ${adjusted} because the withdrawal rate fell below ${formatRuleRate(withdrawalRule.lowerRateThreshold)}.`;
     }
     if (explanation.rule === 'ratcheting') {
-      return translate(
-        "{{rule}} raised this year's spending from {{planned}} to {{adjusted}} because the balance had stayed above {{multiple}} its starting level for {{years}} years.",
-        {
-          rule,
-          planned,
-          adjusted,
-          multiple: `${Number(withdrawalRule.balanceThresholdMultiple.toFixed(2))}×`,
-          years: withdrawalRule.consecutiveYears,
-        },
-      );
+      return `${rule} raised this year's spending from ${planned} to ${adjusted} because the balance had stayed above ${`${Number(withdrawalRule.balanceThresholdMultiple.toFixed(2))}×`} its starting level for ${withdrawalRule.consecutiveYears} years.`;
     }
-    return translate(
-      "{{rule}} raised this year's spending from {{planned}} to {{adjusted}} because the withdrawal rate had fallen well below the plan.",
-      { rule, planned, adjusted },
-    );
+    return `${rule} raised this year's spending from ${planned} to ${adjusted} because the withdrawal rate had fallen well below the plan.`;
   }
   if (explanation.factor !== 1) {
-    return translate(
-      "Earlier {{rule}} changes still applied, so this year's spending was {{adjusted}} instead of the {{planned}} planned.",
-      { rule, planned, adjusted },
-    );
+    return `Earlier ${rule} changes still applied, so this year's spending was ${adjusted} instead of the ${planned} planned.`;
   }
   return null;
 }
@@ -199,22 +137,15 @@ function getRuleDecisionSentence(
 function getFundingSentences(
   row: MonteCarloRunDetailRow,
   format: MonteCarloYearStoryInput['format'],
-  translate: TFunction,
 ): string[] {
   const spent = format(row.spent, 'financial');
   if (row.spent < row.plannedSpending) {
     const sentences = [
-      translate(
-        'Only {{spent}} of the {{planned}} planned could be funded - the plan ran out of accessible money here.',
-        { spent, planned: format(row.plannedSpending, 'financial') },
-      ),
+      `Only ${spent} of the ${format(row.plannedSpending, 'financial')} planned could be funded - the plan ran out of accessible money here.`,
     ];
     if (row.inaccessibleBalance != null) {
       sentences.push(
-        translate(
-          '{{amount}} was still locked in pots that had not reached their access age.',
-          { amount: format(row.inaccessibleBalance, 'financial') },
-        ),
+        `${format(row.inaccessibleBalance, 'financial')} was still locked in pots that had not reached their access age.`,
       );
     }
     return sentences;
@@ -224,10 +155,7 @@ function getFundingSentences(
     const netFromPots = row.withdrawal - row.taxPaid;
     if (netFromPots <= 0) {
       return [
-        translate(
-          'Income covered all of the {{spent}} spent, so nothing had to come from the pots.',
-          { spent },
-        ),
+        `Income covered all of the ${spent} spent, so nothing had to come from the pots.`,
       ];
     }
     const fromIncome = row.spent - netFromPots;
@@ -237,34 +165,19 @@ function getFundingSentences(
     const toContributions = netIncome - row.unspentIncome - fromIncome;
     if (fromIncome <= 0) {
       return [
-        translate(
-          'The {{netIncome}} income all went into contributions, so the {{spent}} spent came from the pots.',
-          { netIncome: format(netIncome, 'financial'), spent },
-        ),
+        `The ${format(netIncome, 'financial')} income all went into contributions, so the ${spent} spent came from the pots.`,
       ];
     }
     if (toContributions > 0) {
       return [
-        translate(
-          'Income covered {{fromIncome}} of the {{spent}} spent, with another {{toContributions}} of it going into contributions; withdrawals covered the rest.',
-          {
-            fromIncome: format(fromIncome, 'financial'),
-            toContributions: format(toContributions, 'financial'),
-            spent,
-          },
-        ),
+        `Income covered ${format(fromIncome, 'financial')} of the ${spent} spent, with another ${format(toContributions, 'financial')} of it going into contributions; withdrawals covered the rest.`,
       ];
     }
     return [
-      translate(
-        'Income covered {{fromIncome}} of the {{spent}} spent; withdrawals covered the rest.',
-        { fromIncome: format(fromIncome, 'financial'), spent },
-      ),
+      `Income covered ${format(fromIncome, 'financial')} of the ${spent} spent; withdrawals covered the rest.`,
     ];
   }
-  return [
-    translate('Spent {{spent}} as planned, funded from the pots.', { spent }),
-  ];
+  return [`Spent ${spent} as planned, funded from the pots.`];
 }
 
 // Where money the plan didn't spend ended up; null when there was none
@@ -273,19 +186,12 @@ function getSurplusSentence(
   surplusPotName: string,
   hasSurplusPot: boolean,
   format: MonteCarloYearStoryInput['format'],
-  translate: TFunction,
 ): string | null {
   if (hasSurplusPot && row.surplusSaved > 0) {
-    return translate(
-      '{{unspent}} of income beyond the plan was saved into {{pot}}.',
-      { pot: surplusPotName, unspent: format(row.surplusSaved, 'financial') },
-    );
+    return `${format(row.surplusSaved, 'financial')} of income beyond the plan was saved into ${surplusPotName}.`;
   }
   if (row.unspentIncome > 0) {
-    return translate(
-      '{{unspent}} of income beyond the plan went unspent and left the plan.',
-      { unspent: format(row.unspentIncome, 'financial') },
-    );
+    return `${format(row.unspentIncome, 'financial')} of income beyond the plan went unspent and left the plan.`;
   }
   return null;
 }

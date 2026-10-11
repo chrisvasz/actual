@@ -1,7 +1,6 @@
 // Initializes the app in the browser
 import '#browser-preload';
 import './fonts.scss';
-import './i18n';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';

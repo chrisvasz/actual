@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { SvgArrowsSynchronize } from '@actual-app/components/icons/v2';
 import { theme } from '@actual-app/components/theme';
@@ -53,8 +52,6 @@ function TransactionRow({
   format,
   index,
 }: TransactionRowProps) {
-  const { t } = useTranslation();
-
   const { data: category } = useCategory(transaction.category);
   const account = useAccount(transaction.account);
 
@@ -135,12 +132,8 @@ function TransactionRow({
             );
           case 'account':
             return (
-              <Field
-                key={i}
-                width="flex"
-                title={account?.name || t('No account')}
-              >
-                {account?.name || t('No account')}
+              <Field key={i} width="flex" title={account?.name || 'No account'}>
+                {account?.name || 'No account'}
               </Field>
             );
           case 'notes':
@@ -228,43 +221,43 @@ export function SimpleTransactionsTable({
               case 'date':
                 return (
                   <Field key={i} width={100}>
-                    <Trans>Date</Trans>
+                    Date
                   </Field>
                 );
               case 'imported_payee':
                 return (
                   <Field key={i} width="flex">
-                    <Trans>Imported payee</Trans>
+                    Imported payee
                   </Field>
                 );
               case 'payee':
                 return (
                   <Field key={i} width="flex">
-                    <Trans>Payee</Trans>
+                    Payee
                   </Field>
                 );
               case 'category':
                 return (
                   <Field key={i} width="flex">
-                    <Trans>Category</Trans>
+                    Category
                   </Field>
                 );
               case 'account':
                 return (
                   <Field key={i} width="flex">
-                    <Trans>Account</Trans>
+                    Account
                   </Field>
                 );
               case 'notes':
                 return (
                   <Field key={i} width="flex">
-                    <Trans>Notes</Trans>
+                    Notes
                   </Field>
                 );
               case 'amount':
                 return (
                   <Field key={i} width={75} style={{ textAlign: 'right' }}>
-                    <Trans>Amount</Trans>
+                    Amount
                   </Field>
                 );
               default:

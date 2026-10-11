@@ -5,7 +5,6 @@ import type {
   CSSProperties,
   ReactElement,
 } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { styles } from '@actual-app/components/styles';
@@ -138,7 +137,6 @@ function AccountGroupItem({
   embedded,
   ...props
 }: AccountGroupItemProps) {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
   const narrowStyle = isNarrowWidth
     ? {
@@ -179,9 +177,7 @@ function AccountGroupItem({
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <TextOneLine>
-          {isCreateRow
-            ? `+ ${t('Create "{{name}}"', { name: item.name })}`
-            : item.name}
+          {isCreateRow ? `+ ${`Create "${item.name}"`}` : item.name}
         </TextOneLine>
       </View>
     </button>

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -44,7 +43,6 @@ export function NetWorthCard({
   onMetaChange,
 }: NetWorthCardProps) {
   const locale = useLocale();
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
   const [_firstDayOfWeekIdx] = useSyncedPref('firstDayOfWeekIdx');
   const firstDayOfWeekIdx = _firstDayOfWeekIdx || '0';
@@ -101,7 +99,7 @@ export function NetWorthCard({
         <View style={{ flexDirection: 'row', padding: 20 }}>
           <View style={{ flex: 1 }}>
             <ReportCardName
-              name={meta?.name || t('Net Worth')}
+              name={meta?.name || 'Net Worth'}
               isEditing={nameMenuOpen}
               onChange={newName => {
                 onMetaChange({

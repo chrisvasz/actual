@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
@@ -42,7 +40,6 @@ export function MonteCarloCashflowGraphTooltip({
   payload,
   groups,
 }: MonteCarloCashflowGraphTooltipProps) {
-  const { t } = useTranslation();
   const format = useFormat();
 
   if (!active || !payload || payload.length === 0) {
@@ -76,21 +73,19 @@ export function MonteCarloCashflowGraphTooltip({
       })}
     >
       <div style={{ marginBottom: 10 }}>
-        <strong>{t('Age {{age}}', { age: point.age })}</strong>
+        <strong>{`Age ${point.age}`}</strong>
       </div>
       {point.afterDepletion && (
         <div
           style={{ marginBottom: 10, maxWidth: 220, color: theme.errorText }}
         >
-          {t('The pots had already run out - this spending went unfunded.')}
+          The pots had already run out - this spending went unfunded.
         </div>
       )}
       {point.unspentIncome > 0 && (
         <div style={{ marginBottom: 10, maxWidth: 220 }}>
           <FinancialText as="span">
-            {t('Unspent income: {{amount}} - it leaves the plan.', {
-              amount: format(point.unspentIncome, 'financial'),
-            })}
+            {`Unspent income: ${format(point.unspentIncome, 'financial')} - it leaves the plan.`}
           </FinancialText>
         </div>
       )}

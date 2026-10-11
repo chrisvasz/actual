@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React, { useRef } from 'react';
 import type { CSSProperties, RefCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgAdd, SvgExpandArrow } from '@actual-app/components/icons/v0';
@@ -53,7 +52,6 @@ export function SidebarGroup({
   onHideNewGroup,
   onToggleCollapse,
 }: SidebarGroupProps) {
-  const { t } = useTranslation();
 
   const temporary = group.id === 'new';
   const { valueOr: pendingNameOr, showUntil: showNameUntil } =
@@ -67,30 +65,30 @@ export function SidebarGroup({
     items: [
       onEdit && {
         name: 'rename',
-        text: t('Rename'),
+        text: 'Rename',
         onClick: () => onEdit(group.id),
       },
       onSave && {
         name: 'toggle-visibility',
-        text: group.hidden ? t('Show') : t('Hide'),
+        text: group.hidden ? 'Show' : 'Hide',
         // Send the displayed name so a rename still saving isn't reverted
         onClick: () => void onSave({ ...group, name, hidden: !group.hidden }),
         hidden: group.is_income,
       },
       onDelete && {
         name: 'delete',
-        text: t('Delete'),
+        text: 'Delete',
         onClick: () => onDelete(group.id),
       },
       canSortCategories && Menu.line,
       canSortCategories && {
         name: 'sort-asc',
-        text: t('Sort A to Z'),
+        text: 'Sort A to Z',
         onClick: () => onSortCategories(group.id, 'asc'),
       },
       canSortCategories && {
         name: 'sort-desc',
-        text: t('Sort Z to A'),
+        text: 'Sort Z to A',
         onClick: () => onSortCategories(group.id, 'desc'),
       },
     ],
@@ -110,7 +108,7 @@ export function SidebarGroup({
       {!dragPreview && (
         <Button
           variant="bare"
-          aria-label={collapsed ? t('Expand group') : t('Collapse group')}
+          aria-label={collapsed ? 'Expand group' : 'Collapse group'}
           style={{ flexShrink: 0, padding: '6px 5px', color: 'currentColor' }}
           onPress={() => onToggleCollapse?.(group.id)}
         >
@@ -156,7 +154,7 @@ export function SidebarGroup({
           >
             <Button
               variant="bare"
-              aria-label={t('Add category')}
+              aria-label={'Add category'}
               className={cx(
                 css({
                   color: theme.pageTextLight,
@@ -225,7 +223,7 @@ export function SidebarGroup({
         style={{ fontWeight: 600 }}
         inputProps={{
           style: { marginLeft: 20 },
-          placeholder: temporary ? t('New group name') : '',
+          placeholder: temporary ? 'New group name' : '',
         }}
       />
     </View>

@@ -1,6 +1,5 @@
 import React from 'react';
 import type { CSSProperties } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Menu } from '@actual-app/components/menu';
 import { styles } from '@actual-app/components/styles';
@@ -41,7 +40,6 @@ export function EnvelopeIncomeBalanceMenuModal({
     borderTop: `1px solid ${theme.pillBorder}`,
   };
 
-  const { t } = useTranslation();
   const { data: category } = useCategory(categoryId);
 
   const carryover = useEnvelopeSheetValue(
@@ -73,7 +71,7 @@ export function EnvelopeIncomeBalanceMenuModal({
                 fontWeight: 400,
               }}
             >
-              <Trans>Balance</Trans>
+              Balance
             </Text>
             <BalanceWithCarryover
               isDisabled
@@ -119,13 +117,11 @@ export function EnvelopeIncomeBalanceMenuModal({
             items={[
               {
                 name: 'carryover',
-                text: carryover
-                  ? t('Disable auto hold')
-                  : t('Enable auto hold'),
+                text: carryover ? 'Disable auto hold' : 'Enable auto hold',
               },
               {
                 name: 'view',
-                text: t('View transactions'),
+                text: 'View transactions',
               },
             ]}
           />

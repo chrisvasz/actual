@@ -1,5 +1,4 @@
 import React, { memo, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgDotsHorizontalTriple } from '@actual-app/components/icons/v1';
@@ -27,7 +26,6 @@ export const BudgetTotals = memo(function BudgetTotals({
   expandAllCategories,
   collapseAllCategories,
 }: BudgetTotalsProps) {
-  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const triggerRef = useRef(null);
 
@@ -69,13 +67,11 @@ export const BudgetTotals = memo(function BudgetTotals({
           WebkitUserSelect: 'none',
         }}
       >
-        <View style={{ flexGrow: '1' }}>
-          <Trans>Category</Trans>
-        </View>
+        <View style={{ flexGrow: '1' }}>Category</View>
         <Button
           ref={triggerRef}
           variant="bare"
-          aria-label={t('Menu')}
+          aria-label="Menu"
           onPress={() => setMenuOpen(true)}
           style={{ color: 'currentColor', padding: 3 }}
         >
@@ -106,15 +102,15 @@ export const BudgetTotals = memo(function BudgetTotals({
             items={[
               {
                 name: 'toggle-visibility',
-                text: t('Toggle hidden categories'),
+                text: 'Toggle hidden categories',
               },
               {
                 name: 'expandAllCategories',
-                text: t('Expand all'),
+                text: 'Expand all',
               },
               {
                 name: 'collapseAllCategories',
-                text: t('Collapse all'),
+                text: 'Collapse all',
               },
             ]}
           />

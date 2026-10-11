@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dialog, DialogTrigger } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { DateRangePicker } from '@actual-app/components/date-range-picker';
@@ -137,7 +136,6 @@ type QueryManagerProps = {
 };
 
 export function QueryManager({ queries, onQueriesChange }: QueryManagerProps) {
-  const { t } = useTranslation();
   const [newQueryName, setNewQueryName] = useState('');
   const [isAddingQuery, setIsAddingQuery] = useState(false);
   const dispatch = useDispatch();
@@ -150,7 +148,7 @@ export function QueryManager({ queries, onQueriesChange }: QueryManagerProps) {
         addNotification({
           notification: {
             type: 'error',
-            message: t('Query with this name already exists'),
+            message: 'Query with this name already exists',
           },
         }),
       );
@@ -198,14 +196,12 @@ export function QueryManager({ queries, onQueriesChange }: QueryManagerProps) {
           marginBottom: 16,
         }}
       >
-        <Text style={{ fontSize: 18, fontWeight: 600 }}>
-          <Trans>Query Definitions</Trans>
-        </Text>
+        <Text style={{ fontSize: 18, fontWeight: 600 }}>Query Definitions</Text>
         <Button
           variant="primary"
           onPress={() => setIsAddingQuery(!isAddingQuery)}
         >
-          {isAddingQuery ? <Trans>Cancel</Trans> : <Trans>Add Query</Trans>}
+          {isAddingQuery ? 'Cancel' : 'Add Query'}
         </Button>
       </View>
 
@@ -221,7 +217,7 @@ export function QueryManager({ queries, onQueriesChange }: QueryManagerProps) {
         >
           <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
             <Input
-              placeholder={t("Query name (e.g., 'expenses', 'income')")}
+              placeholder="Query name (e.g., 'expenses', 'income')"
               value={newQueryName}
               onChange={e => setNewQueryName(e.target.value)}
               onKeyDown={e => {
@@ -232,7 +228,7 @@ export function QueryManager({ queries, onQueriesChange }: QueryManagerProps) {
               style={{ flex: 1 }}
             />
             <Button variant="primary" onPress={handleAddQuery}>
-              <Trans>Create</Trans>
+              Create
             </Button>
           </View>
         </View>
@@ -250,15 +246,11 @@ export function QueryManager({ queries, onQueriesChange }: QueryManagerProps) {
           }}
         >
           <Text>
-            <Trans>
-              No queries defined. Click 'Add Query' to create your first query.
-            </Trans>
+            No queries defined. Click 'Add Query' to create your first query.
           </Text>
           <Text style={{ fontSize: 12, marginTop: 8 }}>
-            <Trans>
-              Queries allow you to reference filtered transaction data in your
-              formulas using QUERY("queryName") or QUERY_COUNT("queryName")
-            </Trans>
+            Queries allow you to reference filtered transaction data in your
+            formulas using QUERY("queryName") or QUERY_COUNT("queryName")
           </Text>
         </View>
       ) : (
@@ -293,7 +285,6 @@ function QueryItem({
 }: QueryItemProps) {
   const language = useLanguage();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
-  const { t } = useTranslation();
   const [importJsonText, setImportJsonText] = useState('');
   const dispatch = useDispatch<AppDispatch>();
 
@@ -463,7 +454,7 @@ function QueryItem({
         addNotification({
           notification: {
             type: 'message',
-            message: t('Query configuration copied to clipboard'),
+            message: 'Query configuration copied to clipboard',
           },
         }),
       );
@@ -472,7 +463,7 @@ function QueryItem({
         addNotification({
           notification: {
             type: 'error',
-            message: t('Failed to copy to clipboard'),
+            message: 'Failed to copy to clipboard',
           },
         }),
       );
@@ -513,7 +504,7 @@ function QueryItem({
           addNotification({
             notification: {
               type: 'error',
-              message: t('Invalid JSON. Please check your input.'),
+              message: 'Invalid JSON. Please check your input.',
             },
           }),
         );
@@ -523,7 +514,7 @@ function QueryItem({
         addNotification({
           notification: {
             type: 'error',
-            message: t('Invalid JSON. Please check your input.'),
+            message: 'Invalid JSON. Please check your input.',
           },
         }),
       );
@@ -533,25 +524,25 @@ function QueryItem({
   const timeRangeMode = timeRangeRef.current as TimeFrame['mode'];
   const isPresetTimeRange = isPresetTimeRangeMode(timeRangeMode);
   const timeRangeLabels = {
-    'sliding-window': t('Live'),
-    static: t('Static'),
-    full: t('All time'),
-    lastMonth: t('Last month'),
-    lastYear: t('Last year'),
-    yearToDate: t('Year to date'),
-    priorYearToDate: t('Prior year to date'),
-    currentQuarter: t('Current quarter'),
-    previousQuarter: t('Previous quarter'),
+    'sliding-window': 'Live',
+    static: 'Static',
+    full: 'All time',
+    lastMonth: 'Last month',
+    lastYear: 'Last year',
+    yearToDate: 'Year to date',
+    priorYearToDate: 'Prior year to date',
+    currentQuarter: 'Current quarter',
+    previousQuarter: 'Previous quarter',
   } satisfies Record<TimeFrame['mode'], string>;
   const timeRangeLabel = timeRangeLabels[timeRangeMode];
   const presetTimeRangeLabels = {
-    full: t('All time transactions'),
-    lastMonth: t('Last month transactions'),
-    lastYear: t('Last year transactions'),
-    yearToDate: t('Year to date transactions'),
-    priorYearToDate: t('Prior year to date transactions'),
-    currentQuarter: t('Current quarter transactions'),
-    previousQuarter: t('Previous quarter transactions'),
+    full: 'All time transactions',
+    lastMonth: 'Last month transactions',
+    lastYear: 'Last year transactions',
+    yearToDate: 'Year to date transactions',
+    priorYearToDate: 'Prior year to date transactions',
+    currentQuarter: 'Current quarter transactions',
+    previousQuarter: 'Previous quarter transactions',
   } satisfies Record<PresetTimeRangeMode, string>;
   const presetTimeRangeLabel = isPresetTimeRange
     ? presetTimeRangeLabels[timeRangeMode]
@@ -568,7 +559,6 @@ function QueryItem({
   );
 
   const presets: DateRangePreset[] = buildDateRangePresets({
-    t,
     onSelectRange: ([rangeStart, rangeEnd, rangeMode]) => {
       const [normalizedRangeStart, normalizedRangeEnd] =
         normalizeMonthPickerSelectionForQuery(rangeStart, rangeEnd);
@@ -625,7 +615,7 @@ function QueryItem({
           }}
         >
           <Text style={{ fontWeight: 600, fontFamily: 'monospace' }}>
-            <Trans>QUERY("{queryName}")</Trans>
+            QUERY("{queryName}")
           </Text>
         </View>
         <View
@@ -641,15 +631,12 @@ function QueryItem({
             <Button
               variant="bare"
               onPress={handleExport}
-              aria-label={t('Export query configuration')}
+              aria-label="Export query configuration"
             >
               <SvgCopy style={{ width: 13, height: 13 }} />
             </Button>
             <DialogTrigger>
-              <Button
-                variant="bare"
-                aria-label={t('Import query configuration')}
-              >
+              <Button variant="bare" aria-label="Import query configuration">
                 <SvgDownloadThickBottom style={{ width: 13, height: 13 }} />
               </Button>
               <Popover>
@@ -662,7 +649,7 @@ function QueryItem({
                         marginBottom: 12,
                       }}
                     >
-                      <Trans>Import Query Configuration</Trans>
+                      Import Query Configuration
                     </Text>
                     <Text
                       style={{
@@ -671,7 +658,7 @@ function QueryItem({
                         marginBottom: 8,
                       }}
                     >
-                      <Trans>Paste the JSON configuration below:</Trans>
+                      Paste the JSON configuration below:
                     </Text>
                     <textarea
                       value={importJsonText}
@@ -713,14 +700,14 @@ function QueryItem({
                       }}
                     >
                       <Button variant="bare" slot="close">
-                        <Trans>Cancel</Trans>
+                        Cancel
                       </Button>
                       <Button
                         variant="primary"
                         onPress={handleImport}
                         slot="close"
                       >
-                        <Trans>Import</Trans>
+                        Import
                       </Button>
                     </View>
                   </View>
@@ -782,16 +769,16 @@ function QueryItem({
               locale={language}
               formatDayLabel={formatDayLabel}
               labels={{
-                selectBy: t('Select by'),
-                quickSelect: t('Quick select'),
-                month: t('Month'),
-                day: t('Day'),
-                previous: t('Previous'),
-                next: t('Next'),
-                previousMonth: t('Previous month'),
-                nextMonth: t('Next month'),
-                year: t('Year'),
-                dateRange: t('Date range'),
+                selectBy: 'Select by',
+                quickSelect: 'Quick select',
+                month: 'Month',
+                day: 'Day',
+                previous: 'Previous',
+                next: 'Next',
+                previousMonth: 'Previous month',
+                nextMonth: 'Next month',
+                year: 'Year',
+                dateRange: 'Date range',
               }}
               presets={presets}
               onChangeDates={(newStart, newEnd) => {
@@ -824,9 +811,9 @@ function QueryItem({
             <Button
               variant="normal"
               isDisabled
-              aria-label={t('Loading date range...')}
+              aria-label="Loading date range..."
             >
-              {t('Loading date range...')}
+              Loading date range...
             </Button>
           )}
         </View>
@@ -854,7 +841,7 @@ function QueryItem({
             color: theme.pageTextSubdued,
           }}
         >
-          <Trans>Filters:</Trans>
+          Filters:
         </Text>
         <View
           style={{

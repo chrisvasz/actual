@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { ComponentPropsWithoutRef } from 'react';
 import { GridListItem } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgDelete } from '@actual-app/components/icons/v0';
@@ -67,7 +66,6 @@ export function MonteCarloPotConfiguration({
   onRemove,
   ...props
 }: MonteCarloPotConfigurationProps) {
-  const { t } = useTranslation();
   const { data: accounts = [] } = useAccounts();
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -109,8 +107,8 @@ export function MonteCarloPotConfiguration({
           [
             pot.accountId,
             linkedAccount
-              ? t('{{name}} (closed)', { name: linkedAccount.name })
-              : t('Unavailable account'),
+              ? `${linkedAccount.name} (closed)`
+              : 'Unavailable account',
           ],
         ]
       : [];
@@ -149,14 +147,12 @@ export function MonteCarloPotConfiguration({
             >
               <Text style={readOnlyCellStyle}>{potLabel}</Text>
               <MonteCarloHelpTooltip>
-                <Trans>
-                  Your plan&apos;s surplus pot. Income beyond your spending is
-                  saved here each year, and it is drawn on before any other pot
-                  when spending needs funding. It starts empty and holds cash:
-                  no access age, no tax, no fees. To remove it, tick Assume any
-                  unspent money is spent under Manage surplus on the Plan
-                  details tab.
-                </Trans>
+                Your plan&apos;s surplus pot. Income beyond your spending is
+                saved here each year, and it is drawn on before any other pot
+                when spending needs funding. It starts empty and holds cash: no
+                access age, no tax, no fees. To remove it, tick Assume any
+                unspent money is spent under Manage surplus on the Plan details
+                tab.
               </MonteCarloHelpTooltip>
             </View>
           </Field>
@@ -165,27 +161,21 @@ export function MonteCarloPotConfiguration({
             style={{ minWidth: POT_COLUMNS.startingBalance }}
             truncate={false}
           >
-            <Text style={readOnlyCellStyle}>
-              <Trans>Starts empty</Trans>
-            </Text>
+            <Text style={readOnlyCellStyle}>Starts empty</Text>
           </Field>
           <Field
             width="flex"
             style={{ minWidth: POT_COLUMNS.linkedAccount }}
             truncate={false}
           >
-            <Text style={readOnlyCellStyle}>
-              <Trans>None</Trans>
-            </Text>
+            <Text style={readOnlyCellStyle}>None</Text>
           </Field>
           <Field
             width="flex"
             style={{ minWidth: POT_COLUMNS.allocation }}
             truncate={false}
           >
-            <Text style={readOnlyCellStyle}>
-              <Trans>Cash / money market</Trans>
-            </Text>
+            <Text style={readOnlyCellStyle}>Cash / money market</Text>
           </Field>
           <Field
             width="flex"
@@ -195,9 +185,7 @@ export function MonteCarloPotConfiguration({
             <Text style={readOnlyCellStyle}>
               <FinancialText as="span">
                 {historicalMixStats != null
-                  ? t('{{value}} (historical)', {
-                      value: `${(historicalMixStats.mean * 100).toFixed(1)}%`,
-                    })
+                  ? `${`${(historicalMixStats.mean * 100).toFixed(1)}%`} (historical)`
                   : `${(pot.expectedReturnMean * 100).toFixed(1)}%`}
               </FinancialText>
             </Text>
@@ -210,9 +198,7 @@ export function MonteCarloPotConfiguration({
             <Text style={readOnlyCellStyle}>
               <FinancialText as="span">
                 {historicalMixStats != null
-                  ? t('{{value}} (historical)', {
-                      value: `${(historicalMixStats.stdDev * 100).toFixed(1)}%`,
-                    })
+                  ? `${`${(historicalMixStats.stdDev * 100).toFixed(1)}%`} (historical)`
                   : `${(pot.returnStdDev * 100).toFixed(1)}%`}
               </FinancialText>
             </Text>
@@ -249,7 +235,7 @@ export function MonteCarloPotConfiguration({
           <Button
             variant="bare"
             aria-label={
-              isExpanded ? t('Hide more settings') : t('Show more settings')
+              isExpanded ? 'Hide more settings' : 'Show more settings'
             }
             onPress={() => setIsExpanded(!isExpanded)}
             style={{ padding: 6 }}
@@ -332,7 +318,7 @@ export function MonteCarloPotConfiguration({
               });
             }}
             options={[
-              ['', t('None')],
+              ['', 'None'],
               ...missingLinkedOptions,
               ...openAccounts.map(
                 account => [account.id, account.name] as [string, string],
@@ -378,13 +364,13 @@ export function MonteCarloPotConfiguration({
               }
             }}
             options={[
-              ['equity-100', t('100% stocks')],
-              ['equity-80', t('80% stocks / 20% bonds')],
-              ['equity-60', t('60% stocks / 40% bonds')],
-              ['equity-40', t('40% stocks / 60% bonds')],
-              ['cash', t('Cash / money market')],
-              ['custom-mix', t('Custom mix')],
-              ['custom', t('Custom')],
+              ['equity-100', '100% stocks'],
+              ['equity-80', '80% stocks / 20% bonds'],
+              ['equity-60', '60% stocks / 40% bonds'],
+              ['equity-40', '40% stocks / 60% bonds'],
+              ['cash', 'Cash / money market'],
+              ['custom-mix', 'Custom mix'],
+              ['custom', 'Custom'],
             ]}
           />
         </Field>
@@ -400,15 +386,13 @@ export function MonteCarloPotConfiguration({
             // rather than an ignored assumption
             <Text style={{ color: theme.tableText }}>
               <FinancialText as="span">
-                {t('{{value}} (historical)', {
-                  value: `${(historicalMixStats.mean * 100).toFixed(1)}%`,
-                })}
+                {`${`${(historicalMixStats.mean * 100).toFixed(1)}%`} (historical)`}
               </FinancialText>
             </Text>
           ) : (
             <MonteCarloNumberInput
               value={pot.expectedReturnMean}
-              aria-label={t('Expected return (%)')}
+              aria-label="Expected return (%)"
               scale={100}
               min={-100}
               max={100}
@@ -435,15 +419,13 @@ export function MonteCarloPotConfiguration({
           {historicalMixStats != null ? (
             <Text style={{ color: theme.tableText }}>
               <FinancialText as="span">
-                {t('{{value}} (historical)', {
-                  value: `${(historicalMixStats.stdDev * 100).toFixed(1)}%`,
-                })}
+                {`${`${(historicalMixStats.stdDev * 100).toFixed(1)}%`} (historical)`}
               </FinancialText>
             </Text>
           ) : (
             <MonteCarloNumberInput
               value={pot.returnStdDev}
-              aria-label={t('Volatility (std dev %)')}
+              aria-label="Volatility (std dev %)"
               scale={100}
               min={0}
               max={100}
@@ -468,7 +450,7 @@ export function MonteCarloPotConfiguration({
           {canRemove && (
             <Button
               variant="bare"
-              aria-label={t('Remove pot')}
+              aria-label="Remove pot"
               onPress={onRemove}
               style={{ padding: 6 }}
             >
@@ -496,20 +478,16 @@ export function MonteCarloPotConfiguration({
               <View
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
               >
-                <Text style={GROUP_HEADING_STYLE}>
-                  <Trans>Allocation</Trans>
-                </Text>
+                <Text style={GROUP_HEADING_STYLE}>Allocation</Text>
                 <MonteCarloHelpTooltip>
-                  <Trans>
-                    The share of this pot held in each asset class. The
-                    allocation must total 100% - until it does, the pot falls
-                    back to the expected return and volatility you enter.
-                    <br />
-                    <br />
-                    The mix drives this pot&apos;s returns under the historical
-                    return models. The random model still uses the expected
-                    return and volatility you enter.
-                  </Trans>
+                  The share of this pot held in each asset class. The allocation
+                  must total 100% - until it does, the pot falls back to the
+                  expected return and volatility you enter.
+                  <br />
+                  <br />
+                  The mix drives this pot&apos;s returns under the historical
+                  return models. The random model still uses the expected return
+                  and volatility you enter.
                 </MonteCarloHelpTooltip>
               </View>
               <View
@@ -522,13 +500,11 @@ export function MonteCarloPotConfiguration({
               >
                 <View style={FIELD_STYLE}>
                   <View style={FIELD_LABEL_ROW_STYLE}>
-                    <Text style={FIELD_LABEL_STYLE}>
-                      <Trans>Stocks (%)</Trans>
-                    </Text>
+                    <Text style={FIELD_LABEL_STYLE}>Stocks (%)</Text>
                   </View>
                   <MonteCarloNumberInput
                     value={pot.allocationStocks}
-                    aria-label={t('Stocks (%)')}
+                    aria-label="Stocks (%)"
                     scale={100}
                     min={0}
                     max={100}
@@ -539,13 +515,11 @@ export function MonteCarloPotConfiguration({
                 </View>
                 <View style={FIELD_STYLE}>
                   <View style={FIELD_LABEL_ROW_STYLE}>
-                    <Text style={FIELD_LABEL_STYLE}>
-                      <Trans>Bonds (%)</Trans>
-                    </Text>
+                    <Text style={FIELD_LABEL_STYLE}>Bonds (%)</Text>
                   </View>
                   <MonteCarloNumberInput
                     value={pot.allocationBonds}
-                    aria-label={t('Bonds (%)')}
+                    aria-label="Bonds (%)"
                     scale={100}
                     min={0}
                     max={100}
@@ -556,13 +530,11 @@ export function MonteCarloPotConfiguration({
                 </View>
                 <View style={FIELD_STYLE}>
                   <View style={FIELD_LABEL_ROW_STYLE}>
-                    <Text style={FIELD_LABEL_STYLE}>
-                      <Trans>Cash (%)</Trans>
-                    </Text>
+                    <Text style={FIELD_LABEL_STYLE}>Cash (%)</Text>
                   </View>
                   <MonteCarloNumberInput
                     value={pot.allocationCash}
-                    aria-label={t('Cash (%)')}
+                    aria-label="Cash (%)"
                     scale={100}
                     min={0}
                     max={100}
@@ -579,91 +551,60 @@ export function MonteCarloPotConfiguration({
                 <Text
                   style={{ color: theme.errorText, width: 0, minWidth: '100%' }}
                 >
-                  <Trans>
-                    The allocation must total 100% - currently{' '}
-                    {{
-                      total: `${parseFloat((mixShareTotal * 100).toFixed(2))}%`,
-                    }}
-                    . Until it does, this pot uses your expected return and
-                    volatility instead of the mix.
-                  </Trans>
+                  The allocation must total 100% - currently{' '}
+                  {`${parseFloat((mixShareTotal * 100).toFixed(2))}%`}. Until it
+                  does, this pot uses your expected return and volatility
+                  instead of the mix.
                 </Text>
               )}
             </View>
           )}
 
           <View style={{ gap: 10 }}>
-            <Text style={GROUP_HEADING_STYLE}>
-              <Trans>Access</Trans>
-            </Text>
+            <Text style={GROUP_HEADING_STYLE}>Access</Text>
             <View style={FIELD_STYLE}>
               <View style={FIELD_LABEL_ROW_STYLE}>
-                <Text style={FIELD_LABEL_STYLE}>
-                  <Trans>Accessible from age</Trans>
-                </Text>
+                <Text style={FIELD_LABEL_STYLE}>Accessible from age</Text>
                 <MonteCarloHelpTooltip>
-                  <Trans>
-                    Some pots can&apos;t be touched until a certain age - e.g.
-                    personal pensions. Until then the pot stays invested and
-                    keeps growing, but can&apos;t fund withdrawals.
-                    <br />
-                    <br />
-                    Leave blank if the pot is available now.
-                  </Trans>
+                  Some pots can&apos;t be touched until a certain age - e.g.
+                  personal pensions. Until then the pot stays invested and keeps
+                  growing, but can&apos;t fund withdrawals.
+                  <br />
+                  <br />
+                  Leave blank if the pot is available now.
                 </MonteCarloHelpTooltip>
               </View>
               <MonteCarloNumberInput
                 value={pot.accessAge}
-                aria-label={t('Accessible from age')}
+                aria-label="Accessible from age"
                 allowEmpty
                 roundToInteger
                 min={16}
                 max={120}
                 step={1}
-                placeholder={t('Immediately')}
+                placeholder="Immediately"
                 onCommit={newValue => onPotChange({ accessAge: newValue })}
               />
             </View>
           </View>
 
           <View style={{ gap: 10 }}>
-            <Text style={GROUP_HEADING_STYLE}>
-              <Trans>Tax</Trans>
-            </Text>
+            <Text style={GROUP_HEADING_STYLE}>Tax</Text>
             <View style={FIELD_STYLE}>
               <View style={FIELD_LABEL_ROW_STYLE}>
                 <Text style={FIELD_LABEL_STYLE}>
-                  {usesTaxBands ? (
-                    <Trans>Taxable portion (%)</Trans>
-                  ) : (
-                    <Trans>Tax (%)</Trans>
-                  )}
+                  {usesTaxBands ? 'Taxable portion (%)' : 'Tax (%)'}
                 </Text>
                 <MonteCarloHelpTooltip>
-                  {usesTaxBands ? (
-                    <Trans>
-                      The share of a withdrawal from this pot that counts as
-                      taxable income under your tax bands - e.g. a pension with
-                      a 25% tax-free portion is 75, a tax-free account is 0, and
-                      a taxable account is roughly the share of each withdrawal
-                      that is gains.
-                    </Trans>
-                  ) : (
-                    <Trans>
-                      The effective tax rate on withdrawals from this pot. Your
-                      spending is what you keep after tax, so the simulation
-                      withdraws extra to cover it - e.g. a tax-free account is
-                      0, a pension blending its tax-free portion with income tax
-                      might be around 15, and a taxable account its effective
-                      gains rate.
-                    </Trans>
-                  )}
+                  {usesTaxBands
+                    ? 'The share of a withdrawal from this pot that counts as taxable income under your tax bands - e.g. a pension with a 25% tax-free portion is 75, a tax-free account is 0, and a taxable account is roughly the share of each withdrawal that is gains.'
+                    : 'The effective tax rate on withdrawals from this pot. Your spending is what you keep after tax, so the simulation withdraws extra to cover it - e.g. a tax-free account is 0, a pension blending its tax-free portion with income tax might be around 15, and a taxable account its effective gains rate.'}
                 </MonteCarloHelpTooltip>
               </View>
               {usesTaxBands ? (
                 <MonteCarloNumberInput
                   value={pot.taxableFraction}
-                  aria-label={t('Taxable portion (%)')}
+                  aria-label="Taxable portion (%)"
                   scale={100}
                   min={0}
                   max={100}
@@ -674,7 +615,7 @@ export function MonteCarloPotConfiguration({
               ) : (
                 <MonteCarloNumberInput
                   value={pot.withdrawalTaxRate}
-                  aria-label={t('Tax (%)')}
+                  aria-label="Tax (%)"
                   scale={100}
                   min={0}
                   max={MAX_WITHDRAWAL_TAX_RATE * 100}
@@ -687,9 +628,7 @@ export function MonteCarloPotConfiguration({
           </View>
 
           <View style={{ gap: 10 }}>
-            <Text style={GROUP_HEADING_STYLE}>
-              <Trans>Fees</Trans>
-            </Text>
+            <Text style={GROUP_HEADING_STYLE}>Fees</Text>
             <View
               style={{
                 flexDirection: 'row',
@@ -700,15 +639,10 @@ export function MonteCarloPotConfiguration({
             >
               <View style={FIELD_STYLE}>
                 <View style={FIELD_LABEL_ROW_STYLE}>
-                  <Text style={FIELD_LABEL_STYLE}>
-                    <Trans>Fixed yearly fee</Trans>
-                  </Text>
+                  <Text style={FIELD_LABEL_STYLE}>Fixed yearly fee</Text>
                   <MonteCarloHelpTooltip>
-                    <Trans>
-                      The sum of all fixed yearly costs on this pot - e.g.
-                      adviser or platform fees - charged at the end of each
-                      year.
-                    </Trans>
+                    The sum of all fixed yearly costs on this pot - e.g. adviser
+                    or platform fees - charged at the end of each year.
                   </MonteCarloHelpTooltip>
                 </View>
                 <FinancialInput
@@ -732,24 +666,20 @@ export function MonteCarloPotConfiguration({
                 }
                 style={{ flex: 'unset', paddingBottom: 6 }}
               >
-                <Trans>Adjust by inflation</Trans>
+                Adjust by inflation
               </LabeledCheckbox>
 
               <View style={FIELD_STYLE}>
                 <View style={FIELD_LABEL_ROW_STYLE}>
-                  <Text style={FIELD_LABEL_STYLE}>
-                    <Trans>Fee (% of balance)</Trans>
-                  </Text>
+                  <Text style={FIELD_LABEL_STYLE}>Fee (% of balance)</Text>
                   <MonteCarloHelpTooltip>
-                    <Trans>
-                      A yearly percentage of the pot&apos;s end-of-year balance
-                      - e.g. fund or platform charges.
-                    </Trans>
+                    A yearly percentage of the pot&apos;s end-of-year balance -
+                    e.g. fund or platform charges.
                   </MonteCarloHelpTooltip>
                 </View>
                 <MonteCarloNumberInput
                   value={pot.annualFeeRate}
-                  aria-label={t('Fee (% of balance)')}
+                  aria-label="Fee (% of balance)"
                   scale={100}
                   min={0}
                   max={MAX_ANNUAL_FEE_RATE * 100}

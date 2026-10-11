@@ -163,8 +163,6 @@ Service for handling plugins/extensions.
 
 Custom ESLint rules specific to Actual.
 
-- `no-untranslated-strings`: Enforces i18n usage
-- `prefer-trans-over-t`: Prefers Trans component over t() function
 - `prefer-logger-over-console`: Enforces using logger instead of console in `packages/loot-core/`
 - `typography`: Typography rules
 - `prefer-if-statement`: Prefers explicit if statements
@@ -228,10 +226,10 @@ TypeScript configuration uses:
   are grandfathered).
 - Platform-specific exports in `loot-core` (node vs browser)
 
-### 4. Internationalization (i18n)
+### 4. User-Facing Text
 
-Use the `Trans` component (and translated strings) for user-facing text.
-Regenerate i18n files with `yarn generate:i18n`.
+This fork does not use i18n. Write user-facing text as plain strings and JSX
+text — don't add `t()`, `<Trans>`, or translation libraries.
 
 ### 5. Financial Number Typography
 
@@ -430,8 +428,7 @@ Icons in `packages/component-library/src/icons/` are auto-generated. Don't manua
 ### Linter Errors
 
 Run `yarn lint` to check. All rules — including the custom `actual/*` rules
-(`no-untranslated-strings`, `prefer-trans-over-t`, `prefer-logger-over-console`,
-`typography`, …) — are defined in [`.oxlintrc.json`](.oxlintrc.json).
+(`prefer-logger-over-console`, `typography`, …) — are defined in [`.oxlintrc.json`](.oxlintrc.json).
 
 ### Test Failures
 

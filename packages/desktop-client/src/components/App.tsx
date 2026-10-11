@@ -4,7 +4,6 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ErrorBoundary, useErrorBoundary } from 'react-error-boundary';
 import type { FallbackProps } from 'react-error-boundary';
 import { HotkeysProvider } from 'react-hotkeys-hook';
-import { useTranslation } from 'react-i18next';
 
 import { styles } from '@actual-app/components/styles';
 import { View } from '@actual-app/components/view';
@@ -21,7 +20,6 @@ import { useIsTestEnv } from '#hooks/useIsTestEnv';
 import { useMetadataPref } from '#hooks/useMetadataPref';
 import { useOnVisible } from '#hooks/useOnVisible';
 import { SpreadsheetProvider } from '#hooks/useSpreadsheet';
-import { setI18NextLanguage } from '#i18n';
 import { addNotification } from '#notifications/notificationsSlice';
 import { loadGlobalPrefs } from '#prefs/prefsSlice';
 import { useDispatch, useSelector, useStore } from '#redux';
@@ -49,21 +47,16 @@ import { UpdateNotification } from './UpdateNotification';
 function AppInner() {
   const [budgetId] = useMetadataPref('id');
   const [cloudFileId] = useMetadataPref('cloudFileId');
-  const { t } = useTranslation();
   const { showBoundary: showErrorBoundary } = useErrorBoundary();
   const dispatch = useDispatch();
   const userData = useSelector(state => state.user.data);
-
-  useEffect(() => {
-    setI18NextLanguage(null);
-  }, []);
 
   useEffect(() => {
     const maybeUpdate = async <T,>(cb?: () => T): Promise<T | void> => {
       if (global.Actual.isUpdateReadyForDownload()) {
         dispatch(
           setAppState({
-            loadingText: t('Downloading and applying update...'),
+            loadingText: 'Downloading and applying update...',
           }),
         );
         await global.Actual.applyAppUpdate();
@@ -75,9 +68,7 @@ function AppInner() {
       await maybeUpdate();
       dispatch(
         setAppState({
-          loadingText: t(
-            'Initializing the connection to the local database...',
-          ),
+          loadingText: 'Initializing the connection to the local database...',
         }),
       );
       await initConnection();
@@ -85,7 +76,7 @@ function AppInner() {
       // Load global prefs and look up the last opened budget in parallel
       dispatch(
         setAppState({
-          loadingText: t('Opening last budget...'),
+          loadingText: 'Opening last budget...',
         }),
       );
       const [, budgetId] = await Promise.all([
@@ -125,11 +116,11 @@ function AppInner() {
           notification: {
             type: 'error',
             id: 'login-expired',
-            title: t('Login expired'),
+            title: 'Login expired',
             sticky: true,
-            message: t('Login expired, please log in again.'),
+            message: 'Login expired, please log in again.',
             button: {
-              title: t('Go to login'),
+              title: 'Go to login',
               action: () => {
                 void dispatch(signOut());
               },
@@ -138,7 +129,7 @@ function AppInner() {
         }),
       );
     }
-  }, [dispatch, t, userData?.tokenExpired]);
+  }, [dispatch, userData?.tokenExpired]);
 
   return budgetId ? <FinancesApp /> : <ManagementApp />;
 }

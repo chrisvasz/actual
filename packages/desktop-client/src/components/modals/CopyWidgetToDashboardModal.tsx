@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import type { ComponentProps } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Menu } from '@actual-app/components/menu';
@@ -18,7 +17,6 @@ type CopyWidgetToDashboardModalProps = Extract<
 export function CopyWidgetToDashboardModal({
   onSelect,
 }: CopyWidgetToDashboardModalProps) {
-  const { t } = useTranslation();
   const { data: dashboardPages = [] } = useDashboardPages();
 
   const items: ComponentProps<typeof Menu<string>>['items'] = useMemo(
@@ -31,7 +29,7 @@ export function CopyWidgetToDashboardModal({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Copy to dashboard')}
+            title="Copy to dashboard"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
 
@@ -45,9 +43,7 @@ export function CopyWidgetToDashboardModal({
                 }}
               />
             ) : (
-              <View>
-                <Trans>No other dashboard pages available.</Trans>
-              </View>
+              <View>No other dashboard pages available.</View>
             )}
 
             <View
@@ -57,9 +53,7 @@ export function CopyWidgetToDashboardModal({
                 marginTop: 15,
               }}
             >
-              <Button onPress={() => state.close()}>
-                <Trans>Cancel</Trans>
-              </Button>
+              <Button onPress={() => state.close()}>Cancel</Button>
             </View>
           </View>
         </>

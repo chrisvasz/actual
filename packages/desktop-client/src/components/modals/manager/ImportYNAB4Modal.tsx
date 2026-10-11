@@ -1,6 +1,5 @@
 // @ts-strict-ignore
 import React, { useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Block } from '@actual-app/components/block';
 import { ButtonWithLoading } from '@actual-app/components/button';
@@ -25,7 +24,6 @@ function getErrorMessage(error: string): string {
 }
 
 export function ImportYNAB4Modal() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +57,7 @@ export function ImportYNAB4Modal() {
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Import from YNAB4')}
+            title="Import from YNAB4"
             rightContent={
               !importing && <ModalCloseButton onPress={() => state.close()} />
             }
@@ -73,21 +71,17 @@ export function ImportYNAB4Modal() {
 
             <View style={{ alignItems: 'center' }}>
               <Paragraph>
-                <Trans>
-                  To import data from YNAB4, locate where your YNAB4 data is
-                  stored. It is usually in your Documents folder under YNAB.
-                  Your data is a directory inside that with the
-                  <code>.ynab4</code> suffix.
-                </Trans>
+                To import data from YNAB4, locate where your YNAB4 data is
+                stored. It is usually in your Documents folder under YNAB. Your
+                data is a directory inside that with the
+                <code>.ynab4</code> suffix.
               </Paragraph>
               <Paragraph>
-                <Trans>
-                  When you've located your data,{' '}
-                  <strong>compress it into a zip file</strong>. On macOS,
-                  right-click the folder and select "Compress". On Windows,
-                  right-click and select "Send to &rarr; Compressed (zipped)
-                  folder". Upload the zipped folder for importing.
-                </Trans>
+                When you've located your data,{' '}
+                <strong>compress it into a zip file</strong>. On macOS,
+                right-click the folder and select "Compress". On Windows,
+                right-click and select "Send to &rarr; Compressed (zipped)
+                folder". Upload the zipped folder for importing.
               </Paragraph>
               {!importing && (
                 <View>
@@ -96,7 +90,7 @@ export function ImportYNAB4Modal() {
                     autoFocus
                     onPress={onImport}
                   >
-                    <Trans>Select zip file...</Trans>
+                    Select zip file...
                   </ButtonWithLoading>
                 </View>
               )}

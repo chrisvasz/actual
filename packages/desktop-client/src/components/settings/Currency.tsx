@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Select } from '@actual-app/components/select';
 import { Text } from '@actual-app/components/text';
@@ -14,64 +13,62 @@ import { useSyncedPref } from '#hooks/useSyncedPref';
 import { Column, Setting } from './UI';
 
 export function CurrencySettings() {
-  const { t } = useTranslation();
-
-  const currencyTranslations = useMemo(
+  const currencyNames = useMemo(
     () =>
       new Map<string, string>([
-        ['', t('None')],
-        ['AED', t('UAE Dirham')],
-        ['ARS', t('Argentinian Peso')],
-        ['AUD', t('Australian Dollar')],
-        ['BRL', t('Brazilian Real')],
-        ['BYN', t('Belarusian Ruble')],
-        ['CAD', t('Canadian Dollar')],
-        ['CHF', t('Swiss Franc')],
-        ['CLP', t('Chilean Peso')],
-        ['CNY', t('Yuan Renminbi')],
-        ['COP', t('Colombian Peso')],
-        ['CRC', t('Costa Rican Colón')],
-        ['CZK', t('Czech Koruna')],
-        ['DKK', t('Danish Krone')],
-        ['DOP', t('Dominican Peso')],
-        ['EGP', t('Egyptian Pound')],
-        ['EUR', t('Euro')],
-        ['GBP', t('Pound Sterling')],
-        ['GTQ', t('Guatemalan Quetzal')],
-        ['HKD', t('Hong Kong Dollar')],
-        ['HUF', t('Hungarian Forint')],
-        ['IDR', t('Indonesian Rupiah')],
-        ['ILS', t('Israeli New Shekel')],
-        ['INR', t('Indian Rupee')],
-        ['IRR', t('Iranian Rial')],
-        ['JMD', t('Jamaican Dollar')],
-        ['JPY', t('Japanese Yen')],
-        ['KRW', t('South Korean Won')],
-        ['LKR', t('Sri Lankan Rupee')],
-        ['MDL', t('Moldovan Leu')],
-        ['MKD', t('Macedonian Denar')],
-        ['MXN', t('Mexican Peso')],
-        ['MYR', t('Malaysian Ringgit')],
-        ['PEN', t('Peruvian Sol')],
-        ['PHP', t('Philippine Peso')],
-        ['PKR', t('Pakistani Rupee')],
-        ['PLN', t('Polish Złoty')],
-        ['QAR', t('Qatari Riyal')],
-        ['RON', t('Romanian Leu')],
-        ['RSD', t('Serbian Dinar')],
-        ['RUB', t('Russian Ruble')],
-        ['SAR', t('Saudi Riyal')],
-        ['SEK', t('Swedish Krona')],
-        ['SGD', t('Singapore Dollar')],
-        ['THB', t('Thai Baht')],
-        ['TRY', t('Turkish Lira')],
-        ['TWD', t('New Taiwan Dollar')],
-        ['UAH', t('Ukrainian Hryvnia')],
-        ['USD', t('US Dollar')],
-        ['UYU', t('Uruguayan Peso')],
-        ['UZS', t('Uzbek Soum')],
+        ['', 'None'],
+        ['AED', 'UAE Dirham'],
+        ['ARS', 'Argentinian Peso'],
+        ['AUD', 'Australian Dollar'],
+        ['BRL', 'Brazilian Real'],
+        ['BYN', 'Belarusian Ruble'],
+        ['CAD', 'Canadian Dollar'],
+        ['CHF', 'Swiss Franc'],
+        ['CLP', 'Chilean Peso'],
+        ['CNY', 'Yuan Renminbi'],
+        ['COP', 'Colombian Peso'],
+        ['CRC', 'Costa Rican Colón'],
+        ['CZK', 'Czech Koruna'],
+        ['DKK', 'Danish Krone'],
+        ['DOP', 'Dominican Peso'],
+        ['EGP', 'Egyptian Pound'],
+        ['EUR', 'Euro'],
+        ['GBP', 'Pound Sterling'],
+        ['GTQ', 'Guatemalan Quetzal'],
+        ['HKD', 'Hong Kong Dollar'],
+        ['HUF', 'Hungarian Forint'],
+        ['IDR', 'Indonesian Rupiah'],
+        ['ILS', 'Israeli New Shekel'],
+        ['INR', 'Indian Rupee'],
+        ['IRR', 'Iranian Rial'],
+        ['JMD', 'Jamaican Dollar'],
+        ['JPY', 'Japanese Yen'],
+        ['KRW', 'South Korean Won'],
+        ['LKR', 'Sri Lankan Rupee'],
+        ['MDL', 'Moldovan Leu'],
+        ['MKD', 'Macedonian Denar'],
+        ['MXN', 'Mexican Peso'],
+        ['MYR', 'Malaysian Ringgit'],
+        ['PEN', 'Peruvian Sol'],
+        ['PHP', 'Philippine Peso'],
+        ['PKR', 'Pakistani Rupee'],
+        ['PLN', 'Polish Złoty'],
+        ['QAR', 'Qatari Riyal'],
+        ['RON', 'Romanian Leu'],
+        ['RSD', 'Serbian Dinar'],
+        ['RUB', 'Russian Ruble'],
+        ['SAR', 'Saudi Riyal'],
+        ['SEK', 'Swedish Krona'],
+        ['SGD', 'Singapore Dollar'],
+        ['THB', 'Thai Baht'],
+        ['TRY', 'Turkish Lira'],
+        ['TWD', 'New Taiwan Dollar'],
+        ['UAH', 'Ukrainian Hryvnia'],
+        ['USD', 'US Dollar'],
+        ['UYU', 'Uruguayan Peso'],
+        ['UZS', 'Uzbek Soum'],
       ]),
-    [t],
+    [],
   );
 
   const [defaultCurrencyCode, setDefaultCurrencyCodePref] = useSyncedPref(
@@ -96,7 +93,7 @@ export function CurrencySettings() {
 
   const currencyOptions: [string, string][] = currencies.map(currency => {
     const translatedName =
-      currencyTranslations.get(currency.code) ?? currency.name;
+      currencyNames.get(currency.code) ?? currency.name;
     if (currency.code === '') {
       return [currency.code, translatedName];
     }
@@ -125,14 +122,14 @@ export function CurrencySettings() {
     return [
       {
         value: 'before',
-        label: `${t('Before amount')} (${t('e.g.')} ${symbol}${space}100)`,
+        label: `${'Before amount'} (${'e.g.'} ${symbol}${space}100)`,
       },
       {
         value: 'after',
-        label: `${t('After amount')} (${t('e.g.')} 100${space}${symbol})`,
+        label: `${'After amount'} (${'e.g.'} 100${space}${symbol})`,
       },
     ];
-  }, [selectedCurrencyCode, spaceEnabled, t]);
+  }, [selectedCurrencyCode, spaceEnabled]);
 
   return (
     <Setting
@@ -146,7 +143,7 @@ export function CurrencySettings() {
           }}
         >
           <View style={{ display: 'flex', flexDirection: 'row', gap: '1.5em' }}>
-            <Column title={t('Default Currency')}>
+            <Column title="Default Currency">
               <Select
                 value={selectedCurrencyCode}
                 onChange={handleCurrencyChange}
@@ -157,7 +154,7 @@ export function CurrencySettings() {
             </Column>
 
             <Column
-              title={t('Symbol Position')}
+              title="Symbol Position"
               style={{
                 visibility: selectedCurrencyCode === '' ? 'hidden' : 'visible',
               }}
@@ -193,7 +190,7 @@ export function CurrencySettings() {
                 htmlFor="settings-spaceEnabled"
                 style={{ marginLeft: '0.5em' }}
               >
-                <Trans>Add space between amount and symbol</Trans>
+                Add space between amount and symbol
               </label>
             </View>
           )}
@@ -201,12 +198,10 @@ export function CurrencySettings() {
       }
     >
       <Text>
-        <Trans>
-          <strong>Currency settings</strong> affect how amounts are displayed
-          throughout the application. Changing the currency will affect the
-          number format, symbol position, and whether fractions are shown. These
-          can be adjusted after the currency is set.
-        </Trans>
+        <strong>Currency settings</strong> affect how amounts are displayed
+        throughout the application. Changing the currency will affect the number
+        format, symbol position, and whether fractions are shown. These can be
+        adjusted after the currency is set.
       </Text>
     </Setting>
   );

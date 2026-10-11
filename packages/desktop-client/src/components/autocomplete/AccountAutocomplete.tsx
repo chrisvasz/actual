@@ -6,7 +6,6 @@ import type {
   CSSProperties,
   ReactElement,
 } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { styles } from '@actual-app/components/styles';
@@ -46,7 +45,6 @@ function AccountList({
   renderAccountItemGroupHeader = defaultRenderAccountItemGroupHeader,
   renderAccountItem = defaultRenderAccountItem,
 }: AccountListProps) {
-  const { t } = useTranslation();
   // Split by onbudget, offbudget, closed and add their indeces relative
   // to the full list. This is needed to highlight the correct item.
   const { onBudgetAccounts, offBudgetAccounts, closedAccounts } =
@@ -96,7 +94,7 @@ function AccountList({
       >
         {onBudgetAccounts.length > 0 && (
           <Fragment key="On budget">
-            {renderAccountItemGroupHeader({ title: t('On budget') })}
+            {renderAccountItemGroupHeader({ title: 'On budget' })}
           </Fragment>
         )}
         {onBudgetAccounts.map(item => (
@@ -112,7 +110,7 @@ function AccountList({
 
         {offBudgetAccounts.length > 0 && (
           <Fragment key="Off budget">
-            {renderAccountItemGroupHeader({ title: t('Off budget') })}
+            {renderAccountItemGroupHeader({ title: 'Off budget' })}
           </Fragment>
         )}
         {offBudgetAccounts.map(item => (
@@ -128,7 +126,7 @@ function AccountList({
 
         {closedAccounts.length > 0 && (
           <Fragment key="Closed accounts">
-            {renderAccountItemGroupHeader({ title: t('Closed accounts') })}
+            {renderAccountItemGroupHeader({ title: 'Closed accounts' })}
           </Fragment>
         )}
         {closedAccounts.map(item => (
@@ -171,8 +169,6 @@ export function AccountAutocomplete({
   inputProps,
   ...props
 }: AccountAutocompleteProps) {
-  const { t } = useTranslation();
-
   const { data: accounts = [] } = useAccounts();
 
   //remove closed accounts if needed
@@ -200,7 +196,7 @@ export function AccountAutocomplete({
       suggestions={accountSuggestions}
       inputProps={{
         ...inputProps,
-        'aria-label': t('Account'),
+        'aria-label': 'Account',
       }}
       renderItems={(items, getItemProps, highlightedIndex) => (
         <AccountList

@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Select } from '@actual-app/components/select';
 
@@ -19,7 +18,6 @@ export function DateFormatSelect({
   parseDateFormat,
   onChange,
 }: DateFormatSelectProps) {
-  const { t } = useTranslation();
   // We don't actually care about the delimiter, but we try to render
   // it based on the data we have so far. Look in a transaction and
   // try to figure out what delimiter the date is using, and default
@@ -34,7 +32,7 @@ export function DateFormatSelect({
 
   return (
     <Select
-      aria-label={t('Date format')}
+      aria-label="Date format"
       options={dateFormats.map(f => [
         f.format,
         f.label.replace(/ /g, delimiter),

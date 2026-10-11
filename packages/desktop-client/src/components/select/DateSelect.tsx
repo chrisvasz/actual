@@ -24,7 +24,6 @@ import {
   Heading,
   I18nProvider,
 } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import {
@@ -169,7 +168,6 @@ const DatePicker = forwardRef<DatePickerForwardedRef, DatePickerProps>(
     },
     ref,
   ) => {
-    const { t } = useTranslation();
     const parsedValue = value ? parse(value, dateFormat, currentDate()) : null;
     const focusedCalendarDate = toCalendarDate(
       parsedValue && isValid(parsedValue) ? parsedValue : currentDate(),
@@ -260,7 +258,7 @@ const DatePicker = forwardRef<DatePickerForwardedRef, DatePickerProps>(
               <button
                 type="button"
                 tabIndex={-1}
-                aria-label={t('Previous month')}
+                aria-label="Previous month"
                 onClick={() => setFocusedDate(d => d.subtract({ months: 1 }))}
               >
                 <SvgCheveronLeft width={16} height={16} />
@@ -269,7 +267,7 @@ const DatePicker = forwardRef<DatePickerForwardedRef, DatePickerProps>(
               <button
                 type="button"
                 tabIndex={-1}
-                aria-label={t('Next month')}
+                aria-label="Next month"
                 onClick={() => setFocusedDate(d => d.add({ months: 1 }))}
               >
                 <SvgCheveronRight width={16} height={16} />
@@ -576,7 +574,7 @@ function DateSelectDesktop({
                 color: theme.calendarText,
               }}
             >
-              <Trans>Sync both transfer dates</Trans>
+              Sync both transfer dates
             </LabeledCheckbox>
           )}
         </View>,

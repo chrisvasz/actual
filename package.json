@@ -31,7 +31,6 @@
     "build:plugins-service": "yarn workspace plugins-service build",
     "build:api": "yarn build --scope=@actual-app/api",
     "build:cli": "yarn build --scope=@actual-app/cli",
-    "generate:i18n": "yarn workspace @actual-app/web generate:i18n",
     "generate:release-notes": "node ./bin/release-note-generator.mts",
     "test": "lage test --continue",
     "test:debug": "lage test --no-cache --continue",

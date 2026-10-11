@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { theme } from '@actual-app/components/theme';
@@ -26,7 +25,6 @@ export function AccountAutocompleteModal({
   hiddenAccounts,
   onClose,
 }: AccountAutocompleteModalProps) {
-  const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
   const defaultAutocompleteProps = {
     containerProps: { style: { height: isNarrowWidth ? '90vh' : 275 } },
@@ -52,7 +50,7 @@ export function AccountAutocompleteModal({
             <ModalHeader
               title={
                 <ModalTitle
-                  title={t('Account')}
+                  title="Account"
                   getStyle={() => ({ color: theme.menuAutoCompleteText })}
                 />
               }
@@ -67,7 +65,7 @@ export function AccountAutocompleteModal({
           <View>
             {!isNarrowWidth && (
               <SectionLabel
-                title={t('Account')}
+                title="Account"
                 style={{
                   alignSelf: 'center',
                   color: theme.menuAutoCompleteText,

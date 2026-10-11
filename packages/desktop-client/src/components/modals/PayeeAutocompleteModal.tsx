@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { theme } from '@actual-app/components/theme';
@@ -26,7 +25,6 @@ export function PayeeAutocompleteModal({
   importedPayee,
   onClose,
 }: PayeeAutocompleteModalProps) {
-  const { t } = useTranslation();
   const { data: payees = [] } = usePayees();
   const { data: accounts = [] } = useAccounts();
   const navigate = useNavigate();
@@ -58,7 +56,7 @@ export function PayeeAutocompleteModal({
             <ModalHeader
               title={
                 <ModalTitle
-                  title={t('Payee')}
+                  title="Payee"
                   getStyle={() => ({ color: theme.menuAutoCompleteText })}
                 />
               }

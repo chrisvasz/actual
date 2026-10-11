@@ -6,10 +6,7 @@ type CustomReportSummary = {
   name: string;
 };
 
-type Translate = (key: string) => string;
-
 type GetDashboardWidgetItemsParams = {
-  t: Translate;
   customReports: CustomReportSummary[];
   formulaMode: boolean;
   crossoverReportEnabled: boolean;
@@ -42,7 +39,6 @@ function findItemIndex(
 }
 
 export function getDashboardWidgetItems({
-  t,
   customReports,
   formulaMode,
   crossoverReportEnabled,
@@ -52,59 +48,59 @@ export function getDashboardWidgetItems({
   const items: MenuItem<DashboardWidgetMenuName>[] = [
     {
       name: 'cash-flow-card',
-      text: t('Cash flow graph'),
+      text: 'Cash flow graph',
     },
     {
       name: 'net-worth-card',
-      text: t('Net worth graph'),
+      text: 'Net worth graph',
     },
     {
       name: 'spending-card',
-      text: t('Spending analysis'),
+      text: 'Spending analysis',
     },
     {
       name: 'markdown-card',
-      text: t('Text widget'),
+      text: 'Text widget',
     },
     {
       name: 'summary-card',
-      text: t('Summary card'),
+      text: 'Summary card',
     },
     {
       name: 'calendar-card',
-      text: t('Calendar card'),
+      text: 'Calendar card',
     },
     {
       name: 'custom-report',
-      text: t('New custom report'),
+      text: 'New custom report',
     },
   ];
 
   if (crossoverReportEnabled) {
     items.splice(2, 0, {
       name: 'crossover-card',
-      text: t('Crossover point'),
+      text: 'Crossover point',
     });
   }
 
   if (budgetAnalysisReportEnabled) {
     items.splice(findItemIndex(items, 'markdown-card'), 0, {
       name: 'budget-analysis-card',
-      text: t('Budget analysis'),
+      text: 'Budget analysis',
     });
   }
 
   if (balanceForecastReportEnabled) {
     items.splice(findItemIndex(items, 'markdown-card'), 0, {
       name: 'balance-forecast-card',
-      text: t('Balance forecast'),
+      text: 'Balance forecast',
     });
   }
 
   if (formulaMode) {
     items.splice(findItemIndex(items, 'custom-report'), 0, {
       name: 'formula-card',
-      text: t('Formula card'),
+      text: 'Formula card',
     });
   }
 

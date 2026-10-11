@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React, { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
 import { theme } from '@actual-app/components/theme';
@@ -63,8 +62,6 @@ const CustomTooltip = ({
   label,
   format,
 }: CustomTooltipProps) => {
-  const { t } = useTranslation();
-
   const dataKeyToName = useMemo(() => {
     return new Map(legend.map(entry => [entry.dataKey, entry.name]));
   }, [legend]);
@@ -144,7 +141,7 @@ const CustomTooltip = ({
             })}
             {compact && nonZeroItems.length > visibleItems.length && '...'}
             <AlignedText
-              left={t('Total')}
+              left="Total"
               right={
                 <FinancialText>{format(sumTotals, 'financial')}</FinancialText>
               }

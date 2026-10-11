@@ -6,7 +6,6 @@ import type {
   KeyboardEvent,
   Ref,
 } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { SvgAdd, SvgSubtract } from '@actual-app/components/icons/v1';
@@ -60,7 +59,6 @@ export function AmountInput({
   disabled = false,
   autoDecimals = false,
 }: AmountInputProps) {
-  const { t } = useTranslation();
   const format = useFormat();
   const [symbol, setSymbol] = useState<'+' | '-'>(() => {
     if (sign) return sign;
@@ -184,7 +182,7 @@ export function AmountInput({
       <Button
         variant="bare"
         isDisabled={disabled || !!sign}
-        aria-label={symbol === '-' ? t('Make positive') : t('Make negative')}
+        aria-label={symbol === '-' ? 'Make positive' : 'Make negative'}
         style={{ padding: '0 7px' }}
         onPress={onSwitch}
         ref={buttonRef}
@@ -247,7 +245,6 @@ export function BetweenAmountInput({
   defaultValue,
   onChange,
 }: BetweenAmountInputProps) {
-  const { t } = useTranslation();
   const [num1, setNum1] = useState(defaultValue.num1);
   const [num2, setNum2] = useState(defaultValue.num2);
 
@@ -261,7 +258,7 @@ export function BetweenAmountInput({
         }}
         style={{ color: theme.formInputText }}
       />
-      <View style={{ margin: '0 5px' }}>{t('and')}</View>
+      <View style={{ margin: '0 5px' }}>and</View>
       <AmountInput
         value={num2}
         onUpdate={value => {

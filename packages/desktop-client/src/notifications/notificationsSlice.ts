@@ -1,6 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { t } from 'i18next';
 import { v4 as uuidv4 } from 'uuid';
 
 import { resetApp } from '#app/appSlice';
@@ -71,10 +70,9 @@ const notificationsSlice = createSlice({
       const notification: NotificationWithId = {
         id: uuidv4(),
         type: 'error',
-        message: t(
+        message:
           'Something internally went wrong. You may want to restart the app if anything looks wrong. ' +
-            'Please report this as a new issue on GitHub.',
-        ),
+          'Please report this as a new issue on GitHub.',
       };
       state.notifications = [...state.notifications, notification];
     },

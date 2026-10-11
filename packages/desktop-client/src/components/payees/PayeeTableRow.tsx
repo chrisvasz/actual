@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import { memo, useMemo, useRef } from 'react';
 import type { CSSProperties } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import {
   SvgArrowThinRight,
@@ -120,21 +119,19 @@ export const PayeeTableRow = memo(
     const [learnCategories = 'true'] = useSyncedPref('learn-categories');
     const isLearnCategoriesEnabled = String(learnCategories) === 'true';
 
-    const { t } = useTranslation();
-
     const triggerRef = useRef(null);
     useContextMenu({
       triggerRef,
       items: [
         {
           name: 'delete',
-          text: t('Delete'),
+          text: 'Delete',
           onClick: () => onDelete(selectedIds),
           hidden: payee.transfer_acct != null,
         },
         {
           name: 'favorite',
-          text: payee.favorite ? t('Unfavorite') : t('Favorite'),
+          text: payee.favorite ? 'Unfavorite' : 'Favorite',
           onClick: () =>
             selectedIds.forEach(id =>
               onUpdate(id, 'favorite', !payee.favorite),
@@ -143,21 +140,19 @@ export const PayeeTableRow = memo(
         },
         {
           name: 'view-rules',
-          text: t('View rules'),
+          text: 'View rules',
           onClick: () => onViewRules(id),
           hidden: !ruleCount,
         },
         {
           name: 'create-rule',
-          text: t('Create rule'),
+          text: 'Create rule',
           onClick: () => onCreateRule(id),
           hidden: selectedIds.length !== 1,
         },
         {
           name: 'learn',
-          text: payee.learn_categories
-            ? t('Disable learning')
-            : t('Enable learning'),
+          text: payee.learn_categories ? 'Disable learning' : 'Enable learning',
           onClick: () =>
             selectedIds.forEach(id =>
               onUpdate(id, 'learn_categories', !payee.learn_categories),
@@ -221,7 +216,7 @@ export const PayeeTableRow = memo(
               <>
                 {payee.favorite ? <SvgBookmark style={{ width: 10 }} /> : null}
                 {isLearnCategoriesEnabled && !payee.learn_categories && (
-                  <Tooltip content={t('Category learning disabled')}>
+                  <Tooltip content="Category learning disabled">
                     <SvgLightBulb style={{ color: 'red', width: 10 }} />
                   </Tooltip>
                 )}
@@ -230,7 +225,7 @@ export const PayeeTableRow = memo(
           }}
         </CustomCell>
         <InputCell
-          value={(payee.transfer_acct ? t('Transfer: ') : '') + payee.name}
+          value={(payee.transfer_acct ? 'Transfer: ' : '') + payee.name}
           valueStyle={
             (!selected &&
               payee.transfer_acct && { color: theme.pageTextSubdued }) ||

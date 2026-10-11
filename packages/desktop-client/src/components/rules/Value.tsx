@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import React, { useState } from 'react';
 import type { CSSProperties } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
@@ -38,7 +37,6 @@ export function Value<T>({
   describe = x => x.name,
   style,
 }: ValueProps<T>) {
-  const { t } = useTranslation();
   const format = useFormat();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
   const { data: payees } = usePayees();
@@ -90,7 +88,7 @@ export function Value<T>({
 
   function formatValue(value) {
     if (value == null || value === '') {
-      return t('(nothing)');
+      return '(nothing)';
     } else if (typeof value === 'boolean') {
       return value ? 'true' : 'false';
     } else {
@@ -130,7 +128,7 @@ export function Value<T>({
             if (item) {
               return describe(item);
             } else {
-              return t('(deleted)');
+              return '(deleted)';
             }
           }
 
@@ -189,7 +187,7 @@ export function Value<T>({
           <Text style={valueStyle}>
             &nbsp;&nbsp;
             <Link variant="text" onClick={onExpand} style={valueStyle}>
-              {t('{{num}} more items...', { num: numHidden })}
+              {`${numHidden} more items...`}
             </Link>
             {!inline && <br />}
           </Text>
@@ -204,7 +202,7 @@ export function Value<T>({
     const { num1, num2 } = value;
     return (
       <Text>
-        <ValueText style={valueStyle}>{formatValue(num1)}</ValueText> {t('and')}{' '}
+        <ValueText style={valueStyle}>{formatValue(num1)}</ValueText> and{' '}
         <ValueText style={valueStyle}>{formatValue(num2)}</ValueText>
       </Text>
     );

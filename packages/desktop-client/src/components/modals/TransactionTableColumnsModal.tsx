@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { DragItem } from 'react-aria';
 import { DropIndicator, GridList, useDragAndDrop } from 'react-aria-components';
-import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { Text } from '@actual-app/components/text';
@@ -36,7 +35,6 @@ export function TransactionTableColumnsModal({
   columns: initialColumns,
   onSave,
 }: TransactionTableColumnsModalProps) {
-  const { t } = useTranslation();
   const columnLabels = useTransactionTableColumnLabels();
 
   const [columns, setColumns] =
@@ -119,19 +117,17 @@ export function TransactionTableColumnsModal({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Table columns')}
+            title="Table columns"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ gap: 15 }}>
             <Text style={{ color: theme.pageTextLight, lineHeight: 1.5 }}>
-              <Trans>
-                Choose which columns appear in the transaction table and drag
-                them into the order you prefer.
-              </Trans>
+              Choose which columns appear in the transaction table and drag them
+              into the order you prefer.
             </Text>
 
             <GridList
-              aria-label={t('Transaction table columns')}
+              aria-label="Transaction table columns"
               items={columns}
               dragAndDropHooks={dragAndDropHooks}
               dependencies={[columnLabels]}
@@ -167,7 +163,7 @@ export function TransactionTableColumnsModal({
                 style={{ flex: 1, userSelect: 'none', cursor: 'pointer' }}
               >
                 <Text style={{ display: 'block' }}>
-                  <Trans>Apply to all transaction tables</Trans>
+                  Apply to all transaction tables
                 </Text>
                 <Text
                   style={{
@@ -177,9 +173,7 @@ export function TransactionTableColumnsModal({
                     marginTop: 2,
                   }}
                 >
-                  <Trans>
-                    Use this layout everywhere, not just in the current view.
-                  </Trans>
+                  Use this layout everywhere, not just in the current view.
                 </Text>
               </label>
             </View>
@@ -188,12 +182,12 @@ export function TransactionTableColumnsModal({
               style={{ marginTop: 0 }}
               leftContent={
                 <Button variant="bare" onPress={onResetToDefault}>
-                  <Trans>Reset to default</Trans>
+                  Reset to default
                 </Button>
               }
             >
               <Button style={{ marginRight: 10 }} onPress={() => state.close()}>
-                <Trans>Cancel</Trans>
+                Cancel
               </Button>
               <Button
                 variant="primary"
@@ -202,7 +196,7 @@ export function TransactionTableColumnsModal({
                   state.close();
                 }}
               >
-                <Trans>Save</Trans>
+                Save
               </Button>
             </ModalButtons>
           </View>
