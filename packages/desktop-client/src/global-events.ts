@@ -90,10 +90,10 @@ export function handleGlobalEvents(store: AppStore, queryClient: QueryClient) {
         } else {
           store.dispatch(closeModal());
 
-          if (
-            window.location.href.replace(window.location.origin, '') !==
-            tagged.url
-          ) {
+          // The screen on display, recorded once it commits. The browser URL
+          // changes as soon as a navigation starts, while the previous screen
+          // stays up until the new one loads.
+          if (undo.getUndoState('url') !== tagged.url) {
             undo.setUndoState('undoEvent', undoState);
             void window.__navigate(tagged.url);
             // This stops propagation of the undo event, which is

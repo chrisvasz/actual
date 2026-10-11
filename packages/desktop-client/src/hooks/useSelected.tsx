@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useReducer,
   useRef,
 } from 'react';
@@ -214,7 +215,10 @@ export function useSelected<T extends Item>(
     return () => undo.setUndoState('selectedItems', prevState);
   }, [name, state.selectedItems]);
 
-  useEffect(() => {
+  // A layout effect, so an undo left pending for this screen is restored
+  // before a parent clears it from its own mount (the account screen does,
+  // in `componentDidMount`).
+  useLayoutEffect(() => {
     function onUndo({ messages, undoTag }: UndoState) {
       const tagged = undo.getTaggedState(undoTag);
 
