@@ -13,6 +13,8 @@ import { listen } from '@actual-app/core/platform/client/connection';
 import * as undo from '@actual-app/core/platform/client/undo';
 import type { UndoState } from '@actual-app/core/server/undo';
 
+import { clearPendingUndo } from '#undo';
+
 type Range<T> = { start: T; end: T | null };
 type Item = { id: string };
 
@@ -232,12 +234,16 @@ export function useSelected<T extends Item>(
             id => !deletedIds.has(id),
           ),
         });
+        return true;
       }
+      return false;
     }
 
+    // An undo that opened this screen is left pending; restore its
+    // selection, then clear it so a later mount doesn't restore it again
     const lastUndoEvent = undo.getUndoState('undoEvent');
-    if (lastUndoEvent) {
-      onUndo(lastUndoEvent);
+    if (lastUndoEvent && onUndo(lastUndoEvent)) {
+      clearPendingUndo(lastUndoEvent);
     }
 
     return listen('undo-event', onUndo);

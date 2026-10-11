@@ -14,6 +14,7 @@ import { usePayees } from '#hooks/usePayees';
 import { pushModal } from '#modals/modalsSlice';
 import { payeeQueries } from '#payees';
 import { useDispatch } from '#redux';
+import { clearPendingUndo } from '#undo';
 
 import { ManagePayees } from './ManagePayees';
 
@@ -65,13 +66,14 @@ export function ManagePayeesWithData({
       if (targetId || messages.find(msg => msg.dataset === 'rules')) {
         await refetchRuleCounts();
       }
-
-      undo.setUndoState('undoEvent', null);
     }
 
+    // An undo that opened this screen is left pending; apply it, then clear
+    // it so a later mount doesn't apply it again
     const lastUndoEvent = undo.getUndoState('undoEvent');
     if (lastUndoEvent) {
       void onUndo(lastUndoEvent);
+      clearPendingUndo(lastUndoEvent);
     }
 
     return listen('undo-event', onUndo);

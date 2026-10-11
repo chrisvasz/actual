@@ -106,6 +106,7 @@ import {
 } from '#transactions';
 import type { TransactionsSnapshot } from '#transactions';
 import { updateNewTransactions } from '#transactions/transactionsSlice';
+import { clearPendingUndo } from '#undo';
 
 import { AccountEmptyMessage } from './AccountEmptyMessage';
 import { unclearedCountCell } from './Balance';
@@ -492,8 +493,6 @@ class AccountInternal extends PureComponent<
           this.table.current.scrollTo(focusId);
         }
       }
-
-      undo.setUndoState('undoEvent', null);
     };
 
     const unlistens = [listen('undo-event', onUndo)];
@@ -515,10 +514,11 @@ class AccountInternal extends PureComponent<
     );
 
     // If there is a pending undo, apply it immediately (this happens
-    // when an undo changes the location to this page)
+    // when an undo changes the location to this page), then clear it so a
+    // later mount doesn't apply it again
     const lastUndoEvent = undo.getUndoState('undoEvent');
     if (lastUndoEvent) {
-      void onUndo(lastUndoEvent);
+      void onUndo(lastUndoEvent).finally(() => clearPendingUndo(lastUndoEvent));
     }
   }
 
