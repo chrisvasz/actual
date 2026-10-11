@@ -1,10 +1,10 @@
 import { useEffect, useMemo } from 'react';
 
+import customThemeSidebarFallbackCss from '@actual-app/components/themes/custom-theme-sidebar-fallback.css?inline';
 import darkThemeCss from '@actual-app/components/themes/dark.css?inline';
 import lightThemeCss from '@actual-app/components/themes/light.css?inline';
 import midnightThemeCss from '@actual-app/components/themes/midnight.css?inline';
 import paletteCss from '@actual-app/components/themes/palette.css?inline';
-import sidebarRedesignLightCss from '@actual-app/components/themes/sidebar-redesign-light.css?inline';
 import type { DarkTheme, Theme } from '@actual-app/core/types/prefs';
 
 import { useGlobalPref } from '#hooks/useGlobalPref';
@@ -13,7 +13,7 @@ import {
   isBaseTheme,
   migrateLegacyOverride,
   parseInstalledTheme,
-  usesRedesignSidebarPalette,
+  stylesSidebar,
   validateThemeCssSafely,
 } from './customThemes';
 
@@ -104,7 +104,6 @@ export function ThemeStyle() {
   const [installedCustomDarkThemeJson] = useGlobalPref(
     'installedCustomDarkTheme',
   );
-
   const [customCssOverride] = useGlobalPref('customCssOverride');
 
   // Rendered rather than injected from an effect so the CSS variables exist
@@ -116,14 +115,14 @@ export function ThemeStyle() {
 
   if (!themeColors) return null;
 
-  const sidebarRedesignCss =
+  const sidebarFallbackCss =
     themeColors === themes.light.colors &&
-    usesRedesignSidebarPalette(
+    stylesSidebar(
       [customLightTheme?.cssContent, customCssOverride]
         .map(css => validateThemeCssSafely(css))
         .join('\n'),
     )
-      ? sidebarRedesignLightCss
+      ? customThemeSidebarFallbackCss
       : null;
 
   if (activeTheme !== 'auto') {
@@ -131,7 +130,7 @@ export function ThemeStyle() {
       <>
         <style>{paletteCss}</style>
         <style>{themeColors}</style>
-        {sidebarRedesignCss != null && <style>{sidebarRedesignCss}</style>}
+        {sidebarFallbackCss != null && <style>{sidebarFallbackCss}</style>}
       </>
     );
   }
@@ -148,9 +147,9 @@ export function ThemeStyle() {
     <>
       <style>{paletteCss}</style>
       <style media="(prefers-color-scheme: light)">{themeColors}</style>
-      {sidebarRedesignCss != null && (
+      {sidebarFallbackCss != null && (
         <style media="(prefers-color-scheme: light)">
-          {sidebarRedesignCss}
+          {sidebarFallbackCss}
         </style>
       )}
       <style media="(prefers-color-scheme: dark)">{darkColors}</style>

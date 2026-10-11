@@ -7,7 +7,7 @@ import {
   MAX_FONT_FILE_SIZE,
   migrateLegacyOverride,
   parseInstalledTheme,
-  usesRedesignSidebarPalette,
+  stylesSidebar,
   validateThemeCss,
   validateThemeCssSafely,
 } from './customThemes';
@@ -1872,57 +1872,42 @@ describe('validateThemeCssSafely', () => {
     expect(validateThemeCssSafely(undefined, onError)).toBe('');
     expect(onError).toHaveBeenCalledOnce();
   });
+});
 
-  it('keeps the redesign palette when only rejected CSS styles the sidebar', () => {
+describe('stylesSidebar', () => {
+  it('ignores themes that leave the sidebar alone', () => {
+    expect(stylesSidebar('')).toBe(false);
+    expect(stylesSidebar(':root { --color-pageBackground: #fff; }')).toBe(
+      false,
+    );
     expect(
-      usesRedesignSidebarPalette(
+      stylesSidebar(
+        ':root { --color-pageText: var(--color-sidebarBackground); }',
+      ),
+    ).toBe(false);
+    expect(
+      stylesSidebar(
+        ':root { /* --color-sidebarBackground: navy; */ --color-pageBackground: #fff; }',
+      ),
+    ).toBe(false);
+  });
+
+  it('detects themes that style the sidebar', () => {
+    expect(
+      stylesSidebar(
+        ':root {\n  --color-pageBackground: #fff;\n  --color-sidebarBackground: hsl(237, 51%, 23%);\n}',
+      ),
+    ).toBe(true);
+    expect(stylesSidebar(':root { --color-sidebarItemText:#fff; }')).toBe(true);
+  });
+
+  it('ignores sidebar tokens in CSS the validator rejects', () => {
+    expect(
+      stylesSidebar(
         validateThemeCssSafely(
           '@media (prefers-color-scheme: dark) { :root { --color-sidebarBackground: navy; } }',
         ),
       ),
-    ).toBe(true);
-  });
-});
-
-describe('usesRedesignSidebarPalette', () => {
-  it('keeps the redesign palette for themes that leave the sidebar alone', () => {
-    expect(usesRedesignSidebarPalette('')).toBe(true);
-    expect(
-      usesRedesignSidebarPalette(':root { --color-pageBackground: #fff; }'),
-    ).toBe(true);
-    expect(
-      usesRedesignSidebarPalette(
-        ':root { --color-pageText: var(--color-sidebarBackground); }',
-      ),
-    ).toBe(true);
-    expect(
-      usesRedesignSidebarPalette(
-        ':root { /* --color-sidebarBackground: navy; */ --color-pageBackground: #fff; }',
-      ),
-    ).toBe(true);
-  });
-
-  it('falls back to the classic palette for themes that style the classic sidebar', () => {
-    expect(
-      usesRedesignSidebarPalette(
-        ':root {\n  --color-pageBackground: #fff;\n  --color-sidebarBackground: hsl(237, 51%, 23%);\n}',
-      ),
     ).toBe(false);
-    expect(
-      usesRedesignSidebarPalette(':root { --color-sidebarItemText:#fff; }'),
-    ).toBe(false);
-  });
-
-  it('keeps the redesign palette when redesign tokens are overridden', () => {
-    expect(
-      usesRedesignSidebarPalette(
-        ':root { --color-sidebarRedesignItemTextSelected: red; }',
-      ),
-    ).toBe(true);
-    expect(
-      usesRedesignSidebarPalette(
-        ':root { --color-sidebarBackground: navy; }\n:root { --color-sidebarRedesignBackground: #eef; }',
-      ),
-    ).toBe(true);
   });
 });

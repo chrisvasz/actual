@@ -362,7 +362,9 @@ test.describe('Accounts', () => {
 
     async function importCsv(screenshot = false) {
       const fileChooserPromise = page.waitForEvent('filechooser');
-      await accountPage.page.getByRole('button', { name: 'Import' }).click();
+      await accountPage.page
+        .getByRole('button', { name: 'Import', exact: true })
+        .click();
 
       const fileChooser = await fileChooserPromise;
       await fileChooser.setFiles(join(__dirname, 'data/test.csv'));
@@ -388,7 +390,9 @@ test.describe('Accounts', () => {
       await importCsv(false);
 
       const fileChooserPromise = page.waitForEvent('filechooser');
-      await accountPage.page.getByRole('button', { name: 'Import' }).click();
+      await accountPage.page
+        .getByRole('button', { name: 'Import', exact: true })
+        .click();
 
       const fileChooser = await fileChooserPromise;
       await fileChooser.setFiles(join(__dirname, 'data/test.csv'));
@@ -411,7 +415,9 @@ test.describe('Accounts', () => {
 
     test('import notes checkbox is not shown for CSV files', async () => {
       const fileChooserPromise = page.waitForEvent('filechooser');
-      await accountPage.page.getByRole('button', { name: 'Import' }).click();
+      await accountPage.page
+        .getByRole('button', { name: 'Import', exact: true })
+        .click();
 
       const fileChooser = await fileChooserPromise;
       await fileChooser.setFiles(join(__dirname, 'data/test.csv'));

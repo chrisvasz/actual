@@ -652,6 +652,14 @@ export function generateThemeId(urlOrRepo: string): string {
   return `theme-${Math.abs(hash).toString(36)}`;
 }
 
+/**
+ * Whether theme CSS sets any --color-sidebar* token (ignoring comments).
+ */
+export function stylesSidebar(css: string): boolean {
+  const declarations = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  return /--color-sidebar[A-Za-z]*\s*:/.test(declarations);
+}
+
 export function validateThemeCssSafely(
   css: string | undefined,
   onError?: (error: unknown) => void,
@@ -663,14 +671,6 @@ export function validateThemeCssSafely(
     onError?.(error);
     return '';
   }
-}
-
-export function usesRedesignSidebarPalette(css: string): boolean {
-  const declarations = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  return (
-    /--color-sidebarRedesign[A-Za-z]*\s*:/.test(declarations) ||
-    !/--color-sidebar(?!Redesign)[A-Za-z]*\s*:/.test(declarations)
-  );
 }
 
 /**

@@ -71,10 +71,17 @@ export class Navigation {
     this.page = page;
   }
 
+  // Accounts are tree rows in the sidebar; "On budget"/"Off budget" are links.
+  sidebarAccount(accountName: string) {
+    const name = new RegExp(`^${accountName}`);
+    return this.page
+      .getByRole('row', { name })
+      .or(this.page.getByRole('link', { name }))
+      .first();
+  }
+
   async goToAccountPage(accountName: string) {
-    await this.page
-      .getByRole('link', { name: new RegExp(`^${accountName}`) })
-      .click();
+    await this.sidebarAccount(accountName).click();
 
     // Opening an account runs in a transition that keeps the previous screen
     // up until the new one is ready. Wait for the new header, or the next
@@ -107,40 +114,19 @@ export class Navigation {
   }
 
   async goToRulesPage() {
-    const rulesLink = this.page.getByRole('link', { name: 'Rules' });
-
-    // Expand the "more" menu only if it is not already expanded
-    if (!(await rulesLink.isVisible())) {
-      await this.page.getByRole('button', { name: 'More' }).click();
-    }
-
-    await rulesLink.click();
+    await this.page.getByRole('link', { name: 'Rules' }).click();
 
     return new RulesPage(this.page);
   }
 
   async goToPayeesPage() {
-    const payeesLink = this.page.getByRole('link', { name: 'Payees' });
-
-    // Expand the "More" menu only if the Payees link is not visible
-    if (!(await payeesLink.isVisible())) {
-      await this.page.getByRole('button', { name: 'More' }).click();
-    }
-
-    await payeesLink.click();
+    await this.page.getByRole('link', { name: 'Payees' }).click();
 
     return new PayeesPage(this.page);
   }
 
   async goToSettingsPage() {
-    const settingsLink = this.page.getByRole('link', { name: 'Settings' });
-
-    // Expand the "more" menu only if it is not already expanded
-    if (!(await settingsLink.isVisible())) {
-      await this.page.getByRole('button', { name: 'More' }).click();
-    }
-
-    await settingsLink.click();
+    await this.page.getByRole('link', { name: 'Settings' }).click();
 
     return new SettingsPage(this.page);
   }
@@ -173,10 +159,18 @@ export class Navigation {
     return accountPage;
   }
 
-  async rightClickAccount(accountName: string) {
+  async goToAllAccountsPage() {
     await this.page
-      .getByRole('link', { name: new RegExp(`^${accountName}`) })
-      .click({ button: 'right' });
+      .getByRole('link', { name: 'Accounts', exact: true })
+      .click();
+
+    const accountPage = new AccountPage(this.page);
+    await expect(accountPage.accountName).toHaveText('All Accounts');
+    return accountPage;
+  }
+
+  async rightClickAccount(accountName: string) {
+    await this.sidebarAccount(accountName).click({ button: 'right' });
   }
 
   async rightClickBudgetName() {
