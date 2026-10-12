@@ -1037,8 +1037,14 @@ export function updateCategoryRules(transactions) {
             });
           }
         }
-      } else {
-        // No existing rules, so create one
+      } else if (
+        !getOneOfSetterRules(null, 'payee', 'category', {
+          condValue: payeeId,
+          actionValue: category,
+        }).next().value
+      ) {
+        // No existing rules (and no "one of" rule that already sets this
+        // category for the payee), so create one
         const newRule = new Rule({
           stage: null,
           conditionsOp: 'and',
