@@ -1,13 +1,9 @@
-import { captureException } from '#platform/exceptions';
-import { logger } from '#platform/server/log';
 // @ts-strict-ignore
-import { APIError } from '#server/errors';
-import { isMutating, runHandler } from '#server/mutators';
+import { logger } from '#platform/server/log';
 
-import { postErrorReply } from './errors';
+import { handleRequest } from './handle-request';
 import type * as T from './index-types';
 import { safePost } from './shared';
-import type { Message } from './shared';
 
 function getGlobalObject() {
   const obj =
@@ -30,10 +26,6 @@ export const init: T.Init = function (serverChn, handlers) {
   const serverChannel = serverChn as Window;
   getGlobalObject().__globalServerChannel = serverChannel;
 
-  function post(msg: Message) {
-    safePost(m => serverChannel.postMessage(m), msg);
-  }
-
   serverChannel.addEventListener(
     'message',
     e => {
@@ -51,56 +43,12 @@ export const init: T.Init = function (serverChn, handlers) {
         return;
       }
 
-      const { id, name, args, undoTag, catchErrors } = msg;
-
-      if (handlers[name]) {
-        runHandler(handlers[name], args, { undoTag, name }).then(
-          result => {
-            post({
-              type: 'reply',
-              id,
-              result: catchErrors ? { data: result, error: null } : result,
-              mutated: isMutating(handlers[name]),
-              undoTag,
-            });
-          },
-          nativeError => {
-            const error = postErrorReply(
-              message => serverChannel.postMessage(message),
-              { id, name, catchErrors },
-              nativeError,
-            );
-
-            // Only report internal errors
-            if (error.type === 'ServerError') {
-              captureException(nativeError);
-            }
-
-            if (!catchErrors) {
-              // Notify the frontend that something bad happend
-              send('server-error');
-            }
-          },
-        );
-      } else {
-        logger.error('Unknown server method: ' + name);
-        captureException(new Error('Unknown server method: ' + name));
-        const unknownMethodError = APIError('Unknown server method: ' + name);
-
-        if (catchErrors) {
-          post({
-            type: 'reply',
-            id,
-            result: { error: unknownMethodError, data: null },
-          });
-        } else {
-          post({
-            type: 'error',
-            id,
-            error: unknownMethodError,
-          });
-        }
-      }
+      handleRequest(
+        handlers,
+        msg,
+        message => serverChannel.postMessage(message),
+        () => send('server-error'),
+      );
     },
     false,
   );

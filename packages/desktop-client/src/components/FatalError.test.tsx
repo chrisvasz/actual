@@ -9,7 +9,7 @@ import { FatalError } from './FatalError';
 
 describe('FatalError', () => {
   it('renders the IndexedDB message for a non-Error AppError payload', () => {
-    // matches what browser-server.js posts and what initAll().catch passes
+    // matches what startBrowserBackend rejects with and initAll().catch passes
     const error = {
       type: 'app-init-failure',
       IDBFailure: true,
@@ -20,7 +20,7 @@ describe('FatalError', () => {
     expect(screen.getByText(/IndexedDB/)).toBeInTheDocument();
   });
 
-  it('renders a backend-worker message for a BackendInitFailure', () => {
+  it('renders a backend load message for a BackendInitFailure', () => {
     const error = {
       type: 'app-init-failure',
       BackendInitFailure: true,
@@ -29,7 +29,7 @@ describe('FatalError', () => {
     render(<FatalError error={error} />, { wrapper: TestProviders });
 
     expect(
-      screen.getByText(/couldn't load a critical backend worker/i),
+      screen.getByText(/couldn't load a critical part of the app/i),
     ).toBeInTheDocument();
   });
 

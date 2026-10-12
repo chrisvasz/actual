@@ -1,8 +1,8 @@
+import type { ServerMessage } from '#platform/in-process-channel';
+
 // `postMessage` payloads must be structured-cloneable; errors from wasm code
 // are not always (e.g. Emscripten filesystem errors carry function properties)
 // and a failed clone masks the real error.
-
-export type Message = { type: string; id?: string } & Record<string, unknown>;
 
 export function serializeError(error: unknown): Record<string, unknown> {
   if (error == null || typeof error !== 'object') {
@@ -45,7 +45,10 @@ function errorReplacer(_key: string, value: unknown): unknown {
   return value;
 }
 
-export function safePost(post: (msg: unknown) => void, msg: Message): void {
+export function safePost(
+  post: (msg: unknown) => void,
+  msg: ServerMessage,
+): void {
   try {
     post(msg);
   } catch (postError) {

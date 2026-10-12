@@ -33,6 +33,7 @@
     },
     "#platform/server/connection": {
       "api": "./src/platform/server/connection/index.api.ts",
+      "main-thread": "./src/platform/server/connection/index.main-thread.ts",
       "default": "./src/platform/server/connection/index.ts"
     },
     "#platform/server/fetch": {
@@ -64,7 +65,10 @@
       "node-test": "./src/platform/server/sqlite/index.api.ts",
       "default": "./src/platform/server/sqlite/index.ts"
     },
-    "#platform/client/connection": "./src/platform/client/connection/index.ts",
+    "#platform/client/connection": {
+      "main-thread": "./src/platform/client/connection/index.main-thread.ts",
+      "default": "./src/platform/client/connection/index.ts"
+    },
     "#server/encryption/encryption-internals": {
       "api": "./src/server/encryption/encryption-internals.api.ts",
       "node-test": "./src/server/encryption/encryption-internals.api.ts",
@@ -130,6 +134,7 @@
     "./platform/client/browser-preload": "./src/platform/client/browser-preload/index.ts",
     "./platform/client/connection": {
       "api": "./src/platform/client/connection/index.api.ts",
+      "main-thread": "./src/platform/client/connection/index.main-thread.ts",
       "default": "./src/platform/client/connection/index.ts"
     },
     "./platform/client/undo": "./src/platform/client/undo/index.ts",
@@ -141,6 +146,7 @@
     },
     "./platform/server/connection": {
       "api": "./src/platform/server/connection/index.api.ts",
+      "main-thread": "./src/platform/server/connection/index.main-thread.ts",
       "default": "./src/platform/server/connection/index.ts"
     },
     "./platform/server/fetch": {

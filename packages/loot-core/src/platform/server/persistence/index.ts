@@ -35,7 +35,7 @@
 //   across.
 //
 // Only one tab may own the storage: the app takes a Web Lock before
-// starting the worker (`platform/client/browser-preload/start.ts`). Web
+// starting the backend (`platform/client/browser-preload/start.ts`). Web
 // Locks need a secure context, so `init` refuses to run without one.
 
 import { captureException } from '#platform/exceptions';
@@ -65,7 +65,7 @@ const persistedRoots = new Set<string>(['/documents']);
 
 export async function init() {
   // Without Web Locks a second tab couldn't be kept from overwriting this
-  // one's data. The page checks this too, before starting the worker.
+  // one's data. The page checks this too, before starting the backend.
   if (globalThis.isSecureContext === false) {
     throw new Error(
       'insecure-context: Actual must be served over HTTPS (or from localhost)',

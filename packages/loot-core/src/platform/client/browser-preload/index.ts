@@ -1,5 +1,5 @@
 export {
   startBrowserBackend,
+  type BackendInitFailure,
   type StartBackendOptions,
-  type StartBackendInit,
 } from './start';

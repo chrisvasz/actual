@@ -1,8 +1,11 @@
+import type { InProcessChannel } from '#platform/in-process-channel';
 import type { Handlers } from '#types/handlers';
 import type { ServerEvents } from '#types/server-events';
 
 export declare function init(
-  channel: Window | number, // in web the worker
+  // The worker's global scope (API browser build) or the in-process
+  // channel (browser app)
+  channel: Window | number | InProcessChannel,
   handlers: Handlers,
 ): void;
 export type Init = typeof init;
