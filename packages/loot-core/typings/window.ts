@@ -1,3 +1,5 @@
+import type { InProcessChannel } from '#platform/in-process-channel';
+
 export {};
 
 type FileDialogOptions = {
@@ -21,7 +23,7 @@ type Actual = {
   relaunch: () => void;
   reload: (() => Promise<void>) | undefined;
   applyAppUpdate: () => Promise<void>;
-  getServerSocket: () => Promise<Worker | null>;
+  getServerSocket: () => Promise<InProcessChannel>;
   setTheme: (theme: string) => void;
   isUpdateReadyForDownload: () => boolean;
   waitForUpdateReadyForDownload: () => Promise<void>;

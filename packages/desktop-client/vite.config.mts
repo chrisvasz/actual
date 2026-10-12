@@ -18,7 +18,7 @@ import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import type { PreRenderedAsset } from 'rolldown';
 import { visualizer } from 'rollup-plugin-visualizer';
 /// <reference types="vitest" />
-import { build, defineConfig, loadEnv } from 'vite';
+import { build, defaultClientConditions, defineConfig, loadEnv } from 'vite';
 import type { Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -30,19 +30,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // default exclude (node_modules) still applies alongside this include.
 const reactCompilerInclude =
   /[\\/]packages[\\/][^\\/]+[\\/]src[\\/].*\.[jt]sx?(?:$|\?)/;
-
-const addWatchers = (): Plugin => ({
-  name: 'add-watchers',
-  configureServer(server) {
-    server.watcher
-      .add([path.resolve('../loot-core/lib-dist/browser/*.js')])
-      .on('all', function () {
-        for (const wsc of server.ws.clients) {
-          wsc.send(JSON.stringify({ type: 'static-changed' }));
-        }
-      });
-  },
-});
 
 const injectPlugin = (options?: Parameters<typeof inject>[0]): Plugin => {
   // Rollup plugins are currently slightly API-incompatible with Rolldown plugins, but not in a way that prevents them from working here.
@@ -96,20 +83,20 @@ const pluginsServiceDistDir = path.resolve(
 );
 const serviceWorkerDir = path.resolve(__dirname, 'service-worker');
 
-const WORKER_FILENAME_RE = /^kcab\.worker\.(.+)\.js$/;
+const BACKEND_FILENAME_RE = /^kcab\.backend\.(.+)\.js$/;
 
-async function extractWorkerHash(): Promise<string> {
+async function extractBackendHash(): Promise<string> {
   const files = await readdir(lootCoreOutDir);
   for (const f of files) {
-    const match = f.match(WORKER_FILENAME_RE);
+    const match = f.match(BACKEND_FILENAME_RE);
     if (match) return match[1];
   }
   throw new Error(
-    `loot-core worker build produced no hashed output at ${lootCoreOutDir}`,
+    `loot-core backend build produced no hashed output at ${lootCoreOutDir}`,
   );
 }
 
-// Serve loot-core worker assets with correct content types so the browser can
+// Serve loot-core backend assets with correct content types so the browser can
 // stream-compile the SQLite wasm module.
 const CONTENT_TYPES: Record<string, string> = {
   '.js': 'application/javascript',
@@ -123,7 +110,7 @@ async function stagePluginsService(): Promise<void> {
   await cp(pluginsServiceDistDir, serviceWorkerDir, { recursive: true });
 }
 
-// Extensions of data files served to the backend worker. Keep in sync
+// Extensions of data files served to the backend. Keep in sync
 // with the workbox `globPatterns` below so every listed file is precached.
 const DATA_FILE_EXTENSIONS = new Set(['.sql', '.js', '.sqlite']);
 
@@ -175,6 +162,16 @@ const lootCoreBackend = (): Plugin => ({
       ],
       { cwd: lootCoreRoot, stdio: 'inherit' },
     );
+    // The page imports the backend at startup, so reload it whenever the
+    // backend is rebuilt
+    server.watcher.add(lootCoreOutDir).on('all', (event, file) => {
+      if (
+        (event === 'add' || event === 'change') &&
+        BACKEND_FILENAME_RE.test(path.basename(file))
+      ) {
+        server.ws.send({ type: 'full-reload' });
+      }
+    });
     child.on('error', err => {
       server.config.logger.error(
         `loot-core backend failed to spawn: ${err.message}`,
@@ -271,7 +268,7 @@ export default defineConfig(async ({ mode, command }) => {
       mode: 'production',
       root: lootCoreRoot,
     }).then(async () => {
-      const hash = await extractWorkerHash();
+      const hash = await extractBackendHash();
       await rm(publicKcabDir, { recursive: true, force: true });
       await cp(lootCoreOutDir, publicKcabDir, { recursive: true });
       return hash;
@@ -281,10 +278,10 @@ export default defineConfig(async ({ mode, command }) => {
       stagePluginsService(),
       stageKcab,
     ]);
-    process.env.REACT_APP_BACKEND_WORKER_HASH = hash;
+    process.env.REACT_APP_BACKEND_HASH = hash;
   } else {
     await stagePublicData();
-    process.env.REACT_APP_BACKEND_WORKER_HASH = 'dev';
+    process.env.REACT_APP_BACKEND_HASH = 'dev';
   }
 
   return {
@@ -345,6 +342,8 @@ export default defineConfig(async ({ mode, command }) => {
     },
     resolve: {
       tsconfigPaths: true,
+      // loot-core's client connection talks to a backend on this thread
+      conditions: ['main-thread', ...defaultClientConditions],
     },
     plugins: [
       VitePWA({
@@ -391,7 +390,6 @@ export default defineConfig(async ({ mode, command }) => {
         },
       }),
       injectShims(),
-      addWatchers(),
       isVitest ? undefined : lootCoreBackend(),
       pluginsServiceAssets(),
       react(),

@@ -1,11 +1,14 @@
+import type { InProcessChannel } from '#platform/in-process-channel';
 import type { Handlers } from '#types/handlers';
 import type { ServerEvents } from '#types/server-events';
 
 /**
- * Connect to the backend. Reads the socket from
- * `global.Actual.getServerSocket()` unless one is passed directly.
+ * Connect to the backend: the given Worker (API browser build), or the
+ * in-process channel from `global.Actual.getServerSocket()` (browser app).
  */
-export declare function init(socket?: Worker | MessagePort): Promise<unknown>;
+export declare function init(
+  socket?: Worker | InProcessChannel,
+): Promise<unknown>;
 export type Init = typeof init;
 
 /** Error shape posted by the backend when a handler rejects. */

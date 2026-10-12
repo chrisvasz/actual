@@ -185,7 +185,7 @@ function makeSpreadsheet() {
     /**
      * Read a cell, batched with every other cell asked for in the same tick.
      * A page that binds hundreds of cells does so in one commit, so without
-     * this each one costs its own round trip to the backend worker.
+     * this each one costs its own round trip to the backend.
      */
     get(sheetName: string, name: string): Promise<CellCacheValue> {
       if (!batch) {

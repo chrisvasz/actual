@@ -107,7 +107,7 @@ export function APIError(
 /**
  * Tag an error with a stable, machine-readable failure code (e.g.
  * 'network-failure', 'invalid-password', 'budget-not-found'). The code is
- * kept when the error crosses the worker boundary (see
+ * kept when the error crosses the connection boundary (see
  * `#platform/server/connection`), so API consumers can branch on `err.code`
  * instead of parsing the English message.
  */
