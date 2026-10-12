@@ -6,19 +6,22 @@ let openedDb: null | Promise<IDBDatabase> = null;
 // and the write outbox in IndexedDB
 function _openDatabase() {
   return new Promise<IDBDatabase>((resolve, reject) => {
-    const dbVersion = 10;
+    const dbVersion = 11;
     const openRequest = indexedDB.open('actual', dbVersion);
 
     openRequest.onupgradeneeded = function (e) {
       const db = (e.target as IDBOpenDBRequest).result;
 
-      // Remove old stores. absurd-sql's `files` store is left in place
-      // for now (budgets stored that way aren't read any more, but are
-      // kept so they can still be recovered)
+      // Remove old stores
       for (const name of ['filesystem', 'messages']) {
         if (db.objectStoreNames.contains(name)) {
           db.deleteObjectStore(name);
         }
+      }
+      // absurd-sql's file tree, kept for one release after budgets
+      // stopped being read from it
+      if (e.oldVersion < 11 && db.objectStoreNames.contains('files')) {
+        db.deleteObjectStore('files');
       }
 
       // Create new stores (see `#platform/server/persistence`)
@@ -64,6 +67,36 @@ function _openDatabase() {
       resolve(db);
     };
   });
+}
+
+// absurd-sql kept each database file in its own IndexedDB database, named
+// after the file path (`documents-My-Budget-1a2b3c-db.sqlite`). None of
+// the current databases end in `.sqlite`.
+export function isLegacyDatabaseName(name: string): boolean {
+  return name.endsWith('.sqlite');
+}
+
+// Deletes the absurd-sql per-file databases. Best-effort: failures are
+// logged, and a deletion blocked by another tab finishes once it closes.
+export async function deleteLegacyDatabases(): Promise<void> {
+  if (typeof indexedDB.databases !== 'function') {
+    return;
+  }
+  try {
+    const databases = await indexedDB.databases();
+    const names = databases
+      .map(info => info.name)
+      .filter((name): name is string => !!name && isLegacyDatabaseName(name));
+    await Promise.all(
+      names.map(name =>
+        promisifyRequest(indexedDB.deleteDatabase(name)).catch(e =>
+          logger.warn(`Failed to delete legacy database ${name}`, e),
+        ),
+      ),
+    );
+  } catch (e) {
+    logger.warn('Failed to delete legacy databases', e);
+  }
 }
 
 export function promisifyRequest<T>(req: IDBRequest<T>): Promise<T> {

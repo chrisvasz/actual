@@ -72,6 +72,8 @@ export async function init() {
     );
   }
   storageDb = await idb.openDatabase();
+  // Not awaited: startup doesn't depend on it
+  void idb.deleteLegacyDatabases();
 }
 
 function getStorage(): IDBDatabase {
