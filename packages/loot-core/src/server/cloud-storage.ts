@@ -6,7 +6,6 @@ import { fetch } from '#platform/server/fetch';
 import * as fs from '#platform/server/fs';
 import { logger } from '#platform/server/log';
 import * as memory from '#platform/server/memory';
-import * as sqlite from '#platform/server/sqlite';
 import * as monthUtils from '#shared/months';
 
 import * as encryption from './encryption';
@@ -147,25 +146,10 @@ export async function exportBuffer() {
   // sure that we get a valid snapshot of it so we want this to be
   // serialized with all other mutations.
   const { zipped, entries } = await runMutator(async () => {
-    const rawDbContent = await fs.readFile(
+    const dbContent = await fs.readFile(
       fs.join(budgetDir, 'db.sqlite'),
       'binary',
     );
-
-    // Never upload the legacy spreadsheet cache. Older versions still read
-    // it, and leaving it out keeps the upload small.
-    const memDb = await sqlite.openDatabase(rawDbContent);
-    sqlite.execQuery(
-      memDb,
-      `
-        DELETE FROM kvcache;
-        DELETE FROM kvcache_key;
-      `,
-    );
-
-    const dbContent = await sqlite.exportDatabase(memDb);
-
-    sqlite.closeDatabase(memDb);
 
     // mark it as a file that needs a new clock so when a new client
     // downloads it, it'll get set to a unique node

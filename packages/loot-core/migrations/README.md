@@ -28,6 +28,8 @@ Do **not** drop or rename tables or columns. Do not rebuild a table to change an
 
 If a column is no longer used, stop reading it in application code and leave it in the database.
 
+The one exception is an internal (non-synced) table that no app version still able to open the budget reads, such as the old `kvcache` spreadsheet cache. Register it in `RETIRED_TABLES` in `additive-migrations.test.ts` and drop it with `DROP TABLE IF EXISTS`.
+
 Renaming is not supported even via `ALTER TABLE ... RENAME`. Older clients address synced data by table and column name; a rename looks like a delete plus an add and breaks cross-version sync.
 
 ## Migration ids

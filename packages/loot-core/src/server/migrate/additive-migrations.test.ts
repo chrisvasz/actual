@@ -32,6 +32,11 @@ const INIT_SQL = path.resolve(__dirname, '../sql/init.sql');
 // tables here.
 const NON_SYNCED_TABLES = new Set(['messages_pending']);
 
+// Internal tables a migration may drop because no app version that can
+// still open the budget reads them. `kvcache`/`kvcache_key` held the old
+// persisted spreadsheet cache.
+const RETIRED_TABLES = new Set(['kvcache', 'kvcache_key']);
+
 async function openTestDb(setupSql: string): Promise<Database> {
   await sqlite.init();
   const db = await sqlite.openDatabase(':memory:');
@@ -52,6 +57,7 @@ async function violationsFor(
     before,
     snapshotSchema(db),
     NON_SYNCED_TABLES,
+    RETIRED_TABLES,
   );
   sqlite.closeDatabase(db);
   return violations;
@@ -84,9 +90,12 @@ describe('migrations are additive-only', () => {
       await applyMigration(db, name, MIGRATIONS_DIR);
       snapshot = snapshotSchema(db);
       violations.push(
-        ...findAdditiveViolations(before, snapshot, NON_SYNCED_TABLES).map(
-          violation => `${name}: ${violation}`,
-        ),
+        ...findAdditiveViolations(
+          before,
+          snapshot,
+          NON_SYNCED_TABLES,
+          RETIRED_TABLES,
+        ).map(violation => `${name}: ${violation}`),
       );
     }
     sqlite.closeDatabase(db);
@@ -188,6 +197,13 @@ describe('migrations are additive-only', () => {
       `CREATE TABLE foo_new (id TEXT PRIMARY KEY, a TEXT UNIQUE, b TEXT);
        DROP TABLE foo;
        ALTER TABLE foo_new RENAME TO foo;`,
+    ],
+    [
+      'dropping columns from a retired table',
+      'CREATE TABLE kvcache (key TEXT PRIMARY KEY, value TEXT);',
+      `CREATE TABLE kvcache_new (key TEXT PRIMARY KEY);
+       DROP TABLE kvcache;
+       ALTER TABLE kvcache_new RENAME TO kvcache;`,
     ],
     [
       'adding a required column to an existing internal table',
@@ -302,6 +318,11 @@ describe('migrations are additive-only', () => {
       TABLE_FOO,
       `CREATE TABLE messages_pending
          (timestamp TEXT PRIMARY KEY, dataset TEXT NOT NULL);`,
+    ],
+    [
+      'dropping a retired table',
+      TABLE_FOO + 'CREATE TABLE kvcache (key TEXT PRIMARY KEY, value TEXT);',
+      'DROP TABLE kvcache;',
     ],
     [
       'adding a plain (non-unique) index',

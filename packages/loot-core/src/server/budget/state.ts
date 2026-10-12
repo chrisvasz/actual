@@ -1,10 +1,7 @@
 import { captureBreadcrumb } from '#platform/exceptions';
-import * as fs from '#platform/server/fs';
 import { logger } from '#platform/server/log';
 import type { CellChange } from '#server/cells/types';
-import * as db from '#server/db';
 import * as monthUtils from '#shared/months';
-import * as Platform from '#shared/platform';
 
 import { diffBudgetCells, getBudgetCell } from './cells';
 import type { CellValue } from './cells';
@@ -59,29 +56,6 @@ let flushScheduled = false;
 
 const EMPTY: ComputedBudget = { months: [], groups: [], values: new Map() };
 
-// Older versions saved every computed cell to `kvcache` (on desktop, in a
-// separate cache.sqlite) and loaded it on open instead of recomputing. Clearing
-// `kvcache_key` in the main db is what stops a version that still reads the
-// cache from showing values from before this one changed the budget.
-async function clearLegacyCache(): Promise<void> {
-  db.execQuery('DELETE FROM kvcache; DELETE FROM kvcache_key;');
-
-  // Deleting cache.sqlite only frees disk space, so a failure (another process
-  // holding the file, or a parallel load that deleted it first) must not stop
-  // the budget from opening.
-  const dbPath = db.getDatabasePath();
-  if (!Platform.isBrowser && dbPath?.endsWith('db.sqlite')) {
-    const cachePath = dbPath.replace(/db\.sqlite$/, 'cache.sqlite');
-    try {
-      if (await fs.exists(cachePath)) {
-        await fs.removeFile(cachePath);
-      }
-    } catch (e) {
-      logger.warn('Could not remove the old spreadsheet cache', e);
-    }
-  }
-}
-
 function readState(months: string[]): State {
   return {
     months,
@@ -101,7 +75,6 @@ function readState(months: string[]): State {
 export async function loadBudgetState(
   onChange?: (changes: CellChange[]) => void,
 ): Promise<void> {
-  await clearLegacyCache();
   captureBreadcrumb({ message: 'loading budget values', category: 'server' });
   listener = onChange ?? null;
   state = readState([]);

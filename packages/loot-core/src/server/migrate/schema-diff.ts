@@ -163,15 +163,22 @@ export function snapshotSchema(db: Database): SchemaSnapshot {
 // either direction — either direction, because tightening rejects data
 // older clients hold while loosening lets newer clients write data
 // older schemas reject on sync.
+//
+// `retiredTables` may be dropped outright: internal tables no app version
+// that can still open the budget reads.
 export function findAdditiveViolations(
   before: SchemaSnapshot,
   after: SchemaSnapshot,
   nonSyncedTables: Set<string>,
+  retiredTables: Set<string> = new Set(),
 ): string[] {
   const violations: string[] = [];
 
   for (const [table, { columns: beforeColumns }] of before) {
     const afterColumns = after.get(table)?.columns;
+    if (!afterColumns && retiredTables.has(table)) {
+      continue;
+    }
     for (const name of beforeColumns.keys()) {
       if (!afterColumns?.has(name)) {
         violations.push(
