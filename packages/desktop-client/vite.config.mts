@@ -376,6 +376,9 @@ export default defineConfig(async ({ mode, command }) => {
           globPatterns: [
             '**/*.{js,css,html,txt,wasm,sql,sqlite,ico,png,woff2,webmanifest}',
           ],
+          // sqlite-wasm's bundled Worker1 API, which the backend never
+          // loads
+          globIgnores: ['**/sqlite3-worker1-*.js'],
           ignoreURLParametersMatching: [/^v$/],
           navigateFallback: '/index.html',
           maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
