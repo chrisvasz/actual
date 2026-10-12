@@ -79,16 +79,6 @@ export type DbCategoryMapping = {
   transferId: DbCategory['id'];
 };
 
-export type DbKvCache = {
-  key: string;
-  value: string;
-};
-
-export type DbKvCacheKey = {
-  id: number;
-  key: number;
-};
-
 export type DbClockMessage = {
   id: string;
   clock: string;
