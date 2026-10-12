@@ -252,10 +252,6 @@ async function readGitHead(): Promise<string> {
 export default defineConfig(async ({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const isVitest = process.env.VITEST === 'true';
-  const devHeaders = {
-    'Cross-Origin-Opener-Policy': 'same-origin',
-    'Cross-Origin-Embedder-Policy': 'require-corp',
-  };
 
   // The commit this bundle was built from, shown in Settings. CI passes it in
   // (the Docker build has no real .git — see sync-server.Dockerfile); locally
@@ -340,7 +336,6 @@ export default defineConfig(async ({ mode, command }) => {
             .map(host => host.trim())
             .filter(Boolean)
         : ['.orb.local'],
-      headers: devHeaders,
       port: +env.PORT || 5173,
       // Never launch a system browser; open the dev server yourself.
       open: false,

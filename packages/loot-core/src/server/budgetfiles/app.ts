@@ -7,6 +7,7 @@ import * as asyncStorage from '#platform/server/asyncStorage';
 import * as connection from '#platform/server/connection';
 import * as fs from '#platform/server/fs';
 import { logger } from '#platform/server/log';
+import * as persistence from '#platform/server/persistence';
 import { createApp } from '#server/app';
 import * as budget from '#server/budget/base';
 import {
@@ -32,6 +33,7 @@ import { getServer } from '#server/server-config';
 import {
   clearFullSyncTimeout,
   initialFullSync,
+  replayOutbox,
   setSyncingMode,
 } from '#server/sync';
 import * as syncMigrations from '#server/sync/migrate';
@@ -272,6 +274,13 @@ async function closeBudget() {
   clearFullSyncTimeout();
   await mainApp.stopServices();
 
+  try {
+    // Snapshot whatever isn't in one yet. If this fails the outbox still
+    // has every batch, and the next open replays it.
+    await persistence.flush();
+  } catch (e) {
+    captureException(e);
+  }
   db.closeDatabase();
 
   try {
@@ -304,12 +313,10 @@ async function deleteBudget({
 
   // If a local file exists, you can delete it by passing its local id
   if (id) {
-    // opening and then closing the database is a hack to be able to delete
-    // the budget file if it hasn't been opened yet.  This needs a better
-    // way, but works for now.
+    if (prefs.getPrefs()?.id === id) {
+      await closeBudget();
+    }
     try {
-      await db.openDatabase(id);
-      db.closeDatabase();
       const budgetDir = fs.getBudgetDir(id);
       await fs.removeDirRecursively(budgetDir);
     } catch {
@@ -466,6 +473,8 @@ async function createBudget({
 
   if (testMode) {
     await createTestBudget(mainApp.handlers);
+    // It clears the default categories directly
+    await persistence.snapshot();
   }
 
   return {};
@@ -565,6 +574,9 @@ async function _loadBudget(id: Budget['id']): Promise<{
     resetFormulaPreferencesCache();
     await prefs.loadPrefs(id);
     await db.openDatabase(id);
+    // Restore batches applied since the last snapshot. This must come
+    // before migrations and before any in-memory state is loaded.
+    await replayOutbox();
   } catch (e) {
     captureBreadcrumb({ message: 'Error loading budget ' + id });
     captureException(e);
@@ -627,7 +639,24 @@ async function _loadBudget(id: Budget['id']): Promise<{
       'INSERT OR REPLACE INTO messages_clock (id, clock) VALUES (1, ?)',
       [CRDT.serializeClock(CRDT.getClock())],
     );
+  }
 
+  // Outbox replay, migrations, view updates, deferred-message replay and
+  // clock setup all write outside the outbox; snapshot them (if anything
+  // changed) before anything builds on them. If that fails, don't open:
+  // edits recorded on top of an unsaved migration couldn't be replayed.
+  try {
+    await persistence.flush();
+  } catch (e) {
+    captureException(e);
+    await closeBudget();
+    return { error: 'opening-budget' };
+  }
+
+  // Only now that the new client id is saved: losing it after clearing
+  // the flag would leave this device sending messages as the one the
+  // file came from
+  if (prefs.getPrefs().resetClock) {
     await prefs.savePrefs({ resetClock: false });
   }
 

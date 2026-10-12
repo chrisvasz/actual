@@ -103,9 +103,6 @@ export const closeBudget = createAppAsyncThunk(
       dispatch(setAppState({ loadingText: 'Closing...' }));
       await send('close-budget');
       dispatch(setAppState({ loadingText: null }));
-      if (localStorage.getItem('SharedArrayBufferOverride')) {
-        window.location.reload();
-      }
     }
   },
 );

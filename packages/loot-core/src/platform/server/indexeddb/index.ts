@@ -1,30 +1,38 @@
 import { logger } from '#platform/server/log';
 
-let openedDb: null | ReturnType<typeof _openDatabase> = _openDatabase();
+let openedDb: null | Promise<IDBDatabase> = null;
 
-// The web version uses IndexedDB to store data
+// The web version keeps global prefs, budget files, database snapshots
+// and the write outbox in IndexedDB
 function _openDatabase() {
   return new Promise<IDBDatabase>((resolve, reject) => {
-    const dbVersion = 9;
+    const dbVersion = 10;
     const openRequest = indexedDB.open('actual', dbVersion);
 
     openRequest.onupgradeneeded = function (e) {
       const db = (e.target as IDBOpenDBRequest).result;
 
-      // Remove old stores
-      if (db.objectStoreNames.contains('filesystem')) {
-        db.deleteObjectStore('filesystem');
-      }
-      if (db.objectStoreNames.contains('messages')) {
-        db.deleteObjectStore('messages');
+      // Remove old stores. absurd-sql's `files` store is left in place
+      // for now (budgets stored that way aren't read any more, but are
+      // kept so they can still be recovered)
+      for (const name of ['filesystem', 'messages']) {
+        if (db.objectStoreNames.contains(name)) {
+          db.deleteObjectStore(name);
+        }
       }
 
-      // Create new stores
+      // Create new stores (see `#platform/server/persistence`)
       if (!db.objectStoreNames.contains('asyncStorage')) {
         db.createObjectStore('asyncStorage');
       }
-      if (!db.objectStoreNames.contains('files')) {
-        db.createObjectStore('files', { keyPath: 'filepath' });
+      if (!db.objectStoreNames.contains('budgetFiles')) {
+        db.createObjectStore('budgetFiles');
+      }
+      if (!db.objectStoreNames.contains('snapshots')) {
+        db.createObjectStore('snapshots');
+      }
+      if (!db.objectStoreNames.contains('outbox')) {
+        db.createObjectStore('outbox', { keyPath: ['path', 'seq'] });
       }
     };
 
@@ -58,44 +66,25 @@ function _openDatabase() {
   });
 }
 
-type Data = { filepath: string; contents: string };
-
-export const getStore = function (db: IDBDatabase, name: string) {
-  const trans = db.transaction([name], 'readwrite');
-  return { trans, store: trans.objectStore(name) };
-};
-
-export const get = async function (
-  store: IDBObjectStore,
-  key: IDBValidKey | IDBKeyRange,
-) {
-  return new Promise<Data>((resolve, reject) => {
-    const req = store.get(key);
-    req.onsuccess = () => {
-      resolve(req.result);
-    };
-    req.onerror = e => reject(e);
-  });
-};
-
-export const set = async function (store: IDBObjectStore, item: Data) {
+export function promisifyRequest<T>(req: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
-    const req = store.put(item);
-    req.onsuccess = () => resolve(undefined);
-    req.onerror = e => reject(e);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
   });
-};
+}
 
-export const del = async function (store: IDBObjectStore, key: string) {
+// Resolves once the transaction has committed
+export function transactionDone(trans: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
-    const req = store.delete(key);
-    req.onsuccess = () => resolve(undefined);
-    req.onerror = e => reject(e);
+    trans.oncomplete = () => resolve();
+    trans.onerror = () => reject(trans.error);
+    trans.onabort = () =>
+      reject(trans.error ?? new Error('IndexedDB transaction aborted'));
   });
-};
+}
 
 export const getDatabase = function () {
-  return openedDb;
+  return openDatabase();
 };
 
 export const openDatabase = function () {

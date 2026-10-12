@@ -1,4 +1,4 @@
-import { listen } from '@actual-app/core/platform/client/connection';
+import { listen, send } from '@actual-app/core/platform/client/connection';
 import * as undo from '@actual-app/core/platform/client/undo';
 // @ts-strict-ignore
 import type { QueryClient } from '@tanstack/react-query';
@@ -129,21 +129,32 @@ export function handleGlobalEvents(store: AppStore, queryClient: QueryClient) {
     }
   });
 
-  const unlistenFallbackWriteError = listen('fallback-write-error', () => {
+  const unlistenStorageWriteError = listen('storage-write-error', () => {
     store.dispatch(
       addNotification({
         notification: {
+          id: 'storage-write-error',
           type: 'error',
           title: 'Unable to save changes',
           sticky: true,
           message:
-            'This browser only supports using the app in one tab at a time, ' +
-            'and another tab has opened the app. No changes will be saved ' +
-            'from this tab; please close it and continue working in the other one.',
+            "Your latest changes could not be saved to this browser's " +
+            'storage, which may be full. Changes made from now on may be ' +
+            'lost when this tab closes. Free up space or export your budget.',
         },
       }),
     );
   });
+
+  // Snapshot the open budget while the tab is hidden or going away. Edits
+  // are already durable in the outbox; this keeps it short.
+  const flushStorage = () => {
+    if (document.visibilityState === 'hidden') {
+      void send('app-hidden');
+    }
+  };
+  document.addEventListener('visibilitychange', flushStorage);
+  window.addEventListener('pagehide', flushStorage);
 
   const unlistenIndexeddbQuotaError = listen('indexeddb-quota-error', () => {
     alert(
@@ -187,7 +198,9 @@ export function handleGlobalEvents(store: AppStore, queryClient: QueryClient) {
     unlistenSchedulesOffline();
     unlistenSync();
     unlistenUndo();
-    unlistenFallbackWriteError();
+    unlistenStorageWriteError();
+    document.removeEventListener('visibilitychange', flushStorage);
+    window.removeEventListener('pagehide', flushStorage);
     unlistenIndexeddbQuotaError();
     unlistenStartLoad();
     unlistenFinishLoad();

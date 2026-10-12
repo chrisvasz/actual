@@ -1,5 +1,3 @@
-import { initBackend as initSQLBackend } from 'absurd-sql/dist/indexeddb-main-thread';
-
 export type StartBackendInit = {
   version: string;
   isDev: boolean;
@@ -14,49 +12,37 @@ export type StartBackendOptions = {
   initPayload: StartBackendInit;
 };
 
-// Only one tab at a time may run the backend. A second tab's backend would
-// keep its own in-memory spreadsheet and sync state and drift apart from the
-// first one's. The tab that gets this lock holds it until the page unloads.
+// Only one tab at a time may run the backend. The backend keeps the open
+// budget in memory and owns its snapshots and outbox; a second tab would
+// load its own copy, and the two would drift apart and overwrite each
+// other's snapshots. The tab that gets this lock holds it until the page
+// unloads.
 const BACKEND_LOCK_NAME = 'actual-backend';
 
 /**
- * Starts the backend in a dedicated Worker for this tab. Resolves to `null`
- * without starting anything when another tab is already running the backend.
+ * Starts the backend in a dedicated Worker for this tab. Resolves to the
+ * reason instead, without starting anything, when the page isn't a secure
+ * context (no Web Locks, so no way to keep a second tab out) or another
+ * tab is already running the backend.
  */
 export async function startBrowserBackend({
   backendWorkerUrl,
   initPayload,
-}: StartBackendOptions): Promise<Worker | null> {
+}: StartBackendOptions): Promise<Worker | 'insecure-context' | 'already-open'> {
+  if (!window.isSecureContext) {
+    return 'insecure-context';
+  }
   if (!(await acquireBackendLock())) {
-    return null;
+    return 'already-open';
   }
 
   const worker = new Worker(backendWorkerUrl);
-  initSQLBackend(worker);
-
-  if (window.SharedArrayBuffer) {
-    localStorage.removeItem('SharedArrayBufferOverride');
-  }
-
-  worker.postMessage({
-    type: 'init',
-    ...initPayload,
-    hasSharedArrayBuffer: !!window.SharedArrayBuffer,
-    isSharedArrayBufferOverrideEnabled: localStorage.getItem(
-      'SharedArrayBufferOverride',
-    ),
-  });
+  worker.postMessage({ type: 'init', ...initPayload });
 
   return worker;
 }
 
 function acquireBackendLock(): Promise<boolean> {
-  // Web Locks need a secure context, so they're missing on plain HTTP (used
-  // with the SharedArrayBuffer override). Run without the check there.
-  if (!navigator.locks) {
-    return Promise.resolve(true);
-  }
-
   return new Promise(resolve => {
     navigator.locks
       .request(BACKEND_LOCK_NAME, { ifAvailable: true }, lock => {

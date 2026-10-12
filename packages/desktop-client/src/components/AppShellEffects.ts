@@ -1,20 +1,18 @@
 import { sync } from '#app/appSlice';
 import { useHotkeys } from '#hooks/useHotkeys';
-import { useSharedArrayBufferWarning } from '#hooks/useSharedArrayBufferWarning';
 import { useUserData } from '#hooks/useUserData';
 import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 
 /**
  * App-wide behaviour that used to live in the titlebar: the sync and
- * keyboard-shortcut hotkeys, keeping the signed-in user's data fresh, and the
- * SharedArrayBuffer warning. Renders nothing.
+ * keyboard-shortcut hotkeys and keeping the signed-in user's data fresh.
+ * Renders nothing.
  */
 export function AppShellEffects() {
   const dispatch = useDispatch();
 
   useUserData();
-  useSharedArrayBufferWarning();
 
   useHotkeys(
     'ctrl+s, cmd+s, meta+s',

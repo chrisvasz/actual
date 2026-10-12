@@ -8,19 +8,8 @@ import { TestProviders } from '#mocks';
 import { FatalError } from './FatalError';
 
 describe('FatalError', () => {
-  it('renders the SharedArrayBuffer message for a non-Error AppError payload', () => {
-    // matches what browser-server.js posts and what initAll().catch passes
-    const error = {
-      type: 'app-init-failure',
-      SharedArrayBufferMissing: true,
-    };
-
-    render(<FatalError error={error} />, { wrapper: TestProviders });
-
-    expect(screen.getAllByText(/SharedArrayBuffer/).length).toBeGreaterThan(0);
-  });
-
   it('renders the IndexedDB message for a non-Error AppError payload', () => {
+    // matches what browser-server.js posts and what initAll().catch passes
     const error = {
       type: 'app-init-failure',
       IDBFailure: true,
@@ -42,6 +31,14 @@ describe('FatalError', () => {
     expect(
       screen.getByText(/couldn't load a critical backend worker/i),
     ).toBeInTheDocument();
+  });
+
+  it('renders a secure-connection message on insecure origins', () => {
+    const error = { type: 'app-init-failure', InsecureContext: true };
+
+    render(<FatalError error={error} />, { wrapper: TestProviders });
+
+    expect(screen.getByText('Secure connection required')).toBeInTheDocument();
   });
 
   it('renders an already-open message when another tab has the backend', () => {

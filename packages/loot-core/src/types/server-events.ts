@@ -62,7 +62,7 @@ type CellsChangedEvent = Array<{
   value: unknown;
 }>;
 
-type FallbackWriteErrorEvent = undefined;
+type StorageWriteErrorEvent = undefined;
 type FinishImportEvent = undefined;
 type FinishLoadEvent = undefined;
 type IndexeddbQuotaErrorEvent = undefined;
@@ -109,7 +109,6 @@ type ApiFetchRedirectedEvent = undefined;
 export type ServerEvents = {
   'backups-updated': BackupUpdatedEvent;
   'cells-changed': CellsChangedEvent;
-  'fallback-write-error': FallbackWriteErrorEvent;
   'finish-import': FinishImportEvent;
   'finish-load': FinishLoadEvent;
   'import-progress': ImportProgressEvent;
@@ -119,6 +118,7 @@ export type ServerEvents = {
   'schedules-offline': SchedulesOfflineEvent;
   'server-error': ServerErrorEvent;
   'show-budgets': ShowBudgetsEvent;
+  'storage-write-error': StorageWriteErrorEvent;
   'start-import': StartImportEvent;
   'start-load': StartLoadEvent;
   'sync-event': SyncEvent;

@@ -3,6 +3,7 @@ import initSqlJS from '@jlongster/sql.js';
 import type { Database, SqlJsStatic, Statement } from '@jlongster/sql.js';
 
 import { logger } from '#platform/server/log';
+import * as persistence from '#platform/server/persistence';
 
 import { normalise } from './normalise';
 import type { SqlParam } from './types';
@@ -11,25 +12,15 @@ import { unicodeLike } from './unicodeLike';
 export type { SqlParam } from './types';
 
 // Types exported from sql.js (and Emscripten) are incomplete, so we need to redefine them here
-type FSStream = (typeof FS)['FSStream'] & {
-  node: (typeof FS)['FSNode'] & {
-    contents: {
-      readIfFallback: () => Promise<unknown>;
-    };
-  };
-};
-type FS = Omit<typeof FS, 'lookupPath' | 'open' | 'close'> & {
+type FS = Omit<typeof FS, 'lookupPath'> & {
   lookupPath: (
     path: string,
     opts?: { follow?: boolean },
   ) => { node: (typeof FS)['FSNode'] & { link?: string } };
-  open: (path: string, flags: string, mode?: number) => FSStream;
-  close: (stream: FSStream) => void;
 };
 export type SqlJsModule = SqlJsStatic & {
   FS: FS;
   reset_filesystem: () => void;
-  register_for_idb: (idb: IDBDatabase) => void;
 };
 
 let SQL: SqlJsModule | null = null;
@@ -141,13 +132,15 @@ export function execQuery(db: Database, sql: string) {
 let transactionDepth = 0;
 
 export type TransactionOptions = {
-  // Take the write lock up front (`BEGIN IMMEDIATE`) instead of on the
-  // first write. Use it for transactions that read before they write:
-  // absurd-sql reuses an IndexedDB cursor across the lock upgrade, and
-  // a read that lands just after that cursor then fails with
-  // "TransactionInactiveError" and stalls the backend.
+  // Take the write lock up front (`BEGIN IMMEDIATE`). Only matters for
+  // file-backed databases with concurrent connections; kept so the
+  // signature is the same on every platform.
   immediate?: boolean;
 };
+
+export function inTransaction() {
+  return transactionDepth > 0;
+}
 
 export function transaction(
   db: Database,
@@ -208,39 +201,36 @@ function regexp(regex: string, text: string) {
   return new RegExp(regex).test(text || '') ? 1 : 0;
 }
 
+// Opens a database in memory. A path under a persisted directory loads
+// the stored snapshot of that file and persists the database from then
+// on (see `#platform/server/persistence`); any other path is opened in
+// place on the in-memory filesystem.
 export async function openDatabase(pathOrBuffer?: string | Uint8Array) {
-  let db = null;
-  if (pathOrBuffer) {
-    if (typeof pathOrBuffer !== 'string') {
-      db = new SQL.Database(pathOrBuffer);
-    } else {
-      const path = pathOrBuffer;
-      if (path !== ':memory:') {
-        if (typeof SharedArrayBuffer === 'undefined') {
-          const stream = SQL.FS.open(SQL.FS.readlink(path), 'a+');
-          await stream.node.contents.readIfFallback();
-          SQL.FS.close(stream);
-        }
-
-        db = new SQL.Database(
-          path.includes('/blocked') ? path : SQL.FS.readlink(path),
-          // @ts-expect-error 2nd argument missed in sql.js types
-          { filename: true },
-        );
-        // absurd-sql serves every page cache miss with a synchronous
-        // round trip to IndexedDB, so allow the cache to hold a whole
-        // large budget file. SQLite allocates cache pages lazily, so
-        // small files don't pay for the ceiling. The value is in KiB.
-        db.exec(`
-          PRAGMA journal_mode=MEMORY;
-          PRAGMA cache_size=-64000;
-        `);
-      }
-    }
-  }
-
-  if (db === null) {
+  let db: Database;
+  if (pathOrBuffer == null || pathOrBuffer === ':memory:') {
     db = new SQL.Database();
+  } else if (typeof pathOrBuffer !== 'string') {
+    db = new SQL.Database(pathOrBuffer);
+  } else if (persistence.isDatabasePath(pathOrBuffer)) {
+    const loaded = await persistence.loadDatabase(pathOrBuffer);
+    db = new SQL.Database(loaded.bytes);
+    // sql.js keeps the database in a file on its in-memory filesystem;
+    // the rollback journal doesn't need to be another file there
+    db.exec('PRAGMA journal_mode=MEMORY');
+    const filename = '/' + (db as Database & { filename: string }).filename;
+    loaded.attach({
+      handle: db,
+      getBytes: () => SQL.FS.readFile(filename, { encoding: 'binary' }),
+      inTransaction,
+      totalChanges: () =>
+        Number(db.exec('SELECT total_changes()')[0].values[0][0]),
+    });
+  } else {
+    db = new SQL.Database(
+      pathOrBuffer,
+      // @ts-expect-error 2nd argument missed in sql.js types
+      { filename: true },
+    );
   }
 
   // Define Unicode-aware LOWER, UPPER, and LIKE implementation.
@@ -258,6 +248,11 @@ export async function openDatabase(pathOrBuffer?: string | Uint8Array) {
 }
 
 export function closeDatabase(db: Database) {
+  if (persistence.detach(db)) {
+    // A transaction left open across handler calls (the API's batch
+    // import) dies with the database
+    transactionDepth = 0;
+  }
   db.close();
 }
 
