@@ -54,6 +54,11 @@
       "node-test": "./src/platform/server/memory/index.api.ts",
       "default": "./src/platform/server/memory/index.ts"
     },
+    "#platform/server/persistence": {
+      "api": "./src/platform/server/persistence/index.api.ts",
+      "node-test": "./src/platform/server/persistence/index.api.ts",
+      "default": "./src/platform/server/persistence/index.ts"
+    },
     "#platform/server/sqlite": {
       "api": "./src/platform/server/sqlite/index.api.ts",
       "node-test": "./src/platform/server/sqlite/index.api.ts",
@@ -187,7 +192,6 @@
     "@jlongster/sql.js": "^1.6.7",
     "@rschedule/core": "^1.5.0",
     "@rschedule/standard-date-adapter": "^1.5.0",
-    "absurd-sql": "0.0.54",
     "better-sqlite3": "^13.0.3",
     "csv-parse": "^7.0.2",
     "csv-stringify": "^6.8.1",

@@ -7,11 +7,15 @@ import * as sqlite from '#platform/server/sqlite';
 
 import {
   _setDocumentDir,
+  copyFile,
   exists,
   init,
   join,
-  pathToId,
+  listDir,
+  mkdir,
   readFile,
+  removeDirRecursively,
+  size,
   writeFile,
 } from './index';
 
@@ -21,149 +25,122 @@ beforeAll(() => {
   process.env.PUBLIC_URL = baseURL;
 });
 
-beforeEach(() => {
+beforeEach(async () => {
   global.indexedDB = new IDBFactory();
+  await sqlite.init();
 });
 
-afterEach(() => {
+afterEach(async () => {
+  await idb.closeDatabase();
   sqlite._getModule().reset_filesystem();
 });
 
+// Simulates a reload: a fresh in-memory filesystem over the same storage
+
+async function storedKeys(store: 'files' | 'snapshots') {
+  const db = await idb.openDatabase();
+  return (await idb.promisifyRequest(
+    db.transaction(store).objectStore(store).getAllKeys(),
+  )) as string[];
+}
+
+async function reinit() {
+  sqlite._getModule().reset_filesystem();
+  await init();
+}
+
 describe('web filesystem', () => {
-  test('basic reads/writes are stored in idb', async () => {
-    await idb.openDatabase();
-    await sqlite.init();
+  test('files under /documents are persisted to the file store', async () => {
     await init();
 
-    // Text file
     await writeFile('/documents/foo.txt', 'hello');
     expect(await readFile('/documents/foo.txt')).toBe('hello');
+    expect(await storedKeys('files')).toEqual(['/documents/foo.txt']);
 
-    // Binary file
-    const str = 'hello, world';
-    const buf = new ArrayBuffer(str.length * 2);
-    const view = new Uint16Array(buf);
-    for (let i = 0, strLen = str.length; i < strLen; i++) {
-      view[i] = str.charCodeAt(i);
-    }
+    const bytes = new Uint8Array([1, 2, 3, 250]);
+    await writeFile('/documents/foo.bin', bytes.buffer);
+    // Compared as arrays: IndexedDB clones into another realm's Uint8Array
+    expect([...(await readFile('/documents/foo.bin', 'binary'))]).toEqual([
+      ...bytes,
+    ]);
+    expect(await size('/documents/foo.bin')).toBe(4);
 
-    await writeFile('/documents/foo.bin', buf);
-    expect(await readFile('/documents/foo.bin')).toBe('hello, world');
+    // Views are written from their offset, not the start of the buffer
+    await writeFile('/documents/slice.bin', bytes.subarray(1, 3));
+    expect([...(await readFile('/documents/slice.bin', 'binary'))]).toEqual([
+      2, 3,
+    ]);
 
-    const db = await idb.openDatabase();
-    const { store } = idb.getStore(db, 'files');
-
-    // Make sure they are in idb
-    expect(await idb.get(store, '/documents/foo.txt')).toEqual({
-      filepath: '/documents/foo.txt',
-      contents: 'hello',
-    });
-    const binResult = await idb.get(store, '/documents/foo.bin');
-    expect(binResult.filepath).toBe('/documents/foo.bin');
-    expect(Array.from(binResult.contents)).toEqual(
-      Array.from(new Uint8Array(buf)),
-    );
-
-    // Write a file outside of documents
+    // Files outside of documents only live in memory
     await writeFile('/outside.txt', 'some junk');
     expect(await readFile('/outside.txt')).toBe('some junk');
-    expect(await idb.get(store, '/outside.txt')).toBe(undefined);
-
-    await idb.closeDatabase();
+    expect(await storedKeys('files')).not.toContain('/outside.txt');
   });
 
-  test('writing to sqlite files creates symlinks', async () => {
-    await idb.openDatabase();
-    await sqlite.init();
+  test('database files are stored as snapshots', async () => {
     await init();
-
     await writeFile('/documents/db.sqlite', 'some junk');
 
     expect(await readFile('/documents/db.sqlite')).toBe('some junk');
-    expect(await readFile('/blocked/' + pathToId('/documents/db.sqlite'))).toBe(
-      'some junk',
-    );
+    expect(await storedKeys('files')).toEqual([]);
+    expect(await storedKeys('snapshots')).toEqual(['/documents/db.sqlite']);
+    expect(await size('/documents/db.sqlite')).toBe(9);
   });
 
-  test('files are restored from idb', async () => {
-    const db = await idb.openDatabase();
-    const { store } = idb.getStore(db, 'files');
-    await idb.set(store, {
-      filepath: '/documents/ok.txt',
-      contents: 'oh yeah',
-    });
-    await idb.set(store, {
-      filepath: '/documents/deep/nested/file/ok.txt',
-      contents: 'deeper',
-    });
-    await idb.set(store, {
-      filepath: '/documents/deep/nested/db.sqlite',
-      contents: 'this will be blank and just create a symlink',
-    });
-
-    await sqlite.init();
+  test('files are restored after a reload', async () => {
     await init();
+    await writeFile('/documents/ok.txt', 'oh yeah');
+    _setDocumentDir('/documents/deep/nested');
+    await writeFile('/documents/deep/nested/ok.txt', 'deeper');
+    await writeFile('/documents/deep/nested/db.sqlite', 'database');
+
+    await reinit();
 
     expect(await readFile('/documents/ok.txt')).toBe('oh yeah');
     expect(await exists('/documents/deep')).toBe(true);
-    expect(await readFile('/documents/deep/nested/file/ok.txt')).toBe('deeper');
-
-    const FS = sqlite._getModule().FS;
-    const { node } = FS.lookupPath('/documents/deep/nested/db.sqlite', {});
-    expect(node.link).toBe(
-      '/blocked/' + pathToId('/documents/deep/nested/db.sqlite'),
-    );
+    expect(await readFile('/documents/deep/nested/ok.txt')).toBe('deeper');
+    expect(await readFile('/documents/deep/nested/db.sqlite')).toBe('database');
+    expect((await listDir('/documents/deep/nested')).sort()).toEqual([
+      'db.sqlite',
+      'ok.txt',
+    ]);
   });
 
   test('files under a custom document dir are persisted', async () => {
-    await idb.openDatabase();
-    await sqlite.init();
     await init();
-
     _setDocumentDir('/budget');
-
     expect(await exists('/budget')).toBe(true);
 
     await writeFile('/budget/foo.txt', 'hello');
-    expect(await readFile('/budget/foo.txt')).toBe('hello');
-
-    const db = await idb.openDatabase();
-    const { store } = idb.getStore(db, 'files');
-    expect(await idb.get(store, '/budget/foo.txt')).toEqual({
-      filepath: '/budget/foo.txt',
-      contents: 'hello',
-    });
-
-    // sqlite files are symlinked into the blocked fs
     await writeFile('/budget/db.sqlite', 'some junk');
-    expect(await readFile('/blocked/' + pathToId('/budget/db.sqlite'))).toBe(
-      'some junk',
-    );
+    expect(await storedKeys('files')).toEqual(['/budget/foo.txt']);
+    expect(await storedKeys('snapshots')).toEqual(['/budget/db.sqlite']);
 
-    await idb.closeDatabase();
+    await reinit();
+    _setDocumentDir('/budget');
+    expect(await readFile('/budget/foo.txt')).toBe('hello');
+    expect(await readFile('/budget/db.sqlite')).toBe('some junk');
   });
 
-  test('files under a custom document dir are restored from idb', async () => {
-    const db = await idb.openDatabase();
-    const { store } = idb.getStore(db, 'files');
-    await idb.set(store, {
-      filepath: '/custom/xyz/metadata.json',
-      contents: '{"id":"xyz"}',
-    });
-    await idb.set(store, {
-      filepath: '/custom/xyz/db.sqlite',
-      contents: 'this will be blank and just create a symlink',
-    });
-
-    await sqlite.init();
+  test('copying and removing a budget directory', async () => {
     await init();
-    _setDocumentDir('/custom');
+    await mkdir('/documents/a');
+    await writeFile('/documents/a/metadata.json', '{}');
+    await writeFile('/documents/a/db.sqlite', 'database');
 
-    expect(await readFile('/custom/xyz/metadata.json')).toBe('{"id":"xyz"}');
+    await copyFile('/documents/a/db.sqlite', '/documents/b.sqlite');
+    expect(await readFile('/documents/b.sqlite')).toBe('database');
 
-    const FS = sqlite._getModule().FS;
-    const { node } = FS.lookupPath('/custom/xyz/db.sqlite', {});
-    expect(node.link).toBe('/blocked/' + pathToId('/custom/xyz/db.sqlite'));
+    await removeDirRecursively('/documents/a');
+    expect(await exists('/documents/a')).toBe(false);
+    expect(await storedKeys('files')).toEqual([]);
+    expect(await storedKeys('snapshots')).toEqual(['/documents/b.sqlite']);
+  });
+
+  test('writing into a missing directory fails', async () => {
+    await init();
+    await expect(writeFile('/documents/missing/x.txt', 'x')).rejects.toThrow();
+    expect(await storedKeys('files')).toEqual([]);
   });
 });
 

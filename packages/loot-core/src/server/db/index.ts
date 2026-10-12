@@ -139,6 +139,12 @@ export function runQuery<T>(
   }
 }
 
+// Rows changed through this connection since it opened. Used to tell
+// whether a stretch of code wrote anything.
+export function totalChanges(): number {
+  return first<{ n: number }>('SELECT total_changes() AS n').n;
+}
+
 export function execQuery(sql: string) {
   sqlite.execQuery(db, sql);
 }

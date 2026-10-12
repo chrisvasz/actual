@@ -3,6 +3,7 @@ import * as asyncStorage from '#platform/server/asyncStorage';
 import * as connection from '#platform/server/connection';
 import * as fs from '#platform/server/fs';
 import { logger, setVerboseMode } from '#platform/server/log';
+import * as persistence from '#platform/server/persistence';
 import * as sqlite from '#platform/server/sqlite';
 import { q } from '#shared/query';
 import { amountToInteger, integerToAmount } from '#shared/util';
@@ -122,6 +123,12 @@ handlers['app-focused'] = async function () {
     // First we sync
     void fullSync();
   }
+};
+
+// The tab is hidden or closing. Edits are already durable in the
+// outbox; snapshotting now keeps the next boot's replay short.
+handlers['app-hidden'] = async function () {
+  await persistence.flush();
 };
 
 handlers = installAPI(handlers) as Handlers;

@@ -99,7 +99,6 @@ __metadata:
     "@types/jlongster__sql.js": "npm:@types/sql.js@latest"
     "@types/node": "npm:^22.20.1"
     "@typescript/native-preview": "npm:beta"
-    absurd-sql: "npm:0.0.54"
     assert: "npm:^2.1.0"
     better-sqlite3: "npm:^13.0.3"
     browserify-zlib: "npm:^0.2.0"
@@ -5257,15 +5256,6 @@ __metadata:
   version: 3.0.1
   resolution: "abbrev@npm:3.0.1"
   checksum: 10/ebd2c149dda6f543b66ce3779ea612151bb3aa9d0824f169773ee9876f1ca5a4e0adbcccc7eed048c04da7998e1825e2aa76fcca92d9e67dea50ac2b0a58dc2e
-  languageName: node
-  linkType: hard
-
-"absurd-sql@npm:0.0.54":
-  version: 0.0.54
-  resolution: "absurd-sql@npm:0.0.54"
-  dependencies:
-    safari-14-idb-fix: "npm:^1.0.4"
-  checksum: 10/85eac6075c44f44c02e5b250bc83f144788f6a02d35b94db13b514d8d1e5851477aa16bafab1fd538e15b35dd554d3bab92585afd8ffae37a32f66e3b2e7a399
   languageName: node
   linkType: hard
 
@@ -13459,13 +13449,6 @@ __metadata:
   dependencies:
     queue-microtask: "npm:^1.2.2"
   checksum: 10/cb4f97ad25a75ebc11a8ef4e33bb962f8af8516bb2001082ceabd8902e15b98f4b84b4f8a9b222e5d57fc3bd1379c483886ed4619367a7680dad65316993021d
-  languageName: node
-  linkType: hard
-
-"safari-14-idb-fix@npm:^1.0.4":
-  version: 1.0.6
-  resolution: "safari-14-idb-fix@npm:1.0.6"
-  checksum: 10/90ea958b47209d689f65852c378dbb0c27e5eaeae77284bcfc4edb636b74da56adecf0435e4827b552944510ac65021a4457ec0bb9fdf1e348248a5e00bfe65b
   languageName: node
   linkType: hard
 

@@ -113,6 +113,9 @@ export const readFile: typeof T.readFile = (
 };
 
 export const writeFile: typeof T.writeFile = async (filepath, contents) => {
+  if (contents instanceof ArrayBuffer) {
+    contents = new Uint8Array(contents);
+  }
   try {
     await promiseRetry(
       (retry, attempt) => {

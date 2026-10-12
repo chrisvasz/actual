@@ -1,5 +1,3 @@
-import { initBackend as initSQLBackend } from 'absurd-sql/dist/indexeddb-main-thread';
-
 export type StartBackendInit = {
   version: string;
   isDev: boolean;
@@ -14,9 +12,11 @@ export type StartBackendOptions = {
   initPayload: StartBackendInit;
 };
 
-// Only one tab at a time may run the backend. A second tab's backend would
-// keep its own in-memory spreadsheet and sync state and drift apart from the
-// first one's. The tab that gets this lock holds it until the page unloads.
+// Only one tab at a time may run the backend. The backend keeps the open
+// budget in memory and owns its snapshots and outbox; a second tab would
+// load its own copy, and the two would drift apart and overwrite each
+// other's snapshots. The tab that gets this lock holds it until the page
+// unloads.
 const BACKEND_LOCK_NAME = 'actual-backend';
 
 /**
@@ -32,27 +32,14 @@ export async function startBrowserBackend({
   }
 
   const worker = new Worker(backendWorkerUrl);
-  initSQLBackend(worker);
-
-  if (window.SharedArrayBuffer) {
-    localStorage.removeItem('SharedArrayBufferOverride');
-  }
-
-  worker.postMessage({
-    type: 'init',
-    ...initPayload,
-    hasSharedArrayBuffer: !!window.SharedArrayBuffer,
-    isSharedArrayBufferOverrideEnabled: localStorage.getItem(
-      'SharedArrayBufferOverride',
-    ),
-  });
+  worker.postMessage({ type: 'init', ...initPayload });
 
   return worker;
 }
 
 function acquireBackendLock(): Promise<boolean> {
-  // Web Locks need a secure context, so they're missing on plain HTTP (used
-  // with the SharedArrayBuffer override). Run without the check there.
+  // Web Locks need a secure context, so they're missing on plain HTTP. Run
+  // without the check there: keeping a single tab open is up to the user.
   if (!navigator.locks) {
     return Promise.resolve(true);
   }

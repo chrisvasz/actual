@@ -3,6 +3,7 @@ import { getClock } from '@actual-app/crdt';
 
 import * as connection from '#platform/server/connection';
 import { logger } from '#platform/server/log';
+import * as persistence from '#platform/server/persistence';
 import {
   getDownloadError,
   getSyncError,
@@ -289,6 +290,8 @@ handlers['api/start-import'] = async function ({ budgetName }) {
   // Clear out the default expense categories
   db.runQuery('DELETE FROM categories WHERE is_income = 0');
   db.runQuery('DELETE FROM category_groups WHERE is_income = 0');
+  // These deletes bypass the outbox
+  await persistence.snapshot();
 
   // Turn syncing off
   setSyncingMode('import');

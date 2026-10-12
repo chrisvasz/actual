@@ -24,4 +24,6 @@ export type ServerHandlers = {
   }) => Promise<{ error?: string }>;
 
   'app-focused': () => Promise<void>;
+
+  'app-hidden': () => Promise<void>;
 };
