@@ -230,6 +230,26 @@ describe('outbox replay', () => {
     expect(captureState()).toEqual(before);
   });
 
+  it('stops at the first batch that fails to replay', async () => {
+    setSyncingMode('disabled');
+    const snapshot = takeSnapshot();
+    applyMessages(insertAccount('acct1', 'Checking'));
+    applyMessages([cell('accounts', 'acct1', 'name', 'Renamed')]);
+
+    // A batch for a column this schema doesn't have, e.g. recorded after
+    // a migration whose snapshot was never saved
+    const [, second] = outbox._getBatches();
+    second.messages[0].column = 'brand_new_column';
+
+    await expect(reopen(snapshot)).rejects.toThrow();
+    // The first batch applied; nothing after the failure did
+    expect(
+      db.first<{ name: string }>('SELECT name FROM accounts WHERE id = ?', [
+        'acct1',
+      ])?.name,
+    ).toBe('Checking');
+  });
+
   it('does not run listeners or log the batches again', async () => {
     const snapshot = takeSnapshot();
     applyMessages(insertAccount('acct1', 'Checking'));

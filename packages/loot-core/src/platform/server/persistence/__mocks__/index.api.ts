@@ -33,6 +33,10 @@ export const recordBatch: typeof T.recordBatch = makeBatch => {
 export const readPendingBatches: typeof T.readPendingBatches = async () =>
   structuredClone(pending);
 
+export const markReplayed: typeof T.markReplayed = () => {
+  // Nothing to track
+};
+
 export const snapshot: typeof T.snapshot = async () => {
   // Nothing to snapshot
 };

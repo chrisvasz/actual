@@ -33,6 +33,14 @@ describe('FatalError', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders a secure-connection message on insecure origins', () => {
+    const error = { type: 'app-init-failure', InsecureContext: true };
+
+    render(<FatalError error={error} />, { wrapper: TestProviders });
+
+    expect(screen.getByText('Secure connection required')).toBeInTheDocument();
+  });
+
   it('renders an already-open message when another tab has the backend', () => {
     const error = {
       type: 'app-init-failure',

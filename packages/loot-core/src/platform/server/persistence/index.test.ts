@@ -76,6 +76,19 @@ function readNote(db: SqlDatabase) {
   return rows[0]?.note;
 }
 
+// Opens the database and replays its outbox, as `_loadBudget` does
+async function open() {
+  const db = await sqlite.openDatabase(DB_PATH);
+  for (const pending of await persistence.readPendingBatches()) {
+    sqlite.runQuery(db, 'INSERT OR REPLACE INTO notes VALUES (?, ?)', [
+      'n1',
+      pending.messages[0].value.slice(2),
+    ]);
+  }
+  persistence.markReplayed();
+  return db;
+}
+
 // The note in the stored snapshot
 async function snapshotNote() {
   const stored = await storage.readSnapshot(await idb.openDatabase(), DB_PATH);
@@ -133,65 +146,115 @@ describe('persisting the open database', () => {
   it('keeps batches in the outbox until a snapshot covers them', async () => {
     await createDatabaseFile();
 
-    let db = await sqlite.openDatabase(DB_PATH);
+    let db = await open();
     applyNote(db, 'one');
     applyNote(db, 'two');
     // Closed without a snapshot, as when the tab is killed
     sqlite.closeDatabase(db);
+    expect(await outboxSeqs()).toEqual([1, 2]);
 
-    db = await sqlite.openDatabase(DB_PATH);
-    expect(readNote(db)).toBe(undefined);
-    expect(await persistence.readPendingBatches()).toEqual([
-      batch('one'),
-      batch('two'),
-    ]);
-
-    // Replay (here: by hand), then snapshot
-    applyNote(db, 'one');
-    applyNote(db, 'two');
+    db = await open();
+    expect(readNote(db)).toBe('two');
     await persistence.flush();
     sqlite.closeDatabase(db);
 
     // The snapshot write dropped every entry it includes
     expect(await outboxSeqs()).toEqual([]);
+    expect(await snapshotNote()).toBe('two');
 
     db = await sqlite.openDatabase(DB_PATH);
-    expect(readNote(db)).toBe('two');
     expect(await persistence.readPendingBatches()).toEqual([]);
     sqlite.closeDatabase(db);
   });
 
-  it('continues seqs after the newest outbox entry', async () => {
+  it('never snapshots before the outbox is replayed', async () => {
     await createDatabaseFile();
-    let db = await sqlite.openDatabase(DB_PATH);
+    let db = await open();
     applyNote(db, 'one');
     sqlite.closeDatabase(db);
 
+    // Opened, but replay hasn't run (or failed)
     db = await sqlite.openDatabase(DB_PATH);
-    applyNote(db, 'two');
+    await persistence.flush();
+    await expect(persistence.snapshot()).rejects.toThrow('replayed');
     sqlite.closeDatabase(db);
 
-    expect(await outboxSeqs()).toEqual([1, 2]);
+    expect(await outboxSeqs()).toEqual([1]);
+    db = await open();
+    expect(readNote(db)).toBe('one');
+    sqlite.closeDatabase(db);
   });
 
-  it('only snapshots on flush when the outbox has new batches', async () => {
+  it('refuses to replay across a missing batch', async () => {
     await createDatabaseFile();
-    const db = await sqlite.openDatabase(DB_PATH);
+    const idbDb = await idb.openDatabase();
+    await storage.appendOutbox(idbDb, {
+      path: DB_PATH,
+      seq: 1,
+      batch: batch('a'),
+    });
+    await storage.appendOutbox(idbDb, {
+      path: DB_PATH,
+      seq: 3,
+      batch: batch('c'),
+    });
 
-    // A migration-style write, outside the outbox: flush can't see it...
+    const db = await sqlite.openDatabase(DB_PATH);
+    await expect(persistence.readPendingBatches()).rejects.toThrow(
+      'missing batches 2-2',
+    );
+    sqlite.closeDatabase(db);
+  });
+
+  it('stops appending after a failed append until a snapshot succeeds', async () => {
+    await createDatabaseFile();
+    const db = await open();
+
+    const add = vi
+      .spyOn(IDBObjectStore.prototype, 'add')
+      .mockImplementationOnce(() => {
+        throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      });
+    applyNote(db, 'one');
+    await Promise.resolve();
+    applyNote(db, 'two');
+    add.mockRestore();
+    expect(await outboxSeqs()).toEqual([]);
+
+    // The snapshot saves both, and appending resumes
+    await persistence.flush();
+    expect(await snapshotNote()).toBe('two');
+    applyNote(db, 'three');
+    sqlite.closeDatabase(db);
+    expect(await outboxSeqs()).toEqual([2]);
+  });
+
+  it('rejects an outbox seq collision instead of overwriting', async () => {
+    const idbDb = await idb.openDatabase();
+    await storage.appendOutbox(idbDb, {
+      path: DB_PATH,
+      seq: 1,
+      batch: batch('a'),
+    });
+    await expect(
+      storage.appendOutbox(idbDb, { path: DB_PATH, seq: 1, batch: batch('b') }),
+    ).rejects.toThrow();
+  });
+
+  it('snapshots direct writes on flush', async () => {
+    await createDatabaseFile();
+    const db = await open();
+
+    // A migration-style write, outside the outbox
     sqlite.runQuery(db, "INSERT INTO notes VALUES ('n1', 'direct')");
     await persistence.flush();
-    expect(await snapshotNote()).toBe(undefined);
-
-    // ...so the code making it snapshots explicitly
-    await persistence.snapshot();
     expect(await snapshotNote()).toBe('direct');
     sqlite.closeDatabase(db);
   });
 
   it('serves the live database when the open file is read', async () => {
     await createDatabaseFile();
-    const db = await sqlite.openDatabase(DB_PATH);
+    const db = await open();
     applyNote(db, 'live');
 
     const copy = await sqlite.openDatabase(
@@ -206,14 +269,25 @@ describe('persisting the open database', () => {
     sqlite.closeDatabase(db);
   });
 
-  it('waits for an open transaction before snapshotting', async () => {
+  it('refuses to read a closed database with unreplayed batches', async () => {
     await createDatabaseFile();
-    const db = await sqlite.openDatabase(DB_PATH);
+    const db = await open();
+    applyNote(db, 'one');
+    sqlite.closeDatabase(db);
+
+    await expect(persistence.readFile(DB_PATH)).rejects.toThrow(
+      'open it first',
+    );
+  });
+
+  it('does not snapshot or read inside an open transaction', async () => {
+    await createDatabaseFile();
+    const db = await open();
 
     sqlite.beginTransaction(db);
     sqlite.runQuery(db, "INSERT INTO notes VALUES ('n1', 'pending')");
-    await persistence.snapshot();
-    expect(await snapshotNote()).toBe(undefined);
+    await expect(persistence.snapshot()).rejects.toThrow('transaction');
+    await expect(persistence.readFile(DB_PATH)).rejects.toThrow('transaction');
     sqlite.commitTransaction(db);
 
     await persistence.snapshot();
@@ -223,7 +297,7 @@ describe('persisting the open database', () => {
 
   it('keeps the snapshot and outbox when a snapshot write fails', async () => {
     await createDatabaseFile();
-    let db = await sqlite.openDatabase(DB_PATH);
+    let db = await open();
     applyNote(db, 'one');
 
     const put = vi
@@ -243,7 +317,7 @@ describe('persisting the open database', () => {
 
   it('starts a new history when the file is replaced', async () => {
     await createDatabaseFile();
-    let db = await sqlite.openDatabase(DB_PATH);
+    let db = await open();
     applyNote(db, 'one');
     applyNote(db, 'two');
     sqlite.closeDatabase(db);
@@ -252,8 +326,7 @@ describe('persisting the open database', () => {
     await createDatabaseFile();
     expect(await outboxSeqs()).toEqual([]);
 
-    db = await sqlite.openDatabase(DB_PATH);
-    expect(await persistence.readPendingBatches()).toEqual([]);
+    db = await open();
     applyNote(db, 'three');
     sqlite.closeDatabase(db);
     expect(await outboxSeqs()).toEqual([1]);

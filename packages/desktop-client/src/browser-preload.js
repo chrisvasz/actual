@@ -20,7 +20,8 @@ const ACTUAL_VERSION = Platform.isPlaywright
 // *** Start the backend ***
 //
 // Each tab runs the backend in its own Worker, but only one tab at a time may
-// do so. This resolves to null when another tab already has Actual open.
+// do so. This resolves to a reason string instead of a Worker when another
+// tab already has Actual open, or the page isn't served securely.
 const workerPromise = startBrowserBackend({
   backendWorkerUrl,
   initPayload: {
@@ -200,10 +201,16 @@ global.Actual = {
 
   getServerSocket: async () => {
     const worker = await workerPromise;
-    if (!worker) {
+    if (worker === 'already-open') {
       throw Object.assign(new Error('Actual is already open in another tab'), {
         type: 'app-init-failure',
         AlreadyOpenInAnotherTab: true,
+      });
+    }
+    if (worker === 'insecure-context') {
+      throw Object.assign(new Error('Actual must be served over HTTPS'), {
+        type: 'app-init-failure',
+        InsecureContext: true,
       });
     }
     return worker;

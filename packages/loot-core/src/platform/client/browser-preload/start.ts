@@ -20,15 +20,20 @@ export type StartBackendOptions = {
 const BACKEND_LOCK_NAME = 'actual-backend';
 
 /**
- * Starts the backend in a dedicated Worker for this tab. Resolves to `null`
- * without starting anything when another tab is already running the backend.
+ * Starts the backend in a dedicated Worker for this tab. Resolves to the
+ * reason instead, without starting anything, when the page isn't a secure
+ * context (no Web Locks, so no way to keep a second tab out) or another
+ * tab is already running the backend.
  */
 export async function startBrowserBackend({
   backendWorkerUrl,
   initPayload,
-}: StartBackendOptions): Promise<Worker | null> {
+}: StartBackendOptions): Promise<Worker | 'insecure-context' | 'already-open'> {
+  if (!window.isSecureContext) {
+    return 'insecure-context';
+  }
   if (!(await acquireBackendLock())) {
-    return null;
+    return 'already-open';
   }
 
   const worker = new Worker(backendWorkerUrl);
@@ -38,12 +43,6 @@ export async function startBrowserBackend({
 }
 
 function acquireBackendLock(): Promise<boolean> {
-  // Web Locks need a secure context, so they're missing on plain HTTP. Run
-  // without the check there: keeping a single tab open is up to the user.
-  if (!navigator.locks) {
-    return Promise.resolve(true);
-  }
-
   return new Promise(resolve => {
     navigator.locks
       .request(BACKEND_LOCK_NAME, { ifAvailable: true }, lock => {

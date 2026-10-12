@@ -6,7 +6,7 @@ import type { OutboxBatch } from './types';
 // - `snapshots`: path → Snapshot, the whole database file plus the last
 //   outbox seq it includes
 // - `outbox`: [path, seq] → OutboxEntry, applied message batches
-// - `files`: path → bytes, every other persisted file
+// - `budgetFiles`: path → bytes, every other persisted file
 //
 // Each write is one transaction, so it commits completely or not at all.
 // Transactions on overlapping stores run in the order they were created,
@@ -64,7 +64,9 @@ export async function appendOutbox(
   entry: OutboxEntry,
 ): Promise<void> {
   const trans = db.transaction('outbox', 'readwrite');
-  trans.objectStore('outbox').put(entry);
+  // `add`, not `put`: a seq collision means two writers, and must fail
+  // rather than overwrite a batch
+  trans.objectStore('outbox').add(entry);
   return idb.transactionDone(trans);
 }
 
@@ -95,7 +97,7 @@ export async function readFile(
   db: IDBDatabase,
   path: string,
 ): Promise<Uint8Array | null> {
-  const store = db.transaction('files').objectStore('files');
+  const store = db.transaction('budgetFiles').objectStore('budgetFiles');
   return (await idb.promisifyRequest(store.get(path))) ?? null;
 }
 
@@ -104,18 +106,18 @@ export async function writeFile(
   path: string,
   bytes: Uint8Array,
 ): Promise<void> {
-  const trans = db.transaction('files', 'readwrite');
-  trans.objectStore('files').put(bytes, path);
+  const trans = db.transaction('budgetFiles', 'readwrite');
+  trans.objectStore('budgetFiles').put(bytes, path);
   return idb.transactionDone(trans);
 }
 
 export async function removeFile(db: IDBDatabase, path: string): Promise<void> {
-  const trans = db.transaction('files', 'readwrite');
-  trans.objectStore('files').delete(path);
+  const trans = db.transaction('budgetFiles', 'readwrite');
+  trans.objectStore('budgetFiles').delete(path);
   return idb.transactionDone(trans);
 }
 
 export async function listFiles(db: IDBDatabase): Promise<string[]> {
-  const store = db.transaction('files').objectStore('files');
+  const store = db.transaction('budgetFiles').objectStore('budgetFiles');
   return (await idb.promisifyRequest(store.getAllKeys())) as string[];
 }

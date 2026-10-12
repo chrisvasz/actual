@@ -27,6 +27,7 @@ type AppError = Error & {
   IDBFailure?: boolean;
   BackendInitFailure?: boolean;
   AlreadyOpenInAnotherTab?: boolean;
+  InsecureContext?: boolean;
   DocumentDirFailure?: boolean;
   path?: string;
   code?: string;
@@ -51,6 +52,14 @@ function RenderSimple({ error }: RenderSimpleProps) {
         that Actual requires to run. This might happen if you are in private
         browsing mode. Please try a different browser or turn off private
         browsing.
+      </Text>
+    );
+  } else if ('InsecureContext' in error && error.InsecureContext) {
+    msg = (
+      <Text>
+        Actual needs a secure connection to store your budgets in this browser.
+        Open it over HTTPS (or from localhost), for example by putting your
+        server behind a reverse proxy with a certificate.
       </Text>
     );
   } else if (
@@ -208,6 +217,8 @@ export function FatalError({ error: rawError }: FatalErrorProps) {
     error.AlreadyOpenInAnotherTab
   ) {
     title = 'Already open in another tab';
+  } else if ('InsecureContext' in error && error.InsecureContext) {
+    title = 'Secure connection required';
   }
 
   return (

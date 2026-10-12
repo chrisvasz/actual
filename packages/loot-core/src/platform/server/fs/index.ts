@@ -106,10 +106,13 @@ export const writeFile = async function (
   const bytes = toBytes(contents);
 
   if (persistence.isPersistedPath(filepath)) {
-    // The placeholder gives the file a place in the directory tree (and
-    // fails like a real write when the directory doesn't exist)
-    getFS().writeFile(filepath, '');
+    // Fail like a real write when the directory doesn't exist
+    if (!_exists(basename(filepath))) {
+      throw new Error('Directory does not exist: ' + basename(filepath));
+    }
     await persistence.writeFile(filepath, bytes);
+    // The placeholder gives the file a place in the directory tree
+    getFS().writeFile(filepath, '');
   } else {
     getFS().writeFile(filepath, bytes);
   }

@@ -11,6 +11,10 @@ export const recordBatch: typeof T.recordBatch = () => {
 
 export const readPendingBatches: typeof T.readPendingBatches = async () => [];
 
+export const markReplayed: typeof T.markReplayed = () => {
+  // Nothing to replay
+};
+
 export const snapshot: typeof T.snapshot = async () => {
   // Nothing to snapshot
 };

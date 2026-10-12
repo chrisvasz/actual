@@ -44,8 +44,8 @@ export { resetSync } from './reset';
 export { repairSync } from './repair';
 
 const FULL_SYNC_DELAY = 1000;
-let SYNCING_MODE = 'enabled';
 type SyncingMode = 'enabled' | 'offline' | 'disabled' | 'import';
+let SYNCING_MODE: SyncingMode = 'enabled';
 
 export function setSyncingMode(mode: SyncingMode) {
   const prevMode = SYNCING_MODE;
@@ -401,7 +401,7 @@ function toOutboxBatch(
   deferUnknownSchema: boolean,
 ): OutboxBatch {
   return {
-    mode: SYNCING_MODE as SyncingMode,
+    mode: SYNCING_MODE,
     deferUnknownSchema,
     clock: checkSyncingMode('enabled') ? serializeClock(getClock()) : null,
     messages: messages.map(({ timestamp, dataset, row, column, value }) => ({
@@ -438,7 +438,7 @@ export function replayBatch(batch: OutboxBatch): void {
     value: deserializeValueSafe(msg.value),
   }));
 
-  const prevMode = setSyncingMode(batch.mode) as SyncingMode;
+  const prevMode = setSyncingMode(batch.mode);
   try {
     if (batch.clock != null) {
       // The clock written to `messages_clock` is the in-memory clock at
@@ -460,28 +460,22 @@ export function replayBatch(batch: OutboxBatch): void {
 // Replays the outbox batches the open budget's snapshot doesn't include.
 // Must run right after the database opens: before migrations (the
 // batches were applied to the snapshot's schema) and before anything
-// loads in-memory state from the database.
+// loads in-memory state from the database. Throws on the first batch
+// that fails, leaving the outbox intact: the budget then doesn't open
+// rather than losing that batch.
 export async function replayOutbox(): Promise<number> {
   const batches = await persistence.readPendingBatches();
-  if (batches.length === 0) {
-    return 0;
-  }
-
-  const start = performance.now();
-  db.loadClock();
-  for (const batch of batches) {
-    try {
+  if (batches.length > 0) {
+    const start = performance.now();
+    db.loadClock();
+    for (const batch of batches) {
       replayBatch(batch);
-    } catch (e) {
-      // It applied when it was logged, so this is a bug. Keep the other
-      // batches rather than refusing to open the budget.
-      captureException(e);
-      logger.error('Failed to replay an outbox batch', e);
     }
+    logger.info(
+      `Replayed ${batches.length} outbox batches in ${Math.round(performance.now() - start)}ms`,
+    );
   }
-  logger.info(
-    `Replayed ${batches.length} outbox batches in ${Math.round(performance.now() - start)}ms`,
-  );
+  persistence.markReplayed();
   return batches.length;
 }
 

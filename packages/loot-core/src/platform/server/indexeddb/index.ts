@@ -12,14 +12,12 @@ function _openDatabase() {
     openRequest.onupgradeneeded = function (e) {
       const db = (e.target as IDBOpenDBRequest).result;
 
-      // Remove old stores. Before version 10, `files` held the absurd-sql
-      // file tree; budgets stored that way aren't migrated (they're
-      // re-downloaded instead)
-      if (e.oldVersion < 10) {
-        for (const name of ['filesystem', 'messages', 'files']) {
-          if (db.objectStoreNames.contains(name)) {
-            db.deleteObjectStore(name);
-          }
+      // Remove old stores. absurd-sql's `files` store is left in place
+      // for now (budgets stored that way aren't read any more, but are
+      // kept so they can still be recovered)
+      for (const name of ['filesystem', 'messages']) {
+        if (db.objectStoreNames.contains(name)) {
+          db.deleteObjectStore(name);
         }
       }
 
@@ -27,8 +25,8 @@ function _openDatabase() {
       if (!db.objectStoreNames.contains('asyncStorage')) {
         db.createObjectStore('asyncStorage');
       }
-      if (!db.objectStoreNames.contains('files')) {
-        db.createObjectStore('files');
+      if (!db.objectStoreNames.contains('budgetFiles')) {
+        db.createObjectStore('budgetFiles');
       }
       if (!db.objectStoreNames.contains('snapshots')) {
         db.createObjectStore('snapshots');

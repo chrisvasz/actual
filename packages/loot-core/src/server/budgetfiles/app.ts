@@ -313,6 +313,9 @@ async function deleteBudget({
 
   // If a local file exists, you can delete it by passing its local id
   if (id) {
+    if (prefs.getPrefs()?.id === id) {
+      await closeBudget();
+    }
     try {
       const budgetDir = fs.getBudgetDir(id);
       await fs.removeDirRecursively(budgetDir);
@@ -567,14 +570,10 @@ async function _loadBudget(id: Budget['id']): Promise<{
     return { error: 'budget-not-found' };
   }
 
-  // Writes made while loading (outbox replay, migrations, clock setup)
-  // are checked against this below
-  let changesAtOpen = 0;
   try {
     resetFormulaPreferencesCache();
     await prefs.loadPrefs(id);
     await db.openDatabase(id);
-    changesAtOpen = db.totalChanges();
     // Restore batches applied since the last snapshot. This must come
     // before migrations and before any in-memory state is loaded.
     await replayOutbox();
@@ -640,24 +639,25 @@ async function _loadBudget(id: Budget['id']): Promise<{
       'INSERT OR REPLACE INTO messages_clock (id, clock) VALUES (1, ?)',
       [CRDT.serializeClock(CRDT.getClock())],
     );
-
-    await prefs.savePrefs({ resetClock: false });
   }
 
   // Outbox replay, migrations, view updates, deferred-message replay and
-  // clock setup all write outside the outbox (or compact it). Snapshot
-  // them before anything builds on them. A fresh client id must never be
-  // lost after `resetClock` is cleared, or this device would keep
-  // sending messages as the one the file came from. Migrations and
-  // view updates always change rows too (`__migrations__`, `__meta__`),
-  // so the change count catches them.
-  if (db.totalChanges() !== changesAtOpen) {
-    try {
-      await persistence.snapshot();
-    } catch (e) {
-      // Already reported to the user; the budget still works in memory
-      captureException(e);
-    }
+  // clock setup all write outside the outbox; snapshot them (if anything
+  // changed) before anything builds on them. If that fails, don't open:
+  // edits recorded on top of an unsaved migration couldn't be replayed.
+  try {
+    await persistence.flush();
+  } catch (e) {
+    captureException(e);
+    await closeBudget();
+    return { error: 'opening-budget' };
+  }
+
+  // Only now that the new client id is saved: losing it after clearing
+  // the flag would leave this device sending messages as the one the
+  // file came from
+  if (prefs.getPrefs().resetClock) {
+    await prefs.savePrefs({ resetClock: false });
   }
 
   if (!Platform.isBrowser && process.env.NODE_ENV !== 'test') {

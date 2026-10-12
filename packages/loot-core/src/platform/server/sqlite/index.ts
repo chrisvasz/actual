@@ -222,6 +222,8 @@ export async function openDatabase(pathOrBuffer?: string | Uint8Array) {
       handle: db,
       getBytes: () => SQL.FS.readFile(filename, { encoding: 'binary' }),
       inTransaction,
+      totalChanges: () =>
+        Number(db.exec('SELECT total_changes()')[0].values[0][0]),
     });
   } else {
     db = new SQL.Database(
@@ -246,7 +248,11 @@ export async function openDatabase(pathOrBuffer?: string | Uint8Array) {
 }
 
 export function closeDatabase(db: Database) {
-  persistence.detach(db);
+  if (persistence.detach(db)) {
+    // A transaction left open across handler calls (the API's batch
+    // import) dies with the database
+    transactionDepth = 0;
+  }
   db.close();
 }
 
