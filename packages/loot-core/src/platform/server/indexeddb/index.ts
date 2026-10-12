@@ -12,9 +12,7 @@ function _openDatabase() {
     openRequest.onupgradeneeded = function (e) {
       const db = (e.target as IDBOpenDBRequest).result;
 
-      // Remove old stores. absurd-sql's `files` store is left in place
-      // for now (budgets stored that way aren't read any more, but are
-      // kept so they can still be recovered)
+      // Remove old stores
       for (const name of ['filesystem', 'messages']) {
         if (db.objectStoreNames.contains(name)) {
           db.deleteObjectStore(name);
