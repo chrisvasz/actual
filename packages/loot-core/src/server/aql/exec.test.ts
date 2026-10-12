@@ -271,6 +271,42 @@ describe('compileAndRunQuery', () => {
     ).toEqual(ids);
   });
 
+  it('calculates over joined filters the same as over the rows', async () => {
+    await insertTransactions();
+    const group = db.insertCategoryGroup({ name: 'group2' });
+    db.insertCategory({ id: 'dead', name: 'dead', cat_group: group });
+    db.insertTransaction({ account: 'acct', date: '2020-01-05', amount: -7 });
+    db.insertTransaction({
+      account: 'acct',
+      date: '2020-01-06',
+      amount: -11,
+      category: 'dead',
+    });
+    db.deleteCategory({ id: 'dead' });
+
+    // A deleted category counts as no category, as do the fixture's two
+    // split parents
+    const uncategorized = q('transactions').filter({ category: null });
+    for (const splits of ['inline', 'grouped', 'all', 'none']) {
+      const calculate = expr =>
+        compileAndRunAqlQuery(
+          uncategorized.options({ splits }).calculate(expr).serialize(),
+        ).data;
+      expect(calculate({ $sum: '$amount' })).toBe(-207);
+      expect(calculate({ $count: '$id' })).toBe(4);
+    }
+
+    // Reading a joined table in the calculation
+    expect(
+      compileAndRunAqlQuery(
+        q('transactions')
+          .filter({ 'category.name': 'cat0a' })
+          .calculate({ $count: '$category.id' })
+          .serialize(),
+      ).data,
+    ).toBe(5);
+  });
+
   it('depends on the tables behind the views it reads', async () => {
     const { dependencies } = compileAndRunAqlQuery(
       q('transactions').filter({ payee: 'p1' }).select('id').serialize(),

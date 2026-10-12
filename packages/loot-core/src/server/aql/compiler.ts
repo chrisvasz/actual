@@ -1233,6 +1233,36 @@ export function defaultConstructQuery(
         s.where,
       );
 
+  // The web build's SQLite (sql.js, 3.35) won't merge a view joined with
+  // LEFT JOIN (like the `category` ref check's `v_categories`) into an
+  // aggregate query. It materializes the view and scans it for every row,
+  // which made the uncategorized count take ~200ms on a large budget.
+  // Filtering the rows in a subquery lets those joins use their indexes;
+  // `LIMIT -1` keeps SQLite from merging the subquery back. The subquery
+  // costs a little for every row, so only use it when a view is joined,
+  // for a single calculation that reads the main table alone.
+  const joinIds = [...compilerState.paths.values()].map(
+    path => (path as { tableId: string }).tableId + '.',
+  );
+  if (
+    queryState.calculation &&
+    s.joins.includes('LEFT JOIN v_') &&
+    !s.groupBy &&
+    s.limit == null &&
+    s.offset == null &&
+    !joinIds.some(id => s.select.includes(id))
+  ) {
+    const table = compilerState.implicitTableId;
+    return `
+    SELECT ${s.select} FROM (
+      SELECT ${table}.* FROM ${s.from}
+      ${s.joins}
+      ${where}
+      LIMIT -1
+    ) ${table}
+  `;
+  }
+
   return `
     SELECT ${s.select} FROM ${s.from}
     ${s.joins}
