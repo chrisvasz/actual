@@ -11,8 +11,6 @@ import { captureException } from '#platform/exceptions';
 import * as asyncStorage from '#platform/server/asyncStorage';
 import * as connection from '#platform/server/connection';
 import { logger } from '#platform/server/log';
-import * as persistence from '#platform/server/persistence';
-import type { OutboxBatch } from '#platform/server/persistence';
 import { applyBudgetChanges, isBudgetStateLoaded } from '#server/budget/state';
 import { triggerQueryCells } from '#server/cells/query-cells';
 import * as db from '#server/db';
@@ -396,103 +394,12 @@ export type Message = {
   value: string | number | null | UnknownFormatValue;
 };
 
-function toOutboxBatch(
-  messages: Message[],
-  deferUnknownSchema: boolean,
-): OutboxBatch {
-  return {
-    mode: SYNCING_MODE,
-    deferUnknownSchema,
-    clock: checkSyncingMode('enabled') ? serializeClock(getClock()) : null,
-    messages: messages.map(({ timestamp, dataset, row, column, value }) => ({
-      timestamp: timestamp ? timestamp.toString() : null,
-      dataset,
-      row,
-      column,
-      value: serializeValue(value),
-    })),
-  };
-}
-
-// On the web, the batch is logged to the outbox once it commits;
-// replaying it on boot recreates the same rows, crdt log, clock and
-// pending messages. Listeners that write derived tables
-// (`schedules_json_paths`) rebuild them on every budget load.
 export function applyMessages(
   messages: Message[],
   deferUnknownSchema = false,
 ): Message[] | undefined {
-  return _applyMessages(messages, deferUnknownSchema, false);
-}
-
-// Applies an outbox batch while opening a budget, before any in-memory
-// state (budget values, query cells, rules, undo) is loaded. Only the
-// database changes: nothing is logged again and no listeners, events or
-// prefs updates run.
-export function replayBatch(batch: OutboxBatch): void {
-  const messages: Message[] = batch.messages.map(msg => ({
-    timestamp: msg.timestamp == null ? null : Timestamp.parse(msg.timestamp),
-    dataset: msg.dataset,
-    row: msg.row,
-    column: msg.column,
-    value: deserializeValueSafe(msg.value),
-  }));
-
-  const prevMode = setSyncingMode(batch.mode);
-  try {
-    if (batch.clock != null) {
-      // The clock written to `messages_clock` is the in-memory clock at
-      // the time, which messages created since the last snapshot
-      // advanced. Restore that timestamp so the row (and the in-memory
-      // clock) match; the merkle is rebuilt from the replayed messages.
-      const recorded = deserializeClock(batch.clock).timestamp;
-      const { timestamp } = getClock();
-      timestamp.setMillis(recorded.millis());
-      timestamp.setCounter(recorded.counter());
-      timestamp.setNode(recorded.node());
-    }
-    _applyMessages(messages, batch.deferUnknownSchema, true);
-  } finally {
-    setSyncingMode(prevMode);
-  }
-}
-
-// Replays the outbox batches the open budget's snapshot doesn't include.
-// Must run right after the database opens: before migrations (the
-// batches were applied to the snapshot's schema) and before anything
-// loads in-memory state from the database. Throws on the first batch
-// that fails, leaving the outbox intact: the budget then doesn't open
-// rather than losing that batch.
-export async function replayOutbox(): Promise<number> {
-  const batches = await persistence.readPendingBatches();
-  if (batches.length > 0) {
-    const start = performance.now();
-    db.loadClock();
-    for (const batch of batches) {
-      replayBatch(batch);
-    }
-    logger.info(
-      `Replayed ${batches.length} outbox batches in ${Math.round(performance.now() - start)}ms`,
-    );
-  }
-  persistence.markReplayed();
-  return batches.length;
-}
-
-function _applyMessages(
-  messages: Message[],
-  deferUnknownSchema: boolean,
-  isReplay: boolean,
-): Message[] | undefined {
-  const inputMessages = messages;
-
   if (checkSyncingMode('import')) {
     applyMessagesForImport(messages);
-    if (!isReplay) {
-      persistence.recordBatch(() =>
-        toOutboxBatch(inputMessages, deferUnknownSchema),
-      );
-    }
     return undefined;
   }
 
@@ -624,15 +531,6 @@ function _applyMessages(
     // Update the in-memory clock.
     clock.merkle = currentMerkle;
   }
-
-  if (isReplay) {
-    return messages;
-  }
-
-  // Log the committed batch before any listener can apply another one
-  persistence.recordBatch(() =>
-    toOutboxBatch(inputMessages, deferUnknownSchema),
-  );
 
   // The transaction succeeded, so we can update in-memory objects now
   undo.appendMessages(messages, oldData);

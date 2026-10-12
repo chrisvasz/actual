@@ -2,7 +2,6 @@ import { captureException } from '#platform/exceptions';
 // @ts-strict-ignore
 import * as asyncStorage from '#platform/server/asyncStorage';
 import * as connection from '#platform/server/connection';
-import * as persistence from '#platform/server/persistence';
 import * as cloudStorage from '#server/cloud-storage';
 import * as db from '#server/db';
 import { runMutator } from '#server/mutators';
@@ -65,10 +64,6 @@ export async function resetSync(
     `);
     db.loadClock();
   });
-
-  // The purge bypasses the outbox; make it durable before uploading the
-  // file as the new source of truth
-  await persistence.snapshot();
 
   if (discardedDeferredCount > 0) {
     notifyDroppedMessages();

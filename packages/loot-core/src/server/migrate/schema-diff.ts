@@ -2,9 +2,9 @@
 // enforces the additive-only migration policy in CI. Nothing enforces
 // that policy at runtime — see `checkDatabaseValidity` for what the app
 // itself tolerates.
-import type { Database } from '@jlongster/sql.js';
 
 import * as sqlite from '#platform/server/sqlite';
+import type { Database } from '#platform/server/sqlite';
 
 // `required` = cannot insert a row without providing this column.
 // `notNull` is tracked separately: NOT NULL with a DEFAULT still

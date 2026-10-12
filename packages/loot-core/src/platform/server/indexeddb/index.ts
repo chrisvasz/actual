@@ -2,18 +2,25 @@ import { logger } from '#platform/server/log';
 
 let openedDb: null | Promise<IDBDatabase> = null;
 
-// The web version keeps global prefs, budget files, database snapshots
-// and the write outbox in IndexedDB
+// The web version keeps global prefs, budget files and the pages of
+// database files in IndexedDB
 function _openDatabase() {
   return new Promise<IDBDatabase>((resolve, reject) => {
-    const dbVersion = 10;
+    const dbVersion = 11;
     const openRequest = indexedDB.open('actual', dbVersion);
 
     openRequest.onupgradeneeded = function (e) {
       const db = (e.target as IDBOpenDBRequest).result;
 
+      // Budgets stored as snapshots aren't migrated: drop them whole, so
+      // they're downloaded again from the sync server
+      if (db.objectStoreNames.contains('snapshots')) {
+        const trans = (e.target as IDBOpenDBRequest).transaction;
+        trans?.objectStore('budgetFiles').clear();
+      }
+
       // Remove old stores
-      for (const name of ['filesystem', 'messages']) {
+      for (const name of ['filesystem', 'messages', 'snapshots', 'outbox']) {
         if (db.objectStoreNames.contains(name)) {
           db.deleteObjectStore(name);
         }
@@ -26,11 +33,8 @@ function _openDatabase() {
       if (!db.objectStoreNames.contains('budgetFiles')) {
         db.createObjectStore('budgetFiles');
       }
-      if (!db.objectStoreNames.contains('snapshots')) {
-        db.createObjectStore('snapshots');
-      }
-      if (!db.objectStoreNames.contains('outbox')) {
-        db.createObjectStore('outbox', { keyPath: ['path', 'seq'] });
+      if (!db.objectStoreNames.contains('pages')) {
+        db.createObjectStore('pages');
       }
     };
 
