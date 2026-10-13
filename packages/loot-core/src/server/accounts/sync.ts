@@ -354,11 +354,19 @@ export async function matchTransactions(
     // is the highest fidelity match and should always be attempted
     // first.
     if (trans.imported_id) {
-      const table = reimportDeleted
-        ? 'v_transactions'
-        : 'v_transactions_internal';
+      // Several transactions can share an imported id, so the order decides
+      // which one matches. `v_transactions` orders its rows itself;
+      // `v_transactions_internal` (which includes deleted transactions)
+      // doesn't, so prefer live rows, then the oldest. The join is there for
+      // `rowid`, which the view hides; this stays an index seek on
+      // `trans_acct_imported_id`.
       match = db.first<db.DbTransaction>(
-        `SELECT * FROM ${table} WHERE imported_id = ? AND account = ?`,
+        reimportDeleted
+          ? 'SELECT * FROM v_transactions WHERE imported_id = ? AND account = ?'
+          : `SELECT v.* FROM v_transactions_internal v
+              JOIN transactions t ON t.id = v.id
+              WHERE v.imported_id = ? AND v.account = ?
+              ORDER BY v.tombstone, t.rowid`,
         [trans.imported_id, acctId],
       );
 
