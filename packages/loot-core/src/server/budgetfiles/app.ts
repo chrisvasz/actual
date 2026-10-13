@@ -83,6 +83,26 @@ export type BudgetFileHandlers = {
   'get-last-opened-backup': typeof getLastOpenedBackup;
 };
 
+// Opening and closing budgets swaps global state (prefs, the database,
+// services), so these handlers run one at a time: a request waits for the
+// one in flight, e.g. opening a budget while the last one is still
+// auto-opening at startup. Internal calls use the functions directly, so
+// handlers that call each other don't wait on themselves.
+let lifecycle: Promise<unknown> = Promise.resolve();
+
+function oneAtATime<Args extends unknown[], Result>(
+  fn: (...args: Args) => Promise<Result>,
+): (...args: Args) => Promise<Result> {
+  return (...args) => {
+    const result = lifecycle.then(() => fn(...args));
+    lifecycle = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
+  };
+}
+
 export const app = createApp<BudgetFileHandlers>();
 app.method('validate-budget-name', handleValidateBudgetName);
 app.method('unique-budget-name', handleUniqueBudgetName);
@@ -90,14 +110,14 @@ app.method('get-budgets', getBudgets);
 app.method('get-remote-files', getRemoteFiles);
 app.method('recompute-budget', mutator(recomputeBudget));
 app.method('upload-budget', uploadBudget);
-app.method('download-budget', downloadBudget);
+app.method('download-budget', oneAtATime(downloadBudget));
 app.method('sync-budget', syncBudget);
-app.method('load-budget', loadBudget);
-app.method('create-demo-budget', createDemoBudget);
-app.method('close-budget', closeBudget);
-app.method('delete-budget', deleteBudget);
-app.method('duplicate-budget', duplicateBudget);
-app.method('create-budget', createBudget);
+app.method('load-budget', oneAtATime(loadBudget));
+app.method('create-demo-budget', oneAtATime(createDemoBudget));
+app.method('close-budget', oneAtATime(closeBudget));
+app.method('delete-budget', oneAtATime(deleteBudget));
+app.method('duplicate-budget', oneAtATime(duplicateBudget));
+app.method('create-budget', oneAtATime(createBudget));
 app.method('import-budget', importBudget);
 app.method('export-budget', exportBudget);
 app.method('upload-file-web', uploadFileWeb);
