@@ -1,4 +1,6 @@
 import * as idb from '#platform/server/indexeddb';
+import { logger } from '#platform/server/log';
+import { isDevelopmentEnvironment } from '#shared/environment';
 
 // IndexedDB layout:
 // - `pages`: [path, n] → bytes [n * PAGE_SIZE, (n + 1) * PAGE_SIZE) of a
@@ -13,11 +15,37 @@ function pageRange(path: string, from = 0) {
   return IDBKeyRange.bound([path, from], [path, Infinity]);
 }
 
-// A copy of `bytes` that owns its own ArrayBuffer. IndexedDB clones the
-// whole ArrayBuffer behind a view, and `Buffer#slice` returns a view, so
-// storing slices of a large `Buffer` would store the whole file each time.
+function ownsBuffer(view: Uint8Array): boolean {
+  return view.byteOffset === 0 && view.byteLength === view.buffer.byteLength;
+}
+
+// `bytes`, or a copy of it that owns its own ArrayBuffer. IndexedDB
+// clones the whole ArrayBuffer behind a view, and `Buffer#slice` returns
+// a view, so storing slices of a large `Buffer` would store the whole
+// file each time.
 function compactCopy(bytes: Uint8Array): Uint8Array {
-  return new Uint8Array(bytes);
+  return ownsBuffer(bytes) ? bytes : new Uint8Array(bytes);
+}
+
+let hasLoggedView = false;
+
+// Every value put into IndexedDB goes through here. Callers are expected
+// to pass compact bytes already (see `compactCopy`); a view means one of
+// them regressed, so fail loudly outside production and copy inside it.
+function checkOwnsBuffer(view: Uint8Array, key: string): Uint8Array {
+  if (ownsBuffer(view)) {
+    return view;
+  }
+  const message = `IndexedDB write of a ${view.byteLength}-byte view into a ${view.buffer.byteLength}-byte buffer (${key})`;
+  // (The browser bundle has no NODE_ENV, so production is "neither")
+  if (isDevelopmentEnvironment() || process.env.NODE_ENV === 'test') {
+    throw new Error(message);
+  }
+  if (!hasLoggedView) {
+    hasLoggedView = true;
+    logger.warn(message + '; storing a copy');
+  }
+  return new Uint8Array(view);
 }
 
 // Splits a whole file into pages
@@ -61,9 +89,12 @@ export async function writePages(
   pages: Map<number, Uint8Array>,
   pageCount: number,
 ): Promise<void> {
+  const values = [...pages].map(
+    ([n, page]) => [n, checkOwnsBuffer(page, `${path} page ${n}`)] as const,
+  );
   const trans = db.transaction('pages', 'readwrite');
   const store = trans.objectStore('pages');
-  for (const [n, page] of pages) {
+  for (const [n, page] of values) {
     store.put(page, [path, n]);
   }
   store.delete(pageRange(path, pageCount));
@@ -110,8 +141,9 @@ export async function writeFile(
   path: string,
   bytes: Uint8Array,
 ): Promise<void> {
+  const value = checkOwnsBuffer(compactCopy(bytes), path);
   const trans = db.transaction('budgetFiles', 'readwrite');
-  trans.objectStore('budgetFiles').put(compactCopy(bytes), path);
+  trans.objectStore('budgetFiles').put(value, path);
   return idb.transactionDone(trans);
 }
 

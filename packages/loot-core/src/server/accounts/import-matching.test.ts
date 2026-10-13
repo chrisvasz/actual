@@ -177,6 +177,63 @@ describe('import matching', () => {
     `);
   });
 
+  describe('an imported id shared by several transactions', () => {
+    const SHARED = 'acct-shared';
+
+    // Inserts transactions in order (so rowid order), deleting the ones
+    // marked deleted, all with the same imported id
+    function insertShared(rows: Array<{ id: string; deleted?: boolean }>) {
+      db.insertAccount({ id: SHARED, name: 'Shared' });
+      for (const { id, deleted } of rows) {
+        db.insertTransaction({
+          id,
+          account: SHARED,
+          date: '2020-01-01',
+          amount: -1000,
+          imported_id: 'shared-id',
+        });
+        if (deleted) {
+          db.deleteTransaction({ id });
+        }
+      }
+    }
+
+    async function matchShared(reimportDeleted: boolean) {
+      const { transactionsStep3 } = await matchTransactions(
+        SHARED,
+        [{ date: '2020-01-01', amount: -1000, imported_id: 'shared-id' }],
+        { reimportDeleted },
+      );
+      return transactionsStep3[0].match?.id ?? null;
+    }
+
+    test('matches the live one over an older deleted one', async () => {
+      insertShared([{ id: 'a-deleted', deleted: true }, { id: 'b-live' }]);
+      expect(await matchShared(false)).toBe('b-live');
+      expect(await matchShared(true)).toBe('b-live');
+    });
+
+    test('matches the live one over a newer deleted one', async () => {
+      insertShared([{ id: 'b-live' }, { id: 'a-deleted', deleted: true }]);
+      expect(await matchShared(false)).toBe('b-live');
+      expect(await matchShared(true)).toBe('b-live');
+    });
+
+    test('matches the oldest of deleted ones when reimportDeleted is off', async () => {
+      insertShared([
+        { id: 'z-first', deleted: true },
+        { id: 'a-second', deleted: true },
+      ]);
+      expect(await matchShared(false)).toBe('z-first');
+      expect(await matchShared(true)).toBeNull();
+    });
+
+    test('matches the oldest of live ones when reimportDeleted is off', async () => {
+      insertShared([{ id: 'z-first' }, { id: 'a-second' }]);
+      expect(await matchShared(false)).toBe('z-first');
+    });
+  });
+
   test.skipIf(!process.env.IMPORT_BENCH)(
     'benchmark: import 2,000 transactions',
     { timeout: 600_000 },

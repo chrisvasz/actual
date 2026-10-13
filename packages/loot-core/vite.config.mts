@@ -2,7 +2,38 @@ import path from 'path';
 
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defaultClientConditions, defineConfig } from 'vite';
+import type { Plugin } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+
+// sqlite-wasm's only browser entry includes `sqlite3Worker1Promiser`, whose
+// `new Worker(new URL('sqlite3-worker1.mjs', import.meta.url))` makes Vite
+// emit the ~1.3 MB Worker1 bundle. The backend calls sqlite directly and
+// never starts that worker, so drop the reference before Vite sees it.
+const WORKER1_REFERENCE =
+  'new Worker(new URL("sqlite3-worker1.mjs", import.meta.url), { type: "module" })';
+
+const dropSqliteWorker1 = (): Plugin => ({
+  name: 'drop-sqlite-worker1',
+  enforce: 'pre',
+  transform(code, id) {
+    if (!id.includes('/@sqlite.org/sqlite-wasm/dist/index.mjs')) {
+      return null;
+    }
+    if (!code.includes(WORKER1_REFERENCE)) {
+      // A new sqlite-wasm release changed the code: update the reference
+      // (or drop this plugin if the entry no longer starts the worker)
+      this.error('sqlite-wasm no longer contains the Worker1 reference');
+    }
+    return {
+      code: code.replace(
+        WORKER1_REFERENCE,
+        '(() => { throw new Error("sqlite3 Worker1 is not bundled"); })()',
+      ),
+      // Only one expression within a line changes, so the mappings still hold
+      map: null,
+    };
+  },
+});
 
 // The browser app's backend: an ES module the page imports at startup and
 // runs on its main thread (see platform/client/browser-preload).
@@ -56,6 +87,7 @@ export default defineConfig(({ mode }) => {
       'process.env.ACTUAL_DOCUMENT_DIR': JSON.stringify('/documents'),
     },
     plugins: [
+      dropSqliteWorker1(),
       nodePolyfills({
         include: [
           'process',

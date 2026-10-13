@@ -40,9 +40,9 @@ afterEach(async () => {
   global.currentMonth = null;
 });
 
-async function createTestBudget(name) {
+async function createTestBudget(name, id = 'test-budget') {
   const templatePath = fs.join(__dirname, '/../mocks/files', name);
-  const budgetPath = fs.join(__dirname, '/../mocks/files/budgets/test-budget');
+  const budgetPath = fs.join(__dirname, '/../mocks/files/budgets', id);
   fs._setDocumentDir(fs.join(budgetPath, '..'));
 
   await fs.mkdir(budgetPath);
@@ -59,14 +59,41 @@ async function createTestBudget(name) {
 describe('Budgets', () => {
   afterEach(async () => {
     fs._setDocumentDir(null);
-    const budgetPath = fs.join(
-      __dirname,
-      '/../mocks/files/budgets/test-budget',
-    );
-
-    if (await fs.exists(budgetPath)) {
-      await fs.removeDirRecursively(budgetPath);
+    for (const id of ['test-budget', 'test-budget-2']) {
+      const budgetPath = fs.join(__dirname, '/../mocks/files/budgets', id);
+      if (await fs.exists(budgetPath)) {
+        await fs.removeDirRecursively(budgetPath);
+      }
     }
+  });
+
+  test('a budget load waits for the one in flight', async () => {
+    await createTestBudget('default-budget-template');
+    await createTestBudget('default-budget-template', 'test-budget-2');
+
+    // Like opening another budget while the last one is still
+    // auto-opening at startup
+    const first = runHandler(handlers['load-budget'], { id: 'test-budget' });
+    const second = runHandler(handlers['load-budget'], {
+      id: 'test-budget-2',
+    });
+
+    expect(await first).toEqual({});
+    expect(await second).toEqual({});
+    expect(prefs.getPrefs().id).toBe('test-budget-2');
+    expect(db.getDatabase()).not.toBe(null);
+  });
+
+  test('closing a budget waits for the load in flight', async () => {
+    await createTestBudget('default-budget-template');
+
+    const load = runHandler(handlers['load-budget'], { id: 'test-budget' });
+    const close = runHandler(handlers['close-budget']);
+
+    expect(await load).toEqual({});
+    expect(await close).toBe('ok');
+    expect(prefs.getPrefs()).toBe(null);
+    expect(db.getDatabase()).toBe(null);
   });
 
   test('budget is successfully loaded', async () => {
