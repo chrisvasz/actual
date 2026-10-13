@@ -166,6 +166,46 @@ describe('web persistence', () => {
     expect(await storedFile()).toEqual(new Uint8Array(bytes));
   });
 
+  describe('a write of a view into a larger buffer', () => {
+    // A 1-page view into a 10-page buffer
+    function pageView() {
+      return new Uint8Array(10 * storage.PAGE_SIZE)
+        .fill(1)
+        .subarray(storage.PAGE_SIZE, 2 * storage.PAGE_SIZE);
+    }
+
+    it('is rejected outside production', async () => {
+      const db = await idb.openDatabase();
+      await expect(
+        storage.writePages(db, DB_PATH, new Map([[0, pageView()]]), 1),
+      ).rejects.toThrow('view into a 40960-byte buffer');
+      expect(await storedFile()).toBeNull();
+    });
+
+    it('is stored compactly in production', async () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('DEV', false);
+      const warn = vi.spyOn(console, 'warn').mockReturnValue(undefined);
+      try {
+        const db = await idb.openDatabase();
+        await storage.writePages(db, DB_PATH, new Map([[0, pageView()]]), 1);
+        await storage.writePages(db, DB_PATH, new Map([[0, pageView()]]), 1);
+
+        const store = db.transaction('pages').objectStore('pages');
+        const pages = await idb.promisifyRequest<Uint8Array[]>(store.getAll());
+        expect(pages).toHaveLength(1);
+        expect(pages[0].buffer.byteLength).toBe(storage.PAGE_SIZE);
+        expect(await storedFile()).toEqual(
+          new Uint8Array(storage.PAGE_SIZE).fill(1),
+        );
+        // Logged once
+        expect(warn).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    });
+  });
+
   it('protects the file of the open database', async () => {
     await createDatabaseFile();
     const db = await sqlite.openDatabase(DB_PATH);
