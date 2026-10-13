@@ -13,11 +13,21 @@ function pageRange(path: string, from = 0) {
   return IDBKeyRange.bound([path, from], [path, Infinity]);
 }
 
+// A copy of `bytes` that owns its own ArrayBuffer. IndexedDB clones the
+// whole ArrayBuffer behind a view, and `Buffer#slice` returns a view, so
+// storing slices of a large `Buffer` would store the whole file each time.
+function compactCopy(bytes: Uint8Array): Uint8Array {
+  return new Uint8Array(bytes);
+}
+
 // Splits a whole file into pages
 export function toPages(bytes: Uint8Array): Map<number, Uint8Array> {
   const pages = new Map<number, Uint8Array>();
   for (let n = 0; n * PAGE_SIZE < bytes.byteLength; n++) {
-    pages.set(n, bytes.slice(n * PAGE_SIZE, (n + 1) * PAGE_SIZE));
+    pages.set(
+      n,
+      compactCopy(bytes.subarray(n * PAGE_SIZE, (n + 1) * PAGE_SIZE)),
+    );
   }
   return pages;
 }
@@ -101,7 +111,7 @@ export async function writeFile(
   bytes: Uint8Array,
 ): Promise<void> {
   const trans = db.transaction('budgetFiles', 'readwrite');
-  trans.objectStore('budgetFiles').put(bytes, path);
+  trans.objectStore('budgetFiles').put(compactCopy(bytes), path);
   return idb.transactionDone(trans);
 }
 
