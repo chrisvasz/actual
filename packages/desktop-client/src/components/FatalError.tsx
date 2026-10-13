@@ -75,7 +75,7 @@ function RenderSimple({ error }: RenderSimpleProps) {
   } else if ('BackendInitFailure' in error && error.BackendInitFailure) {
     msg = (
       <Text>
-        Actual couldn't load a critical backend worker. Reload the page to try
+        Actual couldn't load a critical part of the app. Reload the page to try
         again; if the problem persists, do a hard refresh to clear any stale
         cached assets.
       </Text>

@@ -793,6 +793,8 @@ class AccountInternal extends PureComponent<
     this.setState({ search: value }, this.onSearchDone);
   };
 
+  // Searching a large budget blocks the main thread (the backend runs on
+  // it), so wait for a pause in typing rather than searching per keystroke
   onSearchDone = debounce(() => {
     if (this.state.search === '') {
       this.updateQuery(
@@ -809,7 +811,7 @@ class AccountInternal extends PureComponent<
         true,
       );
     }
-  }, 150);
+  }, 300);
 
   onImport = async () => {
     const accountId = this.props.accountId;

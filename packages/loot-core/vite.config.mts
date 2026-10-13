@@ -1,9 +1,11 @@
 import path from 'path';
 
 import { visualizer } from 'rollup-plugin-visualizer';
-import { defineConfig } from 'vite';
+import { defaultClientConditions, defineConfig } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
+// The browser app's backend: an ES module the page imports at startup and
+// runs on its main thread (see platform/client/browser-preload).
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isDev = mode === 'development';
@@ -11,17 +13,15 @@ export default defineConfig(({ mode }) => {
 
   return {
     mode,
-    base: '/kcab/',
     build: {
       target: 'es2020',
       outDir,
       emptyOutDir: true,
       lib: {
         entry: path.resolve(__dirname, 'src/server/main.ts'),
-        name: 'backend',
-        formats: ['iife'],
+        formats: ['es'],
         fileName: () =>
-          isDev ? 'kcab.worker.dev.js' : `kcab.worker.[hash].js`,
+          isDev ? 'kcab.backend.dev.js' : `kcab.backend.[hash].js`,
       },
       rolldownOptions: {
         output: {
@@ -35,20 +35,18 @@ export default defineConfig(({ mode }) => {
               codegen: true,
             },
           }),
-          chunkFileNames: isDev
-            ? '[name].kcab.worker.dev.js'
-            : '[id].[name].kcab.worker.[hash].js',
-          format: 'iife',
-          name: 'backend',
-          globals: {
-            buffer: 'Buffer',
-            'process/browser': 'process',
-          },
+          // One file, so the page loads the backend with a single request
+          codeSplitting: false,
         },
         external: [],
       },
       sourcemap: true,
       minify: isDev ? false : 'oxc',
+    },
+    resolve: {
+      // Pick the in-process implementations of platform modules (e.g. the
+      // connection) over the Worker ones
+      conditions: ['main-thread', ...defaultClientConditions],
     },
     define: {
       'process.env': '{}',

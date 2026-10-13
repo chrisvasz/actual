@@ -5,8 +5,6 @@ import { registerSW } from 'virtual:pwa-register';
 // oxlint-disable-next-line typescript-paths/absolute-parent-import
 import packageJson from '../package.json';
 
-const backendWorkerUrl = new URL('./browser-server.js', import.meta.url);
-
 // This file installs global variables that the app expects, initializes the
 // backend, and sets up everything else the browser environment needs.
 
@@ -17,20 +15,21 @@ const ACTUAL_VERSION = Platform.isPlaywright
     ? '.preview'
     : packageJson.version;
 
-// *** Start the backend ***
+// *** The backend ***
 //
-// Each tab runs the backend in its own Worker, but only one tab at a time may
-// do so. This resolves to a reason string instead of a Worker when another
-// tab already has Actual open, or the page isn't served securely.
-const workerPromise = startBrowserBackend({
-  backendWorkerUrl,
-  initPayload: {
-    version: ACTUAL_VERSION,
+// The backend runs on this page's main thread, but only one tab at a time
+// may run it. It's started on the first `getServerSocket()` call, once the
+// app has rendered its loading screen, and resolves to a reason string
+// instead of a channel when another tab already has Actual open, or the page
+// isn't served securely.
+let backendPromise = null;
+function startBackend() {
+  backendPromise ??= startBrowserBackend({
+    backendUrl: `${import.meta.env.BASE_URL}kcab/kcab.backend.${import.meta.env.REACT_APP_BACKEND_HASH}.js`,
     isDev: IS_DEV,
-    publicUrl: import.meta.env.BASE_URL.slice(0, -1),
-    hash: import.meta.env.REACT_APP_BACKEND_WORKER_HASH,
-  },
-});
+  });
+  return backendPromise;
+}
 
 // Ask the browser to exclude this origin's storage (the local budget database
 // in IndexedDB) from automatic eviction under storage pressure. Without this,
@@ -200,20 +199,20 @@ global.Actual = {
   },
 
   getServerSocket: async () => {
-    const worker = await workerPromise;
-    if (worker === 'already-open') {
+    const channel = await startBackend();
+    if (channel === 'already-open') {
       throw Object.assign(new Error('Actual is already open in another tab'), {
         type: 'app-init-failure',
         AlreadyOpenInAnotherTab: true,
       });
     }
-    if (worker === 'insecure-context') {
+    if (channel === 'insecure-context') {
       throw Object.assign(new Error('Actual must be served over HTTPS'), {
         type: 'app-init-failure',
         InsecureContext: true,
       });
     }
-    return worker;
+    return channel;
   },
 
   setTheme: theme => {

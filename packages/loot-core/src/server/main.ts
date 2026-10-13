@@ -203,7 +203,9 @@ async function ensureUsable(dir) {
   await fs.removeDir(probeDir);
 }
 
-export async function initApp(isDev, socketName) {
+// Starts the browser app's backend. `channel` is the in-process channel
+// the page talks to it over.
+export async function initApp(isDev, channel) {
   await sqlite.init();
   asyncStorage.init();
   await fs.init();
@@ -233,14 +235,11 @@ export async function initApp(isDev, socketName) {
   }
   setServer(url);
 
-  connection.init(socketName, app.handlers);
+  connection.init(channel, app.handlers);
 
-  // Allow running DB queries locally
-  global.$query = aqlQuery;
-  global.$q = q;
-
+  // The backend shares the page's global scope, where the client already
+  // defines $send, $query and $q
   if (isDev) {
-    global.$send = (name, args) => runHandler(app.handlers[name], args);
     global.$db = db;
     global.$setSyncingMode = setSyncingMode;
   }
@@ -250,7 +249,7 @@ type BaseInitConfig = {
   /**
    * Directory where budget data is stored. In Node this is a directory on
    * disk (defaults to the current working directory) and must already exist.
-   * In the browser build it is a path inside the worker's virtual filesystem
+   * In the browser build it is a path inside the in-memory virtual filesystem
    * (persisted to IndexedDB); it defaults to `/documents` and is created
    * automatically if missing.
    */
