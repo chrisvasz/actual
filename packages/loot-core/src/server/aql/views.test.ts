@@ -30,7 +30,7 @@ const schemaConfig = {
 
       v_transactions2: (_, publicFields) => {
         const fields = publicFields({
-          transfer_id: 'COERCE(transfer_id, "foo")',
+          transfer_id: "COERCE(transfer_id, 'foo')",
         });
 
         return `SELECT ${fields} FROM v_transactions1`;
@@ -48,7 +48,7 @@ describe('schema views', () => {
     );
     expect(str).toMatch('DROP VIEW IF EXISTS v_transactions2;');
     expect(str).toMatch(
-      'CREATE VIEW v_transactions2 AS SELECT _.id, _.amount, COERCE(transfer_id, "foo") AS transfer_id FROM v_transactions1;',
+      "CREATE VIEW v_transactions2 AS SELECT _.id, _.amount, COERCE(transfer_id, 'foo') AS transfer_id FROM v_transactions1;",
     );
 
     db.execQuery('DROP TABLE transactions');

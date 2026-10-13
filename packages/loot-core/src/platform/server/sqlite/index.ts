@@ -245,11 +245,10 @@ export async function openDatabase(pathOrBuffer?: string | Uint8Array) {
     );
   }
 
-  // Accept double-quoted string literals, as sql.js did; existing
-  // queries may rely on them
-  const { capi } = getSqlite3();
-  capi.sqlite3_db_config(db, capi.SQLITE_DBCONFIG_DQS_DML, 1, 0);
-  capi.sqlite3_db_config(db, capi.SQLITE_DBCONFIG_DQS_DDL, 1, 0);
+  // This build leaves double-quoted string literals ("DQS") off, as
+  // better-sqlite3 does: `"foo"` is always an identifier, so a mistyped
+  // column is an error rather than the string 'foo'. Use single quotes
+  // for string literals.
 
   // SQLite's own LOWER, UPPER and LIKE only handle ASCII, since this
   // build has no ICU
