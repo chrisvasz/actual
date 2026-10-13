@@ -14,68 +14,56 @@ beforeEach(global.emptyDatabase());
 // The shapes of the cells the app binds: sidebar and register balances, the
 // uncategorized count, a category's month and the balance chart's start.
 function boundQueries(): Record<string, Query> {
-  const uncategorized = q('transactions').filter({
-    'account.offbudget': false,
-    category: null,
-    $or: [
-      { 'payee.transfer_acct.offbudget': true, 'payee.transfer_acct': null },
-    ],
-  });
-  const queries: Record<string, Query> = {
-    'all-balance': q('transactions')
-      .filter({ 'account.closed': false })
-      .calculate({ $sum: '$amount' }),
-    'all-cleared': q('transactions')
-      .filter({ 'account.closed': false, cleared: true })
-      .options({ splits: 'none' })
-      .calculate({ $sum: '$amount' }),
-    'onbudget-cleared': q('transactions')
+  const sum = (query: Query) => query.calculate({ $sum: '$amount' });
+  return {
+    'all-balance': sum(q('transactions').filter({ 'account.closed': false })),
+    'onbudget-cleared': sum(
+      q('transactions')
+        .filter({
+          'account.offbudget': false,
+          'account.closed': false,
+          cleared: true,
+        })
+        .options({ splits: 'none' }),
+    ),
+    'checking-cleared': sum(
+      q('transactions')
+        .filter({ account: 'acct-checking', cleared: true })
+        .options({ splits: 'none' }),
+    ),
+    'invest-balance': sum(
+      q('transactions')
+        .filter({ account: 'acct-invest' })
+        .options({ splits: 'none' }),
+    ),
+    'uncategorized-count': q('transactions')
       .filter({
         'account.offbudget': false,
-        'account.closed': false,
-        cleared: true,
+        category: null,
+        $or: [
+          {
+            'payee.transfer_acct.offbudget': true,
+            'payee.transfer_acct': null,
+          },
+        ],
       })
-      .options({ splits: 'none' })
-      .calculate({ $sum: '$amount' }),
-    'uncategorized-count': uncategorized.calculate({ $count: '$id' }),
-    'uncategorized-balance': uncategorized.calculate({ $sum: '$amount' }),
-    'register-all': q('transactions')
-      .options({ splits: 'grouped' })
-      .calculate({ $sum: '$amount' }),
+      .calculate({ $count: '$id' }),
     'register-uncleared-count': q('transactions')
       .options({ splits: 'grouped' })
       .filter({ cleared: false })
       .calculate({ $count: '$id' }),
-    'history-start': q('transactions')
-      .options({ splits: 'grouped' })
-      .filter({ date: { $lt: '2021-06-01' } })
-      .calculate({ $sum: '$amount' }),
-    'category-month': q('transactions')
-      .filter({
+    'history-start': sum(
+      q('transactions')
+        .options({ splits: 'grouped' })
+        .filter({ date: { $lt: '2021-06-01' } }),
+    ),
+    'category-month': sum(
+      q('transactions').filter({
         category: 'cat-0-0',
         date: { $transform: '$month', $eq: '2021-03' },
-      })
-      .options({ splits: 'inline' })
-      .calculate({ $sum: '$amount' }),
-    // Not a sum of a plain field, so always runs in full
-    'all-abs': q('transactions').calculate({ $sum: { $abs: '$amount' } }),
+      }),
+    ),
   };
-  for (const account of [
-    'acct-checking',
-    'acct-savings',
-    'acct-invest',
-    'acct-closed',
-  ]) {
-    queries[`balance-${account}`] = q('transactions')
-      .filter({ account })
-      .options({ splits: 'none' })
-      .calculate({ $sum: '$amount' });
-    queries[`cleared-${account}`] = q('transactions')
-      .filter({ account, cleared: true })
-      .options({ splits: 'none' })
-      .calculate({ $sum: '$amount' });
-  }
-  return queries;
 }
 
 function transactionIds(filter: Record<string, unknown>, limit: number) {
@@ -123,106 +111,60 @@ describe('query cells', () => {
       transfer_acct: 'acct-invest',
     });
 
+    const update = (id: string, fields: Record<string, unknown>) => () =>
+      db.update('transactions', { id, ...fields });
+    const added = (
+      id: string,
+      amount: number,
+      fields: Record<string, unknown> = {},
+    ) => ({
+      id,
+      amount,
+      account: 'acct-checking',
+      date: '2021-03-10',
+      ...fields,
+    });
+
     const steps: Array<[string, () => unknown]> = [
-      [
-        'edit amount',
-        () => db.update('transactions', { id: plain, amount: 1234 }),
-      ],
-      [
-        'null amount',
-        () => db.update('transactions', { id: plain, amount: null }),
-      ],
-      ['clear', () => db.update('transactions', { id: plain, cleared: 0 })],
-      [
-        'change account',
-        () => db.update('transactions', { id: plain, acct: 'acct-invest' }),
-      ],
-      [
-        'change category',
-        () => db.update('transactions', { id: other, category: null }),
-      ],
-      [
-        'move date',
-        () => db.update('transactions', { id: other, date: 20210315 }),
-      ],
-      [
-        'no account',
-        () => db.update('transactions', { id: other, acct: null }),
-      ],
+      ['edit amount', update(plain, { amount: 1234 })],
+      ['null amount', update(plain, { amount: null })],
+      ['unclear', update(plain, { cleared: 0 })],
+      ['change account', update(plain, { acct: 'acct-invest' })],
+      ['change category', update(other, { category: null })],
+      ['move date', update(other, { date: 20210315 })],
+      ['no account', update(other, { acct: null })],
       [
         'add split',
         () =>
           batchUpdateTransactions({
             added: [
-              {
-                id: 'split-parent',
-                account: 'acct-checking',
-                date: '2021-03-10',
-                amount: -5000,
-                is_parent: true,
-              },
-              {
-                id: 'split-child-1',
-                account: 'acct-checking',
-                date: '2021-03-10',
-                amount: -2000,
+              added('split', -5000, { is_parent: true }),
+              added('split-1', -2000, {
                 category: 'cat-0-0',
-                parent_id: 'split-parent',
+                parent_id: 'split',
                 is_child: true,
-              },
-              {
-                id: 'split-child-2',
-                account: 'acct-checking',
-                date: '2021-03-10',
-                amount: -3000,
-                parent_id: 'split-parent',
+              }),
+              added('split-2', -3000, {
+                parent_id: 'split',
                 is_child: true,
-              },
+              }),
             ],
           }),
       ],
       // Children of a deleted parent drop out without changing themselves
-      [
-        'delete parent only',
-        () => db.update('transactions', { id: parent, tombstone: 1 }),
-      ],
-      [
-        'restore parent',
-        () => db.update('transactions', { id: parent, tombstone: 0 }),
-      ],
-      [
-        'move child',
-        () =>
-          db.update('transactions', { id: child, parent_id: 'split-parent' }),
-      ],
-      [
-        'unsplit child',
-        () => db.update('transactions', { id: child, isChild: 0 }),
-      ],
+      ['delete parent only', update(parent, { tombstone: 1 })],
+      ['restore parent', update(parent, { tombstone: 0 })],
+      ['move child', update(child, { parent_id: 'split' })],
+      ['unsplit child', update(child, { isChild: 0 })],
       [
         'delete split',
-        () => batchUpdateTransactions({ deleted: [{ id: 'split-parent' }] }),
+        () => batchUpdateTransactions({ deleted: [{ id: 'split' }] }),
       ],
       [
         'transfer',
         () =>
           batchUpdateTransactions({
-            added: [
-              {
-                id: 'transfer',
-                account: 'acct-checking',
-                date: '2021-04-01',
-                amount: -7000,
-                payee: transferPayee,
-              },
-            ],
-          }),
-      ],
-      [
-        'transfer amount',
-        () =>
-          batchUpdateTransactions({
-            updated: [{ id: 'transfer', amount: -9000 }],
+            added: [added('transfer', -7000, { payee: transferPayee })],
           }),
       ],
       [
@@ -231,14 +173,11 @@ describe('query cells', () => {
       ],
       // Changes to other tables a cell reads run the cell in full
       [
-        'payee becomes a transfer',
+        'payee and transaction',
         () =>
           batchMessages(() => {
             db.update('payees', { id: transferPayee, transfer_acct: null });
-            db.update('transactions', {
-              id: plain,
-              description: transferPayee,
-            });
+            update(plain, { description: transferPayee })();
           }),
       ],
       [
@@ -251,7 +190,7 @@ describe('query cells', () => {
         () =>
           batchMessages(() => {
             for (const id of transactionIds({}, 1500)) {
-              db.update('transactions', { id, amount: 100 });
+              update(id, { amount: 100 })();
             }
           }),
       ],

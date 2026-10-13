@@ -6,7 +6,6 @@ import {
   schemaConfig,
 } from '#server/aql';
 import { appendWhere } from '#server/aql/compiler';
-import * as db from '#server/db';
 import type { QueryState } from '#shared/query';
 
 import type { CellChange } from './types';
@@ -55,6 +54,13 @@ export function getQueryCellValue(name: string): unknown {
   return cells.get(name)?.value ?? null;
 }
 
+// The sums and counts the app binds, the only results that can be adjusted by
+// the changed rows.
+const ROW_WISE_SELECTS = [
+  JSON.stringify([{ result: { $sum: '$amount' } }]),
+  JSON.stringify([{ result: { $count: '$id' } }]),
+];
+
 // A sum or count over transactions where each row's part depends only on that
 // row and on other tables. A join back to `transactions` (e.g. through
 // `transfer_id`) would make a row depend on another one.
@@ -62,41 +68,17 @@ function isRowWiseQuery(
   query: QueryState,
   sql: ReturnType<typeof compileQuery>,
 ): boolean {
-  if (
-    query.table !== 'transactions' ||
-    !query.calculation ||
-    query.groupExpressions.length > 0 ||
-    query.limit != null ||
-    query.offset != null ||
-    query.selectExpressions.length !== 1 ||
-    sql.state.namedParameters.length > 0
-  ) {
-    return false;
-  }
-
-  const [select] = query.selectExpressions;
-  const calculation =
-    typeof select === 'object' && select !== null && 'result' in select
-      ? (select as { result: unknown }).result
-      : null;
-  if (typeof calculation !== 'object' || calculation === null) {
-    return false;
-  }
-  const entries = Object.entries(calculation);
-  if (entries.length !== 1) {
-    return false;
-  }
-  const [fn, field] = entries[0];
-  if (
-    (fn !== '$sum' && fn !== '$count') ||
-    typeof field !== 'string' ||
-    !/^\$\w+$/.test(field)
-  ) {
-    return false;
-  }
-
-  return ![...sql.state.paths.values()].some(
-    path => (path as { tableName: string }).tableName === 'transactions',
+  return (
+    query.table === 'transactions' &&
+    query.calculation &&
+    query.groupExpressions.length === 0 &&
+    query.limit == null &&
+    query.offset == null &&
+    ROW_WISE_SELECTS.includes(JSON.stringify(query.selectExpressions)) &&
+    sql.state.namedParameters.length === 0 &&
+    ![...sql.state.paths.values()].some(
+      path => (path as { tableName: string }).tableName === 'transactions',
+    )
   );
 }
 
@@ -178,28 +160,15 @@ function readsTables(cell: QueryCell, tables: Set<string>) {
   return cell.sql.state.dependencies.some(dep => tables.has(dep));
 }
 
-// Whether a change to these tables can be applied to the cell from the
-// changed transactions alone.
-function canUpdateByRows(cell: QueryCell, tables: Set<string>) {
-  return (
-    cell.isRowWise &&
-    cell.isCurrent &&
-    typeof cell.value === 'number' &&
-    cell.sql.state.dependencies.every(
-      dep => dep === 'transactions' || !tables.has(dep),
-    )
-  );
-}
-
 export type QueryCellUpdate = {
-  tables: Set<string>;
   rowsSql: string;
   before: Map<QueryCell, number>;
 };
 
 // Called with the rows a change is about to write, before writing them.
 // Records each cell's result over those rows, so `triggerQueryCells` can
-// adjust the cell by the difference afterwards.
+// adjust the cell by the difference afterwards. Only for cells that read no
+// other table the change touches.
 export function beginQueryCellUpdate(
   idsPerTable: Record<string, string[]>,
 ): QueryCellUpdate | null {
@@ -208,39 +177,30 @@ export function beginQueryCellUpdate(
     return null;
   }
 
-  const tables = new Set(Object.keys(idsPerTable));
-  const updatable = [...cells.values()].filter(cell =>
-    canUpdateByRows(cell, tables),
-  );
-  if (updatable.length === 0) {
-    return null;
-  }
-
   // A split's children are only counted while their parent is alive, so a
-  // change to a parent can change what its children add.
-  const changed = new Set(ids);
-  const idList = `(${[...changed].map(sqlString).join(',')})`;
-  const children = db.runQuery<{ id: string }>(
-    `SELECT id FROM transactions WHERE parent_id IN ${idList}`,
-    [],
-    true,
-  );
-  for (const { id } of children) {
-    changed.add(id);
-  }
-  if (changed.size > MAX_ROW_WISE_ROWS) {
-    return null;
-  }
+  // change to a parent can change what its children add. A child can only
+  // join or leave a parent by changing itself, so this finds the same
+  // children before and after the write.
+  const idList = `(${[...new Set(ids)].map(sqlString).join(',')})`;
+  const rowsSql = `(SELECT id FROM transactions WHERE id IN ${idList} OR parent_id IN ${idList})`;
 
-  const rowsSql = `(${[...changed].map(sqlString).join(',')})`;
+  const tables = new Set(Object.keys(idsPerTable));
   const before = new Map<QueryCell, number>();
-  for (const cell of updatable) {
-    const value = runOverRows(cell, rowsSql);
-    if (value != null) {
-      before.set(cell, value);
+  for (const cell of cells.values()) {
+    if (
+      cell.isRowWise &&
+      cell.isCurrent &&
+      cell.sql.state.dependencies.every(
+        dep => dep === 'transactions' || !tables.has(dep),
+      )
+    ) {
+      const value = runOverRows(cell, rowsSql);
+      if (value != null) {
+        before.set(cell, value);
+      }
     }
   }
-  return { tables, rowsSql, before };
+  return { rowsSql, before };
 }
 
 export function triggerQueryCells(
@@ -254,23 +214,14 @@ export function triggerQueryCells(
     }
 
     const before = update?.before.get(cell);
-    if (
-      update != null &&
-      before != null &&
-      [...tables].every(table => update.tables.has(table)) &&
-      canUpdateByRows(cell, tables)
-    ) {
-      const after = runOverRows(cell, update.rowsSql);
-      if (after != null) {
-        if (after !== before) {
-          cell.value = (cell.value as number) + after - before;
-          changed.push(cell);
-        }
-        continue;
+    const after =
+      update && before != null ? runOverRows(cell, update.rowsSql) : null;
+    if (before != null && after != null) {
+      if (after !== before) {
+        cell.value = (cell.value as number) + after - before;
+        changed.push(cell);
       }
-    }
-
-    if (run(cell)) {
+    } else if (run(cell)) {
       changed.push(cell);
     }
   }
