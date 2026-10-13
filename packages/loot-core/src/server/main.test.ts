@@ -115,6 +115,48 @@ describe('Budgets', () => {
     expect(getClock()).toEqual(deserializeClock(row.clock));
   });
 
+  test.each([
+    [
+      'stale',
+      `UPDATE sqlite_stat1 SET stat = '7 1' WHERE tbl = 'transactions'`,
+    ],
+    ['missing', `DELETE FROM sqlite_stat1 WHERE tbl = 'transactions'`],
+  ])('loading a budget refreshes %s planner stats', async (_, breakStats) => {
+    await createTestBudget('default-budget-template');
+    // The template's old migrations run their own ANALYZE
+    await runHandler(handlers['load-budget'], { id: 'test-budget' });
+
+    db.transaction(() => {
+      for (let i = 0; i < 300; i++) {
+        db.runQuery(
+          'INSERT INTO transactions (id, amount, date) VALUES (?, ?, ?)',
+          [uuidv4(), i, 20200101],
+        );
+      }
+    });
+    db.execQuery('ANALYZE');
+    db.execQuery(breakStats);
+    const { count } = db.first<{ count: number }>(
+      'SELECT COUNT(*) AS count FROM transactions',
+    );
+    await runHandler(handlers['close-budget']);
+
+    const { error } = await runHandler(handlers['load-budget'], {
+      id: 'test-budget',
+    });
+    expect(error).toBe(undefined);
+
+    const stats = db.runQuery<{ stat: string }>(
+      `SELECT stat FROM sqlite_stat1 WHERE tbl = 'transactions'`,
+      [],
+      true,
+    );
+    expect(stats.length).toBeGreaterThan(0);
+    for (const { stat } of stats) {
+      expect(stat.split(' ')[0]).toBe(String(count));
+    }
+  });
+
   test('budget detects out of sync migrations', async () => {
     await createTestBudget('default-budget-template');
 
