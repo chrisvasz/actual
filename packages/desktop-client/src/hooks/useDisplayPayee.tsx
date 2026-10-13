@@ -29,9 +29,10 @@ export function DisplayPayeeProvider({
   transactions,
   children,
 }: DisplayPayeeProviderProps) {
-  // Only split parents have subtransactions. Asking for just their ids also
-  // keeps the list short enough for SQLite to look the children up by index;
-  // with every row's id it walks every transaction instead, on each edit.
+  // Only split parents have subtransactions, and only these fields are read
+  // from them. Asking for less keeps SQLite looking the children up by index;
+  // with every row's id, or the joins `*` brings, it walks every transaction
+  // instead, on each edit.
   const subtransactionsQuery = useMemo(
     () =>
       q('transactions')
@@ -40,7 +41,7 @@ export function DisplayPayeeProvider({
             $oneof: transactions.filter(t => t.is_parent).map(t => t.id),
           },
         })
-        .select('*'),
+        .select(['id', 'parent_id', 'payee']),
     [transactions],
   );
   const { transactions: queriedSubtransactions = [] } = useTransactions({

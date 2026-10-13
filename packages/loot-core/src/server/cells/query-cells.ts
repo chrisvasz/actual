@@ -6,6 +6,7 @@ import {
   schemaConfig,
 } from '#server/aql';
 import { appendWhere } from '#server/aql/compiler';
+import * as db from '#server/db';
 import type { QueryState } from '#shared/query';
 
 import type { CellChange } from './types';
@@ -179,10 +180,19 @@ export function beginQueryCellUpdate(
 
   // A split's children are only counted while their parent is alive, so a
   // change to a parent can change what its children add. A child can only
-  // join or leave a parent by changing itself, so this finds the same
-  // children before and after the write.
-  const idList = `(${[...new Set(ids)].map(sqlString).join(',')})`;
-  const rowsSql = `(SELECT id FROM transactions WHERE id IN ${idList} OR parent_id IN ${idList})`;
+  // join or leave a parent by changing itself, so these are the same children
+  // before and after the write. The ids are listed rather than looked up in a
+  // subquery, which SQLite can plan as a walk over every transaction.
+  const changed = new Set(ids);
+  const children = db.runQuery<{ id: string }>(
+    `SELECT id FROM transactions WHERE parent_id IN (${[...changed].map(sqlString).join(',')})`,
+    [],
+    true,
+  );
+  for (const { id } of children) {
+    changed.add(id);
+  }
+  const rowsSql = `(${[...changed].map(sqlString).join(',')})`;
 
   const tables = new Set(Object.keys(idsPerTable));
   const before = new Map<QueryCell, number>();
