@@ -12,7 +12,11 @@ import * as asyncStorage from '#platform/server/asyncStorage';
 import * as connection from '#platform/server/connection';
 import { logger } from '#platform/server/log';
 import { applyBudgetChanges, isBudgetStateLoaded } from '#server/budget/state';
-import { triggerQueryCells } from '#server/cells/query-cells';
+import {
+  beginQueryCellUpdate,
+  triggerQueryCells,
+} from '#server/cells/query-cells';
+import type { QueryCellUpdate } from '#server/cells/query-cells';
 import * as db from '#server/db';
 import { PostError, SyncError } from '#server/errors';
 import { app } from '#server/main-app';
@@ -419,6 +423,7 @@ export function applyMessages(
   const idsPerTable: Record<string, string[]> = {};
   let oldData: DataMap = new Map();
   let newData: DataMap = new Map();
+  let cellUpdate: QueryCellUpdate | null = null;
 
   // Everything that touches the database runs in one transaction: the
   // crdt lookup, reading the affected rows before and after, and the
@@ -463,6 +468,10 @@ export function applyMessages(
     });
 
     oldData = fetchData(idsPerTable);
+    // Query cells updated from the changed rows read them before the write
+    if (isBudgetStateLoaded()) {
+      cellUpdate = beginQueryCellUpdate(idsPerTable);
+    }
 
     // Now that we have all of the data, go through and apply the
     // messages carefully.
@@ -550,6 +559,7 @@ export function applyMessages(
         ...newData.keys(),
         ...Object.keys(idsPerTable),
       ]),
+      cellUpdate,
     );
   }
 

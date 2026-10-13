@@ -29,10 +29,17 @@ export function DisplayPayeeProvider({
   transactions,
   children,
 }: DisplayPayeeProviderProps) {
+  // Only split parents have subtransactions. Asking for just their ids also
+  // keeps the list short enough for SQLite to look the children up by index;
+  // with every row's id it walks every transaction instead, on each edit.
   const subtransactionsQuery = useMemo(
     () =>
       q('transactions')
-        .filter({ parent_id: { $oneof: transactions.map(t => t.id) } })
+        .filter({
+          parent_id: {
+            $oneof: transactions.filter(t => t.is_parent).map(t => t.id),
+          },
+        })
         .select('*'),
     [transactions],
   );
