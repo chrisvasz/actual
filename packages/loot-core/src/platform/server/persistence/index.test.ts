@@ -149,6 +149,23 @@ describe('web persistence', () => {
     sqlite.closeDatabase(reopened);
   });
 
+  it('stores each page of a Buffer on its own', async () => {
+    // `Buffer#slice` returns a view; storing views would store the
+    // whole file once per page
+    const bytes = Buffer.alloc(10 * storage.PAGE_SIZE, 1);
+    await persistence.writeFile(DB_PATH, bytes);
+
+    const store = (await idb.openDatabase())
+      .transaction('pages')
+      .objectStore('pages');
+    const pages = await idb.promisifyRequest<Uint8Array[]>(store.getAll());
+    expect(pages).toHaveLength(10);
+    for (const page of pages) {
+      expect(page.buffer.byteLength).toBe(storage.PAGE_SIZE);
+    }
+    expect(await storedFile()).toEqual(new Uint8Array(bytes));
+  });
+
   it('protects the file of the open database', async () => {
     await createDatabaseFile();
     const db = await sqlite.openDatabase(DB_PATH);
