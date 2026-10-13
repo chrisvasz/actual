@@ -33,7 +33,7 @@ type Transaction = {
 
 async function getTransactions(accountId: string): Promise<Transaction[]> {
   return db.runQuery(
-    'SELECT * FROM transactions WHERE acct = ?',
+    'SELECT * FROM transactions WHERE acct = ? ORDER BY tombstone, rowid',
     [accountId],
     true,
   );
