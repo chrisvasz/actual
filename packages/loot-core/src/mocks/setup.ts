@@ -24,7 +24,6 @@ vi.mock('#platform/client/connection');
 vi.mock('#platform/exceptions');
 vi.mock('#platform/server/asyncStorage');
 vi.mock('#platform/server/connection');
-vi.mock('#platform/server/persistence');
 vi.mock('#server/post');
 
 // By default, syncing is disabled

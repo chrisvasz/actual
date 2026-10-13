@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import { getClock, merkle, serializeClock, Timestamp } from '@actual-app/crdt';
 
-import * as persistence from '#platform/server/persistence';
 import * as db from '#server/db';
 
 export function rebuildMerkleHash(): {
@@ -37,6 +36,4 @@ export async function repairSync(): Promise<void> {
     db.cache('INSERT OR REPLACE INTO messages_clock (id, clock) VALUES (1, ?)'),
     [serializeClock(clock)],
   );
-  // That write bypasses the outbox
-  await persistence.snapshot();
 }

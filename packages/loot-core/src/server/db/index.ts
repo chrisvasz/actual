@@ -7,12 +7,12 @@ import {
   setClock,
   Timestamp,
 } from '@actual-app/crdt';
-import type { Database, Statement } from '@jlongster/sql.js';
 import { LRUCache } from 'lru-cache';
 import { v4 as uuidv4 } from 'uuid';
 
 import * as fs from '#platform/server/fs';
 import * as sqlite from '#platform/server/sqlite';
+import type { Database, Statement } from '#platform/server/sqlite';
 import {
   convertForInsert,
   convertForUpdate,

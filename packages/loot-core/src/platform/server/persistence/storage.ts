@@ -1,96 +1,90 @@
 import * as idb from '#platform/server/indexeddb';
 
-import type { OutboxBatch } from './types';
-
-// IndexedDB layout (all keyed by file path):
-// - `snapshots`: path → Snapshot, the whole database file plus the last
-//   outbox seq it includes
-// - `outbox`: [path, seq] → OutboxEntry, applied message batches
+// IndexedDB layout:
+// - `pages`: [path, n] → bytes [n * PAGE_SIZE, (n + 1) * PAGE_SIZE) of a
+//   database file. Only the last page of a file may be shorter.
 // - `budgetFiles`: path → bytes, every other persisted file
 //
 // Each write is one transaction, so it commits completely or not at all.
-// Transactions on overlapping stores run in the order they were created,
-// so appends, snapshots and truncations land in the order issued.
 
-export type Snapshot = { outboxSeq: number; bytes: Uint8Array };
-export type OutboxEntry = { path: string; seq: number; batch: OutboxBatch };
+export const PAGE_SIZE = 4096;
 
-function outboxRange(path: string, upToSeq = Infinity, afterSeq = -Infinity) {
-  return IDBKeyRange.bound([path, afterSeq], [path, upToSeq], true, false);
+function pageRange(path: string, from = 0) {
+  return IDBKeyRange.bound([path, from], [path, Infinity]);
 }
 
-export async function readSnapshot(
+// Splits a whole file into pages
+export function toPages(bytes: Uint8Array): Map<number, Uint8Array> {
+  const pages = new Map<number, Uint8Array>();
+  for (let n = 0; n * PAGE_SIZE < bytes.byteLength; n++) {
+    pages.set(n, bytes.slice(n * PAGE_SIZE, (n + 1) * PAGE_SIZE));
+  }
+  return pages;
+}
+
+export async function readPages(
   db: IDBDatabase,
   path: string,
-): Promise<Snapshot | null> {
-  const store = db.transaction('snapshots').objectStore('snapshots');
-  return (await idb.promisifyRequest(store.get(path))) ?? null;
-}
-
-// Stores a snapshot and drops the outbox entries up to `truncateUpTo`
-// (by default, the ones it includes), atomically
-export async function writeSnapshot(
-  db: IDBDatabase,
-  path: string,
-  snapshot: Snapshot,
-  truncateUpTo = snapshot.outboxSeq,
-): Promise<void> {
-  const trans = db.transaction(['snapshots', 'outbox'], 'readwrite');
-  trans.objectStore('snapshots').put(snapshot, path);
-  trans.objectStore('outbox').delete(outboxRange(path, truncateUpTo));
-  return idb.transactionDone(trans);
-}
-
-export async function removeSnapshot(
-  db: IDBDatabase,
-  path: string,
-): Promise<void> {
-  const trans = db.transaction(['snapshots', 'outbox'], 'readwrite');
-  trans.objectStore('snapshots').delete(path);
-  trans.objectStore('outbox').delete(outboxRange(path));
-  return idb.transactionDone(trans);
-}
-
-export async function listSnapshots(db: IDBDatabase): Promise<string[]> {
-  const store = db.transaction('snapshots').objectStore('snapshots');
-  return (await idb.promisifyRequest(store.getAllKeys())) as string[];
-}
-
-// Creates the transaction synchronously, so the append is queued even
-// if the caller never awaits. A failure to even start the transaction
-// (like quota errors) becomes a rejection. Resolves once the entry is committed.
-export async function appendOutbox(
-  db: IDBDatabase,
-  entry: OutboxEntry,
-): Promise<void> {
-  const trans = db.transaction('outbox', 'readwrite');
-  // `add`, not `put`: a seq collision means two writers, and must fail
-  // rather than overwrite a batch
-  trans.objectStore('outbox').add(entry);
-  return idb.transactionDone(trans);
-}
-
-// Entries with seq > `afterSeq`, oldest first
-export async function readOutbox(
-  db: IDBDatabase,
-  path: string,
-  afterSeq: number,
-): Promise<OutboxEntry[]> {
-  const store = db.transaction('outbox').objectStore('outbox');
-  return idb.promisifyRequest<OutboxEntry[]>(
-    store.getAll(outboxRange(path, Infinity, afterSeq)),
+): Promise<Uint8Array | null> {
+  const store = db.transaction('pages').objectStore('pages');
+  const pages = await idb.promisifyRequest<Uint8Array[]>(
+    store.getAll(pageRange(path)),
   );
+  if (pages.length === 0) {
+    return null;
+  }
+  const bytes = new Uint8Array(
+    pages.reduce((size, page) => size + page.byteLength, 0),
+  );
+  let offset = 0;
+  for (const page of pages) {
+    bytes.set(page, offset);
+    offset += page.byteLength;
+  }
+  return bytes;
 }
 
-export async function maxOutboxSeq(
+// Stores `pages` and drops every page at or after `pageCount`
+export async function writePages(
   db: IDBDatabase,
   path: string,
-): Promise<number> {
-  const store = db.transaction('outbox').objectStore('outbox');
-  const cursor = await idb.promisifyRequest(
-    store.openKeyCursor(outboxRange(path), 'prev'),
-  );
-  return cursor ? (cursor.key as [string, number])[1] : 0;
+  pages: Map<number, Uint8Array>,
+  pageCount: number,
+): Promise<void> {
+  const trans = db.transaction('pages', 'readwrite');
+  const store = trans.objectStore('pages');
+  for (const [n, page] of pages) {
+    store.put(page, [path, n]);
+  }
+  store.delete(pageRange(path, pageCount));
+  return idb.transactionDone(trans);
+}
+
+export async function removePages(db: IDBDatabase, path: string) {
+  const trans = db.transaction('pages', 'readwrite');
+  trans.objectStore('pages').delete(pageRange(path));
+  return idb.transactionDone(trans);
+}
+
+// Paths of the stored database files
+export async function listDatabases(db: IDBDatabase): Promise<string[]> {
+  const store = db.transaction('pages').objectStore('pages');
+  const paths: string[] = [];
+  return new Promise((resolve, reject) => {
+    const req = store.openKeyCursor();
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (cursor == null) {
+        resolve(paths);
+        return;
+      }
+      const path = (cursor.key as [string, number])[0];
+      paths.push(path);
+      // Skip the rest of this file's pages
+      cursor.continue([path, Infinity]);
+    };
+    req.onerror = () => reject(req.error);
+  });
 }
 
 export async function readFile(

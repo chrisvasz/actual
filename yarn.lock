@@ -92,11 +92,10 @@ __metadata:
   resolution: "@actual-app/core@workspace:packages/loot-core"
   dependencies:
     "@actual-app/crdt": "workspace:*"
-    "@jlongster/sql.js": "npm:^1.6.7"
     "@rschedule/core": "npm:^1.5.0"
     "@rschedule/standard-date-adapter": "npm:^1.5.0"
+    "@sqlite.org/sqlite-wasm": "npm:3.53.4-build1"
     "@types/better-sqlite3": "npm:^9.6.0"
-    "@types/jlongster__sql.js": "npm:@types/sql.js@latest"
     "@types/node": "npm:^22.20.1"
     "@typescript/native-preview": "npm:beta"
     assert: "npm:^2.1.0"
@@ -2173,13 +2172,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jlongster/sql.js@npm:^1.6.7":
-  version: 1.6.7
-  resolution: "@jlongster/sql.js@npm:1.6.7"
-  checksum: 10/b8e7f255a60244eec21a5ad3af4b24cedc612fd5e62e5623d45b4da828d02a30170e45d9f80debb0013e144419922219d13a5cf141a2d7188a382ce77669a618
-  languageName: node
-  linkType: hard
-
 "@jridgewell/gen-mapping@npm:^0.3.12, @jridgewell/gen-mapping@npm:^0.3.5":
   version: 0.3.13
   resolution: "@jridgewell/gen-mapping@npm:0.3.13"
@@ -4184,6 +4176,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@sqlite.org/sqlite-wasm@npm:3.53.4-build1":
+  version: 3.53.4-build1
+  resolution: "@sqlite.org/sqlite-wasm@npm:3.53.4-build1"
+  checksum: 10/bba33bea5e5985f94e26dd73f17eb15b19dc5d72f555f07c1af91f6035597885cf2b59bb7d06c1a8ca109e9755089445ee908e34daaf7da9a8e6d48b85255729
+  languageName: node
+  linkType: hard
+
 "@standard-schema/spec@npm:^1.0.0":
   version: 1.1.0
   resolution: "@standard-schema/spec@npm:1.1.0"
@@ -4659,13 +4658,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/emscripten@npm:*":
-  version: 1.41.5
-  resolution: "@types/emscripten@npm:1.41.5"
-  checksum: 10/60dfcced39b2d0c94f31907c5cf5d97fe06ed35ed6cb134650a1a96bae861302722d4a6f459b484ea09588cde70cbcc034974454a746be3ce9688b52398d2953
-  languageName: node
-  linkType: hard
-
 "@types/esrecurse@npm:^4.3.1":
   version: 4.3.1
   resolution: "@types/esrecurse@npm:4.3.1"
@@ -4732,16 +4724,6 @@ __metadata:
   version: 2.0.5
   resolution: "@types/http-errors@npm:2.0.5"
   checksum: 10/a88da669366bc483e8f3b3eb3d34ada5f8d13eeeef851b1204d77e2ba6fc42aba4566d877cca5c095204a3f4349b87fe397e3e21288837bdd945dd514120755b
-  languageName: node
-  linkType: hard
-
-"@types/jlongster__sql.js@npm:@types/sql.js@latest":
-  version: 1.4.9
-  resolution: "@types/sql.js@npm:1.4.9"
-  dependencies:
-    "@types/emscripten": "npm:*"
-    "@types/node": "npm:*"
-  checksum: 10/028e4ed497744d8f2060fd286c4ad563e0b2fea024244d8fba805eadb0cde0af5b8a5a0ab6d2e8120b7acb9daed9f1d435642588be8fbb3af0b72c5972eace2d
   languageName: node
   linkType: hard
 

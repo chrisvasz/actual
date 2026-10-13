@@ -33,7 +33,6 @@ import { getServer } from '#server/server-config';
 import {
   clearFullSyncTimeout,
   initialFullSync,
-  replayOutbox,
   setSyncingMode,
 } from '#server/sync';
 import * as syncMigrations from '#server/sync/migrate';
@@ -275,8 +274,7 @@ async function closeBudget() {
   await mainApp.stopServices();
 
   try {
-    // Snapshot whatever isn't in one yet. If this fails the outbox still
-    // has every batch, and the next open replays it.
+    // Wait for the last commits to reach storage
     await persistence.flush();
   } catch (e) {
     captureException(e);
@@ -473,8 +471,6 @@ async function createBudget({
 
   if (testMode) {
     await createTestBudget(mainApp.handlers);
-    // It clears the default categories directly
-    await persistence.snapshot();
   }
 
   return {};
@@ -574,9 +570,6 @@ async function _loadBudget(id: Budget['id']): Promise<{
     resetFormulaPreferencesCache();
     await prefs.loadPrefs(id);
     await db.openDatabase(id);
-    // Restore batches applied since the last snapshot. This must come
-    // before migrations and before any in-memory state is loaded.
-    await replayOutbox();
   } catch (e) {
     captureBreadcrumb({ message: 'Error loading budget ' + id });
     captureException(e);
@@ -641,10 +634,8 @@ async function _loadBudget(id: Budget['id']): Promise<{
     );
   }
 
-  // Outbox replay, migrations, view updates, deferred-message replay and
-  // clock setup all write outside the outbox; snapshot them (if anything
-  // changed) before anything builds on them. If that fails, don't open:
-  // edits recorded on top of an unsaved migration couldn't be replayed.
+  // Make migrations and the clock setup durable before anything builds
+  // on them. If that fails, don't open.
   try {
     await persistence.flush();
   } catch (e) {

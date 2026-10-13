@@ -1,33 +1,28 @@
-// @ts-strict-ignore
-import initSqlJS from '@jlongster/sql.js';
-import type { Database, SqlJsStatic, Statement } from '@jlongster/sql.js';
+import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
+import type {
+  Database,
+  PreparedStatement,
+  Sqlite3Static,
+  SqlValue,
+} from '@sqlite.org/sqlite-wasm';
 
 import { logger } from '#platform/server/log';
 import * as persistence from '#platform/server/persistence';
 
+import * as memoryVfs from './memory-vfs';
 import { normalise } from './normalise';
 import type { SqlParam } from './types';
 import { unicodeLike } from './unicodeLike';
 
 export type { SqlParam } from './types';
+export type { Database };
+export type Statement = PreparedStatement;
 
-// Types exported from sql.js (and Emscripten) are incomplete, so we need to redefine them here
-type FS = Omit<typeof FS, 'lookupPath'> & {
-  lookupPath: (
-    path: string,
-    opts?: { follow?: boolean },
-  ) => { node: (typeof FS)['FSNode'] & { link?: string } };
-};
-export type SqlJsModule = SqlJsStatic & {
-  FS: FS;
-  reset_filesystem: () => void;
-};
-
-let SQL: SqlJsModule | null = null;
+let sqlite3: Sqlite3Static | null = null;
 
 // Opt-in: when set, the wasm is instantiated from these bytes instead of being
 // fetched via `locateFile`. The browser build of `@actual-app/api` uses this to
-// ship a fully self-contained worker (no `sql-wasm.wasm` request). Dormant for
+// ship a fully self-contained worker (no `sqlite3.wasm` request). Dormant for
 // every other consumer (web app and Node build never call `setWasmBinary`).
 let wasmBinaryOverride: ArrayBuffer | Uint8Array | undefined;
 
@@ -39,29 +34,40 @@ export async function init({
   baseURL = process.env.PUBLIC_URL,
   wasmBinary = wasmBinaryOverride,
 }: { baseURL?: string; wasmBinary?: ArrayBuffer | Uint8Array } = {}) {
-  // `initSqlJS` doesn't actually return a real promise, so make sure
-  // we're returning a real one for correct semantics
-  return new Promise((resolve, reject) => {
-    initSqlJS({
-      locateFile: file => baseURL + file,
-      ...(wasmBinary ? { wasmBinary: wasmBinary as ArrayBuffer } : {}),
-    }).then(
-      sql => {
-        SQL = sql as SqlJsModule;
-        resolve(undefined);
+  if (sqlite3) {
+    return;
+  }
+  // The typings omit the Emscripten module options `init` takes
+  const initModule = sqlite3InitModule as (options: {
+    locateFile: (file: string) => string;
+    instantiateWasm?: (
+      imports: WebAssembly.Imports,
+      receive: (instance: WebAssembly.Instance) => void,
+    ) => object;
+    print: (message: string) => void;
+    printErr: (message: string) => void;
+  }) => Promise<Sqlite3Static>;
+  sqlite3 = await initModule({
+    locateFile: file => baseURL + file,
+    ...(wasmBinary && {
+      instantiateWasm(imports, receive) {
+        void WebAssembly.instantiate(new Uint8Array(wasmBinary), imports).then(
+          result => receive(result.instance),
+        );
+        return {};
       },
-      err => {
-        reject(err);
-      },
-    );
+    }),
+    print: message => logger.log(message),
+    printErr: message => logger.error(message),
   });
+  memoryVfs.install(sqlite3);
 }
 
-export function _getModule() {
-  if (SQL == null) {
-    throw new Error('_getModule: sql.js must be initialized first');
+function getSqlite3(): Sqlite3Static {
+  if (sqlite3 == null) {
+    throw new Error('sqlite.init must be called first');
   }
-  return SQL;
+  return sqlite3;
 }
 
 function verifyParamTypes(sql: string | Statement, arr: SqlParam[] = []) {
@@ -79,19 +85,19 @@ export function prepare(db: Database, sql: string) {
 export function runQuery(
   db: Database,
   sql: string | Statement,
-  params?: SqlParam[],
+  params?: SqlParam[] | null,
   fetchAll?: false,
 ): { changes: unknown };
 export function runQuery<T>(
   db: Database,
   sql: string | Statement,
-  params: SqlParam[],
+  params: SqlParam[] | null | undefined,
   fetchAll: true,
 ): T[];
 export function runQuery<T>(
   db: Database,
   sql: string | Statement,
-  params: SqlParam[] = [],
+  params: SqlParam[] | null = [],
   fetchAll = false,
 ): T[] | { changes: unknown } {
   if (params) {
@@ -99,29 +105,28 @@ export function runQuery<T>(
   }
 
   const stmt = typeof sql === 'string' ? db.prepare(sql) : sql;
-
-  if (fetchAll) {
-    try {
+  try {
+    if (params && params.length > 0) {
       stmt.bind(params);
-      const rows = [];
-
+    }
+    if (fetchAll) {
+      const rows: T[] = [];
       while (stmt.step()) {
-        rows.push(stmt.getAsObject());
-      }
-
-      if (typeof sql === 'string') {
-        stmt.free();
-      } else {
-        stmt.reset();
+        rows.push(stmt.get({}) as T);
       }
       return rows;
-    } catch (e) {
-      logger.log(sql);
-      throw e;
     }
-  } else {
-    stmt.run(params);
-    return { changes: db.getRowsModified() };
+    stmt.step();
+    return { changes: db.changes() };
+  } catch (e) {
+    logger.log(sql);
+    throw e;
+  } finally {
+    if (typeof sql === 'string') {
+      stmt.finalize();
+    } else {
+      stmt.reset(true);
+    }
   }
 }
 
@@ -197,65 +202,88 @@ export function commitTransaction(db: Database) {
   }
 }
 
-function regexp(regex: string, text: string) {
+function regexp(regex: string, text: string | null) {
   return new RegExp(regex).test(text || '') ? 1 : 0;
 }
 
+// Files opened from a buffer, by their database
+const bufferFiles = new WeakMap<Database, string>();
+let buffers = 0;
+
 // Opens a database in memory. A path under a persisted directory loads
-// the stored snapshot of that file and persists the database from then
-// on (see `#platform/server/persistence`); any other path is opened in
-// place on the in-memory filesystem.
+// the stored file and persists every commit from then on (see
+// `#platform/server/persistence`).
 export async function openDatabase(pathOrBuffer?: string | Uint8Array) {
+  const { oo1 } = getSqlite3();
   let db: Database;
   if (pathOrBuffer == null || pathOrBuffer === ':memory:') {
-    db = new SQL.Database();
+    db = new oo1.DB(':memory:');
   } else if (typeof pathOrBuffer !== 'string') {
-    db = new SQL.Database(pathOrBuffer);
-  } else if (persistence.isDatabasePath(pathOrBuffer)) {
-    const loaded = await persistence.loadDatabase(pathOrBuffer);
-    db = new SQL.Database(loaded.bytes);
-    // sql.js keeps the database in a file on its in-memory filesystem;
-    // the rollback journal doesn't need to be another file there
+    const name = `/buffer-${buffers++}.sqlite`;
+    memoryVfs.addFile(name, pathOrBuffer.slice());
+    db = new oo1.DB({ filename: name, vfs: memoryVfs.VFS_NAME });
+    bufferFiles.set(db, name);
     db.exec('PRAGMA journal_mode=MEMORY');
-    const filename = '/' + (db as Database & { filename: string }).filename;
-    loaded.attach({
-      handle: db,
-      getBytes: () => SQL.FS.readFile(filename, { encoding: 'binary' }),
-      inTransaction,
-      totalChanges: () =>
-        Number(db.exec('SELECT total_changes()')[0].values[0][0]),
-    });
+  } else if (persistence.isDatabasePath(pathOrBuffer)) {
+    const path = pathOrBuffer;
+    const bytes = await persistence.loadDatabase(path);
+    const onCommit = persistence.attach(path, () => memoryVfs.readFile(path));
+    memoryVfs.addFile(path, bytes, onCommit);
+    try {
+      db = new oo1.DB({ filename: path, vfs: memoryVfs.VFS_NAME });
+    } catch (e) {
+      persistence.detach(path);
+      memoryVfs.removeFile(path);
+      throw e;
+    }
+    // The rollback journal doesn't need to be a file
+    db.exec('PRAGMA journal_mode=MEMORY');
   } else {
-    db = new SQL.Database(
-      pathOrBuffer,
-      // @ts-expect-error 2nd argument missed in sql.js types
-      { filename: true },
+    throw new Error(
+      'Only persisted databases can be opened by path on the web: ' +
+        pathOrBuffer,
     );
   }
 
-  // Define Unicode-aware LOWER, UPPER, and LIKE implementation.
-  // This is necessary because sql.js uses SQLite build without ICU support.
-  //
-  // Note that this function should ideally be created with a deterministic flag
-  // to allow SQLite to better optimize calls to it by factoring them out of inner loops
-  // but SQL.js does not support this: https://github.com/sql-js/sql.js/issues/551
-  db.create_function('UNICODE_LOWER', arg => arg?.toLowerCase());
-  db.create_function('UNICODE_UPPER', arg => arg?.toUpperCase());
-  db.create_function('UNICODE_LIKE', unicodeLike);
-  db.create_function('REGEXP', regexp);
-  db.create_function('NORMALISE', normalise);
+  // Accept double-quoted string literals, as sql.js did; existing
+  // queries may rely on them
+  const { capi } = getSqlite3();
+  capi.sqlite3_db_config(db, capi.SQLITE_DBCONFIG_DQS_DML, 1, 0);
+  capi.sqlite3_db_config(db, capi.SQLITE_DBCONFIG_DQS_DDL, 1, 0);
+
+  // SQLite's own LOWER, UPPER and LIKE only handle ASCII, since this
+  // build has no ICU
+  const functions: Array<[string, (...args: never[]) => SqlValue | boolean]> = [
+    ['UNICODE_LOWER', (arg: string | null) => arg?.toLowerCase() ?? null],
+    ['UNICODE_UPPER', (arg: string | null) => arg?.toUpperCase() ?? null],
+    ['UNICODE_LIKE', unicodeLike],
+    ['REGEXP', regexp],
+    ['NORMALISE', normalise],
+  ];
+  for (const [name, fn] of functions) {
+    db.createFunction(name, (_ctx, ...args) => fn(...(args as never[])), {
+      arity: fn.length,
+      deterministic: true,
+    });
+  }
   return db;
 }
 
 export function closeDatabase(db: Database) {
-  if (persistence.detach(db)) {
+  const path = db.filename;
+  const bufferFile = bufferFiles.get(db);
+  db.close();
+  if (bufferFile) {
+    memoryVfs.removeFile(bufferFile);
+  } else if (persistence.isDatabasePath(path)) {
+    persistence.detach(path);
+    memoryVfs.removeFile(path);
     // A transaction left open across handler calls (the API's batch
     // import) dies with the database
     transactionDepth = 0;
   }
-  db.close();
 }
 
 export async function exportDatabase(db: Database) {
-  return db.export();
+  return getSqlite3().capi.sqlite3_js_db_export(db);
 }

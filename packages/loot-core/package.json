@@ -189,9 +189,9 @@
     "postpack": "node scripts/restore-package-json.mts"
   },
   "dependencies": {
-    "@jlongster/sql.js": "^1.6.7",
     "@rschedule/core": "^1.5.0",
     "@rschedule/standard-date-adapter": "^1.5.0",
+    "@sqlite.org/sqlite-wasm": "3.53.4-build1",
     "better-sqlite3": "^13.0.3",
     "csv-parse": "^7.0.2",
     "csv-stringify": "^6.8.1",
@@ -208,7 +208,6 @@
   "devDependencies": {
     "@actual-app/crdt": "workspace:*",
     "@types/better-sqlite3": "^9.6.0",
-    "@types/jlongster__sql.js": "npm:@types/sql.js@latest",
     "@types/node": "^22.20.1",
     "@typescript/native-preview": "beta",
     "assert": "^2.1.0",

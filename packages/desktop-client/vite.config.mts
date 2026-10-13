@@ -9,7 +9,7 @@ import { promisify } from 'util';
 import {
   defaultDbPath,
   migrationsDir,
-  sqlWasmPath,
+  sqliteWasmPath,
 } from '@actual-app/core/default-filesystem';
 import babel from '@rolldown/plugin-babel';
 import inject from '@rollup/plugin-inject';
@@ -110,7 +110,7 @@ async function extractWorkerHash(): Promise<string> {
 }
 
 // Serve loot-core worker assets with correct content types so the browser can
-// stream-compile the sql.js wasm module.
+// stream-compile the SQLite wasm module.
 const CONTENT_TYPES: Record<string, string> = {
   '.js': 'application/javascript',
   '.mjs': 'application/javascript',
@@ -134,7 +134,7 @@ async function stagePublicData(): Promise<void> {
   await Promise.all([
     cp(migrationsDir, migrationsDest, { recursive: true }),
     cp(defaultDbPath, path.resolve(publicDataDir, 'default-db.sqlite')),
-    cp(sqlWasmPath, path.resolve(publicDir, 'sql-wasm.wasm')),
+    cp(sqliteWasmPath, path.resolve(publicDir, 'sqlite3.wasm')),
   ]);
 
   const entries = await readdir(publicDataDir, {
@@ -376,6 +376,9 @@ export default defineConfig(async ({ mode, command }) => {
           globPatterns: [
             '**/*.{js,css,html,txt,wasm,sql,sqlite,ico,png,woff2,webmanifest}',
           ],
+          // sqlite-wasm's bundled Worker1 API, which the backend never
+          // loads
+          globIgnores: ['**/sqlite3-worker1-*.js'],
           ignoreURLParametersMatching: [/^v$/],
           navigateFallback: '/index.html',
           maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB

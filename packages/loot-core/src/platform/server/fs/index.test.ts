@@ -1,9 +1,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 
-import { patchFetchForSqlJS } from '#mocks/util';
 import * as idb from '#platform/server/indexeddb';
-import * as sqlite from '#platform/server/sqlite';
 
 import {
   _setDocumentDir,
@@ -19,33 +17,30 @@ import {
   writeFile,
 } from './index';
 
-beforeAll(() => {
-  const baseURL = `${__dirname}/../../../../../../node_modules/@jlongster/sql.js/dist/`;
-  patchFetchForSqlJS(baseURL);
-  process.env.PUBLIC_URL = baseURL;
-});
-
-beforeEach(async () => {
+beforeEach(() => {
   global.indexedDB = new IDBFactory();
-  await sqlite.init();
 });
 
 afterEach(async () => {
   await idb.closeDatabase();
-  sqlite._getModule().reset_filesystem();
 });
 
 // Simulates a reload: a fresh in-memory filesystem over the same storage
 
-async function storedKeys(store: 'budgetFiles' | 'snapshots') {
+async function storedKeys(store: 'budgetFiles' | 'databases') {
   const db = await idb.openDatabase();
+  if (store === 'databases') {
+    const keys = (await idb.promisifyRequest(
+      db.transaction('pages').objectStore('pages').getAllKeys(),
+    )) as Array<[string, number]>;
+    return [...new Set(keys.map(([path]) => path))];
+  }
   return (await idb.promisifyRequest(
     db.transaction(store).objectStore(store).getAllKeys(),
   )) as string[];
 }
 
 async function reinit() {
-  sqlite._getModule().reset_filesystem();
   await init();
 }
 
@@ -77,13 +72,13 @@ describe('web filesystem', () => {
     expect(await storedKeys('budgetFiles')).not.toContain('/outside.txt');
   });
 
-  test('database files are stored as snapshots', async () => {
+  test('database files are stored as pages', async () => {
     await init();
     await writeFile('/documents/db.sqlite', 'some junk');
 
     expect(await readFile('/documents/db.sqlite')).toBe('some junk');
     expect(await storedKeys('budgetFiles')).toEqual([]);
-    expect(await storedKeys('snapshots')).toEqual(['/documents/db.sqlite']);
+    expect(await storedKeys('databases')).toEqual(['/documents/db.sqlite']);
     expect(await size('/documents/db.sqlite')).toBe(9);
   });
 
@@ -114,7 +109,7 @@ describe('web filesystem', () => {
     await writeFile('/budget/foo.txt', 'hello');
     await writeFile('/budget/db.sqlite', 'some junk');
     expect(await storedKeys('budgetFiles')).toEqual(['/budget/foo.txt']);
-    expect(await storedKeys('snapshots')).toEqual(['/budget/db.sqlite']);
+    expect(await storedKeys('databases')).toEqual(['/budget/db.sqlite']);
 
     await reinit();
     _setDocumentDir('/budget');
@@ -134,7 +129,7 @@ describe('web filesystem', () => {
     await removeDirRecursively('/documents/a');
     expect(await exists('/documents/a')).toBe(false);
     expect(await storedKeys('budgetFiles')).toEqual([]);
-    expect(await storedKeys('snapshots')).toEqual(['/documents/b.sqlite']);
+    expect(await storedKeys('databases')).toEqual(['/documents/b.sqlite']);
   });
 
   test('writing into a missing directory fails', async () => {

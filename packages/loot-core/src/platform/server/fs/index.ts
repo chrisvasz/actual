@@ -1,18 +1,18 @@
 import { join } from '#platform/server/fs/path-join';
 import * as persistence from '#platform/server/persistence';
-import { _getModule } from '#platform/server/sqlite';
-import type { SqlJsModule } from '#platform/server/sqlite';
 
 import { _setDocumentDir as _setDocumentDirShared } from './shared';
 
-// The web filesystem. The directory tree lives in sql.js's in-memory
-// filesystem. Files under a persisted root (`/documents` or a custom
-// document dir) are only placeholders there: their contents live in
-// IndexedDB, database files as snapshots (see
+// The web filesystem. The directory tree lives in memory. Files under a
+// persisted root (`/documents` or a custom document dir) are only
+// placeholders there: their contents live in IndexedDB (see
 // `#platform/server/persistence`). Everything else (bundled data,
 // uploads) only exists in memory.
 
-let FS: SqlJsModule['FS'] | null = null;
+// A file's contents are null when they're persisted
+type Entry = { type: 'dir' } | { type: 'file'; contents: Uint8Array | null };
+
+let entries: Map<string, Entry> | null = null;
 
 export const bundledDatabasePath: string = '/default-db.sqlite';
 export const migrationsPath: string = '/migrations';
@@ -21,17 +21,43 @@ export { join };
 export { getDocumentDir, getBudgetDir } from './shared';
 export const getDataDir = () => process.env.ACTUAL_DATA_DIR;
 
-function getFS() {
-  if (FS == null) {
+function getEntries() {
+  if (entries == null) {
     throw new Error('fs.init must be called first');
   }
-  return FS;
+  return entries;
+}
+
+function normalize(filepath: string): string {
+  const path = ('/' + filepath).replace(/\/+/g, '/').replace(/\/$/, '');
+  return path === '' ? '/' : path;
+}
+
+function getEntry(filepath: string): Entry | undefined {
+  const path = normalize(filepath);
+  return path === '/' ? { type: 'dir' } : getEntries().get(path);
+}
+
+function getFile(filepath: string): Uint8Array | null {
+  const entry = getEntry(filepath);
+  if (entry == null || entry.type === 'dir') {
+    throw new Error('File does not exist: ' + filepath);
+  }
+  return entry.contents;
+}
+
+function putFile(filepath: string, contents: Uint8Array | null) {
+  const dir = getEntry(basename(normalize(filepath)));
+  if (dir == null || dir.type !== 'dir') {
+    throw new Error('Directory does not exist: ' + basename(filepath));
+  }
+  getEntries().set(normalize(filepath), { type: 'file', contents });
 }
 
 export const _setDocumentDir = (dir: string) => {
   if (typeof dir === 'string' && dir.replace(/\/+$/, '') !== '') {
     persistence.addPersistedRoot(dir);
-    if (FS) {
+    if (entries) {
       _mkdirRecursively(dir);
     }
   }
@@ -39,12 +65,7 @@ export const _setDocumentDir = (dir: string) => {
 };
 
 function _exists(filepath: string): boolean {
-  try {
-    getFS().stat(filepath);
-    return true;
-  } catch {
-    return false;
-  }
+  return getEntry(filepath) != null;
 }
 
 function _mkdirRecursively(dir: string) {
@@ -53,7 +74,7 @@ function _mkdirRecursively(dir: string) {
   for (const part of parts) {
     path += '/' + part;
     if (!_exists(path)) {
-      getFS().mkdir(path);
+      getEntries().set(path, { type: 'dir' });
     }
   }
 }
@@ -89,12 +110,10 @@ export async function readFile(
 ): Promise<string | Uint8Array> {
   let contents: Uint8Array;
   if (persistence.isPersistedPath(filepath)) {
-    if (!_exists(filepath)) {
-      throw new Error('File does not exist: ' + filepath);
-    }
+    getFile(filepath);
     contents = await readPersisted(filepath);
   } else {
-    contents = getFS().readFile(filepath, { encoding: 'binary' });
+    contents = getFile(filepath) ?? new Uint8Array();
   }
   return encoding === 'utf8' ? new TextDecoder().decode(contents) : contents;
 }
@@ -112,9 +131,9 @@ export const writeFile = async function (
     }
     await persistence.writeFile(filepath, bytes);
     // The placeholder gives the file a place in the directory tree
-    getFS().writeFile(filepath, '');
+    putFile(filepath, null);
   } else {
-    getFS().writeFile(filepath, bytes);
+    putFile(filepath, bytes.slice());
   }
   return true;
 };
@@ -123,7 +142,8 @@ export const removeFile = async function (filepath: string) {
   if (persistence.isPersistedPath(filepath)) {
     await persistence.removeFile(filepath);
   }
-  getFS().unlink(filepath);
+  getFile(filepath);
+  getEntries().delete(normalize(filepath));
 };
 
 export const copyFile = async function (
@@ -163,20 +183,20 @@ async function populateDefaultFilesystem() {
 async function populateFileHierarchy() {
   for (const path of await persistence.listFiles()) {
     _mkdirRecursively(basename(path));
-    getFS().writeFile(path, '');
+    putFile(path, null);
   }
 }
 
 export const init = async function () {
-  FS = _getModule().FS;
+  entries = new Map();
   await persistence.init();
 
   // When a user "uploads" a file, we just put it in memory in this
   // dir and the backend takes it from there
-  FS.mkdir('/uploads');
+  await mkdir('/uploads');
 
   // Files in /documents are persisted
-  FS.mkdir('/documents');
+  await mkdir('/documents');
 
   // We don't populate the default files in testing
   if (process.env.NODE_ENV !== 'test') {
@@ -192,8 +212,16 @@ export const basename = function (filepath: string) {
 };
 
 export const listDir = async function (filepath: string) {
-  const paths = getFS().readdir(filepath);
-  return paths.filter(p => p !== '.' && p !== '..');
+  const entry = getEntry(filepath);
+  if (entry == null || entry.type !== 'dir') {
+    throw new Error('Directory does not exist: ' + filepath);
+  }
+  const dir = normalize(filepath);
+  const prefix = dir === '/' ? '/' : dir + '/';
+  return [...getEntries().keys()]
+    .filter(path => path.startsWith(prefix))
+    .map(path => path.slice(prefix.length))
+    .filter(name => !name.includes('/'));
 };
 
 export const exists = async function (filepath: string) {
@@ -201,27 +229,35 @@ export const exists = async function (filepath: string) {
 };
 
 export const mkdir = async function (filepath: string) {
-  getFS().mkdir(filepath);
+  if (_exists(filepath)) {
+    throw new Error('File exists: ' + filepath);
+  }
+  const parent = getEntry(basename(normalize(filepath)));
+  if (parent == null || parent.type !== 'dir') {
+    throw new Error('Directory does not exist: ' + basename(filepath));
+  }
+  getEntries().set(normalize(filepath), { type: 'dir' });
 };
 
 export const size = async function (filepath: string) {
   if (persistence.isPersistedPath(filepath)) {
     return (await readPersisted(filepath)).byteLength;
   }
-  return getFS().stat(filepath).size;
+  return (getFile(filepath) ?? new Uint8Array()).byteLength;
 };
 
 export const removeDir = async function (filepath: string) {
-  getFS().rmdir(filepath);
+  if ((await listDir(filepath)).length > 0) {
+    throw new Error('Directory not empty: ' + filepath);
+  }
+  getEntries().delete(normalize(filepath));
 };
 
 export const removeDirRecursively = async function (dirpath: string) {
   if (await exists(dirpath)) {
     for (const file of await listDir(dirpath)) {
       const fullpath = join(dirpath, file);
-      const attr = getFS().stat(fullpath);
-
-      if (getFS().isDir(attr.mode)) {
+      if (getEntry(fullpath)?.type === 'dir') {
         await removeDirRecursively(fullpath);
       } else {
         await removeFile(fullpath);

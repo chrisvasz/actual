@@ -22,7 +22,7 @@ export async function init() {
   // Nothing to initialise for better-sqlite3
 }
 
-// Parity with the browser sqlite backend (which instantiates sql.js from an
+// Parity with the browser sqlite backend (which instantiates SQLite from an
 // embedded wasm binary). better-sqlite3 has no wasm, so this is a no-op; it
 // exists so callers can reference `setWasmBinary` regardless of platform.
 export function setWasmBinary(_binary: ArrayBuffer | Uint8Array) {
