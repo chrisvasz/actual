@@ -660,6 +660,15 @@ async function _loadBudget(id: Budget['id']): Promise<{
     );
   }
 
+  // After migrations, so new tables and indexes get stats too. The
+  // write is saved with the flush below.
+  try {
+    db.optimizeDatabase();
+  } catch (e) {
+    // Stale stats only cost speed, so they shouldn't block loading
+    captureException(e);
+  }
+
   // Make migrations and the clock setup durable before anything builds
   // on them. If that fails, don't open.
   try {

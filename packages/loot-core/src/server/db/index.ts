@@ -79,6 +79,20 @@ export async function openDatabase(id?: string) {
   // await execQuery('PRAGMA journal_mode = WAL');
 }
 
+// Refreshes the query planner's statistics (`sqlite_stat1`) for tables
+// that were never analysed or have changed a lot since, so it doesn't
+// pick plans from stale row counts. `analysis_limit` samples each index
+// instead of scanning it, keeping this cheap on large budgets. Only
+// tables whose row counts differ from the stats loaded at open are
+// redone, so it needs a fresh connection to notice stale stats.
+export function optimizeDatabase() {
+  execQuery(`
+    PRAGMA analysis_limit = 1000;
+    PRAGMA optimize = 0x10002;
+    PRAGMA analysis_limit = 0;
+  `);
+}
+
 export function closeDatabase() {
   if (db) {
     sqlite.closeDatabase(db);
