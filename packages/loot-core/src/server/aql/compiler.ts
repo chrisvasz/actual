@@ -188,7 +188,10 @@ function transformField(state, name) {
   }
 
   const fieldStr = pathInfo.tableId + '.' + field;
-  return typed(fieldStr, fieldDesc.type);
+  const expr = typed(fieldStr, fieldDesc.type);
+  // Remember the joined table a field comes from, so `$like` can match
+  // that table's rows once instead of once per row of the query
+  return path === '' ? expr : { ...expr, join: pathInfo };
 }
 
 function parseDate(str) {
@@ -732,7 +735,32 @@ const compileOp = saveStack('op', (state, fieldRef, opData) => {
     }
     case '$like': {
       const [left, right] = valArray(state, [lhs, rhs], ['string', 'string']);
-      return `UNICODE_LIKE(${getNormalisedString(right)}, NORMALISE(${left}))`;
+      const pattern = getNormalisedString(right);
+      const like = `UNICODE_LIKE(${pattern}, NORMALISE(${left}))`;
+      if (rhs.type === 'param') {
+        return like;
+      }
+      // Searches run this on every row, and each call goes from SQLite into
+      // JS. Skip the call where it can be answered once per query: an empty
+      // value (a subquery without a FROM runs once), and a joined table's
+      // value (payees, categories, accounts are small, but their names
+      // repeat on every row), matched in a subquery SQLite runs once.
+      const ifNull = (expr: string, otherwise: string) =>
+        `(CASE WHEN ${expr} IS NULL
+          THEN (SELECT UNICODE_LIKE(${pattern}, NULL))
+          ELSE ${otherwise}
+        END)`;
+      if (lhs.join == null) {
+        return ifNull(left, like);
+      }
+      const { tableName, tableId } = lhs.join;
+      return ifNull(
+        `${tableId}.id`,
+        `${tableId}.id IN (
+          SELECT ${tableId}.id FROM ${state.tableRef(tableName, true)} ${tableId}
+          WHERE ${like}
+        )`,
+      );
     }
     case '$regexp': {
       const [left, right] = valArray(state, [lhs, rhs], ['string', 'string']);
@@ -1071,6 +1099,7 @@ export type CompilerState = {
   outputTypes: OutputTypes;
   validateRefs: boolean;
   namedParameters: NamedParameter[];
+  tableRef: (name: string, isJoin?: boolean) => string;
 };
 
 export type SqlPieces = {
@@ -1150,6 +1179,7 @@ export function compileQuery(
     outputTypes: new Map(),
     validateRefs,
     namedParameters: [],
+    tableRef,
   };
   addDependency(state, tableName);
 

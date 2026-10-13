@@ -296,3 +296,100 @@ describe('compileAndRunQuery', () => {
     expect(scheduleDependencies).toContain('schedules_next_date');
   });
 });
+
+describe('$like', () => {
+  async function insertSearchData() {
+    await db.insertAccount({ id: 'checking', name: 'Checking' });
+    await db.insertAccount({ id: 'savings', name: 'Säving?s' });
+    db.insertCategoryGroup({ id: 'group', name: 'group' });
+    db.insertCategory({ id: 'food', name: 'Groceries', cat_group: 'group' });
+    db.insertPayee({ id: 'cafe', name: 'Café Müller' });
+    db.insertPayee({ id: 'grocer', name: 'GROCER Joe' });
+    db.insertPayee({ id: 'lodz', name: 'Łódź 50% \\ off' });
+    db.insertPayee({ id: 'transfer', name: '', transfer_acct: 'savings' });
+
+    const transactions = [
+      { id: 't-cafe', payee: 'cafe' },
+      { id: 't-grocer', payee: 'grocer' },
+      { id: 't-lodz', payee: 'lodz' },
+      { id: 't-transfer', payee: 'transfer' },
+      { id: 't-notes', notes: 'Crème BRÛLÉE' },
+      { id: 't-category', category: 'food', notes: '' },
+      { id: 't-empty' },
+    ];
+    for (const trans of transactions) {
+      db.insertTransaction({
+        account: 'checking',
+        date: '2020-01-01',
+        amount: -100,
+        ...trans,
+      });
+    }
+  }
+
+  // The fields the account register searches
+  function search(pattern: string) {
+    const { data } = compileAndRunAqlQuery(
+      q('transactions')
+        .filter({
+          $or: {
+            'payee.name': { $like: pattern },
+            'payee.transfer_acct.name': { $like: pattern },
+            notes: { $like: pattern },
+            'category.name': { $like: pattern },
+          },
+        })
+        .select('id')
+        .serialize(),
+    );
+    return data.map(row => row.id).sort();
+  }
+
+  it('matches regardless of case and diacritics', async () => {
+    await insertSearchData();
+
+    expect(search('%cafe%')).toEqual(['t-cafe']);
+    expect(search('%MULLER%')).toEqual(['t-cafe']);
+    expect(search('%müller%')).toEqual(['t-cafe']);
+    expect(search('%grocer%')).toEqual(['t-category', 't-grocer']);
+    expect(search('%crème brûlée%')).toEqual(['t-notes']);
+    expect(search('%lodz%')).toEqual(['t-lodz']);
+    expect(search('%SAVING%')).toEqual(['t-transfer']);
+    expect(search('%no match%')).toEqual([]);
+  });
+
+  it('matches escaped wildcards literally', async () => {
+    await insertSearchData();
+
+    expect(search('%50\\%%')).toEqual(['t-lodz']);
+    expect(search('%5\\%%')).toEqual([]);
+    expect(search('%\\\\ off%')).toEqual(['t-lodz']);
+    expect(search('%saving\\?s%')).toEqual(['t-transfer']);
+    expect(search('%savin\\?%')).toEqual([]);
+    expect(search('%sav?ng%')).toEqual(['t-transfer']);
+  });
+
+  it('matches a missing value as an empty one', async () => {
+    await insertSearchData();
+    const all = [
+      't-cafe',
+      't-category',
+      't-empty',
+      't-grocer',
+      't-lodz',
+      't-notes',
+      't-transfer',
+    ];
+
+    expect(search('%')).toEqual(all);
+    for (const field of ['payee.name', 'category.name', 'notes']) {
+      const { data } = compileAndRunAqlQuery(
+        q('transactions')
+          .filter({ [field]: { $like: '%' } })
+          .select('id')
+          .serialize(),
+      );
+      expect(data.map(row => row.id).sort()).toEqual(all);
+    }
+  });
+});
