@@ -341,8 +341,9 @@ async function importDashboard({
     return { status: 'ok' as const };
   } catch (err: unknown) {
     if (err instanceof Error) {
-      err.message = 'Error importing file: ' + err.message;
-      captureException(err);
+      captureException(
+        new Error('Error importing file: ' + err.message, { cause: err }),
+      );
     }
     if (err instanceof SyntaxError) {
       throw new Error('Invalid JSON file.', { cause: 'json-parse-error' });

@@ -517,8 +517,11 @@ async function importBudget({
     // A successful import leaves the imported budget loaded
     return { id: prefs.getPrefs()?.id };
   } catch (err) {
-    err.message = 'Error importing budget: ' + err.message;
-    captureException(err);
+    // Wrap instead of mutating: some errors (e.g. DOMException) have a
+    // getter-only `message`, and assigning to it throws a TypeError
+    captureException(
+      new Error('Error importing budget: ' + err?.message, { cause: err }),
+    );
     return { error: 'internal-error' };
   }
 }
@@ -531,8 +534,11 @@ async function exportBudget() {
       warnings: exported?.warnings ?? [],
     };
   } catch (err) {
-    err.message = 'Error exporting budget: ' + err.message;
-    captureException(err);
+    // Wrap instead of mutating: some errors (e.g. DOMException) have a
+    // getter-only `message`, and assigning to it throws a TypeError
+    captureException(
+      new Error('Error exporting budget: ' + err?.message, { cause: err }),
+    );
     return { error: 'internal-error' };
   }
 }
