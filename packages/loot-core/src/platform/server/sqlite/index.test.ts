@@ -182,12 +182,30 @@ describe('Web sqlite', () => {
 
     const rows = runQuery(
       db,
-      'SELECT id FROM textstrings where REGEXP("n.", string)',
+      "SELECT id FROM textstrings where REGEXP('n.', string)",
       null,
       true,
     );
     expect(rows.length).toBe(1);
     // @ts-expect-error Property 'id' does not exist on type 'unknown'
     expect(rows[0].id).toBe('id1');
+  });
+
+  it('should treat double-quoted strings as identifiers, not literals', async () => {
+    const db = await openDatabase();
+    execQuery(db, initSQL);
+
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => null);
+    expect(() =>
+      runQuery(db, 'SELECT "definitely_not_a_column"', null, true),
+    ).toThrow(/no such column/);
+    // Schema statements too (SQLITE_DBCONFIG_DQS_DDL)
+    expect(() =>
+      execQuery(
+        db,
+        'CREATE TABLE t (a, CHECK (a != "definitely_not_a_column"))',
+      ),
+    ).toThrow(/no such column/);
+    consoleSpy.mockRestore();
   });
 });
