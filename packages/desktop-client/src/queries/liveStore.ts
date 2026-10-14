@@ -1,0 +1,357 @@
+import {
+  onTablesChanged,
+  runQuerySync,
+} from '@actual-app/core/platform/client/live-reads';
+import type { ChangedTables } from '@actual-app/core/platform/client/live-reads';
+import type { Query } from '@actual-app/core/shared/query';
+
+// Live AQL reads of the open budget. The backend runs on this thread and
+// answers a query synchronously (`runQuerySync`), so a read never loads:
+// the first one returns rows.
+//
+// Each query's result is cached, keyed by the serialized query, along with
+// the tables it read. A change to one of those tables only marks the result
+// out of date; it's read again the next time someone asks for it, so a
+// burst of changes (an import, a sync) costs each mounted query one read.
+// Whoever listens to the query is told once per burst, in a microtask.
+
+/** A live query's latest result: its rows, or the error reading them. */
+export type LiveResult<Data> = {
+  /** The last rows read; kept from the previous read when one fails. */
+  readonly data: Data | undefined;
+  readonly error?: Error;
+};
+
+/** Read and subscribe to one query, in the shape `useSyncExternalStore` takes. */
+export type LiveQueryHandle<Data> = {
+  getSnapshot: () => LiveResult<Data>;
+  subscribe: (listener: () => void) => () => void;
+};
+
+type Entry = {
+  key: string;
+  query: Query;
+  result: LiveResult<unknown> | null;
+  /** The tables the last read read; null when it failed. */
+  dependencies: readonly string[] | null;
+  /** The version of each dependency the last read saw. */
+  versions: number[];
+  /** `epoch` when last read */
+  epoch: number;
+  /** `changeCount` when last read, for a read without dependencies */
+  changeCount: number;
+  listeners: Set<() => void>;
+};
+
+const entries = new Map<string, Entry>();
+const handles = new WeakMap<Query, LiveQueryHandle<unknown>>();
+
+// Bumped for each change to a table
+const tableVersions = new Map<string, number>();
+// Bumped for each change to any table
+let changeCount = 0;
+// Bumped when a budget opens or closes: every result is out of date
+let epoch = 0;
+
+// Entries with listeners, by the tables they read. Entries whose last read
+// failed have no known tables, so any change concerns them.
+const listenedByTable = new Map<string, Set<Entry>>();
+const listenedWithoutDependencies = new Set<Entry>();
+
+let stopListening: (() => void) | null = null;
+const toNotify = new Set<Entry>();
+let isNotifyScheduled = false;
+
+function handleTablesChanged(tables: ChangedTables) {
+  changeCount++;
+  if (tables === 'all') {
+    epoch++;
+    for (const entry of entries.values()) {
+      if (entry.listeners.size > 0) {
+        toNotify.add(entry);
+      }
+    }
+  } else {
+    for (const table of tables) {
+      tableVersions.set(table, (tableVersions.get(table) ?? 0) + 1);
+      const listened = listenedByTable.get(table);
+      if (listened) {
+        for (const entry of listened) {
+          toNotify.add(entry);
+        }
+      }
+    }
+    for (const entry of listenedWithoutDependencies) {
+      toNotify.add(entry);
+    }
+  }
+
+  if (toNotify.size > 0 && !isNotifyScheduled) {
+    isNotifyScheduled = true;
+    queueMicrotask(notify);
+  }
+}
+
+function notify() {
+  isNotifyScheduled = false;
+  const notified = [...toNotify];
+  toNotify.clear();
+  for (const entry of notified) {
+    for (const listener of [...entry.listeners]) {
+      listener();
+    }
+  }
+}
+
+function isStale(entry: Entry) {
+  if (entry.result == null || entry.epoch !== epoch) {
+    return true;
+  }
+  if (entry.dependencies == null) {
+    return entry.changeCount !== changeCount;
+  }
+  return entry.dependencies.some(
+    (table, i) => (tableVersions.get(table) ?? 0) !== entry.versions[i],
+  );
+}
+
+function read(entry: Entry): LiveResult<unknown> {
+  if (!isStale(entry)) {
+    // oxlint-disable-next-line typescript/no-non-null-assertion -- not stale means read
+    return entry.result!;
+  }
+
+  const previous = entry.result;
+  let result: LiveResult<unknown>;
+  let dependencies: readonly string[] | null;
+  try {
+    const read = runQuerySync(entry.query);
+    const data = replaceEqualDeep(previous?.data, read.data);
+    result =
+      previous != null && previous.error == null && previous.data === data
+        ? previous
+        : { data: freezeInDev(data) };
+    dependencies = read.dependencies;
+  } catch (error) {
+    result = { data: previous?.data, error: error as Error };
+    dependencies = null;
+  }
+
+  setDependencies(entry, dependencies);
+  entry.result = result;
+  entry.epoch = epoch;
+  entry.changeCount = changeCount;
+  entry.versions = (dependencies ?? []).map(
+    table => tableVersions.get(table) ?? 0,
+  );
+  return result;
+}
+
+function index(entry: Entry) {
+  if (entry.dependencies == null) {
+    listenedWithoutDependencies.add(entry);
+    return;
+  }
+  for (const table of entry.dependencies) {
+    let listened = listenedByTable.get(table);
+    if (!listened) {
+      listened = new Set();
+      listenedByTable.set(table, listened);
+    }
+    listened.add(entry);
+  }
+}
+
+function unindex(entry: Entry) {
+  listenedWithoutDependencies.delete(entry);
+  for (const table of entry.dependencies ?? []) {
+    listenedByTable.get(table)?.delete(entry);
+  }
+}
+
+function setDependencies(entry: Entry, dependencies: readonly string[] | null) {
+  if (
+    entry.dependencies != null &&
+    dependencies != null &&
+    entry.dependencies.length === dependencies.length &&
+    entry.dependencies.every((table, i) => table === dependencies[i])
+  ) {
+    return;
+  }
+  const isListened = entry.listeners.size > 0;
+  if (isListened) {
+    unindex(entry);
+  }
+  entry.dependencies = dependencies;
+  if (isListened) {
+    index(entry);
+  }
+}
+
+function getEntry(key: string, query: Query): Entry {
+  let entry = entries.get(key);
+  if (!entry) {
+    entry = {
+      key,
+      query,
+      result: null,
+      dependencies: null,
+      versions: [],
+      epoch,
+      changeCount,
+      listeners: new Set(),
+    };
+    entries.set(key, entry);
+    // Read during a render that never commits
+    collectLater(entry);
+  }
+  return entry;
+}
+
+function subscribe(entry: Entry, listener: () => void) {
+  stopListening ??= onTablesChanged(handleTablesChanged);
+
+  if (entries.get(entry.key) !== entry) {
+    // Collected between the render that read it and this subscription
+    entries.set(entry.key, entry);
+  }
+  if (entry.listeners.size === 0) {
+    index(entry);
+  }
+  entry.listeners.add(listener);
+
+  return () => {
+    entry.listeners.delete(listener);
+    if (entry.listeners.size === 0) {
+      unindex(entry);
+      toNotify.delete(entry);
+      collectLater(entry);
+    }
+  };
+}
+
+// Drop a result nothing listens to. Not right away: a screen that remounts
+// (or a Strict Mode effect re-run) picks its result back up.
+function collectLater(entry: Entry) {
+  setTimeout(() => {
+    if (entry.listeners.size === 0 && entries.get(entry.key) === entry) {
+      entries.delete(entry.key);
+    }
+  }, 0);
+}
+
+/**
+ * The live result of `query`: the same handle for the same query object,
+ * sharing its cached result with every equal query.
+ */
+export function getLiveQuery<Data = unknown>(
+  query: Query,
+): LiveQueryHandle<Data> {
+  let handle = handles.get(query);
+  if (!handle) {
+    const key = JSON.stringify(query.serialize());
+    handle = {
+      getSnapshot: () => read(getEntry(key, query)),
+      subscribe: listener => subscribe(getEntry(key, query), listener),
+    };
+    handles.set(query, handle);
+  }
+  return handle as LiveQueryHandle<Data>;
+}
+
+/**
+ * Call `onResult` with `query`'s result now, and again whenever it
+ * changes. Returns a function that stops watching.
+ */
+export function watchLiveQuery<Data = unknown>(
+  query: Query,
+  onResult: (result: LiveResult<Data>) => void,
+): () => void {
+  const handle = getLiveQuery<Data>(query);
+  let last = handle.getSnapshot();
+  onResult(last);
+  return handle.subscribe(() => {
+    const next = handle.getSnapshot();
+    if (next !== last) {
+      last = next;
+      onResult(next);
+    }
+  });
+}
+
+/**
+ * `next`, reusing every part of `previous` that is deeply equal to it, so
+ * a re-read that changed one row hands back the other rows (and an
+ * unchanged read the whole result) by reference.
+ */
+export function replaceEqualDeep(previous: unknown, next: unknown): unknown {
+  if (previous === next) {
+    return previous;
+  }
+  const isArray = Array.isArray(previous) && Array.isArray(next);
+  if (!isArray && !(isPlainObject(previous) && isPlainObject(next))) {
+    return next;
+  }
+
+  const prevItems = previous as Record<string, unknown>;
+  const nextItems = next as Record<string, unknown>;
+  const prevKeys = isArray ? null : Object.keys(prevItems);
+  const keys = isArray ? null : Object.keys(nextItems);
+  const size = isArray ? (next as unknown[]).length : (keys as string[]).length;
+  const copy = (isArray ? [] : {}) as Record<string, unknown>;
+  let equalCount = 0;
+
+  for (let i = 0; i < size; i++) {
+    const key = isArray ? i : (keys as string[])[i];
+    const value = replaceEqualDeep(prevItems[key], nextItems[key]);
+    copy[key] = value;
+    if (value === prevItems[key] && (isArray || key in prevItems)) {
+      equalCount++;
+    }
+  }
+
+  const prevSize = isArray
+    ? (previous as unknown[]).length
+    : (prevKeys as string[]).length;
+  return prevSize === size && equalCount === size ? previous : copy;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (value == null || typeof value !== 'object') {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+// Results are shared by every reader of a query; freezing them in
+// development catches code that changes one in place
+function freezeInDev<T>(value: T): T {
+  if (import.meta.env.DEV) {
+    deepFreeze(value);
+  }
+  return value;
+}
+
+function deepFreeze(value: unknown) {
+  if (value == null || typeof value !== 'object' || Object.isFrozen(value)) {
+    return;
+  }
+  Object.freeze(value);
+  for (const child of Object.values(value)) {
+    deepFreeze(child);
+  }
+}
+
+/** Only for tests: forget every result and stop listening. */
+export function resetLiveStoreForTests() {
+  stopListening?.();
+  stopListening = null;
+  entries.clear();
+  listenedByTable.clear();
+  listenedWithoutDependencies.clear();
+  tableVersions.clear();
+  toNotify.clear();
+  changeCount = 0;
+  epoch++;
+}

@@ -6,6 +6,7 @@ import {
   generateTransaction,
 } from '@actual-app/core/mocks';
 import { initServer } from '@actual-app/core/platform/client/connection';
+import type { QueryState } from '@actual-app/core/shared/query';
 import {
   addSplitTransaction,
   realizeTempTransactions,
@@ -44,6 +45,7 @@ import { SelectedProviderWithItems } from '#hooks/useSelected';
 import { SplitsExpandedProvider } from '#hooks/useSplitsExpanded';
 import { SpreadsheetProvider } from '#hooks/useSpreadsheet';
 import { createTestQueryClient, TestProviders } from '#mocks';
+import { initLiveReads } from '#mocks/live-reads';
 import * as modalsSlice from '#modals/modalsSlice';
 import { payeeQueries } from '#payees';
 import { tagQueries } from '#tags/queries';
@@ -249,24 +251,26 @@ function LiveTransactionTable(props: LiveTransactionTableProps) {
 }
 
 function initBasicServer() {
+  function query(query: QueryState) {
+    switch (query.table) {
+      case 'payees':
+        return { data: payees, dependencies: [] };
+      case 'accounts':
+        return { data: accounts, dependencies: [] };
+      case 'transactions':
+        return {
+          data: generateTransactions(5, [6]),
+          dependencies: [],
+        };
+      case 'schedules':
+        return { data: schedules, dependencies: [] };
+      default:
+        throw new Error(`queried unknown table: ${query.table}`);
+    }
+  }
+  initLiveReads(query);
   initServer({
-    query: async query => {
-      switch (query.table) {
-        case 'payees':
-          return { data: payees, dependencies: [] };
-        case 'accounts':
-          return { data: accounts, dependencies: [] };
-        case 'transactions':
-          return {
-            data: generateTransactions(5, [6]),
-            dependencies: [],
-          };
-        case 'schedules':
-          return { data: schedules, dependencies: [] };
-        default:
-          throw new Error(`queried unknown table: ${query.table}`);
-      }
-    },
+    query: async (state: QueryState) => query(state),
     'get-cell': async () => ({
       name: 'test-cell',
       value: 129_87,

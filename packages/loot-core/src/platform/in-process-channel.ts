@@ -14,6 +14,11 @@
 // microtask, in the order they were sent. A handler never runs nested
 // inside UI code (or another handler's synchronous part), and events a
 // handler pushes still arrive before its reply.
+//
+// The backend also installs `reads`, synchronous reads the client calls
+// directly, with no copy and no delay (see `server/live-reads.ts`).
+
+import type { LiveReads } from '#server/live-reads';
 
 export type RequestMessage = {
   id: string;
@@ -33,10 +38,12 @@ export type InProcessChannel = {
   server: ((msg: RequestMessage) => void) | null;
   /** Installed by the client connection; receives replies and events. */
   client: ((msg: ServerMessage) => void) | null;
+  /** Installed by the backend; synchronous reads of the open budget. */
+  reads: LiveReads | null;
 };
 
 export function createInProcessChannel(): InProcessChannel {
-  return { server: null, client: null };
+  return { server: null, client: null, reads: null };
 }
 
 /**

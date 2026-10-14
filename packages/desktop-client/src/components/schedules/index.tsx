@@ -13,8 +13,7 @@ import { accountQueries } from '#accounts';
 import { Search } from '#components/common/Search';
 import { FeatureErrorFallback } from '#components/FeatureErrorFallback';
 import { Page } from '#components/Page';
-import { schedulesSnapshotQuery, useSchedules } from '#hooks/useSchedules';
-import { useSyncedPref } from '#hooks/useSyncedPref';
+import { useSchedules } from '#hooks/useSchedules';
 import { pushModal } from '#modals/modalsSlice';
 import { payeeQueries } from '#payees';
 import { useDispatch } from '#redux';
@@ -81,17 +80,12 @@ export function Schedules() {
   );
 
   const schedulesQuery = useMemo(() => q('schedules').select('*'), []);
-  const [upcomingLength] = useSyncedPref('upcomingScheduledTransactionLength');
 
   // Suspend until the table has what it draws, so navigating here keeps the
   // previous screen up instead of drawing an empty table and filling it in.
-  // `useSchedules` below starts from the snapshot.
+  // The schedules themselves are read synchronously.
   useSuspenseQueries({
-    queries: [
-      schedulesSnapshotQuery(schedulesQuery, upcomingLength),
-      payeeQueries.list(),
-      accountQueries.list(),
-    ],
+    queries: [payeeQueries.list(), accountQueries.list()],
   });
 
   const {
