@@ -148,15 +148,19 @@ function readRows<T>(db: Database, stmt: Statement): T[] {
   if (ptr === undefined) {
     throw new Error('Statement is finalized');
   }
-  const columnCount = capi.sqlite3_column_count(ptr);
-  const names: string[] = [];
-  for (let i = 0; i < columnCount; i++) {
-    names.push(capi.sqlite3_column_name(ptr, i) ?? '');
-  }
+  // Read once the first row is in: a schema change since the statement
+  // was prepared re-prepares it on the first step, which can change its
+  // columns
+  let names: string[] | null = null;
 
   const rows: T[] = [];
   let rc: number;
   while ((rc = raw.sqlite3_step(ptr)) === capi.SQLITE_ROW) {
+    names ??= Array.from(
+      { length: capi.sqlite3_column_count(ptr) },
+      (_, i) => capi.sqlite3_column_name(ptr, i) ?? '',
+    );
+    const columnCount = names.length;
     const row: Record<string, unknown> = {};
     for (let i = 0; i < columnCount; i++) {
       let value: unknown;

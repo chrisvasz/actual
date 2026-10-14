@@ -298,6 +298,16 @@ describe('Web sqlite rows', () => {
     db.close();
   });
 
+  it('reads the columns a prepared statement has after a schema change', async () => {
+    const db = await openDatabase();
+    execQuery(db, 'CREATE TABLE t (a, b); INSERT INTO t VALUES (1, 2)');
+    const stmt = db.prepare('SELECT * FROM t');
+    execQuery(db, 'ALTER TABLE t ADD COLUMN c DEFAULT 3');
+    expect(runQuery(db, stmt, [], true)).toEqual([{ a: 1, b: 2, c: 3 }]);
+    stmt.finalize();
+    db.close();
+  });
+
   it('keeps text after an embedded NUL, as better-sqlite3 does', async () => {
     const db = await openDatabase();
     const [row] = runQuery(db, "SELECT 'a' || char(0) || 'b' AS s", null, true);
