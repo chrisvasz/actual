@@ -47,7 +47,7 @@
     "start": "yarn build && node build/app.js",
     "start-monitor": "nodemon --exec 'yarn build && node build/app.js' --ignore './build/**/*' --ext 'ts,js' build/app.js",
     "build": "vite build",
-    "typecheck": "tsgo -b && tsc-strict",
+    "typecheck": "tsgo -b && tsc-strict --incremental false --composite false",
     "test": "NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules --trace-warnings' vitest --run",
     "db:migrate": "yarn build && cross-env NODE_ENV=development node build/scripts/run-migrations.js up",
     "db:downgrade": "yarn build && cross-env NODE_ENV=development node build/scripts/run-migrations.js down",

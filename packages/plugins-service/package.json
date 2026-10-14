@@ -9,7 +9,7 @@
     "build": "cross-env NODE_ENV=production vite build",
     "build-dev": "cross-env NODE_ENV=development vite build",
     "watch": "cross-env NODE_ENV=development vite build --watch",
-    "typecheck": "tsgo -b && tsc-strict"
+    "typecheck": "tsgo -b && tsc-strict --incremental false --composite false"
   },
   "dependencies": {
     "workbox-precaching": "^7.4.1"
