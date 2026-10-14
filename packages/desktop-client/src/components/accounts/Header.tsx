@@ -49,12 +49,10 @@ import { useLocalPref } from '#hooks/useLocalPref';
 import { useNotes } from '#hooks/useNotes';
 import { usePendingValue } from '#hooks/usePendingValue';
 import { useSplitsExpanded } from '#hooks/useSplitsExpanded';
-import { useSyncedPref } from '#hooks/useSyncedPref';
 import { normalizeUrl } from '#notes/linkParser';
 
 import type { TableRef } from './Account';
 import { Balances } from './Balance';
-import { BalanceHistoryGraph } from './BalanceHistoryGraph';
 import { PrewarmReconcileBalance, ReconcilingMessage } from './Reconcile';
 
 type AccountHeaderProps = {
@@ -62,7 +60,6 @@ type AccountHeaderProps = {
   isNameEditable: boolean;
   workingHard: boolean;
   accountName: string;
-  accountId?: string;
   account?: AccountEntity;
   filterId?: SavedFilter;
   savedFilters: TransactionFilterEntity[];
@@ -128,7 +125,6 @@ export function AccountHeader({
   isNameEditable,
   workingHard,
   accountName,
-  accountId,
   account,
   filterId,
   savedFilters,
@@ -193,10 +189,6 @@ export function AccountHeader({
   }, [isReconciling]);
   const splitsExpanded = useSplitsExpanded();
   const [_, setExpandSplitsPref] = useLocalPref('expand-splits');
-  const [showNetWorthChartPref, _setShowNetWorthChartPref] = useSyncedPref(
-    `show-account-${accountId}-net-worth-chart`,
-  );
-  const showNetWorthChart = showNetWorthChartPref === 'true';
 
   // Only show the ability to make linked transfers on multi-account views.
   const showMakeTransfer = !account;
@@ -211,8 +203,6 @@ export function AccountHeader({
       setExpandSplitsPref(!(splitsExpanded.state.mode === 'expand'));
     }
   }
-
-  const graphRef = useRef<HTMLDivElement>(null);
 
   useHotkeys(
     'ctrl+f, cmd+f, meta+f',
@@ -296,16 +286,6 @@ export function AccountHeader({
               filteredAmount={filteredAmount}
             />
           </View>
-
-          <BalanceHistoryGraph
-            ref={graphRef}
-            accountId={accountId}
-            style={{
-              height: 'calc(5vh + 5vw)',
-              margin: 0,
-              display: showNetWorthChart ? 'flex' : 'none',
-            }}
-          />
         </View>
         <SpaceBetween gap={10} style={{ marginTop: 12 }}>
           {account && !account.closed && (
@@ -433,7 +413,6 @@ export function AccountHeader({
                   <Dialog>
                     <AccountMenu
                       account={account}
-                      showNetWorthChart={showNetWorthChart}
                       isSorted={isSorted}
                       showReconciled={showReconciled}
                       onMenuSelect={onMenuSelect}
@@ -468,12 +447,6 @@ export function AccountHeader({
                             ]
                           : []),
                         { name: 'export', text: 'Export' },
-                        {
-                          name: 'toggle-net-worth-chart',
-                          text: showNetWorthChart
-                            ? 'Hide balance chart'
-                            : 'Show balance chart',
-                        },
                         {
                           name: 'manage-columns',
                           text: 'Manage table columns',
@@ -662,7 +635,6 @@ function getNoteUrl(notes: string | null) {
 
 type AccountMenuProps = {
   account: AccountEntity;
-  showNetWorthChart: boolean;
   showReconciled: boolean;
   isSorted: boolean;
   onMenuSelect: (
@@ -672,7 +644,6 @@ type AccountMenuProps = {
       | 'export'
       | 'remove-sorting'
       | 'toggle-reconciled'
-      | 'toggle-net-worth-chart'
       | 'manage-columns'
       | 'account-group',
   ) => void;
@@ -680,7 +651,6 @@ type AccountMenuProps = {
 
 function AccountMenu({
   account,
-  showNetWorthChart,
   showReconciled,
   isSorted,
   onMenuSelect,
@@ -700,10 +670,6 @@ function AccountMenu({
               } as const,
             ]
           : []),
-        {
-          name: 'toggle-net-worth-chart',
-          text: showNetWorthChart ? 'Hide balance chart' : 'Show balance chart',
-        },
         {
           name: 'manage-columns',
           text: 'Manage table columns',

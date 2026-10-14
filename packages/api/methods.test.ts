@@ -1345,15 +1345,10 @@ describe('API preferences: setPreference', () => {
   // apis: setPreference
   test('can set account-specific preferences', async () => {
     const accountId = 'test-account-123';
-    await api.setPreference(
-      `show-account-${accountId}-net-worth-chart`,
-      'false',
-    );
+    await api.setPreference(`hide-reconciled-${accountId}`, 'true');
 
     const preferences = await api.getPreferences();
-    expect(preferences[`show-account-${accountId}-net-worth-chart`]).toBe(
-      'false',
-    );
+    expect(preferences[`hide-reconciled-${accountId}`]).toBe('true');
   });
 
   // apis: setPreference
