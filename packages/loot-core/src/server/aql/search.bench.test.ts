@@ -21,6 +21,7 @@ import {
   seededRandom,
 } from '#server/budget/test-helpers/generate-budget';
 import * as db from '#server/db';
+import { getNormalisedString } from '#shared/normalisation';
 import { q } from '#shared/query';
 
 import { aqlQuery } from '.';
@@ -42,20 +43,27 @@ const PAYEE_WORDS = [
 const NOTE_WORDS = ['memo', 'cafe', 'Café', 'refund', 'gift', 'rent', 'GROCER'];
 
 // The register's search filter (`transactionsSearch` in desktop-client) for a
-// term that isn't a date or an amount
-function search(term: string) {
+// term that isn't a date or an amount: names are matched in JS against the
+// lists the register has loaded, notes in SQL
+function search(term: string, accountId?: string) {
+  const normalised = getNormalisedString(term);
+  const matchingIds = (items: Array<{ id: string; name: string }>) =>
+    items
+      .filter(item => getNormalisedString(item.name ?? '').includes(normalised))
+      .map(item => item.id);
+  const payeeIds = matchingIds(db.getPayees());
+  const categoryIds = matchingIds(db.getCategories());
+  const accountIds = matchingIds(db.getAccounts());
   const pattern = `%${term.replace(/[\\%?]/g, '\\$&')}%`;
-  return q('transactions')
-    .options({ splits: 'grouped' })
+  const register = q('transactions').options({ splits: 'grouped' });
+  return (accountId ? register.filter({ account: accountId }) : register)
     .filter({
-      $or: {
-        'payee.name': { $like: pattern },
-        'payee.transfer_acct.name': { $like: pattern },
-        notes: { $like: pattern },
-        'category.name': { $like: pattern },
-        'account.name': { $like: pattern },
-        $or: [],
-      },
+      $or: [
+        payeeIds.length > 0 && { payee: { $oneof: payeeIds } },
+        categoryIds.length > 0 && { category: { $oneof: categoryIds } },
+        accountIds.length > 0 && { account: { $oneof: accountIds } },
+        { notes: { $like: pattern } },
+      ].filter(Boolean),
     })
     .select('*');
 }
@@ -151,8 +159,15 @@ describe.skipIf(!process.env.SEARCH_BENCH)('search benchmark', () => {
         'SELECT COUNT(*) AS n FROM transactions',
       )?.n,
     };
-    for (const term of ['grocer', 'memo cafe', 'zzzz-no-match']) {
-      const query = search(term);
+    // Each term across all accounts, then in one account's register
+    const cases = ['grocer', 'memo cafe', 'zzzz-no-match', '#'].flatMap(
+      (term): Array<[string, string | undefined]> => [
+        [term, undefined],
+        [term, 'acct-checking'],
+      ],
+    );
+    for (const [term, accountId] of cases) {
+      const query = search(term, accountId);
       const run = () => {
         const { data: rows } = aqlQuery(query.limit(150));
         const { data: total } = aqlQuery(query.calculate({ $sum: '$amount' }));
@@ -180,7 +195,7 @@ describe.skipIf(!process.env.SEARCH_BENCH)('search benchmark', () => {
       // Both engines return the same rows
       expect(webRows).toEqual(sqls.map(sql => prepare(sql).all()));
 
-      report[term] = {
+      report[accountId ? `${term} (${accountId})` : term] = {
         ...result,
         betterSqlite3Ms: Math.round(node),
         sqliteWasmMs: Math.round(webMs),

@@ -807,6 +807,13 @@ class AccountInternal extends PureComponent<
           this.currentQuery,
           this.state.search,
           this.props.dateFormat,
+          {
+            payees: this.props.payees,
+            categories: this.props.categoryGroups.flatMap(
+              group => group.categories ?? [],
+            ),
+            accounts: this.props.accounts,
+          },
         ),
         true,
       );
