@@ -363,7 +363,7 @@ export const schemaConfig: SchemaConfig = {
       v_transactions_internal_alive: `
         SELECT _.* FROM v_transactions_internal _
         LEFT JOIN transactions t2 ON (_.is_child = 1 AND t2.id = _.parent_id)
-        WHERE IFNULL(_.tombstone, 0) = 0 AND (_.is_child = 0 OR t2.tombstone = 0)
+        WHERE IFNULL(_.tombstone, 0) = 0 AND (_.is_child = 0 OR (t2.id IS NOT NULL AND IFNULL(t2.tombstone, 0) = 0))
       `,
 
       v_transactions: (_, publicFields) => {

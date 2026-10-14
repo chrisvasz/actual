@@ -119,7 +119,10 @@ function execTransactionsGrouped(
   outputTypes: OutputTypes,
 ) {
   const { withDead } = queryState;
-  const whereDead = withDead ? '' : `AND ${sqlPieces.from}.tombstone = 0`;
+  // A NULL tombstone counts as alive, as in `v_transactions_internal_alive`
+  const whereDead = withDead
+    ? ''
+    : `AND IFNULL(${sqlPieces.from}.tombstone, 0) = 0`;
 
   // Aggregate queries don't make sense for a grouped transactions
   // query. We never should include both parent and children
@@ -178,7 +181,7 @@ function execTransactionsGrouped(
             FROM ${sqlPieces.from}
             LEFT JOIN transactions _t2 ON ${sqlPieces.from}.is_child = 1 AND _t2.id = ${sqlPieces.from}.parent_id
             ${sqlPieces.joins}
-            ${appendWhere(sqlPieces.where, `${sqlPieces.from}.tombstone = 0 AND IFNULL(_t2.tombstone, 0) = 0`)}
+            ${appendWhere(sqlPieces.where, `IFNULL(${sqlPieces.from}.tombstone, 0) = 0 AND IFNULL(_t2.tombstone, 0) = 0`)}
           )
         GROUP BY group_id
       )

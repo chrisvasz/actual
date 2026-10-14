@@ -375,7 +375,7 @@ async function isCategoryTransferRequired({
   const res = db.runQuery<{ count: number }>(
     `SELECT count(t.id) as count FROM transactions t
        LEFT JOIN category_mapping cm ON cm.id = t.category
-       WHERE cm.transferId = ? AND t.tombstone = 0`,
+       WHERE cm.transferId = ? AND IFNULL(t.tombstone, 0) = 0`,
     [id],
     true,
   );

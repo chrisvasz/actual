@@ -17,7 +17,7 @@ const FILTERS = `
   IFNULL(t.tombstone, 0) = 0
   AND t.isParent IS NOT 1
   AND t.date IS NOT NULL
-  AND (t.isChild = 0 OR (t.parent_id IS NOT NULL AND p.tombstone = 0))
+  AND (t.isChild = 0 OR (p.id IS NOT NULL AND IFNULL(p.tombstone, 0) = 0))
 `;
 
 function dbMonthFromMonth(month: string): number {

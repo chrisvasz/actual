@@ -561,6 +561,56 @@ describe('transaction executors', () => {
     });
   });
 
+  it('treats transactions with a NULL tombstone as alive', async () => {
+    await insertTransactions([
+      { id: 't1', account: 'acct', date: '2020-01-03', amount: -10 },
+      { id: 't2', account: 'acct', date: '2020-01-02', amount: -20 },
+      {
+        id: 'p1',
+        account: 'acct',
+        date: '2020-01-01',
+        amount: -300,
+        is_parent: true,
+      },
+      {
+        id: 'p1/c1',
+        account: 'acct',
+        date: '2020-01-01',
+        amount: -300,
+        is_child: true,
+        parent_id: 'p1',
+      },
+    ]);
+    // The app always writes 0 or 1, so set NULL directly
+    db.runQuery(
+      `UPDATE transactions SET tombstone = NULL WHERE id IN ('t2', 'p1')`,
+    );
+
+    const grouped = q('transactions').options({ splits: 'grouped' });
+    // Filtering on a non-account field takes the GROUP_CONCAT path
+    const unhappy = grouped.filter({ amount: { $lt: 0 } });
+    for (const query of [grouped, unhappy]) {
+      const { data } = aqlQuery(query.select('*').serialize());
+      expect(data.map(t => [t.id, t.subtransactions.map(s => s.id)])).toEqual([
+        ['t1', []],
+        ['t2', []],
+        ['p1', ['p1/c1']],
+      ]);
+    }
+
+    const { data: inline } = aqlQuery(
+      q('transactions').select('id').serialize(),
+    );
+    expect(inline.map(t => t.id).sort()).toEqual(['p1/c1', 't1', 't2']);
+
+    for (const query of [q('transactions'), grouped, unhappy]) {
+      const { data: sum } = aqlQuery(
+        query.calculate({ $sum: '$amount' }).serialize(),
+      );
+      expect(sum).toBe(-330);
+    }
+  });
+
   it('returns the same rows for large and small sets of groups', async () => {
     // Pages of groups look up their rows by id, while very large sets
     // walk every transaction instead. Both must return the same data.

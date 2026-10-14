@@ -68,7 +68,7 @@ async function fixSplitTransactions(): Promise<{
   const deletedRows = db.all<db.DbViewTransactionInternal>(`
     SELECT t.* FROM v_transactions_internal t
     LEFT JOIN v_transactions_internal p ON t.parent_id = p.id
-    WHERE t.is_child = 1 AND t.tombstone = 0 AND (p.tombstone = 1 OR p.id IS NULL)
+    WHERE t.is_child = 1 AND IFNULL(t.tombstone, 0) = 0 AND (p.tombstone = 1 OR p.id IS NULL)
   `);
 
   await runMutator(async () => {
