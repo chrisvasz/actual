@@ -28,9 +28,13 @@ function addTombstone(schema, tableName, tableId, whereStr) {
   if (!hasTombstone) {
     return whereStr;
   }
-  return whereStr
-    ? `${whereStr} AND ${tableId}.tombstone = 0`
-    : `WHERE ${tableId}.tombstone = 0`;
+  // A transaction with a NULL tombstone is alive, like the
+  // `v_transactions_internal_alive` view and the budget treat it
+  const isAlive =
+    tableName === 'transactions'
+      ? `IFNULL(${tableId}.tombstone, 0) = 0`
+      : `${tableId}.tombstone = 0`;
+  return whereStr ? `${whereStr} AND ${isAlive}` : `WHERE ${isAlive}`;
 }
 
 export function appendWhere(whereStr: string, condition: string) {

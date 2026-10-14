@@ -207,7 +207,7 @@ describe('sheet language', () => {
     expect(sqlLines(result.sql)).toEqual(
       sqlLines(`
         SELECT transactions.amount AS amount, transactions.id AS id FROM transactions
-        WHERE transactions.tombstone = 0
+        WHERE IFNULL(transactions.tombstone, 0) = 0
       `),
     );
 
@@ -230,7 +230,7 @@ describe('sheet language', () => {
     expect(sqlLines(result.sql)).toEqual(
       sqlLines(`
         SELECT transactions1.amount AS "trans.amount", payees2.name AS "trans.payee.name", accounts.id AS id FROM accounts
-        LEFT JOIN transactions transactions1 ON transactions1.id = accounts.trans AND transactions1.tombstone = 0
+        LEFT JOIN transactions transactions1 ON transactions1.id = accounts.trans AND IFNULL(transactions1.tombstone, 0) = 0
         LEFT JOIN payees payees2 ON payees2.id = transactions1.payee AND payees2.tombstone = 0
       `),
     );

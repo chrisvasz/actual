@@ -77,7 +77,7 @@ async function getAccountBalance({
   cutoff: string | Date;
 }) {
   const result = db.first<{ balance: number }>(
-    'SELECT sum(amount) as balance FROM transactions WHERE acct = ? AND isParent = 0 AND tombstone = 0 AND date <= ?',
+    'SELECT sum(amount) as balance FROM transactions WHERE acct = ? AND isParent = 0 AND IFNULL(tombstone, 0) = 0 AND date <= ?',
     [id, db.toDateRepr(dayFromDate(cutoff))],
   );
   return result?.balance ? result.balance : 0;
@@ -85,11 +85,11 @@ async function getAccountBalance({
 
 async function getAccountProperties({ id }: { id: AccountEntity['id'] }) {
   const balanceResult = db.first<{ balance: number }>(
-    'SELECT sum(amount) as balance FROM transactions WHERE acct = ? AND isParent = 0 AND tombstone = 0',
+    'SELECT sum(amount) as balance FROM transactions WHERE acct = ? AND isParent = 0 AND IFNULL(tombstone, 0) = 0',
     [id],
   );
   const countResult = db.first<{ count: number }>(
-    'SELECT count(id) as count FROM transactions WHERE acct = ? AND tombstone = 0',
+    'SELECT count(id) as count FROM transactions WHERE acct = ? AND IFNULL(tombstone, 0) = 0',
     [id],
   );
 
