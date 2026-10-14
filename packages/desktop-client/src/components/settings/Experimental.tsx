@@ -164,30 +164,6 @@ export function ExperimentalFeatures() {
             >
               Currency support
             </FeatureToggle>
-            <FeatureToggle
-              flag="sankeyReport"
-              feedbackLink="https://github.com/actualbudget/actual/issues/1919"
-            >
-              Sankey report
-            </FeatureToggle>
-            <FeatureToggle
-              flag="balanceForecastReport"
-              feedbackLink="https://github.com/actualbudget/actual/issues/7669"
-            >
-              Balance Forecast Report
-            </FeatureToggle>
-            <FeatureToggle
-              flag="budgetAnalysisReport"
-              feedbackLink="https://github.com/actualbudget/actual/pull/6742"
-            >
-              Budget Analysis Report
-            </FeatureToggle>
-            <FeatureToggle
-              flag="monteCarloReport"
-              feedbackLink="https://github.com/actualbudget/actual/issues/8571"
-            >
-              Monte Carlo Analysis Report
-            </FeatureToggle>
             {showServerPrefs && (
               <ServerFeatureToggle
                 prefName="flags.plugins"

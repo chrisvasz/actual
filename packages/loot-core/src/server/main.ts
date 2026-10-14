@@ -17,13 +17,11 @@ import { app as authApp } from './auth/app';
 import { app as budgetApp } from './budget/app';
 import { app as budgetFilesApp } from './budgetfiles/app';
 import { app as cellsApp } from './cells/app';
-import { app as dashboardApp } from './dashboard/app';
 import * as db from './db';
 import * as encryption from './encryption';
 import { app as encryptionApp } from './encryption/app';
 import { DocumentDirError, withErrorCode } from './errors';
 import { app as filtersApp } from './filters/app';
-import { app as forecastApp } from './forecast/app';
 import { app as formulasApp } from './formulas/app';
 import { app } from './main-app';
 import { mutator, runHandler } from './mutators';
@@ -32,7 +30,6 @@ import { app as payeesApp } from './payees/app';
 import { get } from './post';
 import { app as preferencesApp } from './preferences/app';
 import * as prefs from './prefs';
-import { app as reportsApp } from './reports/app';
 import { app as rulesApp } from './rules/app';
 import { app as schedulesApp } from './schedules/app';
 import { getServer, setServer } from './server-config';
@@ -140,14 +137,11 @@ app.combine(
   authApp,
   schedulesApp,
   budgetApp,
-  dashboardApp,
   notesApp,
   preferencesApp,
   toolsApp,
   filtersApp,
   formulasApp,
-  forecastApp,
-  reportsApp,
   rulesApp,
   transactionsApp,
   accountsApp,

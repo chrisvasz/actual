@@ -2,11 +2,7 @@ export type FeatureFlag =
   | 'actionTemplating'
   | 'formulaMode'
   | 'currency'
-  | 'balanceForecastReport'
-  | 'customThemes'
-  | 'budgetAnalysisReport'
-  | 'sankeyReport'
-  | 'monteCarloReport';
+  | 'customThemes';
 
 /**
  * Cross-device preferences. These sync across devices when they are changed.
@@ -89,9 +85,6 @@ export type LocalPrefs = Partial<{
   'budget.startMonth': string;
   'budget.categoryColumnWidth': number;
   'schedules.showCompleted': boolean;
-  reportsViewLegend: boolean;
-  reportsViewSummary: boolean;
-  reportsViewLabel: boolean;
   sidebarWidth: number;
   'mobile.showSpentColumn': boolean;
 }>;

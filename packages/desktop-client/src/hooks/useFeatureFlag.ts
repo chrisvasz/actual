@@ -6,11 +6,7 @@ const DEFAULT_FEATURE_FLAG_STATE: Record<FeatureFlag, boolean> = {
   actionTemplating: false,
   formulaMode: false,
   currency: false,
-  balanceForecastReport: false,
   customThemes: false,
-  budgetAnalysisReport: false,
-  sankeyReport: false,
-  monteCarloReport: false,
 };
 
 export function useFeatureFlag(name: FeatureFlag): boolean {

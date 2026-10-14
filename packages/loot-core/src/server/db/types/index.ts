@@ -230,50 +230,6 @@ export type DbPreference = {
   value: string;
 };
 
-export type DbCustomReport = {
-  id: string;
-  name: string;
-  start_date: string;
-  end_date: string;
-  date_static: number;
-  date_range: string;
-  mode: string;
-  group_by: string;
-  balance_type: string;
-  show_empty: 1 | 0;
-  show_offbudget: 1 | 0;
-  show_hidden: 1 | 0;
-  show_uncategorized: 1 | 0;
-  selected_categories: string;
-  graph_type: string;
-  conditions: JsonString;
-  conditions_op: string;
-  metadata: JsonString;
-  interval: string;
-  color_scheme: string;
-  include_current: 1 | 0;
-  sort_by: string;
-  tombstone: 1 | 0;
-};
-
-export type DbDashboardPage = {
-  id: string;
-  name: string;
-  tombstone: 1 | 0;
-};
-
-export type DbDashboard = {
-  id: string;
-  dashboard_page_id: string;
-  type: string;
-  width: number;
-  height: number;
-  x: number;
-  y: number;
-  meta: JsonString;
-  tombstone: 1 | 0;
-};
-
 export type DbViewTransactionInternal = {
   id: DbTransaction['id'];
   is_parent: DbTransaction['isParent'];

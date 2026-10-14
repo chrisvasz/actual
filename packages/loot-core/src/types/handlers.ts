@@ -4,15 +4,12 @@ import type { AuthHandlers } from '#server/auth/app';
 import type { BudgetHandlers } from '#server/budget/app';
 import type { BudgetFileHandlers } from '#server/budgetfiles/app';
 import type { CellHandlers } from '#server/cells/app';
-import type { DashboardHandlers } from '#server/dashboard/app';
 import type { EncryptionHandlers } from '#server/encryption/app';
 import type { FiltersHandlers } from '#server/filters/app';
-import type { ForecastHandlers } from '#server/forecast/app';
 import type { FormulasHandlers } from '#server/formulas/app';
 import type { NotesHandlers } from '#server/notes/app';
 import type { PayeesHandlers } from '#server/payees/app';
 import type { PreferencesHandlers } from '#server/preferences/app';
-import type { ReportsHandlers } from '#server/reports/app';
 import type { RulesHandlers } from '#server/rules/app';
 import type { SchedulesHandlers } from '#server/schedules/app';
 import type { SyncHandlers } from '#server/sync/app';
@@ -26,13 +23,10 @@ import type { ServerHandlers } from './server-handlers';
 export type Handlers = {} & ServerHandlers &
   ApiHandlers &
   BudgetHandlers &
-  DashboardHandlers &
   FiltersHandlers &
   FormulasHandlers &
-  ForecastHandlers &
   NotesHandlers &
   PreferencesHandlers &
-  ReportsHandlers &
   RulesHandlers &
   SchedulesHandlers &
   TransactionHandlers &

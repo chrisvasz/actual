@@ -16,7 +16,6 @@ import { CategoryAutocomplete } from '#components/autocomplete/CategoryAutocompl
 import { CategoryGroupAutocomplete } from '#components/autocomplete/CategoryGroupAutocomplete';
 import { FilterAutocomplete } from '#components/autocomplete/FilterAutocomplete';
 import { PayeeAutocomplete } from '#components/autocomplete/PayeeAutocomplete';
-import { ReportAutocomplete } from '#components/autocomplete/ReportAutocomplete';
 import { hideNativeDateIconClassName } from '#components/common/FormFields';
 import { Checkbox } from '#components/forms';
 import { DateSelect } from '#components/select/DateSelect';
@@ -59,7 +58,7 @@ type GenericInputProps = {
       ))
   | ({
       type: 'saved';
-      field: 'saved' | 'report';
+      field: 'saved';
     } & (
       | {
           multi: true;
@@ -335,18 +334,6 @@ export const GenericInput = ({
         case 'saved':
           content = (
             <FilterAutocomplete
-              {...savedMultiProps}
-              openOnFocus
-              inputProps={{
-                ref,
-                ...(showSavedPlaceholder ? { placeholder: 'nothing' } : null),
-              }}
-            />
-          );
-          break;
-        case 'report':
-          content = (
-            <ReportAutocomplete
               {...savedMultiProps}
               openOnFocus
               inputProps={{

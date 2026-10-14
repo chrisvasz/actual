@@ -1,6 +1,17 @@
-import type { NewDashboardWidgetEntity } from '#types/models';
+// Frozen seed data for migration 1722804019000_create_dashboard_table, which
+// imports it. Migrations can't change, so this must stay as-is even though the
+// reports UI that read these widgets is gone.
 
-export const DEFAULT_DASHBOARD_STATE: NewDashboardWidgetEntity[] = [
+type SeedDashboardWidget = {
+  type: string;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  meta: Record<string, unknown> | null;
+};
+
+export const DEFAULT_DASHBOARD_STATE: SeedDashboardWidget[] = [
   // Top row: Key metrics at a glance
   {
     type: 'summary-card',
