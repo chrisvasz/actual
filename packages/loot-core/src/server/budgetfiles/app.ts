@@ -26,7 +26,7 @@ import * as mappings from '#server/db/mappings';
 import { resetFormulaPreferencesCache } from '#server/formulas/bootstrap';
 import { handleBudgetImport } from '#server/importers';
 import type { ImportableBudgetType } from '#server/importers';
-import { notifyTablesChanged } from '#server/live-reads';
+import { notifyChanges } from '#server/live-reads';
 import { app as mainApp } from '#server/main-app';
 import { mutator } from '#server/mutators';
 import * as prefs from '#server/prefs';
@@ -301,7 +301,7 @@ async function closeBudget() {
     captureException(e);
   }
   db.closeDatabase();
-  notifyTablesChanged('all');
+  notifyChanges('all');
 
   try {
     await asyncStorage.setItem('lastBudget', '');
@@ -732,7 +732,7 @@ async function _loadBudget(id: Budget['id']): Promise<{
     setSyncingMode('disabled');
   }
 
-  notifyTablesChanged('all');
+  notifyChanges('all');
   app.events.emit('load-budget', { id });
 
   return {};

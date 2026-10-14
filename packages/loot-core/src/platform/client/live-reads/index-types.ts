@@ -1,7 +1,7 @@
-import type { ChangedTables } from '#platform/in-process-channel';
+import type { BudgetChanges } from '#platform/in-process-channel';
 import type { Query } from '#shared/query';
 
-export type { ChangedTables };
+export type { BudgetChanges };
 
 /**
  * Run an AQL query now, against the backend on this thread. Returns its
@@ -15,10 +15,11 @@ export declare function runQuerySync<Data = unknown>(
 export type RunQuerySync = typeof runQuerySync;
 
 /**
- * Call `listener`, synchronously, after each change the backend applies,
- * with the tables it wrote. Returns a function that stops listening.
+ * Call `listener`, synchronously, after each change the backend commits,
+ * with the tables and rows it wrote (or `'all'`). Returns a function that
+ * stops listening.
  */
-export declare function onTablesChanged(
-  listener: (tables: ChangedTables) => void,
+export declare function onChanges(
+  listener: (changes: BudgetChanges) => void,
 ): () => void;
-export type OnTablesChanged = typeof onTablesChanged;
+export type OnChanges = typeof onChanges;

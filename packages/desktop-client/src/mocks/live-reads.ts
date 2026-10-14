@@ -3,7 +3,7 @@
 // backend. A test answers queries with `initLiveReads` and reports
 // changes with `changeTables`.
 
-import type { ChangedTables } from '@actual-app/core/platform/client/live-reads';
+import type { BudgetChanges } from '@actual-app/core/platform/client/live-reads';
 import type { Query, QueryState } from '@actual-app/core/shared/query';
 
 type QueryHandler = (query: QueryState) => {
@@ -12,7 +12,7 @@ type QueryHandler = (query: QueryState) => {
 };
 
 let handler: QueryHandler | null = null;
-let listeners = new Set<(tables: ChangedTables) => void>();
+let listeners = new Set<(changes: BudgetChanges) => void>();
 
 /** Answer live queries with `queryHandler`. */
 export function initLiveReads(queryHandler: QueryHandler) {
@@ -25,9 +25,13 @@ export function clearLiveReads() {
 }
 
 /** Report a change to `tables`, as the backend does after applying one. */
-export function changeTables(tables: ChangedTables) {
+export function changeTables(
+  tables: readonly string[] | 'all',
+  ids: Record<string, string[]> = {},
+) {
+  const changes: BudgetChanges = tables === 'all' ? 'all' : { tables, ids };
   for (const listener of [...listeners]) {
-    listener(tables);
+    listener(changes);
   }
 }
 
@@ -39,7 +43,7 @@ export const runQuerySync = (query: Query) => {
   return handler(query.serialize()) as any;
 };
 
-export const onTablesChanged = (listener: (tables: ChangedTables) => void) => {
+export const onChanges = (listener: (changes: BudgetChanges) => void) => {
   listeners.add(listener);
   return () => {
     listeners.delete(listener);

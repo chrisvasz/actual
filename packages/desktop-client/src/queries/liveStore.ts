@@ -1,8 +1,8 @@
 import {
-  onTablesChanged,
+  onChanges,
   runQuerySync,
 } from '@actual-app/core/platform/client/live-reads';
-import type { ChangedTables } from '@actual-app/core/platform/client/live-reads';
+import type { BudgetChanges } from '@actual-app/core/platform/client/live-reads';
 import type { Query } from '@actual-app/core/shared/query';
 
 // Live AQL reads of the open budget. The backend runs on this thread and
@@ -65,9 +65,9 @@ let stopListening: (() => void) | null = null;
 const toNotify = new Set<Entry>();
 let isNotifyScheduled = false;
 
-function handleTablesChanged(tables: ChangedTables) {
+function handleChanges(changes: BudgetChanges) {
   changeCount++;
-  if (tables === 'all') {
+  if (changes === 'all') {
     epoch++;
     for (const entry of entries.values()) {
       if (entry.listeners.size > 0) {
@@ -75,7 +75,7 @@ function handleTablesChanged(tables: ChangedTables) {
       }
     }
   } else {
-    for (const table of tables) {
+    for (const table of changes.tables) {
       tableVersions.set(table, (tableVersions.get(table) ?? 0) + 1);
       const listened = listenedByTable.get(table);
       if (listened) {
@@ -231,7 +231,7 @@ function getEntry(key: string, query: Query, remembered: Entry | null): Entry {
 // Start following the backend's changes, before the first read, so no
 // change between a read and a later subscription goes unrecorded
 function listen() {
-  stopListening ??= onTablesChanged(handleTablesChanged);
+  stopListening ??= onChanges(handleChanges);
 }
 
 function subscribe(entry: Entry, listener: () => void) {
