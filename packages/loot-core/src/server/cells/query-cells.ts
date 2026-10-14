@@ -5,6 +5,8 @@ import {
   schema,
   schemaConfig,
 } from '#server/aql';
+import { appendWhere } from '#server/aql/compiler';
+import * as db from '#server/db';
 import type { QueryState } from '#shared/query';
 
 import type { CellChange } from './types';
@@ -12,6 +14,12 @@ import type { CellChange } from './types';
 // Cells the client binds to an AQL query, like an account's balance. Each one
 // keeps its last result and runs again whenever an applied change touches a
 // table its query reads.
+//
+// Most of them are a sum or count over every transaction, which takes tens of
+// milliseconds on a large budget. When a change only touched transactions,
+// those are updated from the changed rows instead: the cell's query runs over
+// just those rows before and after the change, and the difference is added to
+// the value.
 
 type QueryCell = {
   name: string;
@@ -20,7 +28,15 @@ type QueryCell = {
   queryKey: string;
   sql: ReturnType<typeof compileQuery>;
   value: unknown;
+  // Whether `value` is the query's current result, so it can be adjusted by
+  // the changed rows. It isn't when the last run failed.
+  isCurrent: boolean;
+  isRowWise: boolean;
 };
+
+// Above this many changed transactions, running each query in full is about
+// as cheap as running it twice over the changed rows.
+const MAX_ROW_WISE_ROWS = 1000;
 
 const cells = new Map<string, QueryCell>();
 let listener: ((changes: CellChange[]) => void) | null = null;
@@ -39,6 +55,34 @@ export function getQueryCellValue(name: string): unknown {
   return cells.get(name)?.value ?? null;
 }
 
+// The sums and counts the app binds, the only results that can be adjusted by
+// the changed rows.
+const ROW_WISE_SELECTS = [
+  JSON.stringify([{ result: { $sum: '$amount' } }]),
+  JSON.stringify([{ result: { $count: '$id' } }]),
+];
+
+// A sum or count over transactions where each row's part depends only on that
+// row and on other tables. A join back to `transactions` (e.g. through
+// `transfer_id`) would make a row depend on another one.
+function isRowWiseQuery(
+  query: QueryState,
+  sql: ReturnType<typeof compileQuery>,
+): boolean {
+  return (
+    query.table === 'transactions' &&
+    query.calculation &&
+    query.groupExpressions.length === 0 &&
+    query.limit == null &&
+    query.offset == null &&
+    ROW_WISE_SELECTS.includes(JSON.stringify(query.selectExpressions)) &&
+    sql.state.namedParameters.length === 0 &&
+    ![...sql.state.paths.values()].some(
+      path => (path as { tableName: string }).tableName === 'transactions',
+    )
+  );
+}
+
 // Runs the cell's query and returns whether it succeeded. A failing query
 // keeps its last value.
 function run(cell: QueryCell): boolean {
@@ -48,10 +92,38 @@ function run(cell: QueryCell): boolean {
       cell.sql.sqlPieces,
       cell.sql.state,
     );
+    cell.isCurrent = true;
     return true;
   } catch (e) {
     logger.warn(`Failed running ${cell.name}!`, e);
+    cell.isCurrent = false;
     return false;
+  }
+}
+
+function sqlString(value: string) {
+  return `'${value.replace(/'/g, "''")}'`;
+}
+
+// The cell's query over the given transactions only, or null if it failed.
+function runOverRows(cell: QueryCell, rowsSql: string): number | null {
+  const { sqlPieces, state } = cell.sql;
+  try {
+    const value = aqlCompiledQuery(
+      cell.query,
+      {
+        ...sqlPieces,
+        where: appendWhere(
+          sqlPieces.where,
+          `${sqlPieces.from}.id IN ${rowsSql}`,
+        ),
+      },
+      state,
+    );
+    return typeof value === 'number' ? value : null;
+  } catch (e) {
+    logger.warn(`Failed running ${cell.name} over changed rows!`, e);
+    return null;
   }
 }
 
@@ -69,12 +141,15 @@ export function createQueryCell(name: string, query: QueryState) {
     return;
   }
 
+  const sql = compileQuery(query, schema, schemaConfig);
   const cell: QueryCell = {
     name,
     query,
     queryKey,
-    sql: compileQuery(query, schema, schemaConfig),
+    sql,
     value: existing?.value ?? null,
+    isCurrent: false,
+    isRowWise: isRowWiseQuery(query, sql),
   };
   cells.set(name, cell);
   if (run(cell)) {
@@ -82,10 +157,89 @@ export function createQueryCell(name: string, query: QueryState) {
   }
 }
 
-export function triggerQueryCells(tables: Set<string>) {
+function readsTables(cell: QueryCell, tables: Set<string>) {
+  return cell.sql.state.dependencies.some(dep => tables.has(dep));
+}
+
+export type QueryCellUpdate = {
+  rowsSql: string;
+  before: Map<QueryCell, number>;
+};
+
+// Called with the rows a change is about to write, before writing them.
+// Records each cell's result over those rows, so `triggerQueryCells` can
+// adjust the cell by the difference afterwards. Only for cells that read no
+// other table the change touches.
+export function beginQueryCellUpdate(
+  idsPerTable: Record<string, string[]>,
+): QueryCellUpdate | null {
+  // One entry per message, so a row can be listed many times
+  const ids = new Set(idsPerTable.transactions);
+  if (ids.size === 0 || ids.size > MAX_ROW_WISE_ROWS) {
+    return null;
+  }
+
+  // A split's children are only counted while their parent is alive, so a
+  // change to a parent can change what its children add. A child can only
+  // join or leave a parent by changing itself, so these are the same children
+  // before and after the write. The ids are listed rather than looked up in a
+  // subquery, which SQLite can plan as a walk over every transaction.
+  const changed = new Set(ids);
+  try {
+    const children = db.runQuery<{ id: string }>(
+      `SELECT id FROM transactions WHERE parent_id IN (${[...changed].map(sqlString).join(',')})`,
+      [],
+      true,
+    );
+    for (const { id } of children) {
+      changed.add(id);
+    }
+  } catch (e) {
+    // This runs inside the change's transaction, so failing here would fail
+    // the change. Run the cells in full instead.
+    logger.warn("Failed finding the changed transactions' children!", e);
+    return null;
+  }
+  const rowsSql = `(${[...changed].map(sqlString).join(',')})`;
+
+  const tables = new Set(Object.keys(idsPerTable));
+  const before = new Map<QueryCell, number>();
+  for (const cell of cells.values()) {
+    if (
+      cell.isRowWise &&
+      cell.isCurrent &&
+      cell.sql.state.dependencies.every(
+        dep => dep === 'transactions' || !tables.has(dep),
+      )
+    ) {
+      const value = runOverRows(cell, rowsSql);
+      if (value != null) {
+        before.set(cell, value);
+      }
+    }
+  }
+  return { rowsSql, before };
+}
+
+export function triggerQueryCells(
+  tables: Set<string>,
+  update: QueryCellUpdate | null = null,
+) {
   const changed: QueryCell[] = [];
   for (const cell of cells.values()) {
-    if (cell.sql.state.dependencies.some(dep => tables.has(dep)) && run(cell)) {
+    if (!readsTables(cell, tables)) {
+      continue;
+    }
+
+    const before = update?.before.get(cell);
+    const after =
+      update && before != null ? runOverRows(cell, update.rowsSql) : null;
+    if (before != null && after != null) {
+      if (after !== before) {
+        cell.value = (cell.value as number) + after - before;
+        changed.push(cell);
+      }
+    } else if (run(cell)) {
       changed.push(cell);
     }
   }
