@@ -52,7 +52,7 @@
     "build": "vite build && tsgo --emitDeclarationOnly && vite build --config vite.browser.config.mts",
     "test": "vitest --run",
     "e2e": "playwright test",
-    "typecheck": "tsgo -b && tsc-strict"
+    "typecheck": "tsgo -b && tsc-strict --incremental false --composite false"
   },
   "dependencies": {
     "@actual-app/core": "workspace:*",
