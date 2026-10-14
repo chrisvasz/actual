@@ -39,7 +39,9 @@ function getErrorCode(error: unknown): string | undefined {
   return undefined;
 }
 
-function coerceError(error: unknown): TransferableError {
+// The error a client sees when the handler (or synchronous read) it
+// called throws
+export function coerceError(error: unknown): TransferableError {
   if (getField(error, 'type') === 'APIError') {
     return error as TransferableError;
   }

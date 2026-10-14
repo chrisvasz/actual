@@ -1,3 +1,4 @@
+import { connectLiveReads } from '#platform/client/live-reads/index.main-thread';
 import { deliver } from '#platform/in-process-channel';
 import type {
   InProcessChannel,
@@ -23,6 +24,7 @@ export const init: T.Init = async function (socket) {
   }
   chn.client = handleMessage;
   channel = chn;
+  connectLiveReads(chn);
 
   const server = chn.server;
   pending?.forEach(msg => queueMicrotask(() => server(msg)));

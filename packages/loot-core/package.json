@@ -136,6 +136,10 @@
       "main-thread": "./src/platform/client/connection/index.main-thread.ts",
       "default": "./src/platform/client/connection/index.ts"
     },
+    "./platform/client/live-reads": {
+      "types": "./src/platform/client/live-reads/index-types.ts",
+      "main-thread": "./src/platform/client/live-reads/index.main-thread.ts"
+    },
     "./platform/client/undo": "./src/platform/client/undo/index.ts",
     "./platform/exceptions": "./src/platform/exceptions/index.ts",
     "./platform/server/asyncStorage": {

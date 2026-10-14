@@ -23,6 +23,7 @@ import { app as encryptionApp } from './encryption/app';
 import { DocumentDirError, withErrorCode } from './errors';
 import { app as filtersApp } from './filters/app';
 import { app as formulasApp } from './formulas/app';
+import { liveReads } from './live-reads';
 import { app } from './main-app';
 import { mutator, runHandler } from './mutators';
 import { app as notesApp } from './notes/app';
@@ -230,6 +231,7 @@ export async function initApp(isDev, channel) {
   setServer(url);
 
   connection.init(channel, app.handlers);
+  channel.reads = liveReads;
 
   // The backend shares the page's global scope, where the client already
   // defines $send, $query and $q

@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { q } from '@actual-app/core/shared/query';
 import type { TransactionFilterEntity } from '@actual-app/core/types/models';
 
-import { useQuery } from './useQuery';
+import { useLiveQuery } from './useLiveQuery';
 
 function toJS(rows): TransactionFilterEntity[] {
   const filters = rows.map(row => {
@@ -21,7 +21,7 @@ function toJS(rows): TransactionFilterEntity[] {
 }
 
 export function useTransactionFilters(): TransactionFilterEntity[] {
-  const { data } = useQuery<TransactionFilterEntity>(
+  const { data } = useLiveQuery<TransactionFilterEntity>(
     () => q('transaction_filters').select('*'),
     [],
   );

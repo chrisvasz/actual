@@ -17,7 +17,7 @@ import type {
 import { updateScheduleConditions } from '#components/schedules/schedule-edit-utils';
 import type { ScheduleFormFields } from '#components/schedules/ScheduleEditForm';
 import { aqlQuery } from '#queries/aqlQuery';
-import { liveQuery } from '#queries/liveQuery';
+import { watchLiveQuery } from '#queries/liveStore';
 
 export type ScheduleEditState = {
   isCustom?: boolean;
@@ -66,7 +66,7 @@ type ScheduleEditAction =
     }
   | {
       type: 'set-transactions';
-      transactions: TransactionEntity[];
+      transactions: readonly TransactionEntity[];
       transactionId?: string;
     }
   | {
@@ -168,9 +168,10 @@ function createScheduleEditReducer(useGetScheduledAmount: boolean = false) {
       }
 
       case 'set-transactions': {
-        const transactions = action.transactions;
+        // A copy: the rows are a live query's shared result
+        const transactions = [...action.transactions];
         // Sort transactions if we have a transactionId to prioritize
-        if (action.transactionId && transactions) {
+        if (action.transactionId) {
           transactions.sort(
             (a, b) =>
               (action.transactionId === b.id ? 1 : 0) -
@@ -338,21 +339,21 @@ export function useScheduleEdit({
       state.schedule.id &&
       state.transactionsMode === 'linked'
     ) {
-      const live = liveQuery<TransactionEntity>(
+      return watchLiveQuery<TransactionEntity[]>(
         q('transactions')
           .filter({ schedule: state.schedule.id })
           .select('*')
           .options({ splits: 'all' }),
-        {
-          onData: data =>
+        ({ data }) => {
+          if (data) {
             dispatch({
               type: 'set-transactions',
               transactions: data,
               transactionId,
-            }),
+            });
+          }
         },
       );
-      return live.unsubscribe;
     }
   }, [state.schedule, state.transactionsMode, transactionId]);
 
@@ -386,21 +387,21 @@ export function useScheduleEdit({
         conditions,
       }).then(({ filters }) => {
         if (current) {
-          const live = liveQuery<TransactionEntity>(
+          unsubscribe = watchLiveQuery<TransactionEntity[]>(
             q('transactions')
               .filter({ $and: filters })
               .select('*')
               .options({ splits: 'all' }),
-            {
-              onData: data =>
+            ({ data }) => {
+              if (data) {
                 dispatch({
                   type: 'set-transactions',
                   transactions: data,
                   transactionId,
-                }),
+                });
+              }
             },
           );
-          unsubscribe = live.unsubscribe;
         }
       });
     }
