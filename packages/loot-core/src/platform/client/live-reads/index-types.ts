@@ -1,12 +1,12 @@
+import type { ChangedTables } from '#platform/in-process-channel';
 import type { Query } from '#shared/query';
 
-/** The tables a change wrote, or `'all'` when a budget opened or closed. */
-export type ChangedTables = readonly string[] | 'all';
+export type { ChangedTables };
 
 /**
  * Run an AQL query now, against the backend on this thread. Returns its
- * rows (a single value for a `calculate` query) and the tables it read.
- * Throws the error a rejected `send('query')` has, or an `Error` if the
+ * rows (a single value for a `calculate` query) and the tables it read;
+ * with no budget open, no rows and no tables. Throws the error a rejected `send('query')` has, or an `Error` if the
  * backend hasn't started.
  */
 export declare function runQuerySync<Data = unknown>(

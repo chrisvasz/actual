@@ -11,9 +11,12 @@ import type { Query } from '@actual-app/core/shared/query';
 //
 // Each query's result is cached, keyed by the serialized query, along with
 // the tables it read. A change to one of those tables only marks the result
-// out of date; it's read again the next time someone asks for it, so a
-// burst of changes (an import, a sync) costs each mounted query one read.
-// Whoever listens to the query is told once per burst, in a microtask.
+// out of date; it's read again the next time someone asks for it. Whoever
+// listens to the query is told in a microtask, so the changes one backend
+// call applies in a row cost each shown query one read, however many there
+// are. (A call that awaits between changes, like a sync fetching pages, is
+// read again after each.) A result nobody shows isn't read until it's
+// asked for.
 
 /** A live query's latest result: its rows, or the error reading them. */
 export type LiveResult<Data> = {
@@ -32,7 +35,7 @@ type Entry = {
   key: string;
   query: Query;
   result: LiveResult<unknown> | null;
-  /** The tables the last read read; null when it failed. */
+  /** The tables the last successful read read; null before one. */
   dependencies: readonly string[] | null;
   /** The version of each dependency the last read saw. */
   versions: number[];
@@ -53,8 +56,8 @@ let changeCount = 0;
 // Bumped when a budget opens or closes: every result is out of date
 let epoch = 0;
 
-// Entries with listeners, by the tables they read. Entries whose last read
-// failed have no known tables, so any change concerns them.
+// Entries with listeners, by the tables they read. Entries that have never
+// read successfully have no known tables, so any change concerns them.
 const listenedByTable = new Map<string, Set<Entry>>();
 const listenedWithoutDependencies = new Set<Entry>();
 
@@ -121,9 +124,9 @@ function read(entry: Entry): LiveResult<unknown> {
     return entry.result!;
   }
 
+  listen();
   const previous = entry.result;
   let result: LiveResult<unknown>;
-  let dependencies: readonly string[] | null;
   try {
     const read = runQuerySync(entry.query);
     const data = replaceEqualDeep(previous?.data, read.data);
@@ -131,17 +134,21 @@ function read(entry: Entry): LiveResult<unknown> {
       previous != null && previous.error == null && previous.data === data
         ? previous
         : { data: freezeInDev(data) };
-    dependencies = read.dependencies;
-  } catch (error) {
-    result = { data: previous?.data, error: error as Error };
-    dependencies = null;
+    setDependencies(entry, read.dependencies);
+  } catch (e) {
+    // The query reads the same tables as when it last succeeded, so it's
+    // retried when they change. The same failure again keeps the result.
+    const error = e as Error;
+    result =
+      previous?.error != null && isSameError(previous.error, error)
+        ? previous
+        : { data: previous?.data, error };
   }
 
-  setDependencies(entry, dependencies);
   entry.result = result;
   entry.epoch = epoch;
   entry.changeCount = changeCount;
-  entry.versions = (dependencies ?? []).map(
+  entry.versions = (entry.dependencies ?? []).map(
     table => tableVersions.get(table) ?? 0,
   );
   return result;
@@ -169,10 +176,16 @@ function unindex(entry: Entry) {
   }
 }
 
-function setDependencies(entry: Entry, dependencies: readonly string[] | null) {
+function isSameError(a: Error, b: Error) {
+  const typeOf = (error: Error) => (error as { type?: unknown }).type;
+  return (
+    typeOf(a) === typeOf(b) && a.message === b.message && a.name === b.name
+  );
+}
+
+function setDependencies(entry: Entry, dependencies: readonly string[]) {
   if (
     entry.dependencies != null &&
-    dependencies != null &&
     entry.dependencies.length === dependencies.length &&
     entry.dependencies.every((table, i) => table === dependencies[i])
   ) {
@@ -188,9 +201,16 @@ function setDependencies(entry: Entry, dependencies: readonly string[] | null) {
   }
 }
 
-function getEntry(key: string, query: Query): Entry {
+// The entry for `key`. `remembered` is the one a handle last used: if it
+// was collected (nothing listened for a tick) it's put back, keeping its
+// result, rather than read again from scratch.
+function getEntry(key: string, query: Query, remembered: Entry | null): Entry {
   let entry = entries.get(key);
-  if (!entry) {
+  if (!entry && remembered) {
+    entry = remembered;
+    entries.set(key, entry);
+    collectLater(entry);
+  } else if (!entry) {
     entry = {
       key,
       query,
@@ -208,13 +228,14 @@ function getEntry(key: string, query: Query): Entry {
   return entry;
 }
 
-function subscribe(entry: Entry, listener: () => void) {
+// Start following the backend's changes, before the first read, so no
+// change between a read and a later subscription goes unrecorded
+function listen() {
   stopListening ??= onTablesChanged(handleTablesChanged);
+}
 
-  if (entries.get(entry.key) !== entry) {
-    // Collected between the render that read it and this subscription
-    entries.set(entry.key, entry);
-  }
+function subscribe(entry: Entry, listener: () => void) {
+  listen();
   if (entry.listeners.size === 0) {
     index(entry);
   }
@@ -250,9 +271,11 @@ export function getLiveQuery<Data = unknown>(
   let handle = handles.get(query);
   if (!handle) {
     const key = JSON.stringify(query.serialize());
+    let last: Entry | null = null;
+    const current = () => (last = getEntry(key, query, last));
     handle = {
-      getSnapshot: () => read(getEntry(key, query)),
-      subscribe: listener => subscribe(getEntry(key, query), listener),
+      getSnapshot: () => read(current()),
+      subscribe: listener => subscribe(current(), listener),
     };
     handles.set(query, handle);
   }
@@ -285,7 +308,7 @@ export function watchLiveQuery<Data = unknown>(
  * unchanged read the whole result) by reference.
  */
 export function replaceEqualDeep(previous: unknown, next: unknown): unknown {
-  if (previous === next) {
+  if (Object.is(previous, next)) {
     return previous;
   }
   const isArray = Array.isArray(previous) && Array.isArray(next);
@@ -305,7 +328,7 @@ export function replaceEqualDeep(previous: unknown, next: unknown): unknown {
     const key = isArray ? i : (keys as string[])[i];
     const value = replaceEqualDeep(prevItems[key], nextItems[key]);
     copy[key] = value;
-    if (value === prevItems[key] && (isArray || key in prevItems)) {
+    if (Object.is(value, prevItems[key]) && (isArray || key in prevItems)) {
       equalCount++;
     }
   }
@@ -342,6 +365,9 @@ function deepFreeze(value: unknown) {
     deepFreeze(child);
   }
 }
+
+// A hot-reloaded copy of this module listens on its own
+import.meta.hot?.dispose(() => stopListening?.());
 
 /** Only for tests: forget every result and stop listening. */
 export function resetLiveStoreForTests() {

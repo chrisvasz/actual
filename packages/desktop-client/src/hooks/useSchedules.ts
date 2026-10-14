@@ -76,6 +76,7 @@ export type UseSchedulesResult = ScheduleData & {
 };
 
 const NO_SCHEDULES: readonly ScheduleEntity[] = [];
+const NO_TRANSACTIONS: readonly TransactionEntity[] = [];
 const NOT_A_SCHEDULES_QUERY = new Error('Query must be a schedules query.');
 
 export function useSchedules({
@@ -103,18 +104,19 @@ export function useSchedules({
       : (schedulesError ?? statusError);
 
   return useMemo(() => {
-    const loaded = scheduleTransactions ? schedules : null;
+    // Statuses come from the transactions read; if that read failed, the
+    // schedules still show, with the error
     const data = toScheduleData(
-      loaded ?? NO_SCHEDULES,
+      schedules ?? NO_SCHEDULES,
       getStatuses(
-        loaded ?? NO_SCHEDULES,
-        scheduleTransactions ?? [],
+        schedules ?? NO_SCHEDULES,
+        scheduleTransactions ?? NO_TRANSACTIONS,
         upcomingLength,
       ),
     );
     return {
       // Only without a query (or with a failed read) is nothing loaded
-      isLoading: loaded == null && error == null,
+      isLoading: schedules == null && error == null,
       ...(error && { error }),
       ...data,
     };

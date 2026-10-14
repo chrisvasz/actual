@@ -1,9 +1,10 @@
 import { captureException } from '#platform/exceptions';
+import type { ChangedTables, LiveReads } from '#platform/in-process-channel';
 import * as connection from '#platform/server/connection';
 import { coerceError } from '#platform/server/connection/errors';
-import type { QueryState } from '#shared/query';
 
 import { aqlQuery } from './aql';
+import * as db from './db';
 import { app } from './main-app';
 
 // Synchronous reads for a client that shares the backend's thread (the
@@ -14,20 +15,10 @@ import { app } from './main-app';
 // A client keeps its reads current with `onTablesChanged`, which reports
 // the tables each applied change wrote: the same tables the `sync-event`
 // `applied` and `success` events carry.
-
-/** The tables a change wrote, or `'all'` when a budget opened or closed. */
-export type ChangedTables = readonly string[] | 'all';
-
-export type LiveReads = {
-  /**
-   * Run an AQL query now. Returns its rows (a single value for a
-   * `calculate` query) and the tables it read. Throws the error shape a
-   * rejected `send('query')` has.
-   */
-  query(query: QueryState): { data: unknown; dependencies: string[] };
-  /** Call `listener` after each change to the budget's tables. */
-  onTablesChanged(listener: (tables: ChangedTables) => void): () => void;
-};
+//
+// With no budget open (a screen re-reading as its budget closes), a read
+// has no rows rather than failing; `'all'` marks it out of date when the
+// next budget opens.
 
 const listeners = new Set<(tables: ChangedTables) => void>();
 
@@ -52,6 +43,9 @@ app.events.on('sync', event => {
 
 export const liveReads: LiveReads = {
   query(query) {
+    if (!db.getDatabase()) {
+      return { data: query?.calculation ? null : [], dependencies: [] };
+    }
     try {
       if (query?.table == null) {
         throw new Error(

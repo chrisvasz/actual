@@ -30,7 +30,7 @@ function getNoResult() {
  * The rows of the query `makeQuery` returns, kept current as the tables it
  * reads change. Read synchronously, so there's no loading state: the first
  * render has the rows. `makeQuery` is called again only when `dependencies`
- * change; return null for no query.
+ * change; return null for no query. Not for `calculate` queries.
  */
 export function useLiveQuery<Row = unknown>(
   makeQuery: () => Query | null,
@@ -38,6 +38,10 @@ export function useLiveQuery<Row = unknown>(
 ): UseLiveQueryResult<Row> {
   // oxlint-disable-next-line react-hooks/exhaustive-deps -- caller owns deps
   const query = useMemo(makeQuery, dependencies);
+  if (query?.state.calculation) {
+    // Its result is a single value, not rows
+    throw new Error('useLiveQuery reads rows; it got a `calculate` query');
+  }
   const result = useLiveResult<ReadonlyArray<Row>>(query);
   return useMemo(
     () => ({

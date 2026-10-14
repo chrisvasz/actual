@@ -1,9 +1,9 @@
+import type { ChangedTables } from '#platform/in-process-channel';
 import * as connection from '#platform/server/connection';
 import * as db from '#server/db';
 import { q } from '#shared/query';
 
 import { liveReads, notifyTablesChanged } from './live-reads';
-import type { ChangedTables } from './live-reads';
 
 beforeEach(global.emptyDatabase());
 
@@ -41,6 +41,22 @@ describe('liveReads', () => {
 
     expect(error).toMatchObject({ type: 'ServerError' });
     expect(send).toHaveBeenCalledWith('server-error');
+  });
+
+  it('reads nothing, quietly, with no budget open', () => {
+    const send = vi.spyOn(connection, 'send');
+    db.closeDatabase();
+
+    expect(liveReads.query(q('transactions').select('*').serialize())).toEqual({
+      data: [],
+      dependencies: [],
+    });
+    expect(
+      liveReads.query(
+        q('transactions').calculate({ $sum: '$amount' }).serialize(),
+      ),
+    ).toEqual({ data: null, dependencies: [] });
+    expect(send).not.toHaveBeenCalled();
   });
 
   it('reports the tables each applied change wrote', () => {

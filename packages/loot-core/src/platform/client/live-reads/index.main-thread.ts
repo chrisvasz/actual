@@ -1,5 +1,4 @@
-import type { InProcessChannel } from '#platform/in-process-channel';
-import type { LiveReads } from '#server/live-reads';
+import type { InProcessChannel, LiveReads } from '#platform/in-process-channel';
 
 import type * as T from './index-types';
 

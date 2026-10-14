@@ -200,20 +200,79 @@ describe('liveStore', () => {
     );
 
     // The backend throws a plain object, like a rejected `send`
-    const error = { type: 'ServerError', message: 'boom' };
-    runQuery.mockImplementationOnce(() => {
+    const fail = () => {
       // oxlint-disable-next-line no-throw-literal -- the backend's error shape
-      throw error;
-    });
+      throw { type: 'ServerError', message: 'boom' };
+    };
+    runQuery.mockImplementation(fail);
     change('transactions');
     await flushNotifications();
-    expect(result.current.error).toBe(error);
-    expect(result.current.data).toEqual([{ id: 't1', amount: 1 }]);
+    const failed = result.current;
+    expect(failed.error).toEqual({ type: 'ServerError', message: 'boom' });
+    expect(failed.data).toEqual([{ id: 't1', amount: 1 }]);
 
-    // Without known tables, any change retries it
+    // Retried only when a table it read changes, and the same failure
+    // again keeps the same result
+    change('accounts');
+    await flushNotifications();
+    expect(readsOf('transactions')).toBe(2);
+    change('transactions');
+    await flushNotifications();
+    expect(readsOf('transactions')).toBe(3);
+    expect(result.current).toBe(failed);
+  });
+
+  it('retries a query that never read on any change', async () => {
+    runQuery.mockImplementationOnce(() => {
+      throw new Error('boom');
+    });
+    const { result } = renderHook(() =>
+      useLiveQuery<Row>(() => q('transactions').select('*'), []),
+    );
+    expect(result.current.error?.message).toBe('boom');
+
     change('accounts');
     await flushNotifications();
     expect(result.current.error).toBeUndefined();
+    expect(result.current.data).toEqual([{ id: 't1', amount: 1 }]);
+  });
+
+  it('records a change between the first read and the first subscription', () => {
+    const handle = getLiveQuery<Row[]>(q('transactions').select('*'));
+    expect(handle.getSnapshot().data).toEqual([{ id: 't1', amount: 1 }]);
+
+    tables.transactions = [{ id: 't1', amount: 2 }];
+    change('transactions');
+    const unsubscribe = handle.subscribe(vi.fn());
+    expect(handle.getSnapshot().data).toEqual([{ id: 't1', amount: 2 }]);
+    unsubscribe();
+  });
+
+  it('reads once per batch of changes when a call awaits between them', async () => {
+    renderHook(() =>
+      useLiveQuery<Row>(() => q('transactions').select('*'), []),
+    );
+
+    for (let batch = 0; batch < 3; batch++) {
+      for (let i = 0; i < 100; i++) {
+        change('transactions');
+      }
+      await flushNotifications();
+    }
+    expect(readsOf('transactions')).toBe(1 + 3);
+  });
+
+  it('throws on a calculate query', () => {
+    // React logs the error it rethrows
+    vi.spyOn(console, 'error').mockImplementation(vi.fn());
+    expect(() =>
+      renderHook(() =>
+        useLiveQuery(
+          () => q('transactions').calculate({ $sum: '$amount' }),
+          [],
+        ),
+      ),
+    ).toThrow('useLiveQuery reads rows');
   });
 
   it('reads everything again when a budget opens or closes', async () => {
@@ -247,6 +306,18 @@ describe('liveStore', () => {
     vi.runAllTimers();
     getLiveQuery(q('transactions').select('*')).getSnapshot();
     expect(readsOf('transactions')).toBe(2);
+  });
+
+  it('keeps the result a render read even if it was collected before subscribing', () => {
+    vi.useFakeTimers();
+    const handle = getLiveQuery<Row[]>(q('transactions').select('*'));
+    const read = handle.getSnapshot();
+    vi.runAllTimers();
+
+    const unsubscribe = handle.subscribe(vi.fn());
+    expect(handle.getSnapshot()).toBe(read);
+    expect(readsOf('transactions')).toBe(1);
+    unsubscribe();
   });
 
   it('watches a query outside React', async () => {
@@ -289,5 +360,10 @@ describe('replaceEqualDeep', () => {
     const prev = [1, 2];
     expect(replaceEqualDeep(prev, [1])).toEqual([1]);
     expect(replaceEqualDeep(prev, [1, 2, 3])).toEqual([1, 2, 3]);
+  });
+
+  it('counts NaN as equal to itself', () => {
+    const prev = [{ x: NaN }];
+    expect(replaceEqualDeep(prev, [{ x: NaN }])).toBe(prev);
   });
 });

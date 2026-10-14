@@ -4,10 +4,10 @@ import type {
   ScheduleEntity,
   TransactionEntity,
 } from '@actual-app/core/types/models';
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { initLiveReads } from '#mocks/live-reads';
+import { changeTables, initLiveReads } from '#mocks/live-reads';
 
 import { getSchedulesQuery, useSchedules } from './useSchedules';
 
@@ -59,6 +59,42 @@ describe('useSchedules', () => {
     expect(result.current.isLoading).toBe(false);
     expect(result.current.schedules).toEqual([schedule]);
     expect(result.current.statuses.get(schedule.id)).toBe('paid');
+  });
+
+  it('updates a status when a schedule transaction is added', async () => {
+    const { result } = renderHook(() =>
+      useSchedules({ query: q('schedules').select('*') }),
+    );
+    expect(result.current.statuses.get(schedule.id)).not.toBe('paid');
+
+    scheduleTransactions = [{ schedule: schedule.id, date: '2017-01-01' }];
+    await act(async () => {
+      changeTables(['transactions']);
+    });
+    expect(result.current.statuses.get(schedule.id)).toBe('paid');
+  });
+
+  it('still shows the schedules when their statuses fail to read', async () => {
+    const { result } = renderHook(() =>
+      useSchedules({ query: q('schedules').select('*') }),
+    );
+
+    // A new next date makes a new status query
+    const edited = { ...schedule, next_date: '2017-02-01' };
+    schedules = [edited];
+    runQuery.mockImplementation(((query: QueryState) => {
+      if (query.table === 'schedules') {
+        return { data: schedules, dependencies: ['schedules'] };
+      }
+      throw new Error('boom');
+    }) as never);
+    await act(async () => {
+      changeTables(['schedules']);
+    });
+
+    expect(result.current.schedules).toEqual([edited]);
+    expect(result.current.error?.message).toBe('boom');
+    expect(result.current.isLoading).toBe(false);
   });
 
   it('returns the same result object when nothing changed', () => {

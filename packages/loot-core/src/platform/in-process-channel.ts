@@ -18,7 +18,7 @@
 // The backend also installs `reads`, synchronous reads the client calls
 // directly, with no copy and no delay (see `server/live-reads.ts`).
 
-import type { LiveReads } from '#server/live-reads';
+import type { QueryState } from '#shared/query';
 
 export type RequestMessage = {
   id: string;
@@ -32,6 +32,23 @@ export type ServerMessage = { type: string; id?: string } & Record<
   string,
   unknown
 >;
+
+/** The tables a change wrote, or `'all'` when a budget opened or closed. */
+export type ChangedTables = readonly string[] | 'all';
+
+/** Synchronous reads of the open budget, installed by the backend. */
+export type LiveReads = {
+  /**
+   * Run an AQL query now. Returns its rows (a single value for a
+   * `calculate` query) and the tables it read; with no budget open, no
+   * rows and no tables. Throws the error shape a rejected `send('query')`
+   * has. The query state is the caller's own object, uncopied: a read
+   * must not change it.
+   */
+  query(query: QueryState): { data: unknown; dependencies: string[] };
+  /** Call `listener` after each change to the budget's tables. */
+  onTablesChanged(listener: (tables: ChangedTables) => void): () => void;
+};
 
 export type InProcessChannel = {
   /** Installed by the backend's connection; receives client requests. */
