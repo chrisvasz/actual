@@ -200,4 +200,45 @@ describe('query cells', () => {
       expectCurrent(step);
     }
   });
+
+  it('adjust sums and counts by the changed rows', async () => {
+    await generateBudget({ seed: 2, years: 1, transactionsPerMonth: 20 });
+    await loadBudgetState();
+    const query = q('transactions').calculate({ $sum: '$amount' });
+    createQueryCell('balance', query.serialize());
+    const balance = getQueryCellValue('balance') as number;
+
+    // A write that skips sync isn't seen, so a full run would pick it up but
+    // an update from the changed rows won't
+    const [skipped, edited] = transactionIds(
+      { is_parent: false, is_child: false, 'account.closed': false },
+      2,
+    );
+    db.runQuery('UPDATE transactions SET amount = amount + 777 WHERE id = ?', [
+      skipped,
+    ]);
+    const editedAmount = aqlQuery(
+      q('transactions').filter({ id: edited }).select('amount'),
+    ).data[0].amount;
+    db.update('transactions', { id: edited, amount: editedAmount + 5 });
+
+    expect(getQueryCellValue('balance')).toBe(balance + 5);
+  });
+
+  it('runs in full when the changed rows cannot be read', async () => {
+    await generateBudget({ seed: 2, years: 1, transactionsPerMonth: 20 });
+    await loadBudgetState();
+    const query = q('transactions').calculate({ $sum: '$amount' });
+    createQueryCell('balance', query.serialize());
+
+    // A NUL can't be spliced into SQL text
+    db.insertTransaction({
+      id: 'bad\u0000id',
+      account: 'acct-checking',
+      date: '2021-03-10',
+      amount: 1234,
+    });
+
+    expect(getQueryCellValue('balance')).toBe(aqlQuery(query).data);
+  });
 });

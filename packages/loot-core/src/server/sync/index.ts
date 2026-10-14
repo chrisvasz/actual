@@ -552,15 +552,20 @@ export function applyMessages(
 
   // In testing, sometimes no budget is loaded, and that's ok
   if (isBudgetStateLoaded()) {
-    applyBudgetChanges(oldData, newData);
-    triggerQueryCells(
-      new Set([
-        ...oldData.keys(),
-        ...newData.keys(),
-        ...Object.keys(idsPerTable),
-      ]),
-      cellUpdate,
-    );
+    try {
+      applyBudgetChanges(oldData, newData);
+    } finally {
+      // Query cells are adjusted by each change rather than run in full, so
+      // missing one would leave them wrong until the budget is reopened.
+      triggerQueryCells(
+        new Set([
+          ...oldData.keys(),
+          ...newData.keys(),
+          ...Object.keys(idsPerTable),
+        ]),
+        cellUpdate,
+      );
+    }
   }
 
   _syncListeners.forEach(func => func(oldData, newData));

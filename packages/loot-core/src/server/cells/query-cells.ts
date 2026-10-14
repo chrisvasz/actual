@@ -173,8 +173,9 @@ export type QueryCellUpdate = {
 export function beginQueryCellUpdate(
   idsPerTable: Record<string, string[]>,
 ): QueryCellUpdate | null {
-  const ids = idsPerTable.transactions;
-  if (ids == null || ids.length > MAX_ROW_WISE_ROWS) {
+  // One entry per message, so a row can be listed many times
+  const ids = new Set(idsPerTable.transactions);
+  if (ids.size === 0 || ids.size > MAX_ROW_WISE_ROWS) {
     return null;
   }
 
@@ -184,13 +185,20 @@ export function beginQueryCellUpdate(
   // before and after the write. The ids are listed rather than looked up in a
   // subquery, which SQLite can plan as a walk over every transaction.
   const changed = new Set(ids);
-  const children = db.runQuery<{ id: string }>(
-    `SELECT id FROM transactions WHERE parent_id IN (${[...changed].map(sqlString).join(',')})`,
-    [],
-    true,
-  );
-  for (const { id } of children) {
-    changed.add(id);
+  try {
+    const children = db.runQuery<{ id: string }>(
+      `SELECT id FROM transactions WHERE parent_id IN (${[...changed].map(sqlString).join(',')})`,
+      [],
+      true,
+    );
+    for (const { id } of children) {
+      changed.add(id);
+    }
+  } catch (e) {
+    // This runs inside the change's transaction, so failing here would fail
+    // the change. Run the cells in full instead.
+    logger.warn("Failed finding the changed transactions' children!", e);
+    return null;
   }
   const rowsSql = `(${[...changed].map(sqlString).join(',')})`;
 
