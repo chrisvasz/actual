@@ -546,6 +546,52 @@ describe('transaction executors', () => {
       ]);
     });
 
+    it('marks unmatched rows on a page of a filtered query', async () => {
+      // A full page is found by checking the groups in order
+      const { data } = aqlQuery(
+        q('transactions')
+          .filter({ amount: -200 })
+          .options({ splits: 'grouped' })
+          .select('*')
+          .limit(1)
+          .serialize(),
+      );
+      expect(shape(data)).toEqual([
+        {
+          id: 'p1',
+          _unmatched: true,
+          subtransactions: ['p1/c2 (unmatched)', 'p1/c1'],
+        },
+      ]);
+    });
+
+    it('shows a parent for a matching child that passes filters it fails', async () => {
+      // p3 is in another account than its child, and comes before t3
+      await insertTransactions([
+        trans('p3', '2020-01-04', {
+          account: 'other',
+          is_parent: true,
+          amount: -77,
+        }),
+        trans('p3/c1', '2020-01-04', {
+          is_child: true,
+          parent_id: 'p3',
+          amount: -77,
+        }),
+        trans('t3', '2020-01-01', { amount: -77 }),
+      ]);
+      const query = q('transactions')
+        .filter({ account: 'acct' })
+        .filter({ amount: -77 })
+        .options({ splits: 'grouped' })
+        .select('*')
+        .withoutValidatedRefs();
+      const { data: page } = aqlQuery(query.limit(1).serialize());
+      expect(shape(page)).toEqual([
+        { id: 'p3', _unmatched: true, subtransactions: ['p3/c1'] },
+      ]);
+    });
+
     it('pages groups without splitting them', async () => {
       const query = q('transactions')
         .options({ splits: 'grouped' })

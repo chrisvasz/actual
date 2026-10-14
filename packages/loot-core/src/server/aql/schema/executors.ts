@@ -14,7 +14,7 @@ import { whereIn } from '#server/db/util';
 import { q } from '#shared/query';
 import type { QueryState } from '#shared/query';
 import type { CategoryEntity } from '#types/models';
-import { aqlQuery } from '..';
+import { aqlQuery, compileQuery, schema, schemaConfig } from '..';
 
 // Transactions executor
 
@@ -23,6 +23,11 @@ type SplitsOption = 'all' | 'inline' | 'none' | 'grouped';
 // Above this many groups, walking every transaction beats per-id
 // index lookups when fetching the rows of a grouped query
 const MAX_INDEXED_GROUP_LOOKUP = 1000;
+
+// How many groups a filtered grouped query looks through for its page
+// before matching every transaction instead (see `pageInWindow`)
+const MIN_WINDOW_GROUPS = 2000;
+const WINDOW_GROUPS_PER_ROW = 10;
 
 function toGroup(parents, children, mapper = x => x) {
   return parents.reduce((list, parent) => {
@@ -111,6 +116,88 @@ export function isHappyPathQuery(queryState) {
   return queryState.filterExpressions.find(_isUnhappy) == null;
 }
 
+// The query's filter as a condition, without the WHERE keyword
+function whereCondition(sqlPieces: SqlPieces) {
+  return sqlPieces.where === '' ? '1' : sqlPieces.where.replace(/^WHERE /, '');
+}
+
+// The first page of groups of a filtered grouped query, or null if it
+// isn't found among the first few groups in the query's order.
+//
+// A group (a parent or standalone transaction) is shown when its own row
+// matches, or when one of its live children does. Matching every
+// transaction, then grouping and sorting the matches (as the fallback
+// does) costs the same however few groups are shown, which is slow for
+// a page of a broad search. Here SQLite instead checks the groups in
+// order and stops at the page. To keep a search that matches few groups
+// from checking every one of them, one by one, it only looks through a
+// window of the first groups. If the page isn't full by then, the query
+// matches few groups, and the fallback finds them faster.
+//
+// A group's children are found by their raw `parent_id` (indexed), then
+// each one is matched by `id` against the query's own FROM, joins and
+// filter, so the filter needn't be compiled for another alias. That inner
+// FROM shadows the outer one, which is why the children are found through
+// `_child` first. The filter appears more than once, so this is only for
+// queries without parameters, whose values are bound in order.
+function pageInWindow(queryState: QueryState, sqlPieces: SqlPieces) {
+  const { from, joins, orderBy, limit, offset } = sqlPieces;
+  const filter = whereCondition(sqlPieces);
+
+  // The window: the first groups in the query's order that pass its
+  // account and date filters. A parent can be shown for a child that
+  // passes them when it doesn't, so parents are always included.
+  const windowState = {
+    ...queryState,
+    filterExpressions: queryState.filterExpressions.filter(
+      expr => !_isUnhappy(expr),
+    ),
+    selectExpressions: ['id'],
+    limit: null,
+    offset: null,
+  };
+  const window = compileQuery(windowState, schema, schemaConfig).sqlPieces;
+  const windowSize = Math.max(
+    MIN_WINDOW_GROUPS,
+    WINDOW_GROUPS_PER_ROW * (limit + (offset ?? 0)),
+  );
+  const windowSql = `
+    SELECT ${window.from}.id AS _group_id FROM ${window.from}
+    ${window.joins}
+    WHERE ${window.from}.is_child = 0 AND
+      IFNULL(${window.from}.tombstone, 0) = 0 AND
+      (${whereCondition(window)} OR ${window.from}.is_parent = 1)
+    ${window.orderBy}
+    LIMIT ${windowSize}
+  `;
+
+  const rows = db.all<{ group_id: string }>(`
+    SELECT ${from}.id AS group_id
+    FROM (${windowSql}) _window
+    CROSS JOIN ${from} ON ${from}.id = _window._group_id
+    ${joins}
+    WHERE (${from}.tombstone = 0 AND (${filter})) OR (
+      ${from}.is_parent = 1 AND
+      IFNULL(${from}.tombstone, 0) = 0 AND
+      EXISTS (
+        SELECT 1 FROM transactions _child
+        WHERE _child.parent_id = ${from}.id AND
+          _child.isChild = 1 AND
+          _child.tombstone = 0 AND
+          EXISTS (
+            SELECT 1 FROM ${from}
+            ${joins}
+            WHERE ${from}.id = _child.id AND (${filter})
+          )
+      )
+    )
+    ${orderBy}
+    LIMIT ${limit}
+    ${offset != null ? `OFFSET ${offset}` : ''}
+  `);
+  return rows.length === limit ? rows : null;
+}
+
 function execTransactionsGrouped(
   compilerState: CompilerState,
   queryState: QueryState,
@@ -147,8 +234,13 @@ function execTransactionsGrouped(
 
   let rows;
   let matched = null;
+  const isHappyPath = isHappyPathQuery(queryState);
+  const windowRows =
+    !isHappyPath && params.length === 0 && sqlPieces.limit > 0
+      ? pageInWindow(queryState, sqlPieces)
+      : null;
 
-  if (isHappyPathQuery(queryState)) {
+  if (isHappyPath) {
     // This is just an optimization - we can just filter out children
     // directly and only list parents
     const rowSql = `
@@ -161,6 +253,8 @@ function execTransactionsGrouped(
       ${sqlPieces.offset != null ? `OFFSET ${sqlPieces.offset}` : ''}
     `;
     rows = db.all<db.DbViewTransactionInternal>(rowSql, params);
+  } else if (windowRows) {
+    rows = windowRows;
   } else {
     // TODO: phew, what a doozy. write docs why it works this way
     //
@@ -221,8 +315,13 @@ function execTransactionsGrouped(
         CROSS JOIN ${sqlPieces.from}
           ON ${sqlPieces.from}.id = _candidates._candidate_id`
       : sqlPieces.from;
+  // A row of a shown group matches if it's alive and matches the filter
+  // (its parent, the group's own row, is always alive here)
+  const matchedColumn = windowRows
+    ? `, (${sqlPieces.from}.tombstone = 0 AND (${whereCondition(sqlPieces)})) AS _matched`
+    : '';
   const finalSql = `
-    SELECT ${sqlPieces.select}, parent_id AS _parent_id FROM ${from}
+    SELECT ${sqlPieces.select}, parent_id AS _parent_id${matchedColumn} FROM ${from}
     ${sqlPieces.joins}
     WHERE ${where} ${whereDead}
     ${sqlPieces.orderBy}
@@ -253,11 +352,16 @@ function execTransactionsGrouped(
   );
 
   const mapper = trans => {
+    const isUnmatched = windowRows
+      ? !trans._matched
+      : matched != null && !matched.has(trans.id);
+    delete trans._matched;
+
     Object.keys(trans).forEach(name => {
       trans[name] = convertOutputType(trans[name], outputTypes.get(name));
     });
 
-    if (matched && !matched.has(trans.id)) {
+    if (isUnmatched) {
       trans._unmatched = true;
     }
     return trans;
