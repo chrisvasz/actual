@@ -25,9 +25,10 @@ type SplitsOption = 'all' | 'inline' | 'none' | 'grouped';
 const MAX_INDEXED_GROUP_LOOKUP = 1000;
 
 // How many groups a filtered grouped query looks through for its page
-// before matching every transaction instead (see `pageInWindow`)
-const MIN_WINDOW_GROUPS = 2000;
-const WINDOW_GROUPS_PER_ROW = 10;
+// before matching every transaction instead (see `pageInWindow`), and
+// the largest page it does that for
+const WINDOW_GROUPS = 2000;
+const MAX_WINDOW_PAGE = 500;
 
 function toGroup(parents, children, mapper = x => x) {
   return parents.reduce((list, parent) => {
@@ -141,12 +142,14 @@ function whereCondition(sqlPieces: SqlPieces) {
 // `_child` first. The filter appears more than once, so this is only for
 // queries without parameters, whose values are bound in order.
 function pageInWindow(queryState: QueryState, sqlPieces: SqlPieces) {
-  const { from, joins, orderBy, limit, offset } = sqlPieces;
+  const { from, joins, orderBy, limit } = sqlPieces;
   const filter = whereCondition(sqlPieces);
 
   // The window: the first groups in the query's order that pass its
   // account and date filters. A parent can be shown for a child that
-  // passes them when it doesn't, so parents are always included.
+  // passes them when it doesn't, so parents are always included. (A
+  // child's account and date follow its parent's, so a group whose
+  // parent lost its split flag is left out only if those differ too.)
   const windowState = {
     ...queryState,
     filterExpressions: queryState.filterExpressions.filter(
@@ -155,12 +158,10 @@ function pageInWindow(queryState: QueryState, sqlPieces: SqlPieces) {
     selectExpressions: ['id'],
     limit: null,
     offset: null,
+    // Only widens the window, and saves joining the accounts to check
+    validateRefs: false,
   };
   const window = compileQuery(windowState, schema, schemaConfig).sqlPieces;
-  const windowSize = Math.max(
-    MIN_WINDOW_GROUPS,
-    WINDOW_GROUPS_PER_ROW * (limit + (offset ?? 0)),
-  );
   const windowSql = `
     SELECT ${window.from}.id AS _group_id FROM ${window.from}
     ${window.joins}
@@ -168,7 +169,7 @@ function pageInWindow(queryState: QueryState, sqlPieces: SqlPieces) {
       IFNULL(${window.from}.tombstone, 0) = 0 AND
       (${whereCondition(window)} OR ${window.from}.is_parent = 1)
     ${window.orderBy}
-    LIMIT ${windowSize}
+    LIMIT ${WINDOW_GROUPS}
   `;
 
   const rows = db.all<{ group_id: string }>(`
@@ -177,7 +178,6 @@ function pageInWindow(queryState: QueryState, sqlPieces: SqlPieces) {
     CROSS JOIN ${from} ON ${from}.id = _window._group_id
     ${joins}
     WHERE (${from}.tombstone = 0 AND (${filter})) OR (
-      ${from}.is_parent = 1 AND
       IFNULL(${from}.tombstone, 0) = 0 AND
       EXISTS (
         SELECT 1 FROM transactions _child
@@ -193,7 +193,6 @@ function pageInWindow(queryState: QueryState, sqlPieces: SqlPieces) {
     )
     ${orderBy}
     LIMIT ${limit}
-    ${offset != null ? `OFFSET ${offset}` : ''}
   `);
   return rows.length === limit ? rows : null;
 }
@@ -236,7 +235,14 @@ function execTransactionsGrouped(
   let matched = null;
   const isHappyPath = isHappyPathQuery(queryState);
   const windowRows =
-    !isHappyPath && params.length === 0 && sqlPieces.limit > 0
+    !isHappyPath &&
+    params.length === 0 &&
+    // The window is a prefix of the default order (cheap to walk), and
+    // holds a first page, or a few, but not a page at an offset
+    queryState.orderExpressions.length === 0 &&
+    sqlPieces.offset == null &&
+    sqlPieces.limit > 0 &&
+    sqlPieces.limit <= MAX_WINDOW_PAGE
       ? pageInWindow(queryState, sqlPieces)
       : null;
 

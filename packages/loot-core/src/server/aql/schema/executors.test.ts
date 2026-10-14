@@ -592,6 +592,31 @@ describe('transaction executors', () => {
       ]);
     });
 
+    it('shows a parent that lost its split flag for a matching child', async () => {
+      // Deleting a split's last child clears the parent's flag, while
+      // another device can add a child to it
+      await insertTransactions([
+        trans('p3', '2020-01-05', { amount: -100 }),
+        trans('p3/c1', '2020-01-05', {
+          is_child: true,
+          parent_id: 'p3',
+          amount: -77,
+        }),
+        trans('t3', '2020-01-01', { amount: -77 }),
+      ]);
+      const query = q('transactions')
+        .filter({ amount: -77 })
+        .options({ splits: 'grouped' })
+        .select('*');
+      const { data: all } = aqlQuery(query.serialize());
+      const { data: page } = aqlQuery(query.limit(1).serialize());
+      expect(shape(all)).toEqual([
+        { id: 'p3', _unmatched: true, subtransactions: ['p3/c1'] },
+        { id: 't3', subtransactions: [] },
+      ]);
+      expect(page).toEqual(all.slice(0, 1));
+    });
+
     it('pages groups without splitting them', async () => {
       const query = q('transactions')
         .options({ splits: 'grouped' })
@@ -657,6 +682,13 @@ describe('transaction executors', () => {
         pages.push(...data);
       }
       expect(pages).toEqual(all);
+
+      // First pages, which a filtered query finds by checking groups in
+      // order
+      for (const limit of [1, 150, 500]) {
+        const { data } = aqlQuery(query.limit(limit).serialize());
+        expect(data).toEqual(all.slice(0, limit));
+      }
     }
   }, 20_000);
 });
