@@ -110,11 +110,7 @@ export function runQuery<T>(
       stmt.bind(params);
     }
     if (fetchAll) {
-      const rows: T[] = [];
-      while (stmt.step()) {
-        rows.push(stmt.get({}) as T);
-      }
-      return rows;
+      return readRows<T>(db, stmt);
     }
     stmt.step();
     return { changes: db.changes() };
@@ -128,6 +124,99 @@ export function runQuery<T>(
       stmt.reset(true);
     }
   }
+}
+
+// The raw C exports `readRows` calls. `wasm.exports` is untyped.
+type RawExports = {
+  sqlite3_step: (stmt: number) => number;
+  sqlite3_column_type: (stmt: number, col: number) => number;
+  sqlite3_column_double: (stmt: number, col: number) => number;
+  sqlite3_column_text: (stmt: number, col: number) => number;
+  sqlite3_column_blob: (stmt: number, col: number) => number;
+  sqlite3_column_bytes: (stmt: number, col: number) => number;
+};
+
+const textDecoder = new TextDecoder();
+
+// Reads every row of a bound statement, with the values `stmt.get({})`
+// returns, through SQLite's C exports. OO1's per-cell wrapper costs about
+// 1.6µs a cell, which dominates large reads.
+function readRows<T>(db: Database, stmt: Statement): T[] {
+  const { capi, wasm, oo1 } = getSqlite3();
+  const raw = wasm.exports as RawExports;
+  const ptr = stmt.pointer;
+  if (ptr === undefined) {
+    throw new Error('Statement is finalized');
+  }
+  // Read once the first row is in: a schema change since the statement
+  // was prepared re-prepares it on the first step, which can change its
+  // columns
+  let names: string[] | null = null;
+
+  const rows: T[] = [];
+  let rc: number;
+  while ((rc = raw.sqlite3_step(ptr)) === capi.SQLITE_ROW) {
+    names ??= Array.from(
+      { length: capi.sqlite3_column_count(ptr) },
+      (_, i) => capi.sqlite3_column_name(ptr, i) ?? '',
+    );
+    const columnCount = names.length;
+    const row: Record<string, unknown> = {};
+    for (let i = 0; i < columnCount; i++) {
+      let value: unknown;
+      switch (raw.sqlite3_column_type(ptr, i)) {
+        case capi.SQLITE_INTEGER:
+          // A double holds every integer up to 2^53 exactly, unlike
+          // `sqlite3_column_int` (32-bit). Larger ones come back as BigInt,
+          // as in OO1.
+          value = raw.sqlite3_column_double(ptr, i);
+          if (!Number.isSafeInteger(value)) {
+            value = readUnsafeInteger(ptr, i);
+          }
+          break;
+        case capi.SQLITE_FLOAT:
+          value = raw.sqlite3_column_double(ptr, i);
+          break;
+        case capi.SQLITE_TEXT: {
+          const text = raw.sqlite3_column_text(ptr, i);
+          const bytes = raw.sqlite3_column_bytes(ptr, i);
+          // The heap is taken after the column calls: if one grows the wasm
+          // memory, views taken before it are detached
+          value = textDecoder.decode(
+            wasm.heap8u().subarray(text, text + bytes),
+          );
+          break;
+        }
+        case capi.SQLITE_BLOB: {
+          const blob = raw.sqlite3_column_blob(ptr, i);
+          const bytes = raw.sqlite3_column_bytes(ptr, i);
+          value = bytes
+            ? wasm.heap8u().slice(blob, blob + bytes)
+            : new Uint8Array(0);
+          break;
+        }
+        default:
+          value = null;
+      }
+      row[names[i]] = value;
+    }
+    rows.push(row as T);
+  }
+  if (rc !== capi.SQLITE_DONE) {
+    oo1.DB.checkRc(db, rc);
+  }
+  return rows;
+}
+
+function readUnsafeInteger(ptr: number, col: number) {
+  const { capi, config } = getSqlite3();
+  if (!config.bigIntEnabled) {
+    throw new Error(
+      'Integer is out of range for JS integer range: ' +
+        capi.sqlite3_column_double(ptr, col),
+    );
+  }
+  return capi.sqlite3_column_int64(ptr, col);
 }
 
 export function execQuery(db: Database, sql: string) {
