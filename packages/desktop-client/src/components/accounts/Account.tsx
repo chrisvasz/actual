@@ -265,6 +265,18 @@ function AllTransactions({
 // A row's running balance is the total less every row above it. Pages load
 // from the top, so the rows above a loaded row are always loaded too. Child
 // rows are skipped because their parent's amount already includes theirs.
+// The filtered total of loaded rows: the ones that match the filter,
+// without split parents, whose children hold their amounts
+function sumMatchingAmounts(transactions: TransactionEntity[]) {
+  let total = 0;
+  for (const transaction of transactions) {
+    if (!transaction.is_parent && !transaction._unmatched) {
+      total += transaction.amount;
+    }
+  }
+  return total;
+}
+
 function calculateRunningBalancesFromTotal(
   transactions: TransactionEntity[],
   total: IntegerAmount,
@@ -729,14 +741,19 @@ class AccountInternal extends PureComponent<
     // Both aggregates are independent of each other and of `data`, so
     // run them together rather than serially. `filteredAmount` is only
     // rendered behind `isFiltered`, so skip that round trip entirely
-    // when nothing will read it.
+    // when nothing will read it. When every row is loaded, it's the sum
+    // of the loaded rows, which saves matching every transaction again.
     const pendingBalanceTotal = this._pendingBalanceTotal;
     this._pendingBalanceTotal = null;
     const [balances, filteredAmount] = await Promise.all([
       this.state.showBalances
         ? this.calculateBalances(data, pendingBalanceTotal ?? undefined)
         : null,
-      isFiltered ? this.getFilteredAmount() : null,
+      !isFiltered
+        ? null
+        : this._hasMoreRows
+          ? this.getFilteredAmount()
+          : sumMatchingAmounts(data),
     ]);
     this.setState(
       {
