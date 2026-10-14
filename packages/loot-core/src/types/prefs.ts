@@ -21,7 +21,6 @@ export type SyncedPrefs = Partial<
     | 'currencySymbolPosition'
     | 'currencySpaceBetweenAmountAndSymbol'
     | 'defaultCurrencyCode'
-    | `show-account-${string}-net-worth-chart`
     // @deprecated: superseded by `transaction-table-columns-${string}`; only
     // read as a fallback for budgets that never used the column manager
     | `show-balances-${string}`
