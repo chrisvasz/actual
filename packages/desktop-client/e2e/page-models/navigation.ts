@@ -4,7 +4,6 @@ import type { Locator, Page } from '@playwright/test';
 import { AccountPage } from './account-page';
 import { BudgetPage } from './budget-page';
 import { PayeesPage } from './payees-page';
-import { ReportsPage } from './reports-page';
 import { RulesPage } from './rules-page';
 import { SchedulesPage } from './schedules-page';
 import { SettingsPage } from './settings-page';
@@ -91,12 +90,6 @@ export class Navigation {
       new RegExp(accountName, 'i'),
     );
     return accountPage;
-  }
-
-  async goToReportsPage() {
-    await this.page.getByRole('link', { name: 'Reports' }).click();
-
-    return new ReportsPage(this.page);
   }
 
   async goToBudgetPage() {

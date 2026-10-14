@@ -24,7 +24,6 @@ import { ConfirmDeleteModal } from './modals/ConfirmDeleteModal';
 import { ConfirmPayeesMergeModal } from './modals/ConfirmPayeesMergeModal';
 import { ConfirmTransactionEditModal } from './modals/ConfirmTransactionEditModal';
 import { ConvertToScheduleModal } from './modals/ConvertToScheduleModal';
-import { CopyWidgetToDashboardModal } from './modals/CopyWidgetToDashboardModal';
 import { CoverModal } from './modals/CoverModal';
 import { CreateEncryptionKeyModal } from './modals/CreateEncryptionKeyModal';
 import { CreateLocalAccountModal } from './modals/CreateLocalAccountModal';
@@ -118,9 +117,6 @@ export function Modals() {
 
         case 'confirm-delete':
           return <ConfirmDeleteModal key={key} {...modal.options} />;
-
-        case 'copy-widget-to-dashboard':
-          return <CopyWidgetToDashboardModal key={key} {...modal.options} />;
 
         case 'load-backup':
           return (

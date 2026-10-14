@@ -10,6 +10,7 @@
     "outDir": "build/ts",
     "rootDir": ".",
     "tsBuildInfoFile": "build/ts/.tsbuildinfo",
+    "types": ["vite/client", "vitest/globals", "node"],
     "plugins": [
       {
         "name": "typescript-strict-plugin",

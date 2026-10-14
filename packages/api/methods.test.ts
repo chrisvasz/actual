@@ -1336,10 +1336,10 @@ describe('API preferences: setPreference', () => {
 
   // apis: setPreference
   test('can set feature flag preferences', async () => {
-    await api.setPreference('flags.sankeyReport', 'true');
+    await api.setPreference('flags.currency', 'true');
 
     const preferences = await api.getPreferences();
-    expect(preferences['flags.sankeyReport']).toBe('true');
+    expect(preferences['flags.currency']).toBe('true');
   });
 
   // apis: setPreference
