@@ -1,45 +1,45 @@
 import { captureException } from '#platform/exceptions';
-import type { ChangedTables, LiveReads } from '#platform/in-process-channel';
+import type { BudgetChanges, LiveReads } from '#platform/in-process-channel';
 import * as connection from '#platform/server/connection';
 import { coerceError } from '#platform/server/connection/errors';
 
 import { aqlQuery } from './aql';
 import * as db from './db';
-import { app } from './main-app';
 
 // Synchronous reads for a client that shares the backend's thread (the
 // browser app, see `platform/client/live-reads`). A read runs right away
 // against the open budget and returns rows built for it, so nothing is
 // copied and nothing it returns is shared with backend state.
 //
-// A client keeps its reads current with `onTablesChanged`, which reports
-// the tables each applied change wrote: the same tables the `sync-event`
-// `applied` and `success` events carry.
+// A client keeps its reads current with `onChanges`. Whatever changes the
+// open budget reports it with `notifyChanges`, once the change is
+// committed:
+// - `applyMessages`, for every write: local edits, undo/redo, synced
+//   batches, and what rules and transfers write along with them. A sync's
+//   closing `success` event isn't reported: each batch it received was
+//   already applied, and reported, by `applyMessages`.
+// - Opening and closing a budget report `'all'`. Writes that skip
+//   `applyMessages` (replaying pending messages, migrations, rebuilding
+//   derived tables) only happen while a budget opens, before that.
 //
 // With no budget open (a screen re-reading as its budget closes), a read
 // has no rows rather than failing; `'all'` marks it out of date when the
 // next budget opens.
 
-const listeners = new Set<(tables: ChangedTables) => void>();
+const listeners = new Set<(changes: BudgetChanges) => void>();
 
-/** Report changed tables to every `onTablesChanged` listener. */
-export function notifyTablesChanged(tables: ChangedTables) {
+/** Report a committed change to every `onChanges` listener. */
+export function notifyChanges(changes: BudgetChanges) {
   for (const listener of [...listeners]) {
     // A listener is UI code; its failure mustn't fail the change that
     // was just applied
     try {
-      listener(tables);
+      listener(changes);
     } catch (error) {
       captureException(error as Error);
     }
   }
 }
-
-app.events.on('sync', event => {
-  if (event.type === 'applied' || event.type === 'success') {
-    notifyTablesChanged(event.tables);
-  }
-});
 
 export const liveReads: LiveReads = {
   query(query) {
@@ -64,7 +64,7 @@ export const liveReads: LiveReads = {
     }
   },
 
-  onTablesChanged(listener) {
+  onChanges(listener) {
     listeners.add(listener);
     return () => {
       listeners.delete(listener);

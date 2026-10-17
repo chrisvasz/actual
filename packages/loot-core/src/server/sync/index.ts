@@ -19,6 +19,7 @@ import {
 import type { QueryCellUpdate } from '#server/cells/query-cells';
 import * as db from '#server/db';
 import { PostError, SyncError } from '#server/errors';
+import { notifyChanges } from '#server/live-reads';
 import { app } from '#server/main-app';
 import { runMutator } from '#server/mutators';
 import { postBinary } from '#server/post';
@@ -572,15 +573,19 @@ export function applyMessages(
 
   // Only tables that actually changed — deferred messages wrote
   // nothing, so they must not trigger client cache invalidation
-  const tables = getTablesFromMessages(
-    messages.filter(msg => !msg.old && !deferredMessages.has(msg)),
+  const written = messages.filter(
+    msg => !msg.old && !deferredMessages.has(msg),
   );
+  const tables = getTablesFromMessages(written);
   app.events.emit('sync', {
     type: 'applied',
     tables,
     data: newData,
     prevData: oldData,
   });
+  if (written.length > 0) {
+    notifyChanges({ tables, ids: getIdsFromMessages(written) });
+  }
 
   if (deferredMessages.size > 0) {
     notifyDeferredMessages();
@@ -784,6 +789,22 @@ export async function waitForScheduledSyncs(): Promise<void> {
   if (failure) {
     throw failure;
   }
+}
+
+// The ids of the rows `messages` wrote, by the table they're in
+function getIdsFromMessages(messages: Message[]): Record<string, string[]> {
+  const ids = new Map<string, Set<string>>();
+  for (const { dataset, row } of messages) {
+    let rows = ids.get(dataset);
+    if (!rows) {
+      rows = new Set();
+      ids.set(dataset, rows);
+    }
+    rows.add(row);
+  }
+  return Object.fromEntries(
+    [...ids].map(([dataset, rows]) => [dataset, [...rows]]),
+  );
 }
 
 function getTablesFromMessages(messages: Message[]): string[] {

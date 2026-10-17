@@ -33,8 +33,20 @@ export type ServerMessage = { type: string; id?: string } & Record<
   unknown
 >;
 
-/** The tables a change wrote, or `'all'` when a budget opened or closed. */
-export type ChangedTables = readonly string[] | 'all';
+/**
+ * What a change to the open budget wrote: the tables, and the ids of the
+ * rows written in each (deleted rows too, since a delete is a tombstone).
+ * `ids` is keyed by the table the rows are in, so `schedules_next_date`
+ * rows appear under that name though `tables` reports them as
+ * `schedules`. `'all'` when a budget opened or closed: anything may have
+ * changed.
+ */
+export type BudgetChanges =
+  | 'all'
+  | {
+      tables: readonly string[];
+      ids: Readonly<Record<string, readonly string[]>>;
+    };
 
 /** Synchronous reads of the open budget, installed by the backend. */
 export type LiveReads = {
@@ -46,8 +58,11 @@ export type LiveReads = {
    * must not change it.
    */
   query(query: QueryState): { data: unknown; dependencies: string[] };
-  /** Call `listener` after each change to the budget's tables. */
-  onTablesChanged(listener: (tables: ChangedTables) => void): () => void;
+  /**
+   * Call `listener` after each change to the open budget is committed,
+   * before anything else can read it.
+   */
+  onChanges(listener: (changes: BudgetChanges) => void): () => void;
 };
 
 export type InProcessChannel = {

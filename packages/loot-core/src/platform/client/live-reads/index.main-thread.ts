@@ -8,7 +8,7 @@ import type * as T from './index-types';
 // synchronously.
 
 let reads: LiveReads | null = null;
-const listeners = new Set<(tables: T.ChangedTables) => void>();
+const listeners = new Set<(changes: T.BudgetChanges) => void>();
 
 /** Called by the client connection once the backend has started. */
 export function connectLiveReads(channel: InProcessChannel) {
@@ -16,9 +16,9 @@ export function connectLiveReads(channel: InProcessChannel) {
     return;
   }
   reads = channel.reads;
-  reads.onTablesChanged(tables => {
+  reads.onChanges(changes => {
     for (const listener of [...listeners]) {
-      listener(tables);
+      listener(changes);
     }
   });
 }
@@ -31,7 +31,7 @@ export const runQuerySync: T.RunQuerySync = function (query) {
   return reads.query(query.serialize()) as any;
 };
 
-export const onTablesChanged: T.OnTablesChanged = function (listener) {
+export const onChanges: T.OnChanges = function (listener) {
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
