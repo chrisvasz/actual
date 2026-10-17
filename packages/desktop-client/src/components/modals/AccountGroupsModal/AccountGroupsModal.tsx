@@ -1,5 +1,4 @@
 import { Button } from '@actual-app/components/button';
-import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -8,11 +7,8 @@ import type {
   AccountGroupEntity,
 } from '@actual-app/core/types/models';
 
-import {
-  useCreateAccountGroupMutation,
-  useMoveAccountGroupMutation,
-} from '#account-groups';
-import { useUpdateAccountMutation } from '#accounts';
+import { useCreateAccountGroup, useMoveAccountGroup } from '#account-groups';
+import { useUpdateAccount } from '#accounts';
 import {
   AccountGroupAutocomplete,
   NEW_ACCOUNT_GROUP_ID,
@@ -35,11 +31,11 @@ type AccountGroupsModalProps = {
 
 export function AccountGroupsModal({ accountId }: AccountGroupsModalProps) {
   const account = useAccount(accountId);
-  const { data: groups = [], isPlaceholderData } = useAccountGroups();
+  const groups = useAccountGroups();
 
-  const createGroup = useCreateAccountGroupMutation();
-  const moveGroup = useMoveAccountGroupMutation();
-  const updateAccount = useUpdateAccountMutation();
+  const createGroup = useCreateAccountGroup();
+  const moveGroup = useMoveAccountGroup();
+  const updateAccount = useUpdateAccount();
 
   const selectedGroupId =
     account != null &&
@@ -48,7 +44,7 @@ export function AccountGroupsModal({ accountId }: AccountGroupsModalProps) {
       : null;
 
   const onSelect = (groupId: AccountGroupEntity['id'] | null) => {
-    updateAccount.mutate({
+    void updateAccount({
       account: { id: accountId, account_group_id: groupId },
     });
   };
@@ -61,84 +57,75 @@ export function AccountGroupsModal({ accountId }: AccountGroupsModalProps) {
             title={<ModalTitle title="Account group" shrinkOnOverflow />}
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
-          {isPlaceholderData ? (
-            <View style={{ alignItems: 'center', padding: 20 }}>
-              <AnimatedLoading width={20} height={20} />
-            </View>
-          ) : (
-            <View style={{ gap: 2 }}>
-              <View
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}
+          <View style={{ gap: 2 }}>
+            <View
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}
+            >
+              <SelectedIndicator selected={selectedGroupId == null} />
+              <Button
+                variant="bare"
+                onPress={() => onSelect(null)}
+                style={{ flex: 1, justifyContent: 'flex-start' }}
               >
-                <SelectedIndicator selected={selectedGroupId == null} />
-                <Button
-                  variant="bare"
-                  onPress={() => onSelect(null)}
-                  style={{ flex: 1, justifyContent: 'flex-start' }}
-                >
-                  <Text style={{ fontStyle: 'italic' }}>None</Text>
-                </Button>
-              </View>
-              {groups.map((group, index) => (
-                <AccountGroupRow
-                  key={group.id}
-                  group={group}
-                  selected={selectedGroupId === group.id}
-                  onSelect={() => onSelect(group.id)}
-                  onMoveUp={
-                    index > 0 && !moveGroup.isPending
-                      ? () =>
-                          moveGroup.mutate({
-                            id: group.id,
-                            targetId: groups[index - 1].id,
-                          })
-                      : undefined
-                  }
-                  onMoveDown={
-                    index < groups.length - 1 && !moveGroup.isPending
-                      ? () =>
-                          moveGroup.mutate({
-                            id: group.id,
-                            targetId: groups[index + 2]?.id ?? null,
-                          })
-                      : undefined
-                  }
-                />
-              ))}
-              {groups.length === 0 && (
-                <Text
-                  style={{ color: theme.pageTextSubdued, padding: '5px 0' }}
-                >
-                  No account groups yet. Add one below to start grouping your
-                  accounts.
-                </Text>
-              )}
-              <View style={{ marginTop: 10 }}>
-                <AccountGroupAutocomplete
-                  key={selectedGroupId ?? 'none'}
-                  groups={groups}
-                  value={null}
-                  inputProps={{
-                    placeholder: 'Find or create a group…',
-                  }}
-                  onSelect={async (groupId, rawValue) => {
-                    if (groupId === NEW_ACCOUNT_GROUP_ID) {
-                      try {
-                        const newId = await createGroup.mutateAsync({
-                          name: rawValue.trim(),
-                        });
-                        onSelect(newId);
-                      } catch {
-                        // Creation failures surface as a notification
-                      }
-                    } else if (groupId) {
-                      onSelect(groupId);
-                    }
-                  }}
-                />
-              </View>
+                <Text style={{ fontStyle: 'italic' }}>None</Text>
+              </Button>
             </View>
-          )}
+            {groups.map((group, index) => (
+              <AccountGroupRow
+                key={group.id}
+                group={group}
+                selected={selectedGroupId === group.id}
+                onSelect={() => onSelect(group.id)}
+                onMoveUp={
+                  index > 0
+                    ? () =>
+                        void moveGroup({
+                          id: group.id,
+                          targetId: groups[index - 1].id,
+                        })
+                    : undefined
+                }
+                onMoveDown={
+                  index < groups.length - 1
+                    ? () =>
+                        void moveGroup({
+                          id: group.id,
+                          targetId: groups[index + 2]?.id ?? null,
+                        })
+                    : undefined
+                }
+              />
+            ))}
+            {groups.length === 0 && (
+              <Text style={{ color: theme.pageTextSubdued, padding: '5px 0' }}>
+                No account groups yet. Add one below to start grouping your
+                accounts.
+              </Text>
+            )}
+            <View style={{ marginTop: 10 }}>
+              <AccountGroupAutocomplete
+                key={selectedGroupId ?? 'none'}
+                groups={groups}
+                value={null}
+                inputProps={{
+                  placeholder: 'Find or create a group…',
+                }}
+                onSelect={async (groupId, rawValue) => {
+                  if (groupId === NEW_ACCOUNT_GROUP_ID) {
+                    const newId = await createGroup({
+                      name: rawValue.trim(),
+                    });
+                    // A failure was reported as a notification
+                    if (newId) {
+                      onSelect(newId);
+                    }
+                  } else if (groupId) {
+                    onSelect(groupId);
+                  }
+                }}
+              />
+            </View>
+          </View>
         </>
       )}
     </Modal>

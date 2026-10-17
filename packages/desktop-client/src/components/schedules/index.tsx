@@ -7,15 +7,12 @@ import { View } from '@actual-app/components/view';
 import { send } from '@actual-app/core/platform/client/connection';
 import { q } from '@actual-app/core/shared/query';
 import type { ScheduleEntity } from '@actual-app/core/types/models';
-import { useSuspenseQueries } from '@tanstack/react-query';
 
-import { accountQueries } from '#accounts';
 import { Search } from '#components/common/Search';
 import { FeatureErrorFallback } from '#components/FeatureErrorFallback';
 import { Page } from '#components/Page';
 import { useSchedules } from '#hooks/useSchedules';
 import { pushModal } from '#modals/modalsSlice';
-import { payeeQueries } from '#payees';
 import { useDispatch } from '#redux';
 
 import { SchedulesTable } from './SchedulesTable';
@@ -80,13 +77,6 @@ export function Schedules() {
   );
 
   const schedulesQuery = useMemo(() => q('schedules').select('*'), []);
-
-  // Suspend until the table has what it draws, so navigating here keeps the
-  // previous screen up instead of drawing an empty table and filling it in.
-  // The schedules themselves are read synchronously.
-  useSuspenseQueries({
-    queries: [payeeQueries.list(), accountQueries.list()],
-  });
 
   const {
     isLoading: isSchedulesLoading,

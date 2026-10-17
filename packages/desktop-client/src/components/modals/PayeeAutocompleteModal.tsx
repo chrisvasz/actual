@@ -25,8 +25,8 @@ export function PayeeAutocompleteModal({
   importedPayee,
   onClose,
 }: PayeeAutocompleteModalProps) {
-  const { data: payees = [] } = usePayees();
-  const { data: accounts = [] } = useAccounts();
+  const payees = usePayees();
+  const accounts = useAccounts();
   const navigate = useNavigate();
 
   const { isNarrowWidth } = useResponsive();

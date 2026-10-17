@@ -1,21 +1,15 @@
 import { send } from '@actual-app/core/platform/client/connection';
 import type { PayeeEntity } from '@actual-app/core/types/models';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
 
+import { useReportErrors } from '#hooks/useReportErrors';
 import { addNotification } from '#notifications/notificationsSlice';
 import { useDispatch } from '#redux';
 import type { AppDispatch } from '#redux/store';
 
 import { locationService } from './location';
 import { payeeQueries } from './queries';
-
-function invalidateQueries(queryClient: QueryClient, queryKey?: QueryKey) {
-  void queryClient.invalidateQueries({
-    queryKey: queryKey ?? payeeQueries.lists(),
-  });
-}
 
 function dispatchErrorNotification(
   dispatch: AppDispatch,
@@ -33,10 +27,6 @@ function dispatchErrorNotification(
     }),
   );
 }
-
-type CreatePayeePayload = {
-  name: PayeeEntity['name'];
-};
 
 export function useDeletePayeeLocationMutation() {
   const queryClient = useQueryClient();
@@ -87,25 +77,10 @@ export function useSavePayeeLocationMutation() {
   });
 }
 
-export function useCreatePayeeMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({ name }: CreatePayeePayload) => {
-      const id: PayeeEntity['id'] = await send('payee-create', {
-        name: name.trim(),
-      });
-      return id;
-    },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error creating payee:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error creating the payee. Please try again.',
-        error,
-      );
-    },
-  });
+export function useCreatePayee() {
+  return useReportErrors(
+    'There was an error creating the payee. Please try again.',
+    ({ name }: Pick<PayeeEntity, 'name'>): Promise<PayeeEntity['id']> =>
+      send('payee-create', { name: name.trim() }),
+  );
 }

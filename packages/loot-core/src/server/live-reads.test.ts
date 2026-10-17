@@ -6,7 +6,10 @@ import * as db from '#server/db';
 import { applyMessages, setSyncingMode } from '#server/sync';
 import { q } from '#shared/query';
 
+import { accountLiveReads } from './accounts/app';
 import { liveReads, notifyChanges } from './live-reads';
+// Registers the payees app's named reads
+import './payees/app';
 
 beforeEach(global.emptyDatabase());
 
@@ -176,6 +179,69 @@ describe('liveReads', () => {
         { tables: ['transactions'], ids: { transactions: ['t1'] } },
       ]);
       stop();
+    });
+  });
+
+  it('refreshes schedules on the change that rewrites their rule paths', () => {
+    // `schedules_json_paths` is rewritten (outside the synced tables) when
+    // a commit writes `rules`, so whatever reads it must also read `rules`
+    const { dependencies } = liveReads.query(
+      q('schedules').select('*').serialize(),
+    );
+    expect(dependencies).toEqual(
+      expect.arrayContaining(['schedules_json_paths', 'rules']),
+    );
+  });
+
+  describe('named reads', () => {
+    it("reads an app's named read, with the tables it declares", () => {
+      db.insertAccount({ id: 'acct', name: 'Checking' });
+      db.insertPayee({ id: 'payee', name: 'Shop' });
+
+      const accounts = liveReads.read('accounts-get', undefined);
+      expect(accounts).toEqual({
+        data: [expect.objectContaining({ id: 'acct', name: 'Checking' })],
+        dependencies: ['accounts'],
+      });
+
+      const payees = liveReads.read('payees-get', undefined);
+      expect(payees.data).toEqual([
+        expect.objectContaining({ id: 'payee', name: 'Shop' }),
+      ]);
+      expect(payees.dependencies).toEqual(['payees', 'accounts']);
+    });
+
+    it('builds a new result for each read', () => {
+      db.insertAccount({ id: 'acct', name: 'Checking' });
+
+      const first = liveReads.read('accounts-get', undefined);
+      const second = liveReads.read('accounts-get', undefined);
+      expect(second.data).toEqual(first.data);
+      expect(second.data).not.toBe(first.data);
+      expect((second.data as unknown[])[0]).not.toBe(
+        (first.data as unknown[])[0],
+      );
+      // Its tables are a copy too
+      expect(second.dependencies).not.toBe(
+        accountLiveReads['accounts-get'].tables,
+      );
+    });
+
+    it('reads the empty result, quietly, with no budget open', () => {
+      const send = vi.spyOn(connection, 'send');
+      db.closeDatabase();
+
+      expect(liveReads.read('payees-get-rule-counts', undefined)).toEqual({
+        data: {},
+        dependencies: [],
+      });
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it('throws for a read nobody registered', () => {
+      expect(() => liveReads.read('no-such-read', undefined)).toThrow(
+        'No live read named "no-such-read"',
+      );
     });
   });
 

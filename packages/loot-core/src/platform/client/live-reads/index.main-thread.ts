@@ -31,6 +31,14 @@ export const runQuerySync: T.RunQuerySync = function (query) {
   return reads.query(query.serialize()) as any;
 };
 
+export const readSync: T.ReadSync = function (name, args?: unknown) {
+  if (!reads) {
+    throw new Error('The backend has not been started');
+  }
+  // oxlint-disable-next-line typescript/no-explicit-any -- typed by the read
+  return reads.read(name, args) as any;
+};
+
 export const onChanges: T.OnChanges = function (listener) {
   listeners.add(listener);
   return () => {

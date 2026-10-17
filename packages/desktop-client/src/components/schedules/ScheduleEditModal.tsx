@@ -31,7 +31,7 @@ type ScheduleEditModalProps = Extract<
 export function ScheduleEditModal({ id, transaction }: ScheduleEditModalProps) {
   const adding = id == null;
   const fromTrans = transaction != null;
-  const { data: payees } = usePayeesById();
+  const payees = usePayeesById();
   const globalDispatch = useDispatch();
 
   // Create initial schedule if adding from transaction

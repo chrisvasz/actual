@@ -1,4 +1,5 @@
 import { send } from '@actual-app/core/platform/client/connection';
+import { readSync } from '@actual-app/core/platform/client/live-reads';
 import type { IntegerAmount } from '@actual-app/core/shared/util';
 import type { File } from '@actual-app/core/types/file';
 import type {
@@ -14,7 +15,6 @@ import type {
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
-import { accountQueries } from '#accounts';
 import { resetApp, setAppState } from '#app/appSlice';
 import type { TransactionTableColumn } from '#components/transactions/table/columns';
 import { createAppAsyncThunk } from '#redux';
@@ -484,7 +484,7 @@ type OpenAccountCloseModalPayload = {
 
 export const openAccountCloseModal = createAppAsyncThunk(
   `${sliceName}/openAccountCloseModal`,
-  async ({ accountId }: OpenAccountCloseModalPayload, { dispatch, extra }) => {
+  async ({ accountId }: OpenAccountCloseModalPayload, { dispatch }) => {
     const {
       balance,
       numTransactions,
@@ -494,8 +494,7 @@ export const openAccountCloseModal = createAppAsyncThunk(
         id: accountId,
       },
     );
-    const queryClient = extra.queryClient;
-    const accounts = await queryClient.ensureQueryData(accountQueries.list());
+    const { data: accounts } = readSync('accounts-get');
     const account = accounts.find(acct => acct.id === accountId);
 
     if (!account) {

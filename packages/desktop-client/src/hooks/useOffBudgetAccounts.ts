@@ -1,7 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-
-import { accountQueries } from '#accounts';
+import { useAccounts } from './useAccounts';
 
 export function useOffBudgetAccounts() {
-  return useQuery(accountQueries.listOffBudget());
+  const accounts = useAccounts();
+  return accounts.filter(account => !account.closed && !!account.offbudget);
 }

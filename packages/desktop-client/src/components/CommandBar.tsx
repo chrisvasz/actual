@@ -131,7 +131,7 @@ export function CommandBar() {
     if (!open) setSearch('');
   }, [open]);
 
-  const { data: allAccounts = [] } = useAccounts();
+  const allAccounts = useAccounts();
 
   const accounts = allAccounts.filter(acc => !acc.closed);
 

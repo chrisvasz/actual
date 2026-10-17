@@ -1,11 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-
-import { payeeQueries } from '#payees';
+import { usePayees } from './usePayees';
 
 export function usePayee(id?: string | null) {
-  return useQuery({
-    ...payeeQueries.list(),
-    select: payees => payees.find(p => p.id === id),
-    enabled: !!id,
-  });
+  const payees = usePayees();
+  return id ? payees.find(payee => payee.id === id) : undefined;
 }

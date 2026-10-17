@@ -16,7 +16,7 @@ type ScheduleValueProps = {
 };
 
 export function ScheduleValue({ value }: ScheduleValueProps) {
-  const { data: byId = {} } = usePayeesById();
+  const byId = usePayeesById();
   const schedulesQuery = useMemo(() => q('schedules').select('*'), []);
   const { schedules = [], isLoading } = useSchedules({ query: schedulesQuery });
 
