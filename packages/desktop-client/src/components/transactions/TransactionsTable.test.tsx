@@ -47,7 +47,6 @@ import { SpreadsheetProvider } from '#hooks/useSpreadsheet';
 import { createTestQueryClient, TestProviders } from '#mocks';
 import { initLiveReads } from '#mocks/live-reads';
 import * as modalsSlice from '#modals/modalsSlice';
-import { payeeQueries } from '#payees';
 import { tagQueries } from '#tags/queries';
 
 import {
@@ -71,7 +70,7 @@ vi.mock('../../hooks/useFeatureFlag', () => ({
 
 const accounts = [generateAccount('Bank of America')];
 vi.mock('../../hooks/useAccounts', () => ({
-  useAccounts: () => ({ data: accounts }),
+  useAccounts: () => accounts,
 }));
 
 const payees: PayeeEntity[] = [
@@ -91,7 +90,6 @@ const payees: PayeeEntity[] = [
     name: 'This guy on the side of the road',
   },
 ];
-queryClient.setQueryData(payeeQueries.list().queryKey, payees);
 
 const tags: TagEntity[] = [
   { id: 'tag1', tag: 'vacation' },
@@ -268,7 +266,16 @@ function initBasicServer() {
         throw new Error(`queried unknown table: ${query.table}`);
     }
   }
-  initLiveReads(query);
+  initLiveReads(query, name => {
+    switch (name) {
+      case 'payees-get':
+        return { data: payees, dependencies: ['payees', 'accounts'] };
+      case 'accounts-get':
+        return { data: accounts, dependencies: ['accounts'] };
+      default:
+        throw new Error(`read unknown live read: ${name}`);
+    }
+  });
   initServer({
     query: async (state: QueryState) => query(state),
     'get-cell': async () => ({

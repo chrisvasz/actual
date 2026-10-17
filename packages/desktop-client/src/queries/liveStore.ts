@@ -1,16 +1,22 @@
 import {
   onChanges,
+  readSync,
   runQuerySync,
 } from '@actual-app/core/platform/client/live-reads';
-import type { BudgetChanges } from '@actual-app/core/platform/client/live-reads';
+import type {
+  BudgetChanges,
+  LiveReadArgs,
+  LiveReadData,
+  LiveReadName,
+} from '@actual-app/core/platform/client/live-reads';
 import type { Query } from '@actual-app/core/shared/query';
 
-// Live AQL reads of the open budget. The backend runs on this thread and
-// answers a query synchronously (`runQuerySync`), so a read never loads:
-// the first one returns rows.
+// Live reads of the open budget: AQL queries, and the backend's named reads
+// (`readSync`). The backend runs on this thread and answers a read
+// synchronously, so a read never loads: the first one returns rows.
 //
-// Each query's result is cached, keyed by the serialized query, along with
-// the tables it read. A change to one of those tables only marks the result
+// Each read's result is cached, keyed by the serialized query (or the
+// read's name and arguments), along with the tables it read. A change to one of those tables only marks the result
 // out of date; it's read again the next time someone asks for it. Whoever
 // listens to the query is told in a microtask, so the changes one backend
 // call applies in a row cost each shown query one read, however many there
@@ -33,7 +39,7 @@ export type LiveQueryHandle<Data> = {
 
 type Entry = {
   key: string;
-  query: Query;
+  run: () => { data: unknown; dependencies: readonly string[] };
   result: LiveResult<unknown> | null;
   /** The tables the last successful read read; null before one. */
   dependencies: readonly string[] | null;
@@ -128,7 +134,7 @@ function read(entry: Entry): LiveResult<unknown> {
   const previous = entry.result;
   let result: LiveResult<unknown>;
   try {
-    const read = runQuerySync(entry.query);
+    const read = entry.run();
     const data = replaceEqualDeep(previous?.data, read.data);
     result =
       previous != null && previous.error == null && previous.data === data
@@ -204,7 +210,11 @@ function setDependencies(entry: Entry, dependencies: readonly string[]) {
 // The entry for `key`. `remembered` is the one a handle last used: if it
 // was collected (nothing listened for a tick) it's put back, keeping its
 // result, rather than read again from scratch.
-function getEntry(key: string, query: Query, remembered: Entry | null): Entry {
+function getEntry(
+  key: string,
+  run: Entry['run'],
+  remembered: Entry | null,
+): Entry {
   let entry = entries.get(key);
   if (!entry && remembered) {
     entry = remembered;
@@ -213,7 +223,7 @@ function getEntry(key: string, query: Query, remembered: Entry | null): Entry {
   } else if (!entry) {
     entry = {
       key,
-      query,
+      run,
       result: null,
       dependencies: null,
       versions: [],
@@ -270,16 +280,37 @@ export function getLiveQuery<Data = unknown>(
 ): LiveQueryHandle<Data> {
   let handle = handles.get(query);
   if (!handle) {
-    const key = JSON.stringify(query.serialize());
-    let last: Entry | null = null;
-    const current = () => (last = getEntry(key, query, last));
-    handle = {
-      getSnapshot: () => read(current()),
-      subscribe: listener => subscribe(current(), listener),
-    };
+    handle = makeHandle(JSON.stringify(query.serialize()), () =>
+      runQuerySync(query),
+    );
     handles.set(query, handle);
   }
   return handle as LiveQueryHandle<Data>;
+}
+
+/**
+ * The live result of the backend's named read `name` with `args`, sharing
+ * its cached result with every other handle to the same read. Each call
+ * makes a new handle; keep it stable for `useSyncExternalStore`.
+ */
+export function getLiveRead<Name extends LiveReadName>(
+  name: Name,
+  args?: LiveReadArgs<Name>,
+): LiveQueryHandle<LiveReadData<Name>> {
+  return makeHandle(
+    `read:${name}:${JSON.stringify(args ?? null)}`,
+    // oxlint-disable-next-line typescript/no-explicit-any -- args match `name`
+    () => (readSync as any)(name, args),
+  ) as LiveQueryHandle<LiveReadData<Name>>;
+}
+
+function makeHandle(key: string, run: Entry['run']): LiveQueryHandle<unknown> {
+  let last: Entry | null = null;
+  const current = () => (last = getEntry(key, run, last));
+  return {
+    getSnapshot: () => read(current()),
+    subscribe: listener => subscribe(current(), listener),
+  };
 }
 
 /**

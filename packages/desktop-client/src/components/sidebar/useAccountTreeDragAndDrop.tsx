@@ -15,8 +15,8 @@ import type {
 } from '@actual-app/core/types/models';
 import { css } from '@emotion/css';
 
-import { useMoveAccountGroupMutation } from '#account-groups';
-import { useMoveAccountMutation } from '#accounts';
+import { useMoveAccountGroup } from '#account-groups';
+import { useMoveAccount } from '#accounts';
 import { useAccountGroups } from '#hooks/useAccountGroups';
 import { useAccounts } from '#hooks/useAccounts';
 
@@ -45,10 +45,10 @@ export function useAccountTreeDragAndDrop({
   side,
   buckets,
 }: UseAccountTreeDragAndDropArgs) {
-  const { data: accounts = [] } = useAccounts();
-  const { data: accountGroups = [] } = useAccountGroups();
-  const moveAccount = useMoveAccountMutation();
-  const moveGroup = useMoveAccountGroupMutation();
+  const accounts = useAccounts();
+  const accountGroups = useAccountGroups();
+  const moveAccount = useMoveAccount();
+  const moveGroup = useMoveAccountGroup();
   const [dragged, setDragged] = useState<DraggedNode | null>(null);
   const [hoveredGroupId, setHoveredGroupId] = useState<
     AccountGroupEntity['id'] | null
@@ -117,7 +117,7 @@ export function useAccountTreeDragAndDrop({
         position: target.dropPosition,
       });
       if (move != null) {
-        moveGroup.mutate(move);
+        void moveGroup(move);
       }
       return;
     }
@@ -140,7 +140,7 @@ export function useAccountTreeDragAndDrop({
             },
     });
     if (move != null) {
-      moveAccount.mutate(move);
+      void moveAccount(move);
     }
   };
 

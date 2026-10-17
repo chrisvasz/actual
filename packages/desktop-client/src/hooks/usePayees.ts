@@ -1,14 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
+import type { PayeeEntity } from '@actual-app/core/types/models';
 
-import { getPayeesById, payeeQueries } from '#payees';
+import { getPayeesById } from '#payees';
 
-export function usePayees() {
-  return useQuery(payeeQueries.list());
+import { useLiveRead } from './useLiveRead';
+
+const NO_PAYEES: PayeeEntity[] = [];
+
+/** Every payee, transfer payees (named for their account) last. */
+export function usePayees(): PayeeEntity[] {
+  return useLiveRead('payees-get').data ?? NO_PAYEES;
 }
 
 export function usePayeesById() {
-  return useQuery({
-    ...payeeQueries.list(),
-    select: payees => getPayeesById(payees),
-  });
+  return getPayeesById(usePayees());
 }

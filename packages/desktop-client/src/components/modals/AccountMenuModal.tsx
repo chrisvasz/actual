@@ -46,7 +46,7 @@ export function AccountMenuModal({
   onToggleReconciled,
 }: AccountMenuModalProps) {
   const account = useAccount(accountId);
-  const { data: accounts = [] } = useAccounts();
+  const accounts = useAccounts();
   const originalNotes = useNotes(`account-${accountId}`);
   const [accountNameError, setAccountNameError] = useState('');
   const [currentAccountName, setCurrentAccountName] = useState(

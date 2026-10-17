@@ -22,9 +22,62 @@ import * as db from './db';
 //   `applyMessages` (replaying pending messages, migrations, rebuilding
 //   derived tables) only happen while a budget opens, before that.
 //
+// Besides AQL queries, a backend app can offer named reads (`liveRead`,
+// `registerLiveReads`) for data an AQL query can't build. Each one declares
+// the tables it reads, which stand in for a query's dependencies, and must
+// build its result afresh on every read: the client shares and freezes it.
+//
 // With no budget open (a screen re-reading as its budget closes), a read
 // has no rows rather than failing; `'all'` marks it out of date when the
 // next budget opens.
+
+/** A synchronous read of the open budget that isn't an AQL query. */
+export type LiveRead<Args, Data> = {
+  /** Every table `read` reads, directly or through a view. */
+  tables: readonly string[];
+  /** What the read returns with no budget open, also built afresh. */
+  empty: () => Data;
+  /** Read now, building a new result. */
+  read: (args: Args) => Data;
+};
+
+/**
+ * Declare a named read; see `registerLiveReads`. A read that takes
+ * arguments names their type: `liveRead<Data, Args>(…)`.
+ */
+export function liveRead<Data, Args = undefined>(
+  read: LiveRead<NoInfer<Args>, Data>,
+): LiveRead<NoInfer<Args>, Data> {
+  return read;
+}
+
+// Any read's arguments type is assignable to `never`
+type AnyLiveRead = LiveRead<never, unknown>;
+
+const namedReads = new Map<string, AnyLiveRead>();
+
+/**
+ * Make `reads` available to `liveReads.read`, by name. Returns them, for
+ * the app's handlers to call and for `LiveReadHandlers` to type.
+ */
+export function registerLiveReads<Reads extends Record<string, AnyLiveRead>>(
+  reads: Reads,
+): Reads {
+  for (const [name, read] of Object.entries(reads)) {
+    namedReads.set(name, read);
+  }
+  return reads;
+}
+
+function reportFailedRead(nativeError: unknown): never {
+  const error = coerceError(nativeError);
+  // Reported like a failed `send('query')`
+  if (error.type === 'ServerError') {
+    captureException(nativeError as Error);
+  }
+  connection.send('server-error');
+  throw error;
+}
 
 const listeners = new Set<(changes: BudgetChanges) => void>();
 
@@ -54,13 +107,26 @@ export const liveReads: LiveReads = {
       }
       return aqlQuery(query);
     } catch (nativeError) {
-      const error = coerceError(nativeError);
-      // Reported like a failed `send('query')`
-      if (error.type === 'ServerError') {
-        captureException(nativeError as Error);
-      }
-      connection.send('server-error');
-      throw error;
+      return reportFailedRead(nativeError);
+    }
+  },
+
+  read(name, args) {
+    const namedRead = namedReads.get(name);
+    if (!namedRead) {
+      throw new Error(`No live read named "${name}"`);
+    }
+    if (!db.getDatabase()) {
+      return { data: namedRead.empty(), dependencies: [] };
+    }
+    try {
+      return {
+        // Typed by `readSync`, which takes the arguments `name` reads
+        data: (namedRead.read as (args: unknown) => unknown)(args),
+        dependencies: [...namedRead.tables],
+      };
+    } catch (nativeError) {
+      return reportFailedRead(nativeError);
     }
   },
 

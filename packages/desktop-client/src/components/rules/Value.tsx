@@ -39,14 +39,14 @@ export function Value<T>({
 }: ValueProps<T>) {
   const format = useFormat();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
-  const { data: payees } = usePayees();
+  const payees = usePayees();
   const {
     data: { list: categories, grouped: categoryGroups } = {
       list: [],
       grouped: [],
     },
   } = useCategories();
-  const { data: accounts = [] } = useAccounts();
+  const accounts = useAccounts();
   const valueStyle = {
     color: theme.pageTextPositive,
     ...style,

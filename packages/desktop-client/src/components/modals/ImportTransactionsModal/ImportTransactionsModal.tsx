@@ -23,19 +23,14 @@ import { View } from '@actual-app/components/view';
 import { send } from '@actual-app/core/platform/client/connection';
 import type { ParseFileOptions } from '@actual-app/core/server/transactions/import/parse-file';
 import { amountToInteger } from '@actual-app/core/shared/util';
-import { useQueryClient } from '@tanstack/react-query';
 
-import {
-  useImportPreviewTransactionsMutation,
-  useImportTransactionsMutation,
-} from '#accounts';
+import { useImportPreviewTransactions, useImportTransactions } from '#accounts';
 import { Modal, ModalCloseButton } from '#components/common/Modal';
 import { LabeledCheckbox } from '#components/forms/LabeledCheckbox';
 import { TableHeader, TableWithNavigator } from '#components/table';
 import { useCategories } from '#hooks/useCategories';
 import { useDateFormat } from '#hooks/useDateFormat';
 import { useSyncedPrefs } from '#hooks/useSyncedPrefs';
-import { payeeQueries } from '#payees';
 
 import { FieldMappings } from './FieldMappings';
 import { Transaction } from './Transaction';
@@ -202,7 +197,6 @@ export function ImportTransactionsModal({
   accountId,
   onImported,
 }) {
-  const queryClient = useQueryClient();
   const dateFormat = useDateFormat() || ('MM/dd/yyyy' as const);
   const [prefs, savePrefs] = useSyncedPrefs();
   const { data: { list: categories } = { list: [] } } = useCategories();
@@ -637,7 +631,7 @@ export function ImportTransactionsModal({
     setTransactions(newTransactions);
   }
 
-  const importTransactions = useImportTransactionsMutation();
+  const importTransactions = useImportTransactions();
 
   async function onImport(close) {
     setLoadingState('importing');
@@ -783,30 +777,25 @@ export function ImportTransactionsModal({
 
     savePrefs({ [`import-merge-${accountId}`]: String(reconcile) });
 
-    importTransactions.mutate(
-      {
-        accountId,
-        transactions: finalTransactions,
-        reconcile,
-        reimportDeleted,
-      },
-      {
-        onSuccess: async didChange => {
-          if (didChange) {
-            void queryClient.invalidateQueries(payeeQueries.list());
-          }
+    const didChange = await importTransactions({
+      accountId,
+      transactions: finalTransactions,
+      reconcile,
+      reimportDeleted,
+    });
+    // A failed import was reported as a notification
+    if (didChange === undefined) {
+      return;
+    }
 
-          if (onImported) {
-            onImported(didChange);
-          }
+    if (onImported) {
+      onImported(didChange);
+    }
 
-          close();
-        },
-      },
-    );
+    close();
   }
 
-  const importPreviewTransactions = useImportPreviewTransactionsMutation();
+  const importPreviewTransactions = useImportPreviewTransactions();
 
   const onImportPreview = useEffectEvent(async () => {
     // Filter by start date before preview and deduplication
@@ -833,63 +822,62 @@ export function ImportTransactionsModal({
     );
 
     // Retreive the transactions that would be updated (along with the existing trx)
-    importPreviewTransactions.mutate(
-      {
-        accountId,
-        transactions: previewTransactionsToImport,
-        reimportDeleted,
-      },
-      {
-        onSuccess: previewTrx => {
-          const matchedUpdateMap = previewTrx.reduce((map, entry) => {
-            // @ts-expect-error - entry.transaction might not have trx_id property
-            map[entry.transaction.trx_id] = entry;
-            return map;
-          }, {});
+    const previewTrx = await importPreviewTransactions({
+      accountId,
+      transactions: previewTransactionsToImport,
+      reimportDeleted,
+    });
+    // A failed preview was reported as a notification
+    if (previewTrx === undefined) {
+      return;
+    }
 
-          const previewTransactions = filteredTransactions
-            .filter(trans => !trans.isMatchedTransaction)
-            .reduce((previous, currentTrx) => {
-              let next = previous;
-              const entry = matchedUpdateMap[currentTrx.trx_id];
-              const existingTrx = entry?.existing;
+    const matchedUpdateMap = previewTrx.reduce((map, entry) => {
+      // @ts-expect-error - entry.transaction might not have trx_id property
+      map[entry.transaction.trx_id] = entry;
+      return map;
+    }, {});
 
-              // if the transaction is matched with an existing one for update
-              currentTrx.existing = !!existingTrx;
-              // if the transaction is an update that will be ignored
-              // (reconciled transactions or no change detected)
-              currentTrx.ignored = entry?.ignored || false;
+    const previewTransactions = filteredTransactions
+      .filter(trans => !trans.isMatchedTransaction)
+      .reduce((previous, currentTrx) => {
+        let next = previous;
+        const entry = matchedUpdateMap[currentTrx.trx_id];
+        const existingTrx = entry?.existing;
 
-              currentTrx.tombstone = entry?.tombstone || false;
+        // if the transaction is matched with an existing one for update
+        currentTrx.existing = !!existingTrx;
+        // if the transaction is an update that will be ignored
+        // (reconciled transactions or no change detected)
+        currentTrx.ignored = entry?.ignored || false;
 
-              currentTrx.selected = !currentTrx.ignored;
-              currentTrx.selected_merge = currentTrx.existing;
+        currentTrx.tombstone = entry?.tombstone || false;
 
-              next = next.concat({ ...currentTrx });
+        currentTrx.selected = !currentTrx.ignored;
+        currentTrx.selected_merge = currentTrx.existing;
 
-              if (existingTrx) {
-                // add the updated existing transaction in the list, with the
-                // isMatchedTransaction flag to identify it in display and not send it again
-                existingTrx.isMatchedTransaction = true;
-                existingTrx.category = categories.find(
-                  cat => cat.id === existingTrx.category,
-                )?.name;
-                // add parent transaction attribute to mimic behaviour
-                existingTrx.trx_id = currentTrx.trx_id;
-                existingTrx.existing = currentTrx.existing;
-                existingTrx.selected = currentTrx.selected;
-                existingTrx.selected_merge = currentTrx.selected_merge;
+        next = next.concat({ ...currentTrx });
 
-                next = next.concat({ ...existingTrx });
-              }
+        if (existingTrx) {
+          // add the updated existing transaction in the list, with the
+          // isMatchedTransaction flag to identify it in display and not send it again
+          existingTrx.isMatchedTransaction = true;
+          existingTrx.category = categories.find(
+            cat => cat.id === existingTrx.category,
+          )?.name;
+          // add parent transaction attribute to mimic behaviour
+          existingTrx.trx_id = currentTrx.trx_id;
+          existingTrx.existing = currentTrx.existing;
+          existingTrx.selected = currentTrx.selected;
+          existingTrx.selected_merge = currentTrx.selected_merge;
 
-              return next;
-            }, []);
+          next = next.concat({ ...existingTrx });
+        }
 
-          setTransactions(previewTransactions);
-        },
-      },
-    );
+        return next;
+      }, []);
+
+    setTransactions(previewTransactions);
   });
 
   useEffect(() => {

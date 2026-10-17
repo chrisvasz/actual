@@ -59,6 +59,11 @@ export type LiveReads = {
    */
   query(query: QueryState): { data: unknown; dependencies: string[] };
   /**
+   * Run the named read an app registered (`registerLiveReads`) now, with
+   * `args`. Returns its result and the tables it reads, like `query`.
+   */
+  read(name: string, args: unknown): { data: unknown; dependencies: string[] };
+  /**
    * Call `listener` after each change to the open budget is committed,
    * before anything else can read it.
    */

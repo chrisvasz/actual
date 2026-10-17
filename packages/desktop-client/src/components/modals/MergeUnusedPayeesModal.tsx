@@ -26,7 +26,7 @@ export function MergeUnusedPayeesModal({
   payeeIds,
   targetPayeeId,
 }: MergeUnusedPayeesModalProps) {
-  const { data: allPayees = [] } = usePayees();
+  const allPayees = usePayees();
   const modalStack = useSelector(state => state.modals.modalStack);
   const isEditingRule = !!modalStack.find(m => m.name === 'edit-rule');
   const dispatch = useDispatch();

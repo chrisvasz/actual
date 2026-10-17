@@ -14,7 +14,7 @@ import { View } from '@actual-app/components/view';
 import { integerToCurrency } from '@actual-app/core/shared/util';
 import type { AccountEntity } from '@actual-app/core/types/models';
 
-import { useCloseAccountMutation } from '#accounts';
+import { useCloseAccount } from '#accounts';
 import { AccountAutocomplete } from '#components/autocomplete/AccountAutocomplete';
 import { CategoryAutocomplete } from '#components/autocomplete/CategoryAutocomplete';
 import { Link } from '#components/common/Link';
@@ -48,7 +48,7 @@ export function CloseAccountModal({
   balance,
   canDelete,
 }: CloseAccountModalProps) {
-  const { data: allAccounts = [] } = useAccounts();
+  const allAccounts = useAccounts();
   const accounts = allAccounts.filter(a => a.closed === 0);
   const {
     data: { grouped: categoryGroups, list: categories } = {
@@ -89,7 +89,7 @@ export function CloseAccountModal({
       }
     : {};
 
-  const closeAccount = useCloseAccountMutation();
+  const closeAccount = useCloseAccount();
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -107,7 +107,7 @@ export function CloseAccountModal({
 
     setLoading(true);
 
-    closeAccount.mutate({
+    void closeAccount({
       id: account.id,
       transferAccountId: transferAccountId || null,
       categoryId: categoryId || null,
@@ -251,7 +251,7 @@ export function CloseAccountModal({
                       variant="text"
                       onClick={() => {
                         setLoading(true);
-                        closeAccount.mutate({
+                        void closeAccount({
                           id: account.id,
                           forced: true,
                         });

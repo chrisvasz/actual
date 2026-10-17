@@ -19,10 +19,7 @@ import type {
 } from '@actual-app/core/types/models';
 import { css } from '@emotion/css';
 
-import {
-  useDeleteAccountGroupMutation,
-  useUpdateAccountGroupMutation,
-} from '#account-groups';
+import { useDeleteAccountGroup, useUpdateAccountGroup } from '#account-groups';
 import { useContextMenu } from '#hooks/useContextMenu';
 import { usePendingValue } from '#hooks/usePendingValue';
 import { pushModal } from '#modals/modalsSlice';
@@ -54,11 +51,11 @@ export function AccountGroupHeader({
   const [balanceMode] = useSidebarBalanceMode();
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
-  const updateGroup = useUpdateAccountGroupMutation();
+  const updateGroup = useUpdateAccountGroup();
   const { valueOr: pendingNameOr, showUntil: showNameUntil } =
     usePendingValue<string>();
   const name = pendingNameOr(group.name);
-  const deleteGroup = useDeleteAccountGroupMutation();
+  const deleteGroup = useDeleteAccountGroup();
 
   const [rowElement, setRowElement] = useState<HTMLDivElement | null>(null);
   useContextMenu({
@@ -79,7 +76,7 @@ export function AccountGroupHeader({
                 name: 'confirm-delete',
                 options: {
                   message: `Are you sure you want to delete the group "${group.name}"? Any accounts in it will be kept but left ungrouped.`,
-                  onConfirm: () => deleteGroup.mutate({ id: group.id }),
+                  onConfirm: () => void deleteGroup({ id: group.id }),
                 },
               },
             }),
@@ -149,7 +146,7 @@ export function AccountGroupHeader({
                     if (newGroupName.trim() !== '') {
                       showNameUntil(
                         newGroupName,
-                        updateGroup.mutateAsync({
+                        updateGroup({
                           id: group.id,
                           name: newGroupName,
                         }),

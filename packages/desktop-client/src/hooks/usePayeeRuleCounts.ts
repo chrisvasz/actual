@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import type { PayeeEntity } from '@actual-app/core/types/models';
 
-import { payeeQueries } from '#payees';
+import { useLiveRead } from './useLiveRead';
 
-export function usePayeeRuleCounts() {
-  return useQuery(payeeQueries.ruleCounts());
+/** How many rules use each payee, leaving out completed schedules' rules. */
+export function usePayeeRuleCounts(): Map<PayeeEntity['id'], number> {
+  const counts = useLiveRead('payees-get-rule-counts').data;
+  return new Map(Object.entries(counts ?? {}));
 }

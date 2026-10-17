@@ -534,6 +534,11 @@ function trackJSONPaths() {
   return addSyncListener(onApplySync);
 }
 
+// Runs inside `applyMessages`, after the commit and before the change is
+// reported. `schedules_json_paths` isn't a synced table, so the change
+// doesn't list it, but this only writes it for a commit that wrote
+// `rules`, which the `schedules` view (its only reader) also depends on.
+// So a live read of schedules is still refreshed.
 function onApplySync(oldValues, newValues) {
   newValues.forEach((items, table) => {
     if (table === 'rules') {
