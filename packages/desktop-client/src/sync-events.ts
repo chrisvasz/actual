@@ -9,12 +9,10 @@ import {
   uploadBudget,
 } from './budgetfiles/budgetfilesSlice';
 import { pushModal } from './modals/modalsSlice';
-import { noteQueries } from './notes/queries';
 import { addNotification } from './notifications/notificationsSlice';
 import type { Notification } from './notifications/notificationsSlice';
 import { loadPrefs } from './prefs/prefsSlice';
 import type { AppStore } from './redux/store';
-import { ruleQueries } from './rules';
 import { signOut } from './users/usersSlice';
 
 // Notifications for sync events that can fire during budget load
@@ -110,21 +108,6 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
       ) {
         void queryClient.invalidateQueries({
           queryKey: categoryQueries.lists(),
-        });
-      }
-
-      if (tables.includes('notes')) {
-        // Refetch even with no subscribers, so the next screen that suspends
-        // on notes doesn't draw once with a stale note.
-        void queryClient.invalidateQueries({
-          queryKey: noteQueries.lists(),
-          refetchType: 'all',
-        });
-      }
-
-      if (tables.includes('rules')) {
-        void queryClient.invalidateQueries({
-          queryKey: ruleQueries.lists(),
         });
       }
     } else if (event.type === 'error') {

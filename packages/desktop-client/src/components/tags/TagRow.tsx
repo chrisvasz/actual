@@ -18,11 +18,11 @@ import { useNavigate } from '#hooks/useNavigate';
 import { useProperFocus } from '#hooks/useProperFocus';
 import { useSelectedDispatch, useSelectedItems } from '#hooks/useSelected';
 import {
-  useDeleteTagsMutation,
-  useHideTagsMutation,
-  useRenameTagMutation,
-  useUnhideTagsMutation,
-  useUpdateTagMutation,
+  useDeleteTags,
+  useHideTags,
+  useRenameTag,
+  useUnhideTags,
+  useUpdateTag,
 } from '#tags';
 
 import { TagEditor } from './TagEditor';
@@ -49,14 +49,14 @@ export const TagRow = memo(
 
     const triggerRef = useRef(null);
     const navigate = useNavigate();
-    const { mutate: updateTag } = useUpdateTagMutation();
-    const { mutate: renameTag } = useRenameTagMutation();
-    const { mutate: deleteTags } = useDeleteTagsMutation();
-    const { mutate: hideTags } = useHideTagsMutation();
-    const { mutate: unhideTags } = useUnhideTagsMutation();
+    const updateTag = useUpdateTag();
+    const renameTag = useRenameTag();
+    const deleteTags = useDeleteTags();
+    const hideTags = useHideTags();
+    const unhideTags = useUnhideTags();
 
     const onUpdate = (description: string) => {
-      updateTag({ tag: { ...tag, description } });
+      void updateTag({ tag: { ...tag, description } });
     };
 
     const onRename = (name: string) => {
@@ -64,7 +64,7 @@ export const TagRow = memo(
       if (!trimmed || trimmed === tag.tag) {
         return;
       }
-      renameTag({ id: tag.id, tag: trimmed });
+      void renameTag({ id: tag.id, tag: trimmed });
     };
 
     // Enter must be handled here: the navigator would otherwise move editing

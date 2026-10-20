@@ -86,7 +86,6 @@ import {
   replaceModal,
 } from '#modals/modalsSlice';
 import type { ConfirmTransactionEditReason } from '#modals/modalsSlice';
-import { noteQueries } from '#notes/queries';
 import { addNotification } from '#notifications/notificationsSlice';
 import { useCreatePayee } from '#payees';
 import * as queries from '#queries';
@@ -2306,10 +2305,9 @@ export function Account() {
 
   // Suspend until the screen has what it needs to draw complete. Navigations
   // run in a transition, so React keeps the previous screen up meanwhile
-  // instead of drawing this one empty and filling it in. Without these lists
-  // rows would draw with blank categories. Notes are needed so the header
-  // can link the account name on first draw. Accounts and payees are read
-  // synchronously, so they need no wait.
+  // instead of drawing this one empty and filling it in. Without the
+  // categories rows would draw with blank categories. Accounts, payees and
+  // notes are read synchronously, so they need no wait.
   const accounts = useAccounts();
   const payees = usePayees();
   const [
@@ -2317,12 +2315,7 @@ export function Account() {
       data: { grouped: categoryGroups },
     },
   ] = useSuspenseQueries({
-    queries: [
-      categoryQueries.list(),
-      // Only suspend on notes; the header subscribes to the one note it
-      // needs, so this screen shouldn't re-render whenever any note changes.
-      { ...noteQueries.list(), notifyOnChangeProps: [] },
-    ],
+    queries: [categoryQueries.list()],
   });
   const newTransactions = useSelector(
     state => state.transactions.newTransactions,

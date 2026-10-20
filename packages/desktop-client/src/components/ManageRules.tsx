@@ -1,14 +1,13 @@
 // @ts-strict-ignore
-import React, { useEffect, useEffectEvent, useMemo, useState } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@actual-app/components/button';
-import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
 import { SpaceBetween } from '@actual-app/components/space-between';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
+import { send } from '@actual-app/core/platform/client/connection';
 import * as undo from '@actual-app/core/platform/client/undo';
 import { getNormalisedString } from '@actual-app/core/shared/normalisation';
 import { q } from '@actual-app/core/shared/query';
@@ -17,21 +16,15 @@ import type {
   RuleEntity,
   ScheduleEntity,
 } from '@actual-app/core/types/models';
-import { useQuery } from '@tanstack/react-query';
 
 import { useAccounts } from '#hooks/useAccounts';
 import { useCategories } from '#hooks/useCategories';
 import { usePayees } from '#hooks/usePayees';
+import { useRules } from '#hooks/useRules';
 import { useSchedules } from '#hooks/useSchedules';
 import { SelectedProvider, useSelected } from '#hooks/useSelected';
 import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
-import {
-  ruleQueries,
-  useDeleteAllRulesMutation,
-  useDeleteRuleMutation,
-  useInvalidateRules,
-} from '#rules';
 import { friendlyOp, mapField } from '#util/rule';
 import { describeSchedule } from '#util/schedule';
 
@@ -117,28 +110,14 @@ export function ruleToString(rule: RuleEntity, data: FilterData) {
 type ManageRulesProps = {
   isModal: boolean;
   payeeId: string | null;
-  setLoading?: Dispatch<SetStateAction<boolean>>;
 };
 
-export function ManageRules({
-  isModal,
-  payeeId,
-  setLoading = () => {},
-}: ManageRulesProps) {
+export function ManageRules({ isModal, payeeId }: ManageRulesProps) {
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState('');
   const dispatch = useDispatch();
 
-  // `isPlaceholderData` is the only reliable "not loaded yet" signal here:
-  // `placeholderData: []` means `isPending` is never true, and an empty array
-  // would otherwise be indistinguishable from having no rules at all.
-  const { data: allRules = [], isPlaceholderData: isRulesLoading } = useQuery(
-    payeeId ? ruleQueries.listForPayee(payeeId) : ruleQueries.list(),
-  );
-
-  const invalidateRules = useInvalidateRules();
-  const deleteRuleMutation = useDeleteRuleMutation();
-  const deleteAllRulesMutation = useDeleteAllRulesMutation();
+  const allRules = useRules(payeeId);
 
   const { schedules = [] } = useSchedules({
     query: useMemo(() => q('schedules').select('*'), []),
@@ -181,15 +160,6 @@ export function ManageRules({
     setPage(0);
   };
 
-  // The modal wrapper renders its own loading indicator from this prop; the
-  // page doesn't pass one at all.
-  const onLoadingChange = useEffectEvent((loading: boolean) => {
-    setLoading(loading);
-  });
-  useEffect(() => {
-    onLoadingChange(isRulesLoading);
-  }, [isRulesLoading]);
-
   useEffect(() => {
     if (payeeId) {
       undo.setUndoState('openModal', { name: 'manage-rules', options: {} });
@@ -205,9 +175,9 @@ export function ManageRules({
   }
 
   const onDeleteSelected = async () => {
-    const { someDeletionsFailed } = await deleteAllRulesMutation.mutateAsync({
-      ids: [...selectedInst.items],
-    });
+    const { someDeletionsFailed } = await send('rule-delete-all', [
+      ...selectedInst.items,
+    ]);
 
     if (someDeletionsFailed) {
       alert(
@@ -219,7 +189,7 @@ export function ManageRules({
   };
 
   function onDeleteRule(id: string) {
-    deleteRuleMutation.mutate({ id });
+    void send('rule-delete', id);
   }
 
   const onEditRule = rule => {
@@ -227,10 +197,7 @@ export function ManageRules({
       pushModal({
         modal: {
           name: 'edit-rule',
-          options: {
-            rule,
-            onSave: () => invalidateRules(),
-          },
+          options: { rule },
         },
       }),
     );
@@ -262,10 +229,7 @@ export function ManageRules({
       pushModal({
         modal: {
           name: 'edit-rule',
-          options: {
-            rule,
-            onSave: () => invalidateRules(),
-          },
+          options: { rule },
         },
       }),
     );
@@ -315,18 +279,7 @@ export function ManageRules({
         <View style={styles.tableContainer}>
           <RulesHeader />
           <InfiniteScrollWrapper loadMore={loadMore}>
-            {isRulesLoading ? (
-              <View
-                style={{
-                  flex: 1,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  ...styles.delayedFadeIn,
-                }}
-              >
-                <AnimatedLoading width={25} color={theme.tableText} />
-              </View>
-            ) : filteredRules.length === 0 ? (
+            {filteredRules.length === 0 ? (
               <EmptyMessage text="No rules" style={{ marginTop: 15 }} />
             ) : (
               <RulesList

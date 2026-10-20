@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React, { useState } from 'react';
+import React from 'react';
 
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
 import { ManageRules } from '#components/ManageRules';
@@ -11,17 +11,15 @@ type ManageRulesModalProps = Extract<
 >['options'];
 
 export function ManageRulesModal({ payeeId }: ManageRulesModalProps) {
-  const [loading, setLoading] = useState(true);
-
   return (
-    <Modal name="manage-rules" isLoading={loading}>
+    <Modal name="manage-rules">
       {({ state }) => (
         <>
           <ModalHeader
             title="Rules"
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
-          <ManageRules isModal payeeId={payeeId} setLoading={setLoading} />
+          <ManageRules isModal payeeId={payeeId} />
         </>
       )}
     </Modal>

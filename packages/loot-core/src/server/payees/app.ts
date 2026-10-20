@@ -92,6 +92,11 @@ export const payeeLiveReads = registerLiveReads({
     empty: () => ({}),
     read: readPayeeRuleCounts,
   }),
+  'payees-get-rules': liveRead<RuleEntity[], { id: PayeeEntity['id'] }>({
+    tables: rules.RULES_TABLES,
+    empty: () => [],
+    read: readPayeeRules,
+  }),
 });
 
 function readPayees(): PayeeEntity[] {
@@ -172,12 +177,14 @@ async function checkOrphanedPayees({
   return ids.filter(id => orphaned.has(id));
 }
 
-async function getPayeeRules({
-  id,
-}: {
+function readPayeeRules({ id }: { id: PayeeEntity['id'] }): RuleEntity[] {
+  return rules.serializeRules(rules.getRulesForPayee(id));
+}
+
+async function getPayeeRules(args: {
   id: PayeeEntity['id'];
 }): Promise<RuleEntity[]> {
-  return rules.getRulesForPayee(id).map(rule => rule.serialize());
+  return readPayeeRules(args);
 }
 
 async function createPayeeLocation({

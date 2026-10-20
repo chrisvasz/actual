@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import { Button } from '@actual-app/components/button';
 import { SvgAdd } from '@actual-app/components/icons/v1';
@@ -7,7 +7,6 @@ import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import { listen } from '@actual-app/core/platform/client/connection';
 import { getNormalisedString } from '@actual-app/core/shared/normalisation';
 
 import { Search } from '#components/common/Search';
@@ -25,9 +24,7 @@ export function ManageTags() {
   const [filter, setFilter] = useState('');
   const [hoveredTag, setHoveredTag] = useState<string>();
   const [create, setCreate] = useState(false);
-  const { data: tags = [], refetch } = useTags();
-
-  useEffect(() => listen('undo-event', () => refetch({ cancelRefetch: true })));
+  const tags = useTags();
 
   const filteredTags = useMemo(() => {
     return filter === ''

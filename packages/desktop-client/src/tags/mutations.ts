@@ -1,84 +1,30 @@
 import { send } from '@actual-app/core/platform/client/connection';
 import type { TagEntity } from '@actual-app/core/types/models';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { QueryClient, QueryKey } from '@tanstack/react-query';
-import { v4 as uuidv4 } from 'uuid';
 
-import { addNotification } from '#notifications/notificationsSlice';
-import { useDispatch } from '#redux';
-import type { AppDispatch } from '#redux/store';
+import { useReportErrors } from '#hooks/useReportErrors';
 
-import { tagQueries } from './queries';
-
-function invalidateQueries(queryClient: QueryClient, queryKey?: QueryKey) {
-  void queryClient.invalidateQueries({
-    queryKey: queryKey ?? tagQueries.lists(),
-  });
-}
-
-function dispatchErrorNotification(
-  dispatch: AppDispatch,
-  message: string,
-  error?: Error,
-) {
-  dispatch(
-    addNotification({
-      notification: {
-        id: uuidv4(),
-        type: 'error',
-        message,
-        pre: error ? error.message : undefined,
-      },
-    }),
-  );
-}
+// Live reads pick up each change once it's applied, so these only send it
 
 type CreateTagPayload = {
   tag: Omit<TagEntity, 'id'>;
 };
 
-export function useCreateTagMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({ tag }: CreateTagPayload) => {
-      return await send('tags-create', tag);
-    },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error creating tag:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error creating the tag. Please try again.',
-        error,
-      );
-    },
-  });
+export function useCreateTag() {
+  return useReportErrors(
+    'There was an error creating the tag. Please try again.',
+    ({ tag }: CreateTagPayload) => send('tags-create', tag),
+  );
 }
 
 type UpdateTagPayload = {
   tag: TagEntity;
 };
 
-export function useUpdateTagMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({ tag }: UpdateTagPayload) => {
-      return await send('tags-update', tag);
-    },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error updating tag:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error updating the tag. Please try again.',
-        error,
-      );
-    },
-  });
+export function useUpdateTag() {
+  return useReportErrors(
+    'There was an error updating the tag. Please try again.',
+    ({ tag }: UpdateTagPayload) => send('tags-update', tag),
+  );
 }
 
 type RenameTagPayload = {
@@ -86,138 +32,41 @@ type RenameTagPayload = {
   tag: TagEntity['tag'];
 };
 
-export function useRenameTagMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({ id, tag }: RenameTagPayload) => {
-      return await send('tags-rename', { id, tag });
-    },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error renaming tag:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error renaming the tag. Please try again.',
-        error,
-      );
-    },
-  });
+export function useRenameTag() {
+  return useReportErrors(
+    'There was an error renaming the tag. Please try again.',
+    ({ id, tag }: RenameTagPayload) => send('tags-rename', { id, tag }),
+  );
 }
 
-type DeleteTagPayload = {
-  id: TagEntity['id'];
-};
-
-export function useDeleteTagMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({ id }: DeleteTagPayload) => {
-      return await send('tags-delete', { id });
-    },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error deleting tag:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error deleting the tag. Please try again.',
-        error,
-      );
-    },
-  });
-}
-
-type DeleteTagsPayload = {
+type TagIdsPayload = {
   ids: Array<TagEntity['id']>;
 };
 
-export function useDeleteTagsMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({ ids }: DeleteTagsPayload) => {
-      return await send('tags-delete-all', ids);
-    },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error deleting tags:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error deleting the tags. Please try again.',
-        error,
-      );
-    },
-  });
+export function useDeleteTags() {
+  return useReportErrors(
+    'There was an error deleting the tags. Please try again.',
+    ({ ids }: TagIdsPayload) => send('tags-delete-all', ids),
+  );
 }
 
-type HideTagsPayload = {
-  ids: Array<TagEntity['id']>;
-};
-
-export function useHideTagsMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({ ids }: HideTagsPayload) => {
-      return await send('tags-hide-all', ids);
-    },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error hiding tags:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error hiding the tags. Please try again.',
-        error,
-      );
-    },
-  });
+export function useHideTags() {
+  return useReportErrors(
+    'There was an error hiding the tags. Please try again.',
+    ({ ids }: TagIdsPayload) => send('tags-hide-all', ids),
+  );
 }
 
-type UnhideTagsPayload = {
-  ids: Array<TagEntity['id']>;
-};
-
-export function useUnhideTagsMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({ ids }: UnhideTagsPayload) => {
-      return await send('tags-unhide-all', ids);
-    },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error hiding tags:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error hiding the tags. Please try again.',
-        error,
-      );
-    },
-  });
+export function useUnhideTags() {
+  return useReportErrors(
+    'There was an error hiding the tags. Please try again.',
+    ({ ids }: TagIdsPayload) => send('tags-unhide-all', ids),
+  );
 }
 
-export function useDiscoverTagsMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async () => {
-      return await send('tags-discover');
-    },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error discovering tags:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error discovering the tags. Please try again.',
-        error,
-      );
-    },
-  });
+export function useDiscoverTags() {
+  return useReportErrors(
+    'There was an error discovering the tags. Please try again.',
+    () => send('tags-discover'),
+  );
 }

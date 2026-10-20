@@ -49,10 +49,9 @@ export function TagAutocomplete({
   const [startIdx, endIdx] = useCurrentWordRange(inputValue, cursorPosition);
   const currentWord = inputValue.slice(startIdx, endIdx);
 
-  const { data: filteredTags, refetch } = useFilteredTags(currentWord, true);
+  const filteredTags = useFilteredTags(currentWord, true);
   const filteredItems = useMemo(() => {
-    const tagArr =
-      filteredTags?.map(tag => ({ ...tag, name: '#' + tag.tag })) ?? [];
+    const tagArr = filteredTags.map(tag => ({ ...tag, name: '#' + tag.tag }));
 
     const isValidTag = currentWord.startsWith('#') && currentWord.length > 1;
     const exactMatchExists =
@@ -97,7 +96,6 @@ export function TagAutocomplete({
 
     if (id === 'create_tag') {
       await send('tags-create', { tag: tagObj.tag });
-      void refetch({ cancelRefetch: true });
     }
 
     const nextChar = inputValue.charAt(endIdx);
