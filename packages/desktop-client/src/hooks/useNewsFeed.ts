@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 
-import { newsQueries } from '#news/queries';
-import type { NewsEntry } from '#news/types';
+import { fetchNewsFeed } from '#news/fetchNewsFeed';
+import type { NewsEntry, NewsFeed } from '#news/types';
 import { getNewestDate, getUnseenEntries } from '#news/utils';
 
 import { useGlobalPref } from './useGlobalPref';
@@ -16,9 +16,39 @@ export function useNewsFeed() {
   const [lastSeenNewsDate, setLastSeenNewsDate] =
     useGlobalPref('lastSeenNewsDate');
 
-  // `enabled: false` means no request is ever made while the feature is off.
-  const query = useQuery({ ...newsQueries.feed(), enabled: isEnabled });
-  const entries = query.data?.entries ?? EMPTY_ENTRIES;
+  const [feed, setFeed] = useState<NewsFeed>();
+  const [error, setError] = useState<Error | null>(null);
+
+  // No request is ever made while the feature is off.
+  useEffect(() => {
+    if (!isEnabled) {
+      return;
+    }
+
+    let isCurrent = true;
+    // Being offline is a normal state for a local-first app, not an error
+    // worth retrying repeatedly.
+    fetchNewsFeed()
+      .catch(() => fetchNewsFeed())
+      .then(
+        result => {
+          if (isCurrent) {
+            setFeed(result);
+            setError(null);
+          }
+        },
+        (loadError: Error) => {
+          if (isCurrent) {
+            setError(loadError);
+          }
+        },
+      );
+    return () => {
+      isCurrent = false;
+    };
+  }, [isEnabled]);
+
+  const entries = (isEnabled && feed?.entries) || EMPTY_ENTRIES;
   const unseenCount = getUnseenEntries(entries, lastSeenNewsDate).length;
 
   const markAllSeen = () => {
@@ -34,7 +64,7 @@ export function useNewsFeed() {
     unseenCount,
     lastSeenNewsDate,
     markAllSeen,
-    isLoading: isEnabled && query.isPending,
-    error: query.error,
+    isLoading: isEnabled && !feed && !error,
+    error: isEnabled ? error : null,
   };
 }
