@@ -189,7 +189,11 @@ export function ManageRules({ isModal, payeeId }: ManageRulesProps) {
   };
 
   function onDeleteRule(id: string) {
-    void send('rule-delete', id);
+    // Fails quietly, as the list does when a rule linked to a schedule
+    // isn't deleted
+    send('rule-delete', id).catch(error => {
+      console.error('Error deleting rule:', error);
+    });
   }
 
   const onEditRule = rule => {
