@@ -28,8 +28,9 @@ import * as usersSlice from './users/usersSlice';
 // React Query is left only for data that isn't a live read: the account
 // register's transaction pages (loaded in pages, and replaced by an
 // in-memory register store later) and the news feed (fetched over the
-// network). Everything else reads synchronously through live reads
-// (`useLiveQuery`/`useLiveRead`).
+// network). Everything else kept on screen reads synchronously through
+// live reads (`useLiveQuery`/`useLiveRead`); one-off reads still use
+// `aqlQuery`.
 const queryClient = new QueryClient();
 window.__TANSTACK_QUERY_CLIENT__ = queryClient;
 
