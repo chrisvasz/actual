@@ -81,8 +81,6 @@ function getStepText(
       return `Importing categories${progress}...`;
     case 'payees':
       return `Importing payees${progress}...`;
-    case 'payee-locations':
-      return `Importing payee locations${progress}...`;
     case 'tags':
       return `Importing tags${progress}...`;
     case 'transactions':

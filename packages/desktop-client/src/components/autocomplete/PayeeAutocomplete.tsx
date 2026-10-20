@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React, { Fragment, useCallback, useMemo, useState } from 'react';
+import React, { Fragment, useMemo, useState } from 'react';
 import type {
   ComponentProps,
   ComponentPropsWithoutRef,
@@ -12,44 +12,25 @@ import type {
 
 import { Button } from '@actual-app/components/button';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
-import {
-  SvgAdd,
-  SvgBookmark,
-  SvgLocation,
-} from '@actual-app/components/icons/v1';
+import { SvgAdd, SvgBookmark } from '@actual-app/components/icons/v1';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { TextOneLine } from '@actual-app/components/text-one-line';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import { formatDistance } from '@actual-app/core/shared/location-utils';
 import { getNormalisedString } from '@actual-app/core/shared/normalisation';
-import type {
-  AccountEntity,
-  NearbyPayeeEntity,
-  PayeeEntity,
-} from '@actual-app/core/types/models';
+import type { AccountEntity, PayeeEntity } from '@actual-app/core/types/models';
 import { css, cx } from '@emotion/css';
 import { byLengthAsc, byStartAsc, Fzf } from 'fzf';
 
 import { useAccounts } from '#hooks/useAccounts';
-import { useLocationPermission } from '#hooks/useLocationPermission';
-import { useNearbyPayees } from '#hooks/useNearbyPayees';
 import { usePayees } from '#hooks/usePayees';
-import {
-  getActivePayees,
-  useCreatePayee,
-  useDeletePayeeLocationMutation,
-} from '#payees';
+import { getActivePayees, useCreatePayee } from '#payees';
 
 import { Autocomplete, AutocompleteFooter } from './Autocomplete';
 import { ItemHeader } from './ItemHeader';
 
-type PayeeAutocompleteItem = PayeeEntity &
-  PayeeItemType & {
-    nearbyLocationId?: string;
-    distance?: number;
-  };
+type PayeeAutocompleteItem = PayeeEntity & PayeeItemType;
 
 function getPayeeSuggestions(payees: PayeeEntity[]): PayeeAutocompleteItem[] {
   const favoritePayees: PayeeAutocompleteItem[] = payees
@@ -113,24 +94,16 @@ type PayeeListProps = {
     props: ComponentPropsWithoutRef<typeof PayeeItem>,
   ) => ReactNode;
   footer: ReactNode;
-  onForgetLocation?: (locationId: string) => void;
 };
 
-type ItemTypes = 'account' | 'payee' | 'favorite_payee' | 'nearby_payee';
+type ItemTypes = 'account' | 'payee' | 'favorite_payee';
 type PayeeItemType = {
   itemType: ItemTypes;
 };
 
-function determineItemType(
-  item: PayeeEntity,
-  isFavorite: boolean,
-  isNearby: boolean = false,
-): ItemTypes {
+function determineItemType(item: PayeeEntity, isFavorite: boolean): ItemTypes {
   if (item.transfer_acct) {
     return 'account';
-  }
-  if (isNearby) {
-    return 'nearby_payee';
   }
   if (isFavorite) {
     return 'favorite_payee';
@@ -149,72 +122,61 @@ function PayeeList({
   renderPayeeItemGroupHeader = defaultRenderPayeeItemGroupHeader,
   renderPayeeItem = defaultRenderPayeeItem,
   footer,
-  onForgetLocation,
 }: PayeeListProps) {
   // If the "new payee" item exists, create it as a special-cased item
   // with the value of the input so it always shows whatever the user
   // entered
 
-  const { newPayee, favoritePayees, payees, transferPayees, nearbyPayees } =
-    useMemo(() => {
-      let currentIndex = 0;
-      const result = items.reduce(
-        (acc, item) => {
-          if (item.id === 'new') {
-            acc.newPayee = { ...item };
-          } else if (item.itemType === 'favorite_payee') {
-            acc.favoritePayees.push({ ...item });
-          } else if (item.itemType === 'payee') {
-            acc.payees.push({ ...item });
-          } else if (item.itemType === 'account') {
-            acc.transferPayees.push({ ...item });
-          } else if (item.itemType === 'nearby_payee') {
-            acc.nearbyPayees.push({ ...item });
-          }
-          return acc;
-        },
-        {
-          newPayee: null as PayeeAutocompleteItem | null,
-          nearbyPayees: [] as Array<PayeeAutocompleteItem>,
-          favoritePayees: [] as Array<PayeeAutocompleteItem>,
-          payees: [] as Array<PayeeAutocompleteItem>,
-          transferPayees: [] as Array<PayeeAutocompleteItem>,
-        },
-      );
+  const { newPayee, favoritePayees, payees, transferPayees } = useMemo(() => {
+    let currentIndex = 0;
+    const result = items.reduce(
+      (acc, item) => {
+        if (item.id === 'new') {
+          acc.newPayee = { ...item };
+        } else if (item.itemType === 'favorite_payee') {
+          acc.favoritePayees.push({ ...item });
+        } else if (item.itemType === 'payee') {
+          acc.payees.push({ ...item });
+        } else if (item.itemType === 'account') {
+          acc.transferPayees.push({ ...item });
+        }
+        return acc;
+      },
+      {
+        newPayee: null as PayeeAutocompleteItem | null,
+        favoritePayees: [] as Array<PayeeAutocompleteItem>,
+        payees: [] as Array<PayeeAutocompleteItem>,
+        transferPayees: [] as Array<PayeeAutocompleteItem>,
+      },
+    );
 
-      // assign indexes in render order
-      const newPayeeWithIndex = result.newPayee
-        ? { ...result.newPayee, highlightedIndex: currentIndex++ }
-        : null;
+    // assign indexes in render order
+    const newPayeeWithIndex = result.newPayee
+      ? { ...result.newPayee, highlightedIndex: currentIndex++ }
+      : null;
 
-      const nearbyPayeesWithIndex = result.nearbyPayees.map(item => ({
-        ...item,
-        highlightedIndex: currentIndex++,
-      }));
+    const favoritePayeesWithIndex = result.favoritePayees.map(item => ({
+      ...item,
+      highlightedIndex: currentIndex++,
+    }));
 
-      const favoritePayeesWithIndex = result.favoritePayees.map(item => ({
-        ...item,
-        highlightedIndex: currentIndex++,
-      }));
+    const payeesWithIndex = result.payees.map(item => ({
+      ...item,
+      highlightedIndex: currentIndex++,
+    }));
 
-      const payeesWithIndex = result.payees.map(item => ({
-        ...item,
-        highlightedIndex: currentIndex++,
-      }));
+    const transferPayeesWithIndex = result.transferPayees.map(item => ({
+      ...item,
+      highlightedIndex: currentIndex++,
+    }));
 
-      const transferPayeesWithIndex = result.transferPayees.map(item => ({
-        ...item,
-        highlightedIndex: currentIndex++,
-      }));
-
-      return {
-        newPayee: newPayeeWithIndex,
-        nearbyPayees: nearbyPayeesWithIndex,
-        favoritePayees: favoritePayeesWithIndex,
-        payees: payeesWithIndex,
-        transferPayees: transferPayeesWithIndex,
-      };
-    }, [items]);
+    return {
+      newPayee: newPayeeWithIndex,
+      favoritePayees: favoritePayeesWithIndex,
+      payees: payeesWithIndex,
+      transferPayees: transferPayeesWithIndex,
+    };
+  }, [items]);
 
   // We limit the number of payees shown to 100.
   // So we show a hint that more are available via search.
@@ -236,20 +198,6 @@ function PayeeList({
             highlighted: newPayee.highlightedIndex === highlightedIndex,
             embedded,
           })}
-
-        {nearbyPayees.length > 0 &&
-          renderPayeeItemGroupHeader({ title: 'Nearby Payees' })}
-        {nearbyPayees.map(item => (
-          <Fragment key={item.id}>
-            <NearbyPayeeItem
-              {...(getItemProps ? getItemProps({ item }) : {})}
-              item={item}
-              highlighted={highlightedIndex === item.highlightedIndex}
-              embedded={embedded}
-              onForgetLocation={onForgetLocation}
-            />
-          </Fragment>
-        ))}
 
         {favoritePayees.length > 0 &&
           renderPayeeItemGroupHeader({ title: 'Favorite Payees' })}
@@ -326,7 +274,6 @@ export type PayeeAutocompleteProps = ComponentProps<
   ) => ReactElement<typeof PayeeItem>;
   accounts?: AccountEntity[];
   payees?: PayeeEntity[];
-  nearbyPayees?: NearbyPayeeEntity[];
   /** The raw payee name from the bank import, shown in the footer for reference. */
   importedPayee?: string;
 };
@@ -348,24 +295,14 @@ export function PayeeAutocomplete({
   renderPayeeItem = defaultRenderPayeeItem,
   accounts,
   payees,
-  nearbyPayees,
   importedPayee,
   ...props
 }: PayeeAutocompleteProps) {
   const retrievedPayees = usePayees();
-  const { isGranted } = useLocationPermission();
-  const { data: retrievedNearbyPayees = [] } = useNearbyPayees({
-    enabled: isGranted,
-  });
   if (!payees) {
     payees = retrievedPayees;
   }
   const createPayee = useCreatePayee();
-  const deletePayeeLocationMutation = useDeletePayeeLocationMutation();
-
-  if (!nearbyPayees) {
-    nearbyPayees = retrievedNearbyPayees;
-  }
 
   const cachedAccounts = useAccounts();
   if (!accounts) {
@@ -403,50 +340,6 @@ export function PayeeAutocomplete({
     hasPayeeInput,
     showInactivePayees,
   ]);
-
-  // Process nearby payees separately from suggestions
-  const nearbyPayeesWithType: PayeeAutocompleteItem[] = useMemo(() => {
-    if (!nearbyPayees?.length) {
-      return [];
-    }
-
-    const processed: PayeeAutocompleteItem[] = nearbyPayees.map(result => ({
-      ...result.payee,
-      itemType: 'nearby_payee' as const,
-      nearbyLocationId: result.location.id,
-      distance: result.location.distance,
-    }));
-    return processed;
-  }, [nearbyPayees]);
-
-  // Filter nearby payees based on input value (similar to regular payees)
-  const filteredNearbyPayees = useMemo(() => {
-    if (!nearbyPayeesWithType.length || !rawPayee) {
-      return nearbyPayeesWithType;
-    }
-
-    return new Fzf(nearbyPayeesWithType, {
-      selector: item => item.name ?? '',
-      limit: 100,
-      casing: 'case-insensitive',
-      // Prefer exact/shorter matches over longer ones that merely contain
-      // the query as a substring when fzf scores them equally.
-      tiebreakers: [byLengthAsc, byStartAsc],
-    })
-      .find(rawPayee)
-      .map(result => result.item);
-  }, [nearbyPayeesWithType, rawPayee]);
-
-  const handleForgetLocation = useCallback(
-    async (locationId: string) => {
-      try {
-        await deletePayeeLocationMutation.mutateAsync(locationId);
-      } catch (error) {
-        console.error('Failed to delete payee location', { error });
-      }
-    },
-    [deletePayeeLocationMutation],
-  );
 
   async function handleSelect(idOrIds, rawInputValue) {
     if (!clearOnBlur) {
@@ -547,12 +440,6 @@ export function PayeeAutocomplete({
       onUpdate={(id, inputValue) => onUpdate?.(id, makeNew(id, inputValue))}
       onSelect={handleSelect}
       getHighlightedIndex={suggestions => {
-        // If we have nearby payees, highlight the first nearby payee
-        if (filteredNearbyPayees.length > 0) {
-          return 0;
-        }
-
-        // Otherwise use original logic for suggestions
         if (suggestions.length === 0) {
           return null;
         } else if (suggestions[0].id === 'new') {
@@ -564,7 +451,7 @@ export function PayeeAutocomplete({
       filterSuggestions={filterSuggestions}
       renderItems={(items, getItemProps, highlightedIndex, inputValue) => (
         <PayeeList
-          items={[...filteredNearbyPayees, ...items]}
+          items={items}
           getItemProps={getItemProps}
           highlightedIndex={highlightedIndex}
           inputValue={inputValue}
@@ -602,7 +489,6 @@ export function PayeeAutocomplete({
               )}
             </AutocompleteFooter>
           }
-          onForgetLocation={handleForgetLocation}
         />
       )}
       {...props}
@@ -817,127 +703,4 @@ function defaultRenderPayeeItem(
   props: ComponentPropsWithoutRef<typeof PayeeItem>,
 ): ReactElement<typeof PayeeItem> {
   return <PayeeItem {...props} />;
-}
-
-type NearbyPayeeItemProps = PayeeItemProps & {
-  onForgetLocation?: (locationId: string) => void;
-};
-
-function NearbyPayeeItem({
-  item,
-  className,
-  highlighted,
-  embedded,
-  onForgetLocation,
-  ...props
-}: NearbyPayeeItemProps) {
-  const { isNarrowWidth } = useResponsive();
-  const narrowStyle = isNarrowWidth
-    ? {
-        ...styles.mobileMenuItem,
-        borderRadius: 0,
-        borderTop: `1px solid ${theme.pillBorder}`,
-      }
-    : {};
-  const iconSize = isNarrowWidth ? 14 : 8;
-  let paddingLeftOverFromIcon = 20;
-  let itemIcon = undefined;
-  if (item.favorite) {
-    itemIcon = (
-      <SvgBookmark
-        width={iconSize}
-        height={iconSize}
-        style={{ marginRight: 5, display: 'inline-block' }}
-      />
-    );
-    paddingLeftOverFromIcon -= iconSize + 5;
-  }
-
-  // Extract location ID and distance from the nearby payee item
-  const locationId = item.nearbyLocationId;
-  const distance = item.distance;
-  const distanceText = distance !== undefined ? formatDistance(distance) : '';
-
-  const handleForgetClick = () => {
-    if (locationId && onForgetLocation) {
-      onForgetLocation(locationId);
-    }
-  };
-
-  return (
-    <div
-      className={cx(
-        className,
-        css({
-          backgroundColor: highlighted
-            ? theme.menuAutoCompleteBackgroundHover
-            : 'transparent',
-          color: highlighted
-            ? theme.menuAutoCompleteItemTextHover
-            : theme.menuAutoCompleteItemText,
-          borderRadius: embedded ? 4 : 0,
-          padding: 4,
-          paddingLeft: paddingLeftOverFromIcon,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          ...narrowStyle,
-        }),
-      )}
-      data-testid={`${item.name}-payee-item`}
-      data-highlighted={highlighted || undefined}
-    >
-      <button
-        type="button"
-        className={css({
-          display: 'flex',
-          flexDirection: 'column',
-          flex: 1,
-          background: 'none',
-          border: 'none',
-          font: 'inherit',
-          color: 'inherit',
-          textAlign: 'left',
-          padding: 0,
-          cursor: 'pointer',
-        })}
-        {...props}
-      >
-        <TextOneLine>
-          {itemIcon}
-          {item.name}
-        </TextOneLine>
-        {distanceText && (
-          <div
-            style={{
-              fontSize: '10px',
-              color: highlighted
-                ? theme.menuAutoCompleteItemTextHover
-                : theme.pageTextSubdued,
-              marginLeft: itemIcon ? iconSize + 5 : 0,
-            }}
-          >
-            {distanceText}
-          </div>
-        )}
-      </button>
-      {locationId && (
-        <Button
-          variant="menu"
-          onPress={handleForgetClick}
-          style={{
-            backgroundColor: theme.errorBackground,
-            border: `1px solid ${theme.errorBorder}`,
-            color: theme.pageText,
-            fontSize: '11px',
-            padding: '2px 6px',
-            borderRadius: 3,
-          }}
-        >
-          Forget
-          <SvgLocation width={10} height={10} style={{ marginLeft: 4 }} />
-        </Button>
-      )}
-    </div>
-  );
 }

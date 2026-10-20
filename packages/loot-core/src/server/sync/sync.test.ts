@@ -222,6 +222,41 @@ describe('Sync', () => {
       ]),
     ).toThrow(expect.objectContaining({ reason: 'clock-drift' }));
   });
+
+  it('should apply messages for payee_locations, which no longer has a feature', async () => {
+    // Other devices running older versions may still send these; the
+    // table stays so the batch applies.
+    const message = (column: string, value: string | number) => ({
+      dataset: 'payee_locations',
+      row: 'loc1',
+      column,
+      value,
+      timestamp: Timestamp.send(),
+    });
+
+    await receiveMessages([
+      message('payee_id', 'payee1'),
+      message('latitude', 40.7),
+      message('longitude', -74),
+      message('created_at', 1),
+      {
+        dataset: 'transactions',
+        row: 't1',
+        column: 'amount',
+        value: 1234,
+        timestamp: Timestamp.send(),
+      },
+    ]);
+
+    expect(
+      db.first('SELECT payee_id, latitude FROM payee_locations WHERE id = ?', [
+        'loc1',
+      ]),
+    ).toEqual({ payee_id: 'payee1', latitude: 40.7 });
+    expect(
+      db.first('SELECT amount FROM transactions WHERE id = ?', ['t1']),
+    ).toEqual({ amount: 1234 });
+  });
 });
 
 function registerBudgetMonths(months: string[]) {

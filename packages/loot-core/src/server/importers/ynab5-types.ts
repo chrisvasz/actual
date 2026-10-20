@@ -13,7 +13,6 @@ export type Budget = {
   currency_format?: CurrencyFormat;
   accounts: Account[];
   payees: Payee[];
-  payee_locations: PayeeLocation[];
   category_groups: CategoryGroup[];
   categories: Category[];
   months: MonthDetail[];
@@ -99,15 +98,6 @@ export type Payee = {
   transfer_account_id?: string | null;
   deleted: boolean;
   transfer_acct?: string;
-};
-
-// Source: https://api.ynab.com/papi/open_api_spec.yaml#/components/schemas/PayeeLocation
-export type PayeeLocation = {
-  id: string;
-  payee_id: string;
-  latitude: string;
-  longitude: string;
-  deleted: boolean;
 };
 
 // Source: https://api.ynab.com/papi/open_api_spec.yaml#/components/schemas/CategoryGroup
