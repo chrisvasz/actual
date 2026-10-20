@@ -256,6 +256,13 @@ describe('Sync', () => {
     expect(
       db.first('SELECT amount FROM transactions WHERE id = ?', ['t1']),
     ).toEqual({ amount: 1234 });
+
+    // Updates to an existing row apply too
+    await receiveMessages([message('tombstone', 1)]);
+    expect(
+      db.first('SELECT tombstone FROM payee_locations WHERE id = ?', ['loc1']),
+    ).toEqual({ tombstone: 1 });
+    expect(db.runQuery('SELECT * FROM messages_pending', [], true)).toEqual([]);
   });
 });
 
