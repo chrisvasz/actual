@@ -2,7 +2,7 @@ import type * as PlatformModule from '@actual-app/core/shared/platform';
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { resetTestProviders, TestProviders } from '#mocks';
+import { TestProviders } from '#mocks';
 import { getNewsFeedUrl } from '#news/fetchNewsFeed';
 import { newsFeedFixture } from '#news/fixtures';
 
@@ -32,7 +32,6 @@ describe('useNewsFeed', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    resetTestProviders();
     mockLastSeenNewsDate = undefined;
     mockShowNewsFeed = true;
     vi.stubGlobal('fetch', fetchMock);
@@ -73,5 +72,54 @@ describe('useNewsFeed', () => {
     expect(result.current.isLoading).toBe(false);
     expect(result.current.entries).toEqual([]);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('retries a failed request once', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('flaky'));
+
+    const { result } = renderHook(() => useNewsFeed(), {
+      wrapper: TestProviders,
+    });
+
+    await waitFor(() => expect(result.current.entries).toHaveLength(2));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('reports loading until the feed arrives', async () => {
+    const { result } = renderHook(() => useNewsFeed(), {
+      wrapper: TestProviders,
+    });
+
+    expect(result.current.isLoading).toBe(true);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.error).toBeNull();
+  });
+
+  it('starts loading when the user turns the news feed on', async () => {
+    mockShowNewsFeed = false;
+    const { result, rerender } = renderHook(() => useNewsFeed(), {
+      wrapper: TestProviders,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    mockShowNewsFeed = true;
+    rerender();
+
+    await waitFor(() => expect(result.current.entries).toHaveLength(2));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports an error after one retry fails', async () => {
+    fetchMock.mockRejectedValue(new Error('offline'));
+
+    const { result } = renderHook(() => useNewsFeed(), {
+      wrapper: TestProviders,
+    });
+
+    await waitFor(() => expect(result.current.error?.message).toBe('offline'));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.entries).toEqual([]);
   });
 });
