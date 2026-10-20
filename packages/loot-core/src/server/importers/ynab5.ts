@@ -1,7 +1,6 @@
 // @ts-strict-ignore
 import { v4 as uuidv4 } from 'uuid';
 
-import { logger } from '#platform/server/log';
 import { send } from '#server/main-app';
 import { ruleModel } from '#server/transactions/transaction-rules';
 import * as monthUtils from '#shared/months';
@@ -471,63 +470,6 @@ export function importPayees(
       }
     }),
   );
-}
-
-async function importPayeeLocations(
-  data: Budget,
-  entityIdMap: Map<string, string>,
-  tick: ImportTick,
-) {
-  // If no payee locations data provided, skip import
-  if (!data?.payee_locations) {
-    logger.log('No payee locations data provided, skipping...');
-    return;
-  }
-
-  const payeeLocations = data.payee_locations;
-
-  for (const location of payeeLocations) {
-    // Skip deleted locations
-    if (location.deleted) {
-      continue;
-    }
-
-    // Get the mapped payee ID
-    const actualPayeeId = entityIdMap.get(location.payee_id);
-    if (!actualPayeeId) {
-      logger.log(`Skipping location for unknown payee: ${location.payee_id}`);
-      continue;
-    }
-
-    // Validate latitude/longitude before attempting import
-    const latitude = parseFloat(location.latitude);
-    const longitude = parseFloat(location.longitude);
-
-    if (isNaN(latitude) || isNaN(longitude)) {
-      logger.log(
-        `Skipping location with invalid coordinates for payee ${actualPayeeId}: lat=${location.latitude}, lng=${location.longitude}`,
-      );
-      continue;
-    }
-
-    try {
-      // Create the payee location in Actual
-      await send('payee-location-create', {
-        payeeId: actualPayeeId,
-        latitude,
-        longitude,
-      });
-      tick();
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : String(error ?? 'Unknown error');
-      logger.error(
-        `Failed to import location for payee ${actualPayeeId} at (${latitude}, ${longitude}): ${errorMessage}`,
-      );
-    }
-  }
 }
 
 function getTagsToCreate(data: Budget, flagNameConflicts: Set<string>) {
@@ -1225,11 +1167,6 @@ export async function doImport(data: Budget) {
         payee => !payee.deleted && !payee.transfer_account_id,
       ).length,
       run: tick => importPayees(data, entityIdMap, tick),
-    },
-    {
-      step: 'payee-locations',
-      total: countLive(data.payee_locations ?? []),
-      run: tick => importPayeeLocations(data, entityIdMap, tick),
     },
     {
       step: 'tags',

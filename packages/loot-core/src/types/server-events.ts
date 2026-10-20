@@ -76,7 +76,6 @@ export type ImportStep =
   | 'accounts'
   | 'categories'
   | 'payees'
-  | 'payee-locations'
   | 'tags'
   | 'transactions'
   | 'scheduled-transactions'
