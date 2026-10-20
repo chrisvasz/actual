@@ -23,8 +23,6 @@ type SyncEvent = {
   | {
       type: 'applied';
       tables: string[];
-      data?: Map<string, unknown>;
-      prevData?: Map<string, unknown>;
     }
   | {
       type: 'success';

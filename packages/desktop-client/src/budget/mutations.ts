@@ -4,7 +4,6 @@ import type {
   CategoryEntity,
   CategoryGroupEntity,
 } from '@actual-app/core/types/models';
-import { useMutation } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
 
 import { useReportErrors } from '#hooks/useReportErrors';
@@ -476,122 +475,135 @@ type ApplyBudgetActionPayload =
       };
     };
 
+/**
+ * Applies a budget action. A failure is shown as an error notification, and
+ * the call still rejects so the amount cell can drop the amount it's showing.
+ */
 export function useBudgetActions() {
   const dispatch = useDispatch();
 
-  return useMutation({
-    mutationFn: async ({ month, type, args }: ApplyBudgetActionPayload) => {
-      switch (type) {
-        case 'budget-amount':
-          await send('budget/budget-amount', {
-            month,
-            category: args.category,
-            amount: args.amount,
-          });
-          break;
-        case 'copy-last':
-          await send('budget/copy-previous-month', { month });
-          break;
-        case 'set-zero':
-          await send('budget/set-zero', { month });
-          break;
-        case 'set-3-avg':
-          await send('budget/set-3month-avg', { month });
-          break;
-        case 'set-6-avg':
-          await send('budget/set-6month-avg', { month });
-          break;
-        case 'set-12-avg':
-          await send('budget/set-12month-avg', { month });
-          break;
-        case 'hold':
-          await send('budget/hold-for-next-month', {
-            month,
-            amount: args.amount,
-          });
-          break;
-        case 'reset-hold':
-          await send('budget/reset-hold', { month });
-          break;
-        case 'cover-overspending':
-          await send('budget/cover-overspending', {
-            month,
-            to: args.to,
-            from: args.from,
-            amount: args.amount,
-          });
-          break;
-        case 'transfer-available':
-          await send('budget/transfer-available', {
-            month,
-            amount: args.amount,
-            category: args.category,
-          });
-          break;
-        case 'cover-overbudgeted':
-          await send('budget/cover-overbudgeted', {
-            month,
-            category: args.category,
-            amount: args.amount,
-          });
-          break;
-        case 'transfer-category':
-          await send('budget/transfer-category', {
-            month,
-            amount: args.amount,
-            from: args.from,
-            to: args.to,
-          });
-          break;
-        case 'carryover': {
-          await send('budget/set-carryover', {
-            startMonth: month,
-            category: args.category,
-            flag: args.flag,
-          });
-          break;
-        }
-        case 'reset-income-carryover':
-          await send('budget/reset-income-carryover', { month });
-          break;
-        case 'set-single-3-avg':
-          await send('budget/set-n-month-avg', {
-            month,
-            N: 3,
-            category: args.category,
-          });
-          break;
-        case 'set-single-6-avg':
-          await send('budget/set-n-month-avg', {
-            month,
-            N: 6,
-            category: args.category,
-          });
-          break;
-        case 'set-single-12-avg':
-          await send('budget/set-n-month-avg', {
-            month,
-            N: 12,
-            category: args.category,
-          });
-          break;
-        case 'copy-single-last':
-          await send('budget/copy-single-month', {
-            month,
-            category: args.category,
-          });
-          break;
-        default:
-          throw new Error(`Unknown budget action type: ${String(type)}`);
-      }
-    },
-    onError: error => {
+  return async (payload: ApplyBudgetActionPayload): Promise<void> => {
+    try {
+      await sendBudgetAction(payload);
+    } catch (e) {
+      const error = e as Error;
       console.error('Error applying budget action:', error);
       dispatchErrorNotification(
         dispatch,
         'There was an error applying the budget action. Please try again.',
         error,
       );
-    },
-  });
+      throw error;
+    }
+  };
+}
+
+async function sendBudgetAction({
+  month,
+  type,
+  args,
+}: ApplyBudgetActionPayload): Promise<void> {
+  switch (type) {
+    case 'budget-amount':
+      await send('budget/budget-amount', {
+        month,
+        category: args.category,
+        amount: args.amount,
+      });
+      break;
+    case 'copy-last':
+      await send('budget/copy-previous-month', { month });
+      break;
+    case 'set-zero':
+      await send('budget/set-zero', { month });
+      break;
+    case 'set-3-avg':
+      await send('budget/set-3month-avg', { month });
+      break;
+    case 'set-6-avg':
+      await send('budget/set-6month-avg', { month });
+      break;
+    case 'set-12-avg':
+      await send('budget/set-12month-avg', { month });
+      break;
+    case 'hold':
+      await send('budget/hold-for-next-month', {
+        month,
+        amount: args.amount,
+      });
+      break;
+    case 'reset-hold':
+      await send('budget/reset-hold', { month });
+      break;
+    case 'cover-overspending':
+      await send('budget/cover-overspending', {
+        month,
+        to: args.to,
+        from: args.from,
+        amount: args.amount,
+      });
+      break;
+    case 'transfer-available':
+      await send('budget/transfer-available', {
+        month,
+        amount: args.amount,
+        category: args.category,
+      });
+      break;
+    case 'cover-overbudgeted':
+      await send('budget/cover-overbudgeted', {
+        month,
+        category: args.category,
+        amount: args.amount,
+      });
+      break;
+    case 'transfer-category':
+      await send('budget/transfer-category', {
+        month,
+        amount: args.amount,
+        from: args.from,
+        to: args.to,
+      });
+      break;
+    case 'carryover': {
+      await send('budget/set-carryover', {
+        startMonth: month,
+        category: args.category,
+        flag: args.flag,
+      });
+      break;
+    }
+    case 'reset-income-carryover':
+      await send('budget/reset-income-carryover', { month });
+      break;
+    case 'set-single-3-avg':
+      await send('budget/set-n-month-avg', {
+        month,
+        N: 3,
+        category: args.category,
+      });
+      break;
+    case 'set-single-6-avg':
+      await send('budget/set-n-month-avg', {
+        month,
+        N: 6,
+        category: args.category,
+      });
+      break;
+    case 'set-single-12-avg':
+      await send('budget/set-n-month-avg', {
+        month,
+        N: 12,
+        category: args.category,
+      });
+      break;
+    case 'copy-single-last':
+      await send('budget/copy-single-month', {
+        month,
+        category: args.category,
+      });
+      break;
+    default:
+      throw new Error(`Unknown budget action type: ${String(type)}`);
+  }
 }

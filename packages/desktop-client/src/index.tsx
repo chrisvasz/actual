@@ -25,6 +25,11 @@ import * as transactionsSlice from './transactions/transactionsSlice';
 import { redo, undo } from './undo';
 import * as usersSlice from './users/usersSlice';
 
+// React Query is left only for data that isn't a live read: the account
+// register's transaction pages (loaded in pages, and replaced by an
+// in-memory register store later), nearby payees (need the device's
+// location) and the news feed (fetched over the network). Everything else
+// reads synchronously through live reads (`useLiveQuery`/`useLiveRead`).
 const queryClient = new QueryClient();
 window.__TANSTACK_QUERY_CLIENT__ = queryClient;
 

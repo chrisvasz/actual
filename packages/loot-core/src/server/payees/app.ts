@@ -14,8 +14,6 @@ export type PayeesHandlers = {
   'payee-create': typeof createPayee;
   'common-payees-get': typeof getCommonPayees;
   'payees-get': typeof getPayees;
-  'payees-get-orphaned': typeof getOrphanedPayees;
-  'payees-get-rule-counts': typeof getPayeeRuleCounts;
   'payees-merge': typeof mergePayees;
   'payees-batch-change': typeof batchChangePayees;
   'payees-check-orphaned': typeof checkOrphanedPayees;
@@ -26,8 +24,6 @@ export const app = createApp<PayeesHandlers>();
 app.method('payee-create', mutator(undoable(createPayee)));
 app.method('common-payees-get', getCommonPayees);
 app.method('payees-get', getPayees);
-app.method('payees-get-orphaned', getOrphanedPayees);
-app.method('payees-get-rule-counts', getPayeeRuleCounts);
 app.method(
   'payees-merge',
   mutator(
@@ -75,7 +71,7 @@ export const payeeLiveReads = registerLiveReads({
     // (a merge remaps their payees) before a change is reported, less those
     // of completed schedules
     tables: ['rules', 'payee_mapping', 'schedules'],
-    empty: () => ({}),
+    empty: (): Record<PayeeEntity['id'], number> => ({}),
     read: readPayeeRuleCounts,
   }),
   'payees-get-rules': liveRead<RuleEntity[], { id: PayeeEntity['id'] }>({
@@ -96,14 +92,6 @@ async function getPayees(): Promise<PayeeEntity[]> {
 
 function readOrphanedPayees(): Array<Pick<PayeeEntity, 'id'>> {
   return db.syncGetOrphanedPayees();
-}
-
-async function getOrphanedPayees(): Promise<Array<Pick<PayeeEntity, 'id'>>> {
-  return readOrphanedPayees();
-}
-
-async function getPayeeRuleCounts() {
-  return readPayeeRuleCounts();
 }
 
 function readPayeeRuleCounts(): Record<PayeeEntity['id'], number> {

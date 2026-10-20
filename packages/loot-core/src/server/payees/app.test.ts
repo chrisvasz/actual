@@ -66,10 +66,11 @@ describe('payees app', () => {
       });
       deleteRule(deletedId);
 
-      const orphaned = await app.handlers['payees-get-orphaned']();
+      const orphaned = payeeLiveReads['payees-get-orphaned'].read(undefined);
 
-      expect(orphaned.map(p => p.id).sort()).toEqual(
-        [orphanId, deletedRuleId].sort(),
+      const byId = (a: string, b: string) => a.localeCompare(b);
+      expect(orphaned.map(p => p.id).sort(byId)).toEqual(
+        [orphanId, deletedRuleId].sort(byId),
       );
     });
   });
@@ -98,7 +99,7 @@ describe('payees app', () => {
         schedule: { id: scheduleId, completed: true },
       });
 
-      const counts = await app.handlers['payees-get-rule-counts']();
+      const counts = payeeLiveReads['payees-get-rule-counts'].read(undefined);
 
       expect(counts[activePayeeId]).toBe(1);
       expect(counts[completedPayeeId]).toBeUndefined();
@@ -119,7 +120,7 @@ describe('payees app', () => {
       await app.handlers['payees-merge']({ targetId, mergeIds: [mergedId] });
       stop();
 
-      const counts = await app.handlers['payees-get-rule-counts']();
+      const counts = payeeLiveReads['payees-get-rule-counts'].read(undefined);
       expect(counts[targetId]).toBe(1);
       expect(counts[mergedId]).toBeUndefined();
 

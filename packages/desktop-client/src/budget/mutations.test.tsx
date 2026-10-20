@@ -9,11 +9,7 @@ import type {
 import { act, renderHook } from '@testing-library/react';
 
 import { useCategory } from '#hooks/useCategory';
-import {
-  configureTestAppStore,
-  createTestQueryClient,
-  TestProviders,
-} from '#mocks';
+import { createTestAppStore, TestProviders } from '#mocks';
 import { changeTables, initLiveReads } from '#mocks/live-reads';
 
 import {
@@ -42,17 +38,12 @@ const rent: CategoryEntity = {
 
 describe('category mutations', () => {
   let groups: CategoryGroupEntity[];
-  let store: ReturnType<typeof configureTestAppStore>;
+  let store: ReturnType<typeof createTestAppStore>;
   let sent: Array<{ name: string; args: unknown }>;
 
   function wrapper({ children }: { children: ReactNode }) {
-    const queryClient = createTestQueryClient();
-    store = configureTestAppStore({ queryClient });
-    return (
-      <TestProviders store={store} queryClient={queryClient}>
-        {children}
-      </TestProviders>
-    );
+    store = createTestAppStore();
+    return <TestProviders store={store}>{children}</TestProviders>;
   }
 
   function notifications() {
