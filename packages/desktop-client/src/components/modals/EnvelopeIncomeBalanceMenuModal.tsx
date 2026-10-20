@@ -40,7 +40,7 @@ export function EnvelopeIncomeBalanceMenuModal({
     borderTop: `1px solid ${theme.pillBorder}`,
   };
 
-  const { data: category } = useCategory(categoryId);
+  const category = useCategory(categoryId);
 
   const carryover = useEnvelopeSheetValue(
     envelopeBudget.catCarryover(categoryId),

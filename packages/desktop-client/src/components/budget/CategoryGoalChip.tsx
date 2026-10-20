@@ -14,7 +14,7 @@ import type {
   CategoryGoalType,
 } from '@actual-app/core/types/models';
 
-import { useUpdateCategoryMutation } from '#budget/mutations';
+import { useUpdateCategory } from '#budget/mutations';
 import { FinancialText } from '#components/FinancialText';
 import { useFormat } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
@@ -37,7 +37,7 @@ export function CategoryGoalChip({ category }: CategoryGoalChipProps) {
   const [typeDraft, setTypeDraft] = useState<CategoryGoalType>('balance');
   // '' means no target month
   const [targetDraft, setTargetDraft] = useState('');
-  const { mutate: updateCategory } = useUpdateCategoryMutation();
+  const updateCategory = useUpdateCategory();
 
   const goal = category.goal_amount ?? null;
   const hasGoal = goal != null;
@@ -95,7 +95,7 @@ export function CategoryGoalChip({ category }: CategoryGoalChipProps) {
       nextType !== (category.goal_type ?? null) ||
       nextTarget !== (category.goal_target_month ?? null)
     ) {
-      updateCategory({
+      void updateCategory({
         category: {
           ...category,
           goal_amount: next,

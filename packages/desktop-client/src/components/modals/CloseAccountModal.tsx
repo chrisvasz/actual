@@ -50,12 +50,7 @@ export function CloseAccountModal({
 }: CloseAccountModalProps) {
   const allAccounts = useAccounts();
   const accounts = allAccounts.filter(a => a.closed === 0);
-  const {
-    data: { grouped: categoryGroups, list: categories } = {
-      grouped: [],
-      list: [],
-    },
-  } = useCategories();
+  const { grouped: categoryGroups, list: categories } = useCategories();
   const [loading, setLoading] = useState(false);
   const [transferAccountId, setTransferAccountId] = useState('');
   const transferAccount = accounts.find(a => a.id === transferAccountId);

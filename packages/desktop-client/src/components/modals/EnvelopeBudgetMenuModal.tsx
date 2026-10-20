@@ -54,7 +54,7 @@ export function EnvelopeBudgetMenuModal({
   const budgeted = useEnvelopeSheetValue(
     envelopeBudget.catBudgeted(categoryId),
   );
-  const { data: category } = useCategory(categoryId);
+  const category = useCategory(categoryId);
 
   const _onUpdateBudget = (amount: number) => {
     onUpdateBudget?.(amountToInteger(amount));

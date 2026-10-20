@@ -31,8 +31,7 @@ export function TransferModal({
 }: TransferModalProps) {
   const [hideFraction] = useSyncedPref('hideFraction');
 
-  const { data: { grouped: originalCategoryGroups } = { grouped: [] } } =
-    useCategories();
+  const { grouped: originalCategoryGroups } = useCategories();
   const [categoryGroups, categories] = useMemo(() => {
     const expenseGroups = originalCategoryGroups.filter(g => !g.is_income);
     const categoryGroups = showToBeBudgeted

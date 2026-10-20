@@ -46,8 +46,7 @@ export function CategoryGroupMenuModal({
   onClose,
   onSortCategories,
 }: CategoryGroupMenuModalProps) {
-  const { data: { grouped: categoryGroups } = { grouped: [] } } =
-    useCategories();
+  const { grouped: categoryGroups } = useCategories();
   const group = categoryGroups.find(g => g.id === groupId);
   const notes = useNotes(group.id);
 

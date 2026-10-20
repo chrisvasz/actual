@@ -124,8 +124,7 @@ export const GenericInput = ({
 }: GenericInputProps) => {
   const dispatch = useDispatch();
   const { isNarrowWidth } = useResponsive();
-  const { data: { grouped: categoryGroups } = { grouped: [] } } =
-    useCategories();
+  const { grouped: categoryGroups } = useCategories();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
 
   let content: JSX.Element | null = null;

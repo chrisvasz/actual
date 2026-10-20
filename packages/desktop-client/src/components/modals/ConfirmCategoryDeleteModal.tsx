@@ -24,12 +24,7 @@ export function ConfirmCategoryDeleteModal({
 }: ConfirmCategoryDeleteModalProps) {
   const [transferCategory, setTransferCategory] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const {
-    data: { grouped: categoryGroups, list: categories } = {
-      grouped: [],
-      list: [],
-    },
-  } = useCategories();
+  const { grouped: categoryGroups, list: categories } = useCategories();
   const group = categoryGroups.find(g => g.id === groupId);
   const category = categories.find(c => c.id === categoryId);
 

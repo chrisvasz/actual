@@ -2,6 +2,7 @@ import { createApp } from '#server/app';
 import { aqlQuery } from '#server/aql';
 import * as db from '#server/db';
 import { APIError } from '#server/errors';
+import { liveRead, registerLiveReads } from '#server/live-reads';
 import { categoryGroupModel, categoryModel } from '#server/models';
 import { mutator } from '#server/mutators';
 import { batchMessages } from '#server/sync';
@@ -108,9 +109,22 @@ app.method('category-group-move', mutator(undoable(moveCategoryGroup)));
 app.method('category-group-delete', mutator(undoable(deleteCategoryGroup)));
 app.method('must-category-transfer', isCategoryTransferRequired);
 
+export const budgetLiveReads = registerLiveReads({
+  'get-categories': liveRead({
+    // Every category and group; aqlQuery leaves out tombstoned (and so
+    // merged) ones
+    tables: ['categories', 'category_groups'],
+    empty: () => ({ grouped: [], list: [] }),
+    read: () => readCategories(),
+  }),
+});
+
 // Server must return AQL entities not the raw DB data
-async function getCategories({ hidden }: { hidden?: boolean } = {}) {
-  const categoryGroups = await getCategoryGroups({ hidden });
+function readCategories({ hidden }: { hidden?: boolean } = {}): {
+  grouped: CategoryGroupEntity[];
+  list: CategoryEntity[];
+} {
+  const categoryGroups = readCategoryGroups({ hidden });
   let list: CategoryEntity[];
   if (hidden === true) {
     // A hidden category can live in a visible group, so when the caller
@@ -127,6 +141,10 @@ async function getCategories({ hidden }: { hidden?: boolean } = {}) {
     grouped: categoryGroups,
     list,
   };
+}
+
+async function getCategories({ hidden }: { hidden?: boolean } = {}) {
+  return readCategories({ hidden });
 }
 
 async function getBudgetBounds() {
@@ -298,7 +316,9 @@ async function deleteCategory({
 }
 
 // Server must return AQL entities not the raw DB data
-async function getCategoryGroups({ hidden }: { hidden?: boolean } = {}) {
+function readCategoryGroups({
+  hidden,
+}: { hidden?: boolean } = {}): CategoryGroupEntity[] {
   const baseQuery = q('category_groups').select('*');
   const query = hidden === undefined ? baseQuery : baseQuery.filter({ hidden });
   const { data: categoryGroups }: { data: CategoryGroupEntity[] } =
@@ -310,6 +330,10 @@ async function getCategoryGroups({ hidden }: { hidden?: boolean } = {}) {
     ...g,
     categories: g.categories?.filter(c => Boolean(c.hidden) === hidden),
   }));
+}
+
+async function getCategoryGroups({ hidden }: { hidden?: boolean } = {}) {
+  return readCategoryGroups({ hidden });
 }
 
 async function createCategoryGroup({

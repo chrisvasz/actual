@@ -38,7 +38,6 @@ import type {
 import {
   QueryObserver,
   useQueryClient,
-  useSuspenseQueries,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
@@ -49,7 +48,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { useReopenAccount, useUpdateAccount } from '#accounts';
 import { markAccountRead } from '#accounts/accountsSlice';
 import * as reconciliation from '#accounts/reconciliation';
-import { categoryQueries } from '#budget';
 import { FeatureErrorFallback } from '#components/FeatureErrorFallback';
 import type { SavedFilter } from '#components/filters/SavedFilterMenuButton';
 import type {
@@ -61,6 +59,7 @@ import { validateAccountName } from '#components/util/accountValidation';
 import { useAccountPreviewTransactions } from '#hooks/useAccountPreviewTransactions';
 import { useAccounts } from '#hooks/useAccounts';
 import { SchedulesProvider } from '#hooks/useCachedSchedules';
+import { useCategories } from '#hooks/useCategories';
 import { useDateFormat } from '#hooks/useDateFormat';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { usePayees } from '#hooks/usePayees';
@@ -2303,20 +2302,11 @@ export function Account() {
   const params = useParams();
   const location = useLocation();
 
-  // Suspend until the screen has what it needs to draw complete. Navigations
-  // run in a transition, so React keeps the previous screen up meanwhile
-  // instead of drawing this one empty and filling it in. Without the
-  // categories rows would draw with blank categories. Accounts, payees and
-  // notes are read synchronously, so they need no wait.
+  // Accounts, payees, categories and notes are read synchronously, so the
+  // screen draws them complete on its first render.
   const accounts = useAccounts();
   const payees = usePayees();
-  const [
-    {
-      data: { grouped: categoryGroups },
-    },
-  ] = useSuspenseQueries({
-    queries: [categoryQueries.list()],
-  });
+  const { grouped: categoryGroups } = useCategories();
   const newTransactions = useSelector(
     state => state.transactions.newTransactions,
   );
