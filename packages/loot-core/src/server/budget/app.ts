@@ -35,7 +35,6 @@ export type BudgetHandlers = {
   'budget/reset-income-carryover': typeof actions.resetIncomeCarryover;
   'get-categories': typeof getCategories;
   'get-budget-bounds': typeof getBudgetBounds;
-  'envelope-budget-month': typeof envelopeBudgetMonth;
   'category-create': typeof createCategory;
   'category-update': typeof updateCategory;
   'category-move': typeof moveCategory;
@@ -96,7 +95,6 @@ app.method(
 );
 app.method('get-categories', getCategories);
 app.method('get-budget-bounds', getBudgetBounds);
-app.method('envelope-budget-month', envelopeBudgetMonth);
 app.method('category-create', mutator(undoable(createCategory)));
 app.method('category-update', mutator(undoable(updateCategory)));
 app.method('category-move', mutator(undoable(moveCategory)));
@@ -149,60 +147,6 @@ async function getCategories({ hidden }: { hidden?: boolean } = {}) {
 
 async function getBudgetBounds() {
   return await budget.createAllBudgets();
-}
-
-async function envelopeBudgetMonth({ month }: { month: string }) {
-  const groups = db.getCategoriesGrouped();
-  const sheetName = monthUtils.sheetForMonth(month);
-
-  function value(name: string) {
-    return {
-      value: getBudgetCellValue(sheetName, name),
-      name: `${sheetName}!${name}`,
-    };
-  }
-
-  let values = [
-    value('available-funds'),
-    value('last-month-overspent'),
-    value('buffered'),
-    value('total-budgeted'),
-    value('to-budget'),
-
-    value('from-last-month'),
-    value('total-income'),
-    value('total-spent'),
-    value('total-leftover'),
-  ];
-
-  for (const group of groups) {
-    const categories = group.categories ?? [];
-
-    if (group.is_income) {
-      values.push(value('total-income'));
-
-      for (const cat of categories) {
-        values.push(value(`sum-amount-${cat.id}`));
-      }
-    } else {
-      values = values.concat([
-        value(`group-budget-${group.id}`),
-        value(`group-sum-amount-${group.id}`),
-        value(`group-leftover-${group.id}`),
-      ]);
-
-      for (const cat of categories) {
-        values = values.concat([
-          value(`budget-${cat.id}`),
-          value(`sum-amount-${cat.id}`),
-          value(`leftover-${cat.id}`),
-          value(`carryover-${cat.id}`),
-        ]);
-      }
-    }
-  }
-
-  return values;
 }
 
 async function budgetAmount(

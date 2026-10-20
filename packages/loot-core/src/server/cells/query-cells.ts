@@ -9,11 +9,13 @@ import { appendWhere } from '#server/aql/compiler';
 import * as db from '#server/db';
 import type { QueryState } from '#shared/query';
 
-import type { CellChange } from './types';
-
 // Cells the client binds to an AQL query, like an account's balance. Each one
 // keeps its last result and runs again whenever an applied change touches a
-// table its query reads.
+// table its query reads. The client reads a cell (`liveReads.cell`), which
+// binds it, and is told the names of the cells a change changed; it releases
+// a cell once nothing shows it. The most recently released cells are still
+// kept current, so a screen that comes back (a register reopened) binds its
+// cells again without running their queries.
 //
 // Most of them are a sum or count over every transaction, which takes tens of
 // milliseconds on a large budget. When a change only touched transactions,
@@ -38,19 +40,20 @@ type QueryCell = {
 // as cheap as running it twice over the changed rows.
 const MAX_ROW_WISE_ROWS = 1000;
 
-const cells = new Map<string, QueryCell>();
-let listener: ((changes: CellChange[]) => void) | null = null;
+// Above this many released cells, the one released longest ago is dropped.
+// Each kept cell costs a little on every change to the tables it reads.
+const MAX_RELEASED = 100;
 
-export function setQueryCellListener(
-  callback: ((changes: CellChange[]) => void) | null,
-) {
-  listener = callback;
-}
+const cells = new Map<string, QueryCell>();
+// Names of the released cells still kept, released longest ago first
+const released = new Set<string>();
 
 export function hasQueryCell(name: string): boolean {
   return cells.has(name);
 }
 
+// A run replaces the value rather than changing it, so the client can keep
+// and share it.
 export function getQueryCellValue(name: string): unknown {
   return cells.get(name)?.value ?? null;
 }
@@ -127,14 +130,11 @@ function runOverRows(cell: QueryCell, rowsSql: string): number | null {
   }
 }
 
-function notify(changed: QueryCell[]) {
-  if (listener && changed.length > 0) {
-    listener(changed.map(cell => ({ name: cell.name, value: cell.value })));
-  }
-}
-
+// Binds the cell `name` to `query` and runs it, unless it's already bound to
+// an equal query. Whoever binds it reads the new value, so it isn't reported
+// as a change.
 export function createQueryCell(name: string, query: QueryState) {
-  // Every bind sends a fresh copy of the query, so compare it by value.
+  released.delete(name);
   const queryKey = JSON.stringify(query);
   const existing = cells.get(name);
   if (existing?.queryKey === queryKey) {
@@ -152,8 +152,21 @@ export function createQueryCell(name: string, query: QueryState) {
     isRowWise: isRowWiseQuery(query, sql),
   };
   cells.set(name, cell);
-  if (run(cell)) {
-    notify([cell]);
+  run(cell);
+}
+
+// Marks the cell `name` as no longer shown, unless it has since been bound to
+// another query. It's kept current until enough cells were released after it.
+export function releaseQueryCell(name: string, query: QueryState) {
+  if (cells.get(name)?.queryKey !== JSON.stringify(query)) {
+    return;
+  }
+  released.delete(name);
+  released.add(name);
+  if (released.size > MAX_RELEASED) {
+    const [oldest] = released;
+    released.delete(oldest);
+    cells.delete(oldest);
   }
 }
 
@@ -221,11 +234,13 @@ export function beginQueryCellUpdate(
   return { rowsSql, before };
 }
 
+// Brings the cells reading `tables` up to date with a change; returns the
+// names of the cells it changed.
 export function triggerQueryCells(
   tables: Set<string>,
   update: QueryCellUpdate | null = null,
-) {
-  const changed: QueryCell[] = [];
+): string[] {
+  const changed: string[] = [];
   for (const cell of cells.values()) {
     if (!readsTables(cell, tables)) {
       continue;
@@ -237,15 +252,16 @@ export function triggerQueryCells(
     if (before != null && after != null) {
       if (after !== before) {
         cell.value = (cell.value as number) + after - before;
-        changed.push(cell);
+        changed.push(cell.name);
       }
     } else if (run(cell)) {
-      changed.push(cell);
+      changed.push(cell.name);
     }
   }
-  notify(changed);
+  return changed;
 }
 
 export function clearQueryCells() {
   cells.clear();
+  released.clear();
 }

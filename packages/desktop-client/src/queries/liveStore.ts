@@ -1,6 +1,8 @@
 import {
   onChanges,
+  readCellSync,
   readSync,
+  releaseCellSync,
   runQuerySync,
 } from '@actual-app/core/platform/client/live-reads';
 import type {
@@ -11,13 +13,16 @@ import type {
 } from '@actual-app/core/platform/client/live-reads';
 import type { Query } from '@actual-app/core/shared/query';
 
-// Live reads of the open budget: AQL queries, and the backend's named reads
-// (`readSync`). The backend runs on this thread and answers a read
-// synchronously, so a read never loads: the first one returns rows.
+// Live reads of the open budget: AQL queries, the backend's named reads
+// (`readSync`) and cells (`readCellSync`: budget values and query cells).
+// The backend runs on this thread and answers a read synchronously, so a
+// read never loads: the first one returns rows.
 //
 // Each read's result is cached, keyed by the serialized query (or the
-// read's name and arguments), along with the tables it read. A change to one of those tables only marks the result
-// out of date; it's read again the next time someone asks for it. Whoever
+// read's name and arguments, or the cell's name and query), along with the
+// tables it read. A cell instead depends on itself: the backend names the
+// cells each change changed, so a change re-reads only those. A change to
+// one of its dependencies only marks the result out of date; it's read again the next time someone asks for it. Whoever
 // listens to the query is told in a microtask, so the changes one backend
 // call applies in a row cost each shown query one read, however many there
 // are. (A call that awaits between changes, like a sync fetching pages, is
@@ -50,12 +55,14 @@ type Entry = {
   /** `changeCount` when last read, for a read without dependencies */
   changeCount: number;
   listeners: Set<() => void>;
+  /** Tells the backend the read is no longer needed, once it's dropped */
+  release: (() => void) | null;
 };
 
 const entries = new Map<string, Entry>();
 const handles = new WeakMap<Query, LiveQueryHandle<unknown>>();
 
-// Bumped for each change to a table
+// Bumped for each change to a table, or to a cell (see `cellDependency`)
 const tableVersions = new Map<string, number>();
 // Bumped for each change to any table
 let changeCount = 0;
@@ -82,13 +89,10 @@ function handleChanges(changes: BudgetChanges) {
     }
   } else {
     for (const table of changes.tables) {
-      tableVersions.set(table, (tableVersions.get(table) ?? 0) + 1);
-      const listened = listenedByTable.get(table);
-      if (listened) {
-        for (const entry of listened) {
-          toNotify.add(entry);
-        }
-      }
+      markChanged(table);
+    }
+    for (const cell of changes.cells) {
+      markChanged(cellDependency(cell));
     }
     for (const entry of listenedWithoutDependencies) {
       toNotify.add(entry);
@@ -99,6 +103,22 @@ function handleChanges(changes: BudgetChanges) {
     isNotifyScheduled = true;
     queueMicrotask(notify);
   }
+}
+
+function markChanged(dependency: string) {
+  tableVersions.set(dependency, (tableVersions.get(dependency) ?? 0) + 1);
+  const listened = listenedByTable.get(dependency);
+  if (listened) {
+    for (const entry of listened) {
+      toNotify.add(entry);
+    }
+  }
+}
+
+// What a cell's result depends on, kept with the tables it can't be
+// confused with: a cell's name always has a `!`, a table's never does
+function cellDependency(cell: string) {
+  return `cell:${cell}`;
 }
 
 function notify() {
@@ -213,6 +233,7 @@ function setDependencies(entry: Entry, dependencies: readonly string[]) {
 function getEntry(
   key: string,
   run: Entry['run'],
+  release: Entry['release'],
   remembered: Entry | null,
 ): Entry {
   let entry = entries.get(key);
@@ -230,6 +251,7 @@ function getEntry(
       epoch,
       changeCount,
       listeners: new Set(),
+      release,
     };
     entries.set(key, entry);
     // Read during a render that never commits
@@ -267,6 +289,12 @@ function collectLater(entry: Entry) {
   setTimeout(() => {
     if (entry.listeners.size === 0 && entries.get(entry.key) === entry) {
       entries.delete(entry.key);
+      if (entry.release) {
+        // The backend stops reporting its changes, so a handle that puts it
+        // back reads it again
+        entry.epoch = -1;
+        entry.release();
+      }
     }
   }, 0);
 }
@@ -304,9 +332,35 @@ export function getLiveRead<Name extends LiveReadName>(
   ) as LiveQueryHandle<LiveReadData<Name>>;
 }
 
-function makeHandle(key: string, run: Entry['run']): LiveQueryHandle<unknown> {
+/**
+ * The live value of the cell `<sheetName>!<name>`: a budget value, or with
+ * `query`, that query's result. Re-read only when a change changes it. A
+ * query cell is released once nothing listens to it. Each call makes a new
+ * handle; keep it stable for `useSyncExternalStore`.
+ */
+export function getLiveCell<Data = unknown>(
+  sheetName: string,
+  name: string,
+  query?: Query,
+): LiveQueryHandle<Data> {
+  const cell = `${sheetName}!${name}`;
+  const dependencies = [cellDependency(cell)];
+  return makeHandle(
+    query
+      ? `cell:${cell}:${JSON.stringify(query.serialize())}`
+      : `cell:${cell}`,
+    () => ({ data: readCellSync(sheetName, name, query), dependencies }),
+    query ? () => releaseCellSync(sheetName, name, query) : null,
+  ) as LiveQueryHandle<Data>;
+}
+
+function makeHandle(
+  key: string,
+  run: Entry['run'],
+  release: Entry['release'] = null,
+): LiveQueryHandle<unknown> {
   let last: Entry | null = null;
-  const current = () => (last = getEntry(key, run, last));
+  const current = () => (last = getEntry(key, run, release, last));
   return {
     getSnapshot: () => read(current()),
     subscribe: listener => subscribe(current(), listener),

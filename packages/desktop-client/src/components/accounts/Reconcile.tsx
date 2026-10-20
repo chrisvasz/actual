@@ -34,7 +34,7 @@ type ReconcilingAction = 'done' | 'create-transaction';
 type BalanceQuery = ReconcilingMessageProps['balanceQuery'];
 
 // The cleared balance as of `date`: only what Lock would lock counts
-export function clearedBalanceCell(balanceQuery: BalanceQuery, date: string) {
+function clearedBalanceCell(balanceQuery: BalanceQuery, date: string) {
   return {
     name: `${balanceQuery.name}-${date}-cleared`,
     query: balanceQuery.query.filter({ cleared: true, date: { $lte: date } }),
@@ -42,24 +42,9 @@ export function clearedBalanceCell(balanceQuery: BalanceQuery, date: string) {
 }
 
 function useClearedBalance(balanceQuery: BalanceQuery, date: string) {
-  return useSheetValue<'balance', `balance-query-${string}-cleared`>({
-    ...clearedBalanceCell(balanceQuery, date),
-    value: 0,
-  });
-}
-
-/**
- * Keeps the cleared balance the reconcile panel opens with live in the
- * spreadsheet cache (the screen preload seeds it), so the panel draws the
- * current value straight away instead of waiting on its query.
- */
-export function PrewarmReconcileBalance({
-  balanceQuery,
-}: {
-  balanceQuery: BalanceQuery;
-}) {
-  useClearedBalance(balanceQuery, currentDay());
-  return null;
+  return useSheetValue<'balance', `balance-query-${string}-cleared`>(
+    clearedBalanceCell(balanceQuery, date),
+  );
 }
 
 export function ReconcilingMessage({

@@ -14,16 +14,13 @@ type HoldMenuProps = {
   onClose: () => void;
 };
 export function HoldMenu({ onSubmit, onClose }: HoldMenuProps) {
-  const [amount, setAmount] = useState<IntegerAmount | null>(null);
-
-  useSheetValue<'envelope-budget', 'to-budget'>('to-budget', ({ value }) => {
-    setAmount(Math.max(value || 0, 0));
-  });
-
-  if (amount === null) {
-    // See `TransferMenu` for more info about this
-    return null;
-  }
+  const toBudget = useSheetValue<'envelope-budget', 'to-budget'>(
+    'to-budget',
+    ({ value }) => setAmount(Math.max(value || 0, 0)),
+  );
+  const [amount, setAmount] = useState<IntegerAmount>(() =>
+    Math.max(toBudget || 0, 0),
+  );
 
   return (
     <Form

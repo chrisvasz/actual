@@ -4,7 +4,6 @@ import * as CRDT from '@actual-app/crdt';
 import { createTestBudget } from '#mocks/budget';
 import { captureBreadcrumb, captureException } from '#platform/exceptions';
 import * as asyncStorage from '#platform/server/asyncStorage';
-import * as connection from '#platform/server/connection';
 import * as fs from '#platform/server/fs';
 import { logger } from '#platform/server/log';
 import * as persistence from '#platform/server/persistence';
@@ -15,18 +14,14 @@ import {
   reloadBudgetState,
   unloadBudgetState,
 } from '#server/budget/state';
-import {
-  clearQueryCells,
-  setQueryCellListener,
-} from '#server/cells/query-cells';
-import type { CellChange } from '#server/cells/types';
+import { clearQueryCells } from '#server/cells/query-cells';
 import * as cloudStorage from '#server/cloud-storage';
 import * as db from '#server/db';
 import * as mappings from '#server/db/mappings';
 import { resetFormulaPreferencesCache } from '#server/formulas/bootstrap';
 import { handleBudgetImport } from '#server/importers';
 import type { ImportableBudgetType } from '#server/importers';
-import { notifyChanges } from '#server/live-reads';
+import { notifyCellChanges, notifyChanges } from '#server/live-reads';
 import { app as mainApp } from '#server/main-app';
 import { mutator } from '#server/mutators';
 import * as prefs from '#server/prefs';
@@ -288,7 +283,6 @@ async function closeBudget() {
   resetFormulaPreferencesCache();
 
   unloadBudgetState();
-  setQueryCellListener(null);
   clearQueryCells();
 
   clearFullSyncTimeout();
@@ -565,10 +559,6 @@ async function exportBudget() {
   }
 }
 
-function onCellsChange(changes: CellChange[]) {
-  connection.send('cells-changed', changes);
-}
-
 async function _loadBudget(id: Budget['id']): Promise<{
   error?:
     | 'budget-not-found'
@@ -694,8 +684,7 @@ async function _loadBudget(id: Budget['id']): Promise<{
 
   try {
     clearQueryCells();
-    setQueryCellListener(onCellsChange);
-    await loadBudgetState(onCellsChange);
+    await loadBudgetState(notifyCellChanges);
   } catch (e) {
     captureException(e);
     await closeBudget();

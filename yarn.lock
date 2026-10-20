@@ -226,7 +226,6 @@ __metadata:
     fzf: "npm:^0.5.2"
     hyperformula: "npm:^3.3.0"
     jsdom: "npm:^29.1.1"
-    lru-cache: "npm:^11.5.2"
     mdast-util-newline-to-break: "npm:^2.0.0"
     plugins-service: "workspace:*"
     re-resizable: "npm:^6.11.2"

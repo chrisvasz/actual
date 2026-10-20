@@ -7,7 +7,14 @@ import { applyMessages, setSyncingMode } from '#server/sync';
 import { q } from '#shared/query';
 
 import { accountLiveReads } from './accounts/app';
-import { liveReads, notifyChanges } from './live-reads';
+import { setBudget } from './budget/actions';
+import {
+  extendBudgetMonths,
+  loadBudgetState,
+  unloadBudgetState,
+} from './budget/state';
+import { hasQueryCell } from './cells/query-cells';
+import { liveReads, notifyCellChanges, notifyChanges } from './live-reads';
 // Registers the payees app's named reads
 import './payees/app';
 
@@ -82,16 +89,17 @@ describe('liveReads', () => {
     db.deleteTransaction({ id: 't1' });
 
     expect(changes).toEqual([
-      { tables: ['accounts'], ids: { accounts: ['acct'] } },
+      { tables: ['accounts'], ids: { accounts: ['acct'] }, cells: [] },
       // Along with the rows it writes for it
       {
         tables: ['payees', 'payee_mapping'],
         ids: { payees: ['payee'], payee_mapping: ['payee'] },
+        cells: [],
       },
-      { tables: ['transactions'], ids: { transactions: ['t1'] } },
-      { tables: ['transactions'], ids: { transactions: ['t1'] } },
+      { tables: ['transactions'], ids: { transactions: ['t1'] }, cells: [] },
+      { tables: ['transactions'], ids: { transactions: ['t1'] }, cells: [] },
       // A delete is a tombstone, and reports its row
-      { tables: ['transactions'], ids: { transactions: ['t1'] } },
+      { tables: ['transactions'], ids: { transactions: ['t1'] }, cells: [] },
     ]);
 
     stop();
@@ -139,6 +147,7 @@ describe('liveReads', () => {
       {
         tables: ['accounts', 'schedules'],
         ids: { accounts: ['a1', 'a2'], schedules_next_date: ['nd1'] },
+        cells: [],
       },
     ]);
     stop();
@@ -176,7 +185,7 @@ describe('liveReads', () => {
       applyMessages([amount], true);
 
       expect(changes).toEqual([
-        { tables: ['transactions'], ids: { transactions: ['t1'] } },
+        { tables: ['transactions'], ids: { transactions: ['t1'] }, cells: [] },
       ]);
       stop();
     });
@@ -256,5 +265,131 @@ describe('liveReads', () => {
     expect(seen).toEqual(['all']);
     stopFailing();
     stop();
+  });
+});
+
+describe('liveReads cells', () => {
+  const balance = q('transactions').calculate({ $sum: '$amount' }).serialize();
+
+  async function openBudget() {
+    db.insertAccount({ id: 'acct', name: 'Checking' });
+    const group = db.insertCategoryGroup({ id: 'group', name: 'Bills' });
+    db.insertCategory({ id: 'cat', name: 'Rent', cat_group: group });
+    await loadBudgetState(notifyCellChanges);
+    extendBudgetMonths(['2017-01', '2017-02']);
+  }
+
+  it('reads a budget value', async () => {
+    await openBudget();
+    setBudget({ category: 'cat', month: '2017-01', amount: 500 });
+
+    expect(liveReads.cell('budget201701', 'budget-cat')).toBe(500);
+    expect(liveReads.cell('budget201701', 'leftover-cat')).toBe(500);
+  });
+
+  it('binds a query cell on its first read', async () => {
+    await openBudget();
+
+    expect(liveReads.cell('__global', 'balance', balance)).toBe(0);
+    expect(hasQueryCell('__global!balance')).toBe(true);
+    // Read again without its query, by name
+    expect(liveReads.cell('__global', 'balance')).toBe(0);
+  });
+
+  it('reports the cells each change changed, with its tables', async () => {
+    await openBudget();
+    liveReads.cell('__global', 'balance', balance);
+    liveReads.cell('budget201701', 'budget-cat');
+    const changes: BudgetChanges[] = [];
+    const stop = liveReads.onChanges(change => changes.push(change));
+
+    db.insertTransaction({
+      id: 't1',
+      account: 'acct',
+      amount: 100,
+      date: '2017-01-05',
+    });
+    setBudget({ category: 'cat', month: '2017-01', amount: 300 });
+    stop();
+
+    expect(changes).toHaveLength(2);
+    const [transaction, budget] = changes as Array<
+      Exclude<BudgetChanges, 'all'>
+    >;
+    expect(transaction.tables).toEqual(['transactions']);
+    expect(transaction.cells).toContain('__global!balance');
+    expect(transaction.cells).not.toContain('budget201701!budget-cat');
+    expect(liveReads.cell('__global', 'balance')).toBe(100);
+    expect(budget.tables).toEqual(['zero_budgets']);
+    expect(budget.cells).toEqual(
+      expect.arrayContaining([
+        'budget201701!budget-cat',
+        'budget201701!leftover-cat',
+        'budget201701!to-budget',
+      ]),
+    );
+    expect(budget.cells).not.toContain('__global!balance');
+  });
+
+  it('reports cells that change without a write', async () => {
+    await openBudget();
+    const changes: BudgetChanges[] = [];
+    const stop = liveReads.onChanges(change => changes.push(change));
+
+    extendBudgetMonths(['2017-03']);
+    await Promise.resolve();
+    stop();
+
+    expect(changes).toHaveLength(1);
+    expect(changes[0]).toMatchObject({ tables: [], ids: {} });
+    expect((changes[0] as Exclude<BudgetChanges, 'all'>).cells).toContain(
+      'budget201703!budget-cat',
+    );
+  });
+
+  it('keeps the most recently released query cells current', async () => {
+    await openBudget();
+    liveReads.cell('__global', 'balance', balance);
+
+    // A cell since bound to another query isn't released
+    const cleared = q('transactions')
+      .filter({ cleared: true })
+      .calculate({ $sum: '$amount' })
+      .serialize();
+    liveReads.cell('__global', 'balance', cleared);
+    liveReads.releaseCell('__global', 'balance', balance);
+    for (let i = 0; i < 100; i++) {
+      liveReads.cell('__global', `other-${i}`, balance);
+      liveReads.releaseCell('__global', `other-${i}`, balance);
+    }
+    expect(hasQueryCell('__global!balance')).toBe(true);
+
+    // Released, it's kept current while 100 cells released after it are
+    liveReads.releaseCell('__global', 'balance', cleared);
+    db.insertTransaction({
+      id: 't1',
+      account: 'acct',
+      amount: 100,
+      date: '2017-01-05',
+      cleared: true,
+    });
+    expect(hasQueryCell('__global!balance')).toBe(true);
+    expect(liveReads.cell('__global', 'balance')).toBe(100);
+    for (let i = 0; i < 99; i++) {
+      liveReads.cell('__global', `more-${i}`, balance);
+      liveReads.releaseCell('__global', `more-${i}`, balance);
+    }
+    expect(hasQueryCell('__global!balance')).toBe(true);
+    liveReads.cell('__global', 'last', balance);
+    liveReads.releaseCell('__global', 'last', balance);
+    expect(hasQueryCell('__global!balance')).toBe(false);
+    expect(hasQueryCell('__global!last')).toBe(true);
+  });
+
+  it('reads null, binding nothing, with no budget open', () => {
+    unloadBudgetState();
+
+    expect(liveReads.cell('__global', 'balance', balance)).toBeNull();
+    expect(hasQueryCell('__global!balance')).toBe(false);
   });
 });

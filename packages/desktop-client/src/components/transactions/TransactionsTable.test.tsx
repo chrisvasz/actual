@@ -43,7 +43,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { SchedulesProvider } from '#hooks/useCachedSchedules';
 import { SelectedProviderWithItems } from '#hooks/useSelected';
 import { SplitsExpandedProvider } from '#hooks/useSplitsExpanded';
-import { SpreadsheetProvider } from '#hooks/useSpreadsheet';
 import { createTestQueryClient, TestProviders } from '#mocks';
 import { initLiveReads } from '#mocks/live-reads';
 import * as modalsSlice from '#modals/modalsSlice';
@@ -214,34 +213,32 @@ function LiveTransactionTable(props: LiveTransactionTableProps) {
   // hook dependencies haven't changed
   return (
     <TestProviders queryClient={queryClient}>
-      <SpreadsheetProvider>
-        <SchedulesProvider>
-          <SelectedProviderWithItems
-            name="transactions"
-            items={transactions}
-            fetchAllIds={() => Promise.resolve(transactions.map(t => t.id))}
-          >
-            <SplitsExpandedProvider>
-              <TransactionTable
-                {...props}
-                transactions={transactions}
-                loadMoreTransactions={vi.fn()}
-                // @ts-expect-error TODO: fix me
-                commonPayees={[]}
-                payees={payees}
-                addNotification={console.log}
-                onSave={onSave}
-                onSplit={onSplit}
-                onAdd={onAdd}
-                onAddSplit={onAddSplit}
-                onCreatePayee={onCreatePayee}
-                showSelection
-                allowSplitTransaction
-              />
-            </SplitsExpandedProvider>
-          </SelectedProviderWithItems>
-        </SchedulesProvider>
-      </SpreadsheetProvider>
+      <SchedulesProvider>
+        <SelectedProviderWithItems
+          name="transactions"
+          items={transactions}
+          fetchAllIds={() => Promise.resolve(transactions.map(t => t.id))}
+        >
+          <SplitsExpandedProvider>
+            <TransactionTable
+              {...props}
+              transactions={transactions}
+              loadMoreTransactions={vi.fn()}
+              // @ts-expect-error TODO: fix me
+              commonPayees={[]}
+              payees={payees}
+              addNotification={console.log}
+              onSave={onSave}
+              onSplit={onSplit}
+              onAdd={onAdd}
+              onAddSplit={onAddSplit}
+              onCreatePayee={onCreatePayee}
+              showSelection
+              allowSplitTransaction
+            />
+          </SplitsExpandedProvider>
+        </SelectedProviderWithItems>
+      </SchedulesProvider>
     </TestProviders>
   );
 }
@@ -264,26 +261,24 @@ function initBasicServer() {
         throw new Error(`queried unknown table: ${query.table}`);
     }
   }
-  initLiveReads(query, name => {
-    switch (name) {
-      case 'payees-get':
-        return { data: payees, dependencies: ['payees', 'accounts'] };
-      case 'accounts-get':
-        return { data: accounts, dependencies: ['accounts'] };
-      case 'tags-get':
-        return { data: tags, dependencies: ['tags'] };
-      default:
-        throw new Error(`read unknown live read: ${name}`);
-    }
-  });
+  initLiveReads(
+    query,
+    name => {
+      switch (name) {
+        case 'payees-get':
+          return { data: payees, dependencies: ['payees', 'accounts'] };
+        case 'accounts-get':
+          return { data: accounts, dependencies: ['accounts'] };
+        case 'tags-get':
+          return { data: tags, dependencies: ['tags'] };
+        default:
+          throw new Error(`read unknown live read: ${name}`);
+      }
+    },
+    { read: () => 129_87 },
+  );
   initServer({
     query: async (state: QueryState) => query(state),
-    'get-cell': async () => ({
-      name: 'test-cell',
-      value: 129_87,
-    }),
-    'get-cells': async ({ cells }) =>
-      cells.map(() => ({ name: 'test-cell', value: 129_87 })),
     'tags-create': async (tag: Omit<TagEntity, 'id'>) => ({
       id: 'new-tag',
       ...tag,

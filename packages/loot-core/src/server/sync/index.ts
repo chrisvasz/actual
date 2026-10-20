@@ -11,7 +11,11 @@ import { captureException } from '#platform/exceptions';
 import * as asyncStorage from '#platform/server/asyncStorage';
 import * as connection from '#platform/server/connection';
 import { logger } from '#platform/server/log';
-import { applyBudgetChanges, isBudgetStateLoaded } from '#server/budget/state';
+import {
+  applyBudgetChanges,
+  isBudgetStateLoaded,
+  takeBudgetCellChanges,
+} from '#server/budget/state';
 import {
   beginQueryCellUpdate,
   triggerQueryCells,
@@ -551,14 +555,16 @@ export function applyMessages(
     connection.send('prefs-updated');
   }
 
-  // In testing, sometimes no budget is loaded, and that's ok
+  // The cells the change changed, reported with it. In testing, sometimes
+  // no budget is loaded, and that's ok
+  let cells: string[] = [];
   if (isBudgetStateLoaded()) {
     try {
       applyBudgetChanges(oldData, newData);
     } finally {
       // Query cells are adjusted by each change rather than run in full, so
       // missing one would leave them wrong until the budget is reopened.
-      triggerQueryCells(
+      cells = triggerQueryCells(
         new Set([
           ...oldData.keys(),
           ...newData.keys(),
@@ -567,6 +573,7 @@ export function applyMessages(
         cellUpdate,
       );
     }
+    cells = cells.concat(takeBudgetCellChanges());
   }
 
   _syncListeners.forEach(func => func(oldData, newData));
@@ -578,8 +585,8 @@ export function applyMessages(
   );
   const tables = getTablesFromMessages(written);
   app.events.emit('sync', { type: 'applied', tables });
-  if (written.length > 0) {
-    notifyChanges({ tables, ids: getIdsFromMessages(written) });
+  if (written.length > 0 || cells.length > 0) {
+    notifyChanges({ tables, ids: getIdsFromMessages(written), cells });
   }
 
   if (deferredMessages.size > 0) {

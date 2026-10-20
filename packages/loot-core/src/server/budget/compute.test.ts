@@ -1,5 +1,6 @@
 import { createTestBudget } from '#mocks/budget';
 import * as db from '#server/db';
+import { liveReads, notifyCellChanges } from '#server/live-reads';
 import { handlers } from '#server/main';
 import { batchMessages } from '#server/sync';
 import * as monthUtils from '#shared/months';
@@ -165,18 +166,23 @@ describe('computeBudget', () => {
 
   describe('after changes', () => {
     let budget: GeneratedBudget;
-    // What a client that read every cell at load would show, kept current
-    // only by the changes the budget notifies.
+    // What a client that read every cell at load would show, re-reading
+    // only the cells each notified change names.
     let client: Map<string, unknown>;
+    let stopListening: () => void;
 
     beforeEach(async () => {
       budget = await generateBudget({ seed: 7, years: 3 });
       client = new Map();
-      await loadBudgetState(changes => {
-        for (const { name, value } of changes) {
-          client.set(name, value);
+      stopListening = liveReads.onChanges(changes => {
+        if (changes !== 'all') {
+          for (const full of changes.cells) {
+            const [sheetName, name] = splitName(full);
+            client.set(full, getBudgetCellValue(sheetName, name));
+          }
         }
       });
+      await loadBudgetState(notifyCellChanges);
       await createAllBudgets();
       const months = budgetMonths();
       for (const full of createReferenceBudget(months).names()) {
@@ -184,6 +190,8 @@ describe('computeBudget', () => {
         client.set(full, getBudgetCellValue(sheetName, name));
       }
     });
+
+    afterEach(() => stopListening());
 
     // The values the budget kept current as changes were applied match the
     // reference and `computeBudget` evaluated from scratch, and so does what

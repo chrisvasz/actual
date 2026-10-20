@@ -2,8 +2,6 @@
 import { styles } from '@actual-app/components/styles';
 import type { CSSProperties } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
-import { send } from '@actual-app/core/platform/client/connection';
-import * as monthUtils from '@actual-app/core/shared/months';
 import {
   currencyToAmount,
   integerToCurrency,
@@ -14,9 +12,6 @@ import type {
 } from '@actual-app/core/types/models';
 
 import type { DropPosition } from '#components/sort';
-import type { useSpreadsheet } from '#hooks/useSpreadsheet';
-
-import { getValidMonthBounds } from './MonthsContext';
 
 // Default width of the budget table's category column. The user can drag it
 // between the min and max below; see categoryColumnStyles.ts.
@@ -172,32 +167,4 @@ export function findSortUp<T extends { id: string }>(
 
 export function getScrollbarWidth() {
   return Math.max(styles.scrollbarWidth - 2, 0);
-}
-
-export async function prewarmMonth(
-  spreadsheet: ReturnType<typeof useSpreadsheet>,
-  month: string,
-) {
-  const values = await send('envelope-budget-month', { month });
-
-  for (const value of values) {
-    spreadsheet.prewarmCache(value.name, value);
-  }
-}
-
-export async function prewarmAllMonths(
-  spreadsheet: ReturnType<typeof useSpreadsheet>,
-  bounds: { start: string; end: string },
-  startMonth: string,
-) {
-  const numMonths = 3;
-
-  bounds = getValidMonthBounds(
-    bounds,
-    monthUtils.subMonths(startMonth, 1),
-    monthUtils.addMonths(startMonth, numMonths + 1),
-  );
-  const months = monthUtils.rangeInclusive(bounds.start, bounds.end);
-
-  await Promise.all(months.map(month => prewarmMonth(spreadsheet, month)));
 }

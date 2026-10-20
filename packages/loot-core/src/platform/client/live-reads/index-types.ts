@@ -33,9 +33,33 @@ export declare function readSync<Name extends LiveReadName>(
 export type ReadSync = typeof readSync;
 
 /**
+ * Read the cell `<sheetName>!<name>` now: a budget value, or with `query`,
+ * that query's result, binding the cell to it until `releaseCellSync`.
+ * Null with no budget open. Throws like `runQuerySync`. Its value changes
+ * only with a change that lists it in `cells`.
+ */
+export declare function readCellSync(
+  sheetName: string,
+  name: string,
+  query?: Query,
+): unknown;
+export type ReadCellSync = typeof readCellSync;
+
+/**
+ * Say nothing reads the cell `<sheetName>!<name>` bound to `query` any more,
+ * so the backend can stop keeping it current.
+ */
+export declare function releaseCellSync(
+  sheetName: string,
+  name: string,
+  query: Query,
+): void;
+export type ReleaseCellSync = typeof releaseCellSync;
+
+/**
  * Call `listener`, synchronously, after each change the backend commits,
- * with the tables and rows it wrote (or `'all'`). Returns a function that
- * stops listening.
+ * with the tables and rows it wrote and the cells it changed (or `'all'`).
+ * Returns a function that stops listening.
  */
 export declare function onChanges(
   listener: (changes: BudgetChanges) => void,

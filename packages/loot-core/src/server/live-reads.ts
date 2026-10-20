@@ -4,6 +4,13 @@ import * as connection from '#platform/server/connection';
 import { coerceError } from '#platform/server/connection/errors';
 
 import { aqlQuery } from './aql';
+import { getBudgetCellValue, isBudgetStateLoaded } from './budget/state';
+import {
+  createQueryCell,
+  getQueryCellValue,
+  hasQueryCell,
+  releaseQueryCell,
+} from './cells/query-cells';
 import * as db from './db';
 
 // Synchronous reads for a client that shares the backend's thread (the
@@ -21,6 +28,11 @@ import * as db from './db';
 // - Opening and closing a budget report `'all'`. Writes that skip
 //   `applyMessages` (replaying pending messages, migrations, rebuilding
 //   derived tables) only happen while a budget opens, before that.
+//
+// The change also names the cells (budget values and query cells, see
+// `cells`) whose values it changed, so a client reads a cell again only when
+// it did. Cells can also change without a write, as the budget comes to
+// cover more months; `notifyCellChanges` reports those.
 //
 // Besides AQL queries, a backend app can offer named reads (`liveRead`,
 // `registerLiveReads`) for data an AQL query can't build. Each one declares
@@ -81,6 +93,13 @@ function reportFailedRead(nativeError: unknown): never {
 
 const listeners = new Set<(changes: BudgetChanges) => void>();
 
+/** Report cells whose values changed without a write. */
+export function notifyCellChanges(cells: string[]) {
+  if (cells.length > 0) {
+    notifyChanges({ tables: [], ids: {}, cells });
+  }
+}
+
 /** Report a committed change to every `onChanges` listener. */
 export function notifyChanges(changes: BudgetChanges) {
   for (const listener of [...listeners]) {
@@ -128,6 +147,28 @@ export const liveReads: LiveReads = {
     } catch (nativeError) {
       return reportFailedRead(nativeError);
     }
+  },
+
+  cell(sheetName, name, query) {
+    if (!db.getDatabase() || !isBudgetStateLoaded()) {
+      return null;
+    }
+    const full = `${sheetName}!${name}`;
+    try {
+      if (query) {
+        createQueryCell(full, query);
+        return getQueryCellValue(full);
+      }
+      return hasQueryCell(full)
+        ? getQueryCellValue(full)
+        : getBudgetCellValue(sheetName, name);
+    } catch (nativeError) {
+      return reportFailedRead(nativeError);
+    }
+  },
+
+  releaseCell(sheetName, name, query) {
+    releaseQueryCell(`${sheetName}!${name}`, query);
   },
 
   onChanges(listener) {

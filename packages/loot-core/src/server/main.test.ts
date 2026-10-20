@@ -17,6 +17,7 @@ import * as monthUtils from '#shared/months';
 import * as budgetActions from './budget/actions';
 import * as budget from './budget/base';
 import * as db from './db';
+import { liveReads, notifyCellChanges } from './live-reads';
 import { handlers } from './main';
 import {
   disableGlobalMutations,
@@ -276,9 +277,14 @@ describe('Budget', () => {
 
   test('budget updates when changing a category', async () => {
     let notified: string[] = [];
-    await loadBudgetState(changes => {
-      notified = notified.concat(changes.map(change => change.name));
-    });
+    onTestFinished(
+      liveReads.onChanges(changes => {
+        if (changes !== 'all') {
+          notified = notified.concat(changes.cells);
+        }
+      }),
+    );
+    await loadBudgetState(notifyCellChanges);
     async function captureChangedCells(func: () => Promise<unknown>) {
       notified = [];
       await func();

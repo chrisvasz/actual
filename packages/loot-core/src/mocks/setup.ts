@@ -4,10 +4,7 @@ import * as nativeFs from 'fs';
 import * as fetchClient from '#platform/client/connection';
 import * as sqlite from '#platform/server/sqlite';
 import { unloadBudgetState } from '#server/budget/state';
-import {
-  clearQueryCells,
-  setQueryCellListener,
-} from '#server/cells/query-cells';
+import { clearQueryCells } from '#server/cells/query-cells';
 import * as db from '#server/db';
 import type * as MigrationsType from '#server/migrate/migrations';
 import {
@@ -166,7 +163,6 @@ afterEach(async () => {
   void fetchClient.clearServer();
 
   unloadBudgetState();
-  setQueryCellListener(null);
   clearQueryCells();
 });
 

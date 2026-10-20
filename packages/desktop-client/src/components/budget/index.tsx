@@ -25,17 +25,14 @@ import { useCategories } from '#hooks/useCategories';
 import { useGlobalPref } from '#hooks/useGlobalPref';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { SheetNameProvider } from '#hooks/useSheetName';
-import { useSpreadsheet } from '#hooks/useSpreadsheet';
 import { useStableNavigate } from '#hooks/useStableNavigate';
 
 import { AutoSizingBudgetTable } from './DynamicBudgetTable';
 import * as envelopeBudget from './envelope/EnvelopeBudgetComponents';
 import { EnvelopeBudgetProvider } from './envelope/EnvelopeBudgetContext';
-import { prewarmAllMonths, prewarmMonth } from './util';
 
 export function Budget() {
   const currentMonth = monthUtils.currentMonth();
-  const spreadsheet = useSpreadsheet();
   const navigate = useStableNavigate();
   const [summaryCollapsed, setSummaryCollapsedPref] = useLocalPref(
     'budget.summaryCollapsed',
@@ -52,8 +49,8 @@ export function Budget() {
   const { grouped: categoryGroups } = useCategories();
 
   const init = useEffectEvent(() => {
-    // Effects re-run each time the kept budget page is shown again, but its
-    // cells stay cached while it's hidden, so only the first showing warms them.
+    // Effects re-run each time the kept budget page is shown again; only the
+    // first showing needs the bounds before it can render.
     if (initialized) {
       return;
     }
@@ -61,9 +58,6 @@ export function Budget() {
     async function run() {
       const { start, end } = await send('get-budget-bounds');
       setBounds({ start, end });
-
-      await prewarmAllMonths(spreadsheet, { start, end }, startMonth);
-
       setInitialized(true);
     }
 
@@ -80,31 +74,8 @@ export function Budget() {
   });
   useEffect(() => loadBoundBudgets(), []);
 
-  const onMonthSelect = async (month, numDisplayed) => {
+  const onMonthSelect = month => {
     setStartMonthPref(month);
-
-    const warmingMonth = month;
-
-    // We could be smarter about this, but this is a good start. We
-    // optimize for the case where users press the left/right button
-    // to move between months. This loads the month data all at once
-    // and "prewarms" the spreadsheet cache. This uses a simple
-    // heuristic that will fail if the user clicks an arbitrary month,
-    // but it will just load in some unnecessary data.
-    if (month < startMonth) {
-      // pre-warm prev month
-      await prewarmMonth(spreadsheet, monthUtils.subMonths(month, 1));
-    } else if (month > startMonth) {
-      // pre-warm next month
-      await prewarmMonth(
-        spreadsheet,
-        monthUtils.addMonths(month, numDisplayed),
-      );
-    }
-
-    if (warmingMonth === month) {
-      setStartMonthPref(month);
-    }
   };
 
   const onToggleCollapse = () => {

@@ -1,15 +1,14 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 
+import { getLiveCell } from '#queries/liveStore';
 import type {
   Binding,
-  BindingObject,
   SheetFields,
   SheetNames,
   Spreadsheets,
 } from '#spreadsheet';
 
 import { useSheetName } from './useSheetName';
-import { useSpreadsheet } from './useSpreadsheet';
 
 type SheetValueResult<
   SheetName extends SheetNames,
@@ -19,6 +18,12 @@ type SheetValueResult<
   value: Spreadsheets[SheetName][FieldName] | null;
 };
 
+/**
+ * The value of the cell `binding` names, kept current. Read synchronously,
+ * so the first render has it; the component re-renders only when this cell
+ * changes. A binding with a query binds the cell to it while it's shown.
+ * `onChange` is called after a render that shows a new value.
+ */
 export function useSheetValue<
   SheetName extends SheetNames,
   FieldName extends SheetFields<SheetName>,
@@ -26,106 +31,35 @@ export function useSheetValue<
   binding: Binding<SheetName, FieldName>,
   onChange?: (result: SheetValueResult<SheetName, FieldName>) => void,
 ): SheetValueResult<SheetName, FieldName>['value'] {
+  // A binding can name another sheet ("budget202609!budget-<id>"), which
+  // `sheetName` already accounts for
   const { sheetName, bindingName, fullSheetName } = useSheetName(binding);
+  const query = typeof binding === 'string' ? undefined : binding.query;
+  // Callers build a new query object each render, so compare it by value
+  const serializedQuery = query?.serializeAsString();
 
-  // A binding can name another sheet ("budget202609!budget-<id>"), so bind the
-  // name with that sheet stripped off, as `sheetName` already accounts for it
-  const memoizedBinding = useMemoizedBinding(
-    () =>
-      typeof binding === 'string'
-        ? { name: bindingName as FieldName, value: undefined, query: undefined }
-        : { ...binding, name: bindingName as FieldName },
-    binding,
+  const handle = useMemo(
+    () => getLiveCell(sheetName, bindingName, query),
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- query by value
+    [sheetName, bindingName, serializedQuery],
   );
+  const result = useSyncExternalStore(handle.subscribe, handle.getSnapshot);
+  // TODO: Spreadsheets, SheetNames, SheetFields, etc must be moved to the loot-core package
+  const value = (result.data ?? null) as
+    | Spreadsheets[SheetName][FieldName]
+    | null;
 
-  const spreadsheet = useSpreadsheet();
-  const [result, setResult] = useState<SheetValueResult<SheetName, FieldName>>({
-    name: fullSheetName,
-    value: memoizedBinding.value ? memoizedBinding.value : null,
-  });
   const latestOnChange = useRef(onChange);
-  latestOnChange.current = onChange;
-
-  const latestValue = useRef(result.value);
-  latestValue.current = result.value;
-
+  const shownValue = useRef(value);
   useLayoutEffect(() => {
-    let isMounted = true;
+    latestOnChange.current = onChange;
+  });
+  useLayoutEffect(() => {
+    if (value !== shownValue.current) {
+      shownValue.current = value;
+      latestOnChange.current?.({ name: fullSheetName, value });
+    }
+  }, [fullSheetName, value]);
 
-    const unbind = spreadsheet.bind(sheetName, memoizedBinding, newResult => {
-      if (!isMounted) {
-        return;
-      }
-
-      const newCastedResult = {
-        name: newResult.name,
-        // TODO: Spreadsheets, SheetNames, SheetFields, etc must be moved to the loot-core package
-        value: newResult.value as Spreadsheets[SheetName][FieldName],
-      };
-
-      if (latestOnChange.current) {
-        latestOnChange.current(newCastedResult);
-      }
-
-      if (newResult.value !== latestValue.current) {
-        setResult(newCastedResult);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      unbind();
-    };
-  }, [spreadsheet, sheetName, memoizedBinding]);
-
-  return result.value;
-}
-
-type MemoKey<
-  SheetName extends SheetNames,
-  FieldName extends SheetFields<SheetName>,
-> = {
-  name: string;
-  value?: Spreadsheets[SheetName][FieldName] | undefined;
-  // We check the serialized query to see if it has changed
-  serializedQuery?: string;
-};
-
-function useMemoizedBinding<
-  SheetName extends SheetNames,
-  FieldName extends SheetFields<SheetName>,
->(
-  memoBinding: () => BindingObject<SheetName, FieldName>,
-  key: Binding<SheetName, FieldName>,
-): BindingObject<SheetName, FieldName> {
-  const ref = useRef<{
-    key: MemoKey<SheetName, FieldName>;
-    value: BindingObject<SheetName, FieldName>;
-  } | null>(null);
-
-  const bindingName = typeof key === 'string' ? key : key.name;
-  const bindingValue = typeof key === 'string' ? undefined : key.value;
-  const serializedBindingQuery =
-    typeof key === 'string' ? undefined : key.query?.serializeAsString();
-
-  if (
-    !ref.current ||
-    bindingName !== ref.current.key.name ||
-    bindingValue !== ref.current.key.value ||
-    serializedBindingQuery !== ref.current.key.serializedQuery
-  ) {
-    // This should not update the binding reference if the binding name, value, and query values are the same.
-    // Since query objects are immutable, we compare the serialized query string to make sure that we don't cause
-    // a re-render whenever a new query object with the same parameter values (QueryState) is passed in.
-    ref.current = {
-      key: {
-        name: bindingName,
-        value: bindingValue,
-        serializedQuery: serializedBindingQuery,
-      },
-      value: memoBinding(),
-    };
-  }
-
-  return ref.current.value;
+  return value;
 }

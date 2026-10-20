@@ -53,7 +53,7 @@ import { normalizeUrl } from '#notes/linkParser';
 
 import type { TableRef } from './Account';
 import { Balances } from './Balance';
-import { PrewarmReconcileBalance, ReconcilingMessage } from './Reconcile';
+import { ReconcilingMessage } from './Reconcile';
 
 type AccountHeaderProps = {
   tableRef: TableRef;
@@ -473,7 +473,6 @@ export function AccountHeader({
           />
         )}
       </View>
-      {account && <PrewarmReconcileBalance balanceQuery={balanceQuery} />}
       {account && isReconciling && (
         <ReconcilingMessage
           balanceQuery={balanceQuery}
