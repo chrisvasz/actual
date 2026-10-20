@@ -99,8 +99,8 @@ export const closeBudget = createAppAsyncThunk(
     const prefs = getState().prefs.local;
     if (prefs && prefs.id) {
       dispatch(resetApp());
-      // Drops the closed budget's register pages and nearby payees (and the
-      // news feed, which is fetched again)
+      // Drops the closed budget's register pages (and the news feed, which
+      // is fetched again)
       queryClient.clear();
       dispatch(setAppState({ loadingText: 'Closing...' }));
       await send('close-budget');
