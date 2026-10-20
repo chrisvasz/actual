@@ -13,11 +13,14 @@ export function useCreateAccountGroup() {
   );
 }
 
+/** Resolves true once saved, undefined if the save failed. */
 export function useUpdateAccountGroup() {
   return useReportErrors(
     'There was an error updating the account group. Please try again.',
-    ({ id, name }: Pick<AccountGroupEntity, 'id' | 'name'>) =>
-      send('account-group-update', { id, name }),
+    async ({ id, name }: Pick<AccountGroupEntity, 'id' | 'name'>) => {
+      await send('account-group-update', { id, name });
+      return true;
+    },
   );
 }
 

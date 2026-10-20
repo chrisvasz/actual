@@ -85,9 +85,10 @@ export const payeeLiveReads = registerLiveReads({
     read: readOrphanedPayees,
   }),
   'payees-get-rule-counts': liveRead({
-    // The rules app's rules, kept in step with `rules` before a change is
-    // reported, less those of completed schedules
-    tables: ['rules', 'schedules', 'schedules_json_paths'],
+    // The rules app's rules, kept in step with `rules` and the mappings
+    // (a merge remaps their payees) before a change is reported, less those
+    // of completed schedules
+    tables: ['rules', 'payee_mapping', 'schedules'],
     empty: () => ({}),
     read: readPayeeRuleCounts,
   }),

@@ -45,10 +45,13 @@ export function AccountGroupRow({
       setIsEditing(false);
       return;
     }
-    // The new name is shown by the time the save settles
-    void updateGroup({ id: group.id, name: trimmed }).then(() =>
-      setIsEditing(false),
-    );
+    // The new name is shown by the time it's saved; a failed save keeps
+    // the input open with the typed name
+    void updateGroup({ id: group.id, name: trimmed }).then(saved => {
+      if (saved) {
+        setIsEditing(false);
+      }
+    });
   };
 
   const onDelete = () => {

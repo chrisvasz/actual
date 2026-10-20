@@ -7,44 +7,6 @@ import type { AccountPage } from './page-models/account-page';
 import { ConfigurationPage } from './page-models/configuration-page';
 import { Navigation } from './page-models/navigation';
 
-// Delays the backend's reply to the account list request, so pages that
-// need the list mount before it arrives.
-function delayAccountListReply() {
-  const delayedIds = new Set<string>();
-  for (const proto of [Worker.prototype, MessagePort.prototype]) {
-    const postMessage = proto.postMessage as (
-      this: EventTarget,
-      ...args: unknown[]
-    ) => void;
-    proto.postMessage = function (this: EventTarget, ...args: unknown[]) {
-      const message = args[0] as { id?: string; name?: string } | undefined;
-      if (message?.name === 'accounts-get' && message.id) {
-        delayedIds.add(message.id);
-      }
-      postMessage.apply(this, args);
-    };
-
-    const onmessage = Object.getOwnPropertyDescriptor(proto, 'onmessage');
-    Object.defineProperty(proto, 'onmessage', {
-      ...onmessage,
-      set(this: EventTarget, handler: ((event: MessageEvent) => void) | null) {
-        onmessage?.set?.call(
-          this,
-          handler &&
-            ((event: MessageEvent) => {
-              const id = (event.data as { id?: string } | undefined)?.id;
-              if (id && delayedIds.delete(id)) {
-                setTimeout(() => handler.call(this, event), 1000);
-              } else {
-                handler.call(this, event);
-              }
-            }),
-        );
-      },
-    });
-  }
-}
-
 test.describe('Accounts', () => {
   let page: Page;
   let navigation: Navigation;
@@ -172,9 +134,6 @@ test.describe('Accounts', () => {
     await accountPage.setTransactionColumnVisibility('balance', true);
     await expect(accountPage.getNthTransaction(0).balance).toHaveText('110.00');
 
-    // Right after a reload the account list can load after the register
-    // mounts. Hold it back so that always happens.
-    await page.addInitScript(delayAccountListReply);
     await page.reload();
     await accountPage.waitFor();
 

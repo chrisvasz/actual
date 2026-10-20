@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { send } from '@actual-app/core/platform/client/connection';
+import * as undo from '@actual-app/core/platform/client/undo';
 import type { Diff } from '@actual-app/core/shared/util';
 import type { NewRuleEntity, PayeeEntity } from '@actual-app/core/types/models';
 
@@ -9,6 +10,7 @@ import { usePayeeRuleCounts } from '#hooks/usePayeeRuleCounts';
 import { usePayees } from '#hooks/usePayees';
 import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
+import { clearPendingUndo } from '#undo';
 
 import { ManagePayees } from './ManagePayees';
 
@@ -25,6 +27,15 @@ export function ManagePayeesWithData({
   const orphanedPayees = useOrphanedPayees();
   const ruleCounts = usePayeeRuleCounts();
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    // An undo that opened this screen is left pending for it. Its changes
+    // already show, so just clear it, or a later screen would act on it
+    const lastUndoEvent = undo.getUndoState('undoEvent');
+    if (lastUndoEvent) {
+      clearPendingUndo(lastUndoEvent);
+    }
+  }, []);
 
   function onViewRules(id: PayeeEntity['id']) {
     dispatch(
