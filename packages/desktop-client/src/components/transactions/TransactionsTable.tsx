@@ -194,37 +194,46 @@ function measureAmountColumnWidth(values: string[], minWidth: number) {
   );
 }
 
+/** The account a transaction's payee transfers to, if any. */
+type GetTransferAccount = (
+  transaction: TransactionEntity,
+) => AccountEntity | null;
+
 // A formatted amount only gets longer as its magnitude grows (negatives add a
 // sign), so the widest one is always the smallest or the largest value.
-function widestAmountCandidates(values: IntegerAmount[]): string[] {
-  if (values.length === 0) {
-    return [];
-  }
-  let min = values[0];
-  let max = values[0];
-  for (const value of values) {
-    if (value < min) {
-      min = value;
-    } else if (value > max) {
-      max = value;
-    }
-  }
+function widestAmountCandidates(min: IntegerAmount, max: IntegerAmount) {
   return [integerToCurrency(min), integerToCurrency(max)];
 }
 
-// Widths are computed from every transaction currently loaded so the
-// column doesn't jump width while scrolling.
+// Widths are computed from every transaction shown so the column doesn't
+// jump width while scrolling.
 export function useAmountColumnWidths(
   transactions: TransactionEntity[],
-  balances: Record<TransactionEntity['id'], IntegerAmount> | null,
+  balances: ReadonlyMap<TransactionEntity['id'], IntegerAmount> | null,
 ): AmountColumnWidths {
   return useMemo(() => {
-    const debitCreditValues = widestAmountCandidates(
-      transactions.map(t => Math.abs(t.amount ?? 0)),
-    );
-    const balanceValues = balances
-      ? widestAmountCandidates(Object.values(balances))
-      : [];
+    // Plain loops: a register can show every transaction of the budget
+    let debitCreditValues: string[] = [];
+    if (transactions.length > 0) {
+      let min = Infinity;
+      let max = -Infinity;
+      for (const transaction of transactions) {
+        const amount = Math.abs(transaction.amount ?? 0);
+        min = Math.min(min, amount);
+        max = Math.max(max, amount);
+      }
+      debitCreditValues = widestAmountCandidates(min, max);
+    }
+    let balanceValues: string[] = [];
+    if (balances && balances.size > 0) {
+      let min = Infinity;
+      let max = -Infinity;
+      for (const balance of balances.values()) {
+        min = Math.min(min, balance);
+        max = Math.max(max, balance);
+      }
+      balanceValues = widestAmountCandidates(min, max);
+    }
 
     return {
       amount: measureAmountColumnWidth(
@@ -644,9 +653,8 @@ type PayeeCellProps = {
   focused: boolean;
   payees: PayeeEntity[];
   accounts: AccountEntity[];
-  transferAccountsByTransaction: {
-    [id: TransactionEntity['id']]: AccountEntity | null;
-  };
+  /** The saved transaction's transfer account */
+  transferAccount: AccountEntity | null;
   valueStyle: CSSProperties | null;
   transaction: SerializedTransaction;
   schedule: ScheduleEntity | null;
@@ -666,7 +674,7 @@ function PayeeCell({
   focused,
   payees,
   accounts,
-  transferAccountsByTransaction,
+  transferAccount,
   valueStyle,
   transaction,
   schedule,
@@ -682,8 +690,6 @@ function PayeeCell({
   const isCreatingPayee = useRef(false);
 
   const dispatch = useDispatch();
-
-  const transferAccount = transferAccountsByTransaction[transaction.id];
 
   const displayPayee = useDisplayPayee({ transaction });
 
@@ -931,9 +937,7 @@ type TransactionProps = {
   // so that schedules loading only re-renders the rows linked to one.
   schedule: ScheduleEntity | null;
   subtransactions: TransactionEntity[] | null;
-  transferAccountsByTransaction: {
-    [id: TransactionEntity['id']]: AccountEntity | null;
-  };
+  getTransferAccount: GetTransferAccount;
   editing: boolean;
   columns: TransactionTableColumnId[];
   showZeroInDeposit?: boolean;
@@ -1006,7 +1010,7 @@ const Transaction = memo(function Transaction({
   transaction: originalTransaction,
   schedule,
   subtransactions,
-  transferAccountsByTransaction,
+  getTransferAccount,
   editing,
   columns,
   showZeroInDeposit,
@@ -1313,10 +1317,14 @@ const Transaction = memo(function Transaction({
   const account = accounts && accountId && getAccountsById(accounts)[accountId];
 
   const isChild = transaction.is_child;
+  // A new transaction has no saved transfer account yet
+  const savedTransferAccount = isTemporaryId(id)
+    ? null
+    : getTransferAccount(originalTransaction);
   const transferAcct =
     isTemporaryId(id) && payee?.transfer_acct
       ? getAccountsById(accounts)[payee.transfer_acct]
-      : transferAccountsByTransaction[id];
+      : savedTransferAccount;
   const isBudgetTransfer = transferAcct && transferAcct.offbudget === 0;
   const isOffBudget = account && account.offbudget === 1;
 
@@ -1682,7 +1690,7 @@ const Transaction = memo(function Transaction({
             valueStyle={valueStyle}
             transaction={transaction}
             schedule={schedule}
-            transferAccountsByTransaction={transferAccountsByTransaction}
+            transferAccount={savedTransferAccount}
             importedPayee={importedPayee}
             isPreview={isPreview}
             onEdit={onEdit}
@@ -2411,9 +2419,7 @@ type NewTransactionProps = {
   balance?: number | null;
   transactions: TransactionEntity[];
   amountColumnWidths: AmountColumnWidths;
-  transferAccountsByTransaction: {
-    [id: TransactionEntity['id']]: AccountEntity | null;
-  };
+  getTransferAccount: GetTransferAccount;
   showHiddenCategories?: boolean;
 };
 function NewTransaction({
@@ -2422,7 +2428,7 @@ function NewTransaction({
   accounts,
   categoryGroups,
   payees,
-  transferAccountsByTransaction,
+  getTransferAccount,
   editingTransaction,
   focusedField,
   columns,
@@ -2502,7 +2508,7 @@ function NewTransaction({
           editing={editingTransaction === transaction.id}
           transaction={transaction}
           subtransactions={transaction.is_parent ? childTransactions : null}
-          transferAccountsByTransaction={transferAccountsByTransaction}
+          getTransferAccount={getTransferAccount}
           columns={columns}
           focusedField={
             editingTransaction === transaction.id ? focusedField : undefined
@@ -2590,21 +2596,20 @@ type TransactionTableInnerProps = {
   newNavigator: TableNavigator<TransactionEntity>;
   selectedItems: Set<string>;
   isExpanded: (id: string) => boolean;
-  transactionMap: Map<TransactionEntity['id'], TransactionEntity>;
-  transactionsByParent: {
-    [parentId: TransactionEntity['id']]: TransactionEntity[];
-  };
-  transferAccountsByTransaction: {
-    [id: TransactionEntity['id']]: AccountEntity | null;
-  };
+  /** The split parents shown, by id */
+  parentsById: ReadonlyMap<TransactionEntity['id'], TransactionEntity>;
+  transactionsByParent: ReadonlyMap<
+    TransactionEntity['id'],
+    TransactionEntity[]
+  >;
+  getTransferAccount: GetTransferAccount;
   newTransactions: TransactionEntity[];
 
   transactions: TransactionEntity[];
-  loadMoreTransactions: () => void;
   accounts: AccountEntity[];
   categoryGroups: CategoryGroupEntity[];
   payees: PayeeEntity[];
-  balances: Record<TransactionEntity['id'], IntegerAmount> | null;
+  balances: ReadonlyMap<TransactionEntity['id'], IntegerAmount> | null;
   columns: TransactionTableColumnId[];
   showReconciled: boolean;
   currentAccountId: AccountEntity['id'];
@@ -2768,7 +2773,7 @@ function TransactionTableInner({
     const trans = item;
     const selected = selectedItems.has(trans.id);
 
-    const parent = trans.parent_id && props.transactionMap.get(trans.parent_id);
+    const parent = trans.parent_id && props.parentsById.get(trans.parent_id);
     const isChildDeposit = parent ? parent.amount > 0 : undefined;
     const expanded = isExpanded && isExpanded((parent || trans).id);
 
@@ -2786,13 +2791,13 @@ function TransactionTableInner({
       error.type === 'SplitTransactionError';
 
     const childTransactions = trans.is_parent
-      ? props.transactionsByParent[trans.id]
+      ? (props.transactionsByParent.get(trans.id) ?? null)
       : null;
 
     // Get sibling count for child transactions (used for drag/drop)
     const siblingCount =
       trans.is_child && trans.parent_id
-        ? (props.transactionsByParent[trans.parent_id]?.length ?? 0)
+        ? (props.transactionsByParent.get(trans.parent_id)?.length ?? 0)
         : 0;
 
     // Get preview sibling count on the same date (used for drag/drop)
@@ -2832,7 +2837,7 @@ function TransactionTableInner({
         editing={editing}
         transaction={trans}
         schedule={(trans.schedule && schedulesById.get(trans.schedule)) || null}
-        transferAccountsByTransaction={props.transferAccountsByTransaction}
+        getTransferAccount={props.getTransferAccount}
         subtransactions={childTransactions}
         columns={columns}
         selected={selected}
@@ -2841,7 +2846,7 @@ function TransactionTableInner({
         expanded={isExpanded?.(trans.id)}
         matched={isMatched?.(trans.id)}
         showZeroInDeposit={isChildDeposit}
-        balance={balances?.[trans.id] ?? null}
+        balance={balances?.get(trans.id) ?? null}
         amountColumnWidths={amountColumnWidths}
         focusedField={editing ? tableNavigator.focusedField : undefined}
         accounts={accounts}
@@ -2928,9 +2933,7 @@ function TransactionTableInner({
             <NewTransaction
               transactions={props.newTransactions}
               amountColumnWidths={amountColumnWidths}
-              transferAccountsByTransaction={
-                props.transferAccountsByTransaction
-              }
+              getTransferAccount={props.getTransferAccount}
               editingTransaction={newNavigator.editingId}
               focusedField={newNavigator.focusedField}
               accounts={props.accounts}
@@ -2974,7 +2977,6 @@ function TransactionTableInner({
           items={transactionsToRender}
           renderItem={renderRow}
           renderEmpty={renderEmpty}
-          loadMore={props.loadMoreTransactions}
           isSelected={id => props.selectedItems.has(id)}
           onKeyDown={e => props.onCheckEnter(e)}
           stableScrollbarGutter
@@ -3008,11 +3010,10 @@ type TableState = {
 
 export type TransactionTableProps = {
   transactions: readonly TransactionEntity[];
-  loadMoreTransactions: () => void;
   accounts: AccountEntity[];
   categoryGroups: CategoryGroupEntity[];
   payees: PayeeEntity[];
-  balances: Record<TransactionEntity['id'], IntegerAmount> | null;
+  balances: ReadonlyMap<TransactionEntity['id'], IntegerAmount> | null;
   showBalances: boolean;
   showReconciled: boolean;
   showCleared: boolean;
@@ -3223,44 +3224,37 @@ export const TransactionTable = forwardRef(
       return result;
     }, [props.transactions, splitsExpanded]);
 
-    const transactionMap = useMemo(() => {
-      return new Map(
-        transactionsWithExpandedSplits.map(trans => [trans.id, trans]),
-      );
-    }, [transactionsWithExpandedSplits]);
-
-    const transactionsByParent = useMemo(() => {
-      return props.transactions.reduce(
-        (acc, trans) => {
-          if (trans.is_child && trans.parent_id) {
-            acc[trans.parent_id] = [...(acc[trans.parent_id] ?? []), trans];
+    // A register can hold every transaction of the budget, so these are
+    // built in one pass, or worked out as a row is drawn
+    const { parentsById, transactionsByParent } = useMemo(() => {
+      const parents = new Map<TransactionEntity['id'], TransactionEntity>();
+      const children = new Map<TransactionEntity['id'], TransactionEntity[]>();
+      for (const trans of props.transactions) {
+        if (trans.is_parent) {
+          parents.set(trans.id, trans);
+        } else if (trans.is_child && trans.parent_id) {
+          const siblings = children.get(trans.parent_id);
+          if (siblings) {
+            siblings.push(trans);
+          } else {
+            children.set(trans.parent_id, [trans]);
           }
-          return acc;
-        },
-        {} as { [parentId: TransactionEntity['id']]: TransactionEntity[] },
-      );
+        }
+      }
+      return { parentsById: parents, transactionsByParent: children };
     }, [props.transactions]);
 
-    const transferAccountsByTransaction = useMemo(() => {
+    const getTransferAccount = useMemo((): GetTransferAccount => {
       if (!props.accounts) {
-        return {};
+        return () => null;
       }
       const accounts = getAccountsById(props.accounts);
       const payees = getPayeesById(props.payees);
-
-      return Object.fromEntries(
-        props.transactions.map(t => {
-          if (!props.accounts) {
-            return [t.id, null];
-          }
-
-          const payee = (t.payee && payees[t.payee]) || undefined;
-          const transferAccount =
-            payee?.transfer_acct && accounts[payee.transfer_acct];
-          return [t.id, transferAccount || null];
-        }),
-      );
-    }, [props.transactions, props.payees, props.accounts]);
+      return transaction => {
+        const payee = (transaction.payee && payees[transaction.payee]) || null;
+        return (payee?.transfer_acct && accounts[payee.transfer_acct]) || null;
+      };
+    }, [props.payees, props.accounts]);
 
     const hasPrevSplitsExpanded = prevSplitsExpanded.current;
 
@@ -3978,9 +3972,9 @@ export const TransactionTable = forwardRef(
             {...props}
             columns={visibleColumns}
             transactions={transactionsWithExpandedSplits}
-            transactionMap={transactionMap}
+            parentsById={parentsById}
             transactionsByParent={transactionsByParent}
-            transferAccountsByTransaction={transferAccountsByTransaction}
+            getTransferAccount={getTransferAccount}
             selectedItems={selectedItems}
             isExpanded={splitsExpanded.isExpanded}
             onSave={onSave}

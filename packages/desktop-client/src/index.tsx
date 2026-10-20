@@ -21,6 +21,7 @@ import * as notificationsSlice from './notifications/notificationsSlice';
 import * as prefsSlice from './prefs/prefsSlice';
 import { aqlQuery } from './queries/aqlQuery';
 import { configureAppStore } from './redux/store';
+import { listenForRegisterRows } from './transactions/registerStore';
 import * as transactionsSlice from './transactions/transactionsSlice';
 import { redo, undo } from './undo';
 import * as usersSlice from './users/usersSlice';
@@ -33,6 +34,9 @@ const queryClient = new QueryClient();
 window.__TANSTACK_QUERY_CLIENT__ = queryClient;
 
 const store = configureAppStore({ queryClient });
+
+// Read the account registers' rows in the background as each budget opens
+listenForRegisterRows();
 
 const boundActions = bindActionCreators(
   {

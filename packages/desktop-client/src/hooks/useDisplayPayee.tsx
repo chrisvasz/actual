@@ -1,7 +1,6 @@
 import { createContext, useContext, useMemo } from 'react';
 import type { ReactNode } from 'react';
 
-import { q } from '@actual-app/core/shared/query';
 import type {
   AccountEntity,
   PayeeEntity,
@@ -10,10 +9,9 @@ import type {
 
 import { useAccounts } from './useAccounts';
 import { usePayeesById } from './usePayees';
-import { useTransactions } from './useTransactions';
 
 type DisplayPayeeContextValue = {
-  displayPayees: Record<TransactionEntity['id'], string>;
+  getDisplayPayee: (transaction: TransactionEntity) => string;
 };
 
 const DisplayPayeeContext = createContext<DisplayPayeeContextValue | null>(
@@ -21,6 +19,7 @@ const DisplayPayeeContext = createContext<DisplayPayeeContextValue | null>(
 );
 
 type DisplayPayeeProviderProps = {
+  /** The rows shown, each split's children among them */
   transactions: readonly TransactionEntity[];
   children: ReactNode;
 };
@@ -29,123 +28,114 @@ export function DisplayPayeeProvider({
   transactions,
   children,
 }: DisplayPayeeProviderProps) {
-  // Only split parents have subtransactions, and only these fields are read
-  // from them. Asking for less keeps SQLite looking the children up by index;
-  // with every row's id, or the joins `*` brings, it walks every transaction
-  // instead, on each edit.
-  const subtransactionsQuery = useMemo(
-    () =>
-      q('transactions')
-        .filter({
-          parent_id: {
-            $oneof: transactions.filter(t => t.is_parent).map(t => t.id),
-          },
-        })
-        .select(['id', 'parent_id', 'payee']),
-    [transactions],
-  );
-  const { transactions: queriedSubtransactions = [] } = useTransactions({
-    query: subtransactionsQuery,
-    options: { pageSize: transactions.length * 5 },
-  });
-
-  // Preview and other not-yet-saved split transactions have subtransactions
-  // that only exist in-memory (never persisted), so the query above can't
-  // find them. Merge those in from the transactions we were already given.
-  const allSubtransactions = useMemo(() => {
-    const localChildren = transactions.filter(t => t.is_child);
-    const localIds = new Set(localChildren.map(t => t.id));
-    return [
-      ...queriedSubtransactions.filter(st => !localIds.has(st.id)),
-      ...localChildren,
-    ];
-  }, [queriedSubtransactions, transactions]);
-
   const accounts = useAccounts();
   const payeesById = usePayeesById();
 
-  const displayPayees = useMemo(() => {
-    return transactions.reduce(
-      (acc, transaction) => {
-        const subtransactions = allSubtransactions.filter(
-          st => st.parent_id === transaction.id,
+  // A fresh context value re-renders every consumer (one per row shown), so
+  // keep its identity tied to what it reads. Each row's payee is worked out
+  // when the row first asks: a register can have many more rows than show.
+  const value = useMemo(() => {
+    const accountsById = new Map(accounts.map(a => [a.id, a]));
+    const childrenByParent = new Map<
+      TransactionEntity['id'],
+      TransactionEntity[]
+    >();
+    for (const transaction of transactions) {
+      if (transaction.is_child && transaction.parent_id) {
+        const siblings = childrenByParent.get(transaction.parent_id);
+        if (siblings) {
+          siblings.push(transaction);
+        } else {
+          childrenByParent.set(transaction.parent_id, [transaction]);
+        }
+      }
+    }
+    const displayPayees = new Map<TransactionEntity['id'], string>();
+
+    const transferAccount = (payee: PayeeEntity | undefined) =>
+      payee?.transfer_acct ? accountsById.get(payee.transfer_acct) : undefined;
+
+    function getDisplayPayee(transaction: TransactionEntity) {
+      let displayPayee = displayPayees.get(transaction.id);
+      if (displayPayee == null) {
+        displayPayee = getSplitPayee(
+          transaction,
+          childrenByParent.get(transaction.id) ?? [],
+          payeesById,
+          transferAccount,
         );
+        displayPayees.set(transaction.id, displayPayee);
+      }
+      return displayPayee;
+    }
 
-        if (subtransactions.length === 0) {
-          acc[transaction.id] = getPrettyPayee({
-            transaction,
-            payee: payeesById[transaction?.payee || ''],
-            transferAccount: accounts.find(
-              a => a.id === payeesById[transaction?.payee || '']?.transfer_acct,
-            ),
-          });
-
-          return acc;
-        }
-
-        const { counts, mostCommonPayeeTransaction } =
-          subtransactions.reduce(
-            ({ counts, ...result }, sub) => {
-              if (sub.payee) {
-                counts[sub.payee] = (counts[sub.payee] || 0) + 1;
-                if (counts[sub.payee] > result.maxCount) {
-                  return {
-                    counts,
-                    maxCount: counts[sub.payee],
-                    mostCommonPayeeTransaction: sub,
-                  };
-                }
-              }
-              return { counts, ...result };
-            },
-            {
-              counts: {},
-              maxCount: 0,
-              mostCommonPayeeTransaction: null,
-            } as Counts,
-          ) || {};
-
-        if (!mostCommonPayeeTransaction) {
-          acc[transaction.id] = 'Split (no payee)';
-          return acc;
-        }
-
-        const mostCommonPayee =
-          payeesById[mostCommonPayeeTransaction.payee || ''];
-
-        if (!mostCommonPayee) {
-          acc[transaction.id] = 'Split (no payee)';
-          return acc;
-        }
-
-        const numDistinctPayees = Object.keys(counts).length;
-
-        acc[transaction.id] = getPrettyPayee({
-          transaction: mostCommonPayeeTransaction,
-          payee: mostCommonPayee,
-          transferAccount: accounts.find(
-            a =>
-              a.id ===
-              payeesById[mostCommonPayeeTransaction.payee || '']?.transfer_acct,
-          ),
-          numHiddenPayees: numDistinctPayees - 1,
-        });
-
-        return acc;
-      },
-      {} as Record<TransactionEntity['id'], string>,
-    );
-  }, [transactions, allSubtransactions, payeesById, accounts]);
-
-  // A fresh context value on every render re-renders every consumer (one per
-  // transaction row), so keep its identity tied to `displayPayees`.
-  const value = useMemo(() => ({ displayPayees }), [displayPayees]);
+    return { getDisplayPayee };
+  }, [transactions, payeesById, accounts]);
 
   return (
     <DisplayPayeeContext.Provider value={value}>
       {children}
     </DisplayPayeeContext.Provider>
   );
+}
+
+// A split shows its most common payee, and how many others it has
+function getSplitPayee(
+  transaction: TransactionEntity,
+  subtransactions: readonly TransactionEntity[],
+  payeesById: Record<PayeeEntity['id'], PayeeEntity>,
+  transferAccount: (
+    payee: PayeeEntity | undefined,
+  ) => AccountEntity | undefined,
+) {
+  if (subtransactions.length === 0) {
+    const payee = payeesById[transaction?.payee || ''];
+    return getPrettyPayee({
+      transaction,
+      payee,
+      transferAccount: transferAccount(payee),
+    });
+  }
+
+  const { counts, mostCommonPayeeTransaction } = subtransactions.reduce(
+    ({ counts, ...result }, sub) => {
+      if (sub.payee) {
+        counts[sub.payee] = (counts[sub.payee] || 0) + 1;
+        if (counts[sub.payee] > result.maxCount) {
+          return {
+            counts,
+            maxCount: counts[sub.payee],
+            mostCommonPayeeTransaction: sub,
+          };
+        }
+      }
+      return { counts, ...result };
+    },
+    {
+      counts: {},
+      maxCount: 0,
+      mostCommonPayeeTransaction: null,
+    } as Counts,
+  );
+
+  if (!mostCommonPayeeTransaction) {
+    return 'Split (no payee)';
+  }
+
+  const mostCommonPayee = payeesById[mostCommonPayeeTransaction.payee || ''];
+
+  if (!mostCommonPayee) {
+    return 'Split (no payee)';
+  }
+
+  const numDistinctPayees = Object.keys(counts).length;
+
+  return getPrettyPayee({
+    transaction: mostCommonPayeeTransaction,
+    payee: mostCommonPayee,
+    transferAccount: transferAccount(mostCommonPayee),
+    numHiddenPayees: numDistinctPayees - 1,
+  });
 }
 
 type Counts = {
@@ -165,9 +155,7 @@ export function useDisplayPayee({ transaction }: UseDisplayPayeeProps) {
       'useDisplayPayee must be used within a DisplayPayeeContextProvider.',
     );
   }
-  const { displayPayees } = context;
-
-  return transaction ? displayPayees[transaction.id] || '' : '';
+  return transaction ? context.getDisplayPayee(transaction) : '';
 }
 
 type GetPrettyPayeeProps = {
