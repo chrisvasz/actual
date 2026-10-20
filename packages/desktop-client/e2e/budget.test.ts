@@ -116,11 +116,6 @@ test.describe('Budget scroll position', () => {
       for (let i = 1; i <= count; i++) {
         await $send('category-create', { name: `Category ${i}`, groupId });
       }
-      // Invalidate the category query so React re-renders with the new categories.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (window as any).__TANSTACK_QUERY_CLIENT__.invalidateQueries({
-        queryKey: ['categories', 'lists'],
-      });
     }, categoryCount);
     await page
       .getByText(`Category ${categoryCount}`, { exact: true })

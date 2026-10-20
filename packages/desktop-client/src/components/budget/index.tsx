@@ -146,12 +146,12 @@ export function Budget() {
   const onReorderCategoryGroup = ({ id, targetId }) =>
     void moveCategoryGroup({ id, targetId });
   const sortCategories = useSortCategories();
-  // Not the result object, which changes on every state transition and
-  // would hand the whole budget table new callbacks on every save
-  const { mutate: applyBudgetAction } = useBudgetActions();
+  const applyBudgetAction = useBudgetActions();
 
   const onBudgetAction = (month, type, args) => {
-    applyBudgetAction({ month, type, args });
+    applyBudgetAction({ month, type, args }).catch(() => {
+      // Already shown as an error notification
+    });
   };
 
   if (!initialized || !categoryGroups) {

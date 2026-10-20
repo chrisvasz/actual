@@ -196,10 +196,10 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
   onShowActivity,
 }: CategoryMonthProps) {
   const format = useFormat();
-  // The amount cell uses the mutation directly (rather than onBudgetAction)
-  // so it gets the save's promise and can drop the amount it's showing if
-  // the save fails.
-  const { mutateAsync: applyBudgetAction } = useBudgetActions();
+  // The amount cell applies the action directly (rather than through
+  // onBudgetAction) so it gets the save's promise and can drop the amount
+  // it's showing if the save fails.
+  const applyBudgetAction = useBudgetActions();
 
   const balanceMenuTriggerRef = useRef(null);
 

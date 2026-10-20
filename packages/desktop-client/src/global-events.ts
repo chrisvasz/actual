@@ -50,8 +50,7 @@ export function handleGlobalEvents(store: AppStore) {
     const tagged = undo.getTaggedState(undoTag);
 
     if (tagged) {
-      // After the open screen's own `undo-event` listeners, as when this
-      // waited for refetches
+      // After the open screen's own `undo-event` listeners
       void Promise.resolve().then(() => {
         // The undo is left pending only for a modal or screen this opens,
         // and whichever one acts on it on mount clears it. A modal or screen

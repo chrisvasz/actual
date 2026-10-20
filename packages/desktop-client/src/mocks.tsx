@@ -17,26 +17,16 @@ export function createTestQueryClient() {
   });
 }
 
-export function configureTestAppStore(
-  ...args: Parameters<typeof configureAppStore>
-) {
-  return configureAppStore(...args);
-}
-
 let testQueryClient = createTestQueryClient();
-let testStore = configureTestAppStore({
-  queryClient: testQueryClient,
-});
+let testStore = createTestAppStore();
 
 export function resetTestProviders() {
   testQueryClient = createTestQueryClient();
-  testStore = configureTestAppStore({ queryClient: testQueryClient });
+  testStore = createTestAppStore();
 }
 
 export function createTestAppStore() {
-  return configureAppStore({
-    queryClient: testQueryClient,
-  });
+  return configureAppStore({ queryClient: testQueryClient });
 }
 
 export function TestProviders({

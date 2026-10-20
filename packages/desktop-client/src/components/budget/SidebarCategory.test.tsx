@@ -5,11 +5,7 @@ import { generateCategory } from '@actual-app/core/mocks';
 import { initServer } from '@actual-app/core/platform/client/connection';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 
-import {
-  configureTestAppStore,
-  createTestQueryClient,
-  TestProviders,
-} from '#mocks';
+import { createTestAppStore, TestProviders } from '#mocks';
 
 import { SidebarCategory } from './SidebarCategory';
 
@@ -19,7 +15,7 @@ vi.mock(
 );
 
 describe('SidebarCategory context menu', () => {
-  let store: ReturnType<typeof configureTestAppStore>;
+  let store: ReturnType<typeof createTestAppStore>;
 
   const category = generateCategory('Groceries', 'group-id');
 
@@ -31,7 +27,7 @@ describe('SidebarCategory context menu', () => {
         cells.map(() => ({ name: 'test-cell', value: 0 })),
     });
 
-    store = configureTestAppStore({ queryClient: createTestQueryClient() });
+    store = createTestAppStore();
   });
 
   async function renderRow(children: ReactNode) {

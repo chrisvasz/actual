@@ -572,17 +572,12 @@ export function applyMessages(
   _syncListeners.forEach(func => func(oldData, newData));
 
   // Only tables that actually changed — deferred messages wrote
-  // nothing, so they must not trigger client cache invalidation
+  // nothing, so they must not mark the client's reads stale
   const written = messages.filter(
     msg => !msg.old && !deferredMessages.has(msg),
   );
   const tables = getTablesFromMessages(written);
-  app.events.emit('sync', {
-    type: 'applied',
-    tables,
-    data: newData,
-    prevData: oldData,
-  });
+  app.events.emit('sync', { type: 'applied', tables });
   if (written.length > 0) {
     notifyChanges({ tables, ids: getIdsFromMessages(written) });
   }

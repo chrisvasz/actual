@@ -9,14 +9,11 @@ import type {
 import { act, renderHook } from '@testing-library/react';
 
 import { useCategory } from '#hooks/useCategory';
-import {
-  configureTestAppStore,
-  createTestQueryClient,
-  TestProviders,
-} from '#mocks';
+import { createTestAppStore, TestProviders } from '#mocks';
 import { changeTables, initLiveReads } from '#mocks/live-reads';
 
 import {
+  useBudgetActions,
   useReorderCategory,
   useSaveCategory,
   useSaveCategoryGroup,
@@ -42,17 +39,12 @@ const rent: CategoryEntity = {
 
 describe('category mutations', () => {
   let groups: CategoryGroupEntity[];
-  let store: ReturnType<typeof configureTestAppStore>;
+  let store: ReturnType<typeof createTestAppStore>;
   let sent: Array<{ name: string; args: unknown }>;
 
   function wrapper({ children }: { children: ReactNode }) {
-    const queryClient = createTestQueryClient();
-    store = configureTestAppStore({ queryClient });
-    return (
-      <TestProviders store={store} queryClient={queryClient}>
-        {children}
-      </TestProviders>
-    );
+    store = createTestAppStore();
+    return <TestProviders store={store}>{children}</TestProviders>;
   }
 
   function notifications() {
@@ -157,6 +149,67 @@ describe('category mutations', () => {
 
     expect(notifications()).toEqual([
       'There was an error updating the category group. Please try again.',
+    ]);
+  });
+});
+
+describe('budget actions', () => {
+  let store: ReturnType<typeof createTestAppStore>;
+
+  function wrapper({ children }: { children: ReactNode }) {
+    store = createTestAppStore();
+    return <TestProviders store={store}>{children}</TestProviders>;
+  }
+
+  it('sends a budgeted amount', async () => {
+    const sent: unknown[] = [];
+    initServer({
+      'budget/budget-amount': async args => {
+        sent.push(args);
+      },
+    });
+    const { result } = renderHook(() => useBudgetActions(), { wrapper });
+
+    await act(() =>
+      result.current({
+        month: '2024-01',
+        type: 'budget-amount',
+        args: { category: 'food', amount: 100 },
+      }),
+    );
+
+    expect(sent).toEqual([{ month: '2024-01', category: 'food', amount: 100 }]);
+  });
+
+  it('reports a failure and still rejects', async () => {
+    initServer({
+      'budget/budget-amount': async () => {
+        throw new Error('boom');
+      },
+    });
+    const { result } = renderHook(() => useBudgetActions(), { wrapper });
+
+    await act(() =>
+      expect(
+        result.current({
+          month: '2024-01',
+          type: 'budget-amount',
+          args: { category: 'food', amount: 100 },
+        }),
+      ).rejects.toThrow('boom'),
+    );
+
+    expect(
+      store.getState().notifications.notifications.map(({ message, pre }) => ({
+        message,
+        pre,
+      })),
+    ).toEqual([
+      {
+        message:
+          'There was an error applying the budget action. Please try again.',
+        pre: 'boom',
+      },
     ]);
   });
 });

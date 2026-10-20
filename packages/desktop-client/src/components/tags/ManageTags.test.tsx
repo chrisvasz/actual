@@ -6,11 +6,7 @@ import type { TagEntity } from '@actual-app/core/types/models';
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import {
-  configureTestAppStore,
-  createTestQueryClient,
-  TestProviders,
-} from '#mocks';
+import { createTestAppStore, TestProviders } from '#mocks';
 import { initLiveReads } from '#mocks/live-reads';
 
 import { ManageTags } from './ManageTags';
@@ -29,7 +25,7 @@ const createRenameTagMock = () =>
   vi.fn(async ({ id }: { id: string; tag: string }) => id);
 
 describe('ManageTags', () => {
-  let store: ReturnType<typeof configureTestAppStore>;
+  let store: ReturnType<typeof createTestAppStore>;
   let renameTag: ReturnType<typeof createRenameTagMock>;
 
   beforeEach(async () => {
@@ -42,11 +38,10 @@ describe('ManageTags', () => {
       return { data: tags, dependencies: ['tags'] };
     });
 
-    const queryClient = createTestQueryClient();
-    store = configureTestAppStore({ queryClient });
+    store = createTestAppStore();
 
     render(
-      <TestProviders store={store} queryClient={queryClient}>
+      <TestProviders store={store}>
         <MemoryRouter>
           <ManageTags />
         </MemoryRouter>
