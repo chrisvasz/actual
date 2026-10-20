@@ -35,8 +35,7 @@ export function CoverMenu({
   onSubmit,
   onClose,
 }: CoverMenuProps) {
-  const { data: { grouped: originalCategoryGroups } = { grouped: [] } } =
-    useCategories();
+  const { grouped: originalCategoryGroups } = useCategories();
 
   const [fromCategoryId, setFromCategoryId] = useState<string | null>(null);
 

@@ -1,11 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-
-import { categoryQueries } from '#budget';
+import { useCategories } from './useCategories';
 
 export function useCategoryGroup(id?: string | null) {
-  return useQuery({
-    ...categoryQueries.list(),
-    select: data => data.grouped.find(g => g.id === id),
-    enabled: !!id,
-  });
+  const { grouped } = useCategories();
+  return id ? grouped.find(g => g.id === id) : undefined;
 }

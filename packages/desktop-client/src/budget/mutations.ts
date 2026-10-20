@@ -4,22 +4,32 @@ import type {
   CategoryEntity,
   CategoryGroupEntity,
 } from '@actual-app/core/types/models';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { QueryClient, QueryKey } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
 
+import { useReportErrors } from '#hooks/useReportErrors';
 import { pushModal } from '#modals/modalsSlice';
 import { addNotification } from '#notifications/notificationsSlice';
-import { invalidateAndDeliver } from '#queries/invalidateAndDeliver';
+import { getLiveRead } from '#queries/liveStore';
 import { useDispatch } from '#redux';
 import type { AppDispatch } from '#redux/store';
 
-import { categoryQueries } from './queries';
+// Live reads pick up each change once it's applied, so these only send it.
+// A change is applied, and the categories read again on the next render,
+// by the time its call resolves.
 
-function invalidateQueries(queryClient: QueryClient, queryKey?: QueryKey) {
-  void queryClient.invalidateQueries({
-    queryKey: queryKey ?? categoryQueries.lists(),
-  });
+// The cached read: it doesn't throw, keeping the last good result if a
+// read fails (which the backend already reports)
+function readCategories(): {
+  grouped: CategoryGroupEntity[];
+  list: CategoryEntity[];
+} {
+  return (
+    getLiveRead('get-categories').getSnapshot().data ?? {
+      grouped: [],
+      list: [],
+    }
+  );
 }
 
 function dispatchErrorNotification(
@@ -60,125 +70,78 @@ type CreateCategoryPayload = {
   isHidden: boolean;
 };
 
-export function useCreateCategoryMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({
-      name,
-      groupId,
-      isIncome,
-      isHidden,
-    }: CreateCategoryPayload) => {
-      const id = await send('category-create', {
+export function useCreateCategory() {
+  return useReportErrors(
+    'There was an error creating the category. Please try again.',
+    ({ name, groupId, isIncome, isHidden }: CreateCategoryPayload) =>
+      send('category-create', {
         name,
         groupId,
         isIncome,
         hidden: isHidden,
-      });
-      return id;
-    },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error creating category:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error creating the category. Please try again.',
-        error,
-      );
-    },
-  });
+      }),
+  );
 }
 
 type UpdateCategoryPayload = {
   category: CategoryEntity;
 };
 
-export function useUpdateCategoryMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({ category }: UpdateCategoryPayload) => {
+export function useUpdateCategory() {
+  return useReportErrors(
+    'There was an error updating the category. Please try again.',
+    async ({ category }: UpdateCategoryPayload) => {
       await send('category-update', category);
     },
-    // Resolve only once components have the new data; rename fields keep
-    // showing the pending name until then.
-    onSuccess: () => invalidateAndDeliver(queryClient, categoryQueries.lists()),
-    onError: error => {
-      console.error('Error updating category:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error updating the category. Please try again.',
-        error,
-      );
-    },
-  });
+  );
 }
 
 type SaveCategoryPayload = {
   category: CategoryEntity;
 };
 
-export function useSaveCategoryMutation() {
-  const createCategory = useCreateCategoryMutation();
-  const updateCategory = useUpdateCategoryMutation();
+export function useSaveCategory() {
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
   const dispatch = useDispatch();
-  const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({ category }: SaveCategoryPayload) => {
-      const { grouped: categoryGroups = [] } =
-        await queryClient.ensureQueryData(categoryQueries.list());
+  return async ({ category }: SaveCategoryPayload) => {
+    const group = readCategories().grouped.find(g => g.id === category.group);
+    const categoriesInGroup = group?.categories ?? [];
+    const exists = categoriesInGroup.some(
+      c =>
+        c.id !== category.id &&
+        c.name.toUpperCase() === category.name.toUpperCase(),
+    );
 
-      const group = categoryGroups.find(g => g.id === category.group);
-      const categoriesInGroup = group?.categories ?? [];
-      const exists = categoriesInGroup.some(
-        c =>
-          c.id !== category.id &&
-          c.name.toUpperCase() === category.name.toUpperCase(),
-      );
+    if (exists) {
+      dispatchCategoryNameAlreadyExistsNotification(dispatch, category.name);
+      return;
+    }
 
-      if (exists) {
-        dispatchCategoryNameAlreadyExistsNotification(dispatch, category.name);
-        return;
-      }
-
-      if (category.id === 'new') {
-        await createCategory.mutateAsync({
-          name: category.name,
-          groupId: category.group,
-          isIncome: !!category.is_income,
-          isHidden: !!category.hidden,
-        });
-      } else {
-        await updateCategory.mutateAsync({ category });
-      }
-    },
-  });
+    if (category.id === 'new') {
+      await createCategory({
+        name: category.name,
+        groupId: category.group,
+        isIncome: !!category.is_income,
+        isHidden: !!category.hidden,
+      });
+    } else {
+      await updateCategory({ category });
+    }
+  };
 }
 
 type DeleteCategoryPayload = {
   id: CategoryEntity['id'];
 };
 
-export function useDeleteCategoryMutation() {
-  const queryClient = useQueryClient();
+export function useDeleteCategory() {
   const dispatch = useDispatch();
 
-  const deleteCategory = async ({
-    id,
-    transferId,
-  }: {
-    id: CategoryEntity['id'];
-    transferId?: CategoryEntity['id'];
-  }) => {
-    await send('category-delete', { id, transferId });
-  };
-
-  return useMutation({
-    mutationFn: async ({ id }: DeleteCategoryPayload) => {
+  return useReportErrors(
+    'There was an error deleting the category. Please try again.',
+    async ({ id }: DeleteCategoryPayload) => {
       const mustTransfer = await send('must-category-transfer', { id });
 
       if (mustTransfer) {
@@ -190,7 +153,10 @@ export function useDeleteCategoryMutation() {
                 category: id,
                 onDelete: async transferCategory => {
                   if (id !== transferCategory) {
-                    await deleteCategory({ id, transferId: transferCategory });
+                    await send('category-delete', {
+                      id,
+                      transferId: transferCategory,
+                    });
                   }
                 },
               },
@@ -198,19 +164,10 @@ export function useDeleteCategoryMutation() {
           }),
         );
       } else {
-        await deleteCategory({ id });
+        await send('category-delete', { id });
       }
     },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error deleting category:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error deleting the category. Please try again.',
-        error,
-      );
-    },
-  });
+  );
 }
 
 type MoveCategoryPayload = {
@@ -219,170 +176,117 @@ type MoveCategoryPayload = {
   targetId: CategoryEntity['id'] | null;
 };
 
-export function useMoveCategoryMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({ id, groupId, targetId }: MoveCategoryPayload) => {
+export function useMoveCategory() {
+  return useReportErrors(
+    'There was an error moving the category. Please try again.',
+    async ({ id, groupId, targetId }: MoveCategoryPayload) => {
       await send('category-move', { id, groupId, targetId });
     },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error moving category:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error moving the category. Please try again.',
-        error,
-      );
-    },
-  });
+  );
 }
 
-type ReoderCategoryPayload = {
-  id: CategoryEntity['id'];
-  groupId: CategoryGroupEntity['id'];
-  targetId: CategoryEntity['id'] | null;
-};
-
-export function useReorderCategoryMutation() {
-  const moveCategory = useMoveCategoryMutation();
-  const queryClient = useQueryClient();
+export function useReorderCategory() {
+  const moveCategory = useMoveCategory();
   const dispatch = useDispatch();
 
-  return useMutation({
-    mutationFn: async ({ id, groupId, targetId }: ReoderCategoryPayload) => {
-      const { grouped: categoryGroups = [], list: categories = [] } =
-        await queryClient.ensureQueryData(categoryQueries.list());
+  return async ({ id, groupId, targetId }: MoveCategoryPayload) => {
+    const { grouped: categoryGroups, list: categories } = readCategories();
 
-      const moveCandidate = categories.filter(c => c.id === id)[0];
-      const group = categoryGroups.find(g => g.id === groupId);
-      const categoriesInGroup = group?.categories ?? [];
-      const exists = categoriesInGroup.some(
-        c =>
-          c.id !== moveCandidate.id &&
-          c.name.toUpperCase() === moveCandidate.name.toUpperCase(),
+    const moveCandidate = categories.find(c => c.id === id);
+    // Deleted (by a sync or an undo) while it was being dragged
+    if (!moveCandidate) {
+      return;
+    }
+    const group = categoryGroups.find(g => g.id === groupId);
+    const categoriesInGroup = group?.categories ?? [];
+    const exists = categoriesInGroup.some(
+      c =>
+        c.id !== moveCandidate.id &&
+        c.name.toUpperCase() === moveCandidate.name.toUpperCase(),
+    );
+
+    if (exists) {
+      dispatchCategoryNameAlreadyExistsNotification(
+        dispatch,
+        moveCandidate.name,
       );
+      return;
+    }
 
-      if (exists) {
-        dispatchCategoryNameAlreadyExistsNotification(
-          dispatch,
-          moveCandidate.name,
-        );
-        return;
-      }
-
-      await moveCategory.mutateAsync({ id, groupId, targetId });
-    },
-  });
+    await moveCategory({ id, groupId, targetId });
+  };
 }
 
 type CreateCategoryGroupPayload = {
   name: CategoryGroupEntity['name'];
 };
 
-export function useCreateCategoryGroupMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({ name }: CreateCategoryGroupPayload) => {
-      const id = await send('category-group-create', { name });
-      return id;
-    },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error creating category group:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error creating the category group. Please try again.',
-        error,
-      );
-    },
-  });
+export function useCreateCategoryGroup() {
+  return useReportErrors(
+    'There was an error creating the category group. Please try again.',
+    ({ name }: CreateCategoryGroupPayload) =>
+      send('category-group-create', { name }),
+  );
 }
 
 type UpdateCategoryGroupPayload = {
   group: CategoryGroupEntity;
 };
 
-export function useUpdateCategoryGroupMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-  return useMutation({
-    mutationFn: async ({ group }: UpdateCategoryGroupPayload) => {
+export function useUpdateCategoryGroup() {
+  return useReportErrors(
+    'There was an error updating the category group. Please try again.',
+    async ({ group }: UpdateCategoryGroupPayload) => {
       // Strip off the categories field if it exist. It's not a real db
       // field but groups have this extra field in the client most of the time
       const { categories: _, ...groupNoCategories } = group;
       await send('category-group-update', groupNoCategories);
     },
-    // Resolve only once components have the new data; rename fields keep
-    // showing the pending name until then.
-    onSuccess: () => invalidateAndDeliver(queryClient, categoryQueries.lists()),
-    onError: error => {
-      console.error('Error updating category group:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error updating the category group. Please try again.',
-        error,
-      );
-    },
-  });
+  );
 }
 
 type SaveCategoryGroupPayload = {
   group: CategoryGroupEntity;
 };
 
-export function useSaveCategoryGroupMutation() {
-  const createCategoryGroup = useCreateCategoryGroupMutation();
-  const updateCategoryGroup = useUpdateCategoryGroupMutation();
-  const queryClient = useQueryClient();
+export function useSaveCategoryGroup() {
+  const createCategoryGroup = useCreateCategoryGroup();
+  const updateCategoryGroup = useUpdateCategoryGroup();
   const dispatch = useDispatch();
 
-  return useMutation({
-    mutationFn: async ({ group }: SaveCategoryGroupPayload) => {
-      const { grouped: categoryGroups } = await queryClient.ensureQueryData(
-        categoryQueries.list(),
+  return async ({ group }: SaveCategoryGroupPayload) => {
+    const exists = readCategories().grouped.some(
+      g =>
+        g.id !== group.id && g.name.toUpperCase() === group.name.toUpperCase(),
+    );
+
+    if (exists) {
+      dispatchErrorNotification(
+        dispatch,
+        `A category group with name "${group.name}" already exists.`,
       );
+      return;
+    }
 
-      const exists = categoryGroups.some(
-        g =>
-          g.id !== group.id &&
-          g.name.toUpperCase() === group.name.toUpperCase(),
-      );
-
-      if (exists) {
-        dispatchErrorNotification(
-          dispatch,
-          `A category group with name "${group.name}" already exists.`,
-        );
-        return;
-      }
-
-      if (group.id === 'new') {
-        await createCategoryGroup.mutateAsync({ name: group.name });
-      } else {
-        await updateCategoryGroup.mutateAsync({ group });
-      }
-    },
-  });
+    if (group.id === 'new') {
+      await createCategoryGroup({ name: group.name });
+    } else {
+      await updateCategoryGroup({ group });
+    }
+  };
 }
 
 type DeleteCategoryGroupPayload = {
   id: CategoryGroupEntity['id'];
 };
 
-export function useDeleteCategoryGroupMutation() {
-  const queryClient = useQueryClient();
+export function useDeleteCategoryGroup() {
   const dispatch = useDispatch();
 
-  return useMutation({
-    mutationFn: async ({ id }: DeleteCategoryGroupPayload) => {
-      const { grouped: categoryGroups } = await queryClient.ensureQueryData(
-        categoryQueries.list(),
-      );
-      const group = categoryGroups.find(g => g.id === id);
+  return useReportErrors(
+    'There was an error deleting the category group. Please try again.',
+    async ({ id }: DeleteCategoryGroupPayload) => {
+      const group = readCategories().grouped.find(g => g.id === id);
 
       if (!group) {
         return;
@@ -419,16 +323,7 @@ export function useDeleteCategoryGroupMutation() {
         await send('category-group-delete', { id });
       }
     },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error deleting category group:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error deleting the category group. Please try again.',
-        error,
-      );
-    },
-  });
+  );
 }
 
 type MoveCategoryGroupPayload = {
@@ -436,42 +331,13 @@ type MoveCategoryGroupPayload = {
   targetId: CategoryGroupEntity['id'] | null;
 };
 
-export function useMoveCategoryGroupMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({ id, targetId }: MoveCategoryGroupPayload) => {
+export function useMoveCategoryGroup() {
+  return useReportErrors(
+    'There was an error moving the category group. Please try again.',
+    async ({ id, targetId }: MoveCategoryGroupPayload) => {
       await send('category-group-move', { id, targetId });
     },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error moving category group:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error moving the category group. Please try again.',
-        error,
-      );
-    },
-  });
-}
-
-type ReorderCategoryGroupPayload = {
-  id: CategoryGroupEntity['id'];
-  targetId: CategoryGroupEntity['id'] | null;
-};
-
-export function useReorderCategoryGroupMutation() {
-  const moveCategoryGroup = useMoveCategoryGroupMutation();
-
-  return useMutation({
-    mutationFn: async (sortInfo: ReorderCategoryGroupPayload) => {
-      await moveCategoryGroup.mutateAsync({
-        id: sortInfo.id,
-        targetId: sortInfo.targetId,
-      });
-    },
-  });
+  );
 }
 
 type SortCategoriesPayload = {
@@ -479,24 +345,13 @@ type SortCategoriesPayload = {
   direction: 'asc' | 'desc';
 };
 
-export function useSortCategoriesMutation() {
-  const queryClient = useQueryClient();
-  const dispatch = useDispatch();
-
-  return useMutation({
-    mutationFn: async ({ groupId, direction }: SortCategoriesPayload) => {
+export function useSortCategories() {
+  return useReportErrors(
+    'There was an error sorting the categories. Please try again.',
+    async ({ groupId, direction }: SortCategoriesPayload) => {
       await send('categories-sort', { groupId, direction });
     },
-    onSuccess: () => invalidateQueries(queryClient),
-    onError: error => {
-      console.error('Error sorting categories:', error);
-      dispatchErrorNotification(
-        dispatch,
-        'There was an error sorting the categories. Please try again.',
-        error,
-      );
-    },
-  });
+  );
 }
 
 type ApplyBudgetActionPayload =

@@ -52,7 +52,7 @@ function TransactionRow({
   format,
   index,
 }: TransactionRowProps) {
-  const { data: category } = useCategory(transaction.category);
+  const category = useCategory(transaction.category);
   const account = useAccount(transaction.account);
 
   const dispatchSelected = useSelectedDispatch();

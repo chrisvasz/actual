@@ -179,8 +179,7 @@ export function CategoryAutocomplete({
   showHiddenCategories,
   ...props
 }: CategoryAutocompleteProps) {
-  const { data: { grouped: defaultCategoryGroups } = { grouped: [] } } =
-    useCategories();
+  const { grouped: defaultCategoryGroups } = useCategories();
   const categorySuggestions: CategoryAutocompleteItem[] = useMemo(() => {
     const allSuggestions = (categoryGroups || defaultCategoryGroups).reduce(
       (list, group) =>

@@ -1,9 +1,7 @@
 import { listen, send } from '@actual-app/core/platform/client/connection';
 import type { ServerEvents } from '@actual-app/core/types/server-events';
-import type { QueryClient } from '@tanstack/react-query';
 
 import { resetSync, sync } from './app/appSlice';
-import { categoryQueries } from './budget';
 import {
   closeAndDownloadBudget,
   uploadBudget,
@@ -41,7 +39,7 @@ const syncNotifications: Partial<
   }),
 };
 
-export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
+export function listenForSyncEvent(store: AppStore) {
   // TODO: Should this run on mobile too?
   const unlistenUnauthorized = listen('sync-event', async ({ type }) => {
     if (type === 'unauthorized') {
@@ -99,16 +97,6 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
 
       if (tables.includes('prefs')) {
         void store.dispatch(loadPrefs());
-      }
-
-      if (
-        tables.includes('categories') ||
-        tables.includes('category_groups') ||
-        tables.includes('category_mapping')
-      ) {
-        void queryClient.invalidateQueries({
-          queryKey: categoryQueries.lists(),
-        });
       }
     } else if (event.type === 'error') {
       let notif: Notification | null = null;

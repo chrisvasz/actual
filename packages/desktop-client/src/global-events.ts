@@ -1,10 +1,8 @@
 import { listen, send } from '@actual-app/core/platform/client/connection';
 import * as undo from '@actual-app/core/platform/client/undo';
 // @ts-strict-ignore
-import type { QueryClient } from '@tanstack/react-query';
 
 import { setAppState } from './app/appSlice';
-import { categoryQueries } from './budget';
 import { closeBudgetUI } from './budgetfiles/budgetfilesSlice';
 import { closeModal, pushModal, replaceModal } from './modals/modalsSlice';
 import type { Modal } from './modals/modalsSlice';
@@ -16,7 +14,7 @@ import { loadPrefs } from './prefs/prefsSlice';
 import type { AppStore } from './redux/store';
 import * as syncEvents from './sync-events';
 
-export function handleGlobalEvents(store: AppStore, queryClient: QueryClient) {
+export function handleGlobalEvents(store: AppStore) {
   const unlistenServerError = listen('server-error', () => {
     store.dispatch(addGenericErrorNotification());
   });
@@ -45,28 +43,16 @@ export function handleGlobalEvents(store: AppStore, queryClient: QueryClient) {
     );
   });
 
-  const unlistenSync = syncEvents.listenForSyncEvent(store, queryClient);
+  const unlistenSync = syncEvents.listenForSyncEvent(store);
 
   const unlistenUndo = listen('undo-event', undoState => {
-    const { tables, undoTag } = undoState;
-    const promises: Promise<unknown>[] = [];
-
-    if (
-      tables.includes('categories') ||
-      tables.includes('category_groups') ||
-      tables.includes('category_mapping')
-    ) {
-      promises.push(
-        queryClient.invalidateQueries({
-          queryKey: categoryQueries.lists(),
-        }),
-      );
-    }
-
+    const { undoTag } = undoState;
     const tagged = undo.getTaggedState(undoTag);
 
     if (tagged) {
-      void Promise.all(promises).then(() => {
+      // After the open screen's own `undo-event` listeners, as when this
+      // waited for refetches
+      void Promise.resolve().then(() => {
         // The undo is left pending only for a modal or screen this opens,
         // and whichever one acts on it on mount clears it. A modal or screen
         // that is already showing handles it through its own `undo-event`

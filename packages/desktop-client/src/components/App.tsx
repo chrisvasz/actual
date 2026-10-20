@@ -11,7 +11,6 @@ import {
   init as initConnection,
   send,
 } from '@actual-app/core/platform/client/connection';
-import { useQueryClient } from '@tanstack/react-query';
 
 import { setAppState, sync } from '#app/appSlice';
 import { closeBudget, loadBudget } from '#budgetfiles/budgetfilesSlice';
@@ -154,9 +153,8 @@ function ErrorFallback({ error }: FallbackProps) {
 export function App() {
   const store = useStore();
   const isTestEnv = useIsTestEnv();
-  const queryClient = useQueryClient();
 
-  useEffect(() => handleGlobalEvents(store, queryClient), [store, queryClient]);
+  useEffect(() => handleGlobalEvents(store), [store]);
 
   const [hiddenScrollbars, setHiddenScrollbars] = useState(
     hasHiddenScrollbars(),

@@ -70,10 +70,7 @@ export function BudgetTable(props: BudgetTableProps) {
     onBudgetAction,
   } = props;
 
-  // Not destructured with a default: the React Compiler can't compile
-  // object-pattern defaults, and this component relies on its memoization.
-  const { data: categoryData } = useCategories();
-  const categoryGroups = categoryData?.grouped ?? [];
+  const { grouped: categoryGroups } = useCategories();
   const [collapsedGroupIds = [], setCollapsedGroupIdsPref] =
     useLocalPref('budget.collapsed');
   const [showHiddenCategories, setShowHiddenCategoriesPef] = useLocalPref(

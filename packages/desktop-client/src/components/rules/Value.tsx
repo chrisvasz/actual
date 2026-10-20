@@ -40,12 +40,7 @@ export function Value<T>({
   const format = useFormat();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
   const payees = usePayees();
-  const {
-    data: { list: categories, grouped: categoryGroups } = {
-      list: [],
-      grouped: [],
-    },
-  } = useCategories();
+  const { list: categories, grouped: categoryGroups } = useCategories();
   const accounts = useAccounts();
   const valueStyle = {
     color: theme.pageTextPositive,

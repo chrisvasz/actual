@@ -6,7 +6,6 @@ import {
   prevMonth,
   sheetForMonth,
 } from '@actual-app/core/shared/months';
-import type { CategoryEntity } from '@actual-app/core/types/models/category';
 
 import { ToBudgetAmount } from '#components/budget/envelope/budgetsummary/ToBudgetAmount';
 import { TotalsList } from '#components/budget/envelope/budgetsummary/TotalsList';
@@ -43,11 +42,7 @@ export function EnvelopeBudgetSummaryModal({
     }) ?? 0;
 
   const { showUndoNotification } = useUndo();
-  const {
-    data: { list: categoriesById } = {
-      list: {} as Record<string, CategoryEntity>,
-    },
-  } = useCategoriesById();
+  const { list: categoriesById } = useCategoriesById();
 
   const openTransferAvailableModal = () => {
     dispatch(

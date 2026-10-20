@@ -13,13 +13,13 @@ import type {
 
 import {
   useBudgetActions,
-  useDeleteCategoryGroupMutation,
-  useDeleteCategoryMutation,
-  useReorderCategoryGroupMutation,
-  useReorderCategoryMutation,
-  useSaveCategoryGroupMutation,
-  useSaveCategoryMutation,
-  useSortCategoriesMutation,
+  useDeleteCategory,
+  useDeleteCategoryGroup,
+  useMoveCategoryGroup,
+  useReorderCategory,
+  useSaveCategory,
+  useSaveCategoryGroup,
+  useSortCategories,
 } from '#budget';
 import { useCategories } from '#hooks/useCategories';
 import { useGlobalPref } from '#hooks/useGlobalPref';
@@ -49,10 +49,7 @@ export function Budget() {
   const [maxMonthsPref] = useGlobalPref('maxMonths');
   const maxMonths = maxMonthsPref || 1;
   const [initialized, setInitialized] = useState(false);
-  // Not destructured with a default: the React Compiler can't compile
-  // object-pattern defaults, and this component relies on its memoization.
-  const { data: categoryData } = useCategories();
-  const categoryGroups = categoryData?.grouped ?? [];
+  const { grouped: categoryGroups } = useCategories();
 
   const init = useEffectEvent(() => {
     // Effects re-run each time the kept budget page is shown again, but its
@@ -133,29 +130,24 @@ export function Budget() {
     });
   };
 
-  // Take only the stable `mutate` functions: the mutation result objects
-  // change on every state transition, and closing over them would hand the
-  // whole budget table new callbacks (and a full re-render) on every save.
-  // Saves return a promise that settles once the change is in the cache, so
-  // the sidebar can show the new name until then. Failures are already
-  // reported by the mutations, so they're swallowed here.
-  const { mutateAsync: saveCategory } = useSaveCategoryMutation();
-  const onSaveCategory = category =>
-    saveCategory({ category }).catch(() => undefined);
-  const { mutate: deleteCategory } = useDeleteCategoryMutation();
-  const onDeleteCategory = id => {
-    deleteCategory({ id });
-  };
-  const { mutate: reorderCategory } = useReorderCategoryMutation();
-  const { mutateAsync: saveCategoryGroup } = useSaveCategoryGroupMutation();
-  const onSaveCategoryGroup = group =>
-    saveCategoryGroup({ group }).catch(() => undefined);
-  const { mutate: deleteCategoryGroup } = useDeleteCategoryGroupMutation();
-  const onDeleteCategoryGroup = id => {
-    deleteCategoryGroup({ id });
-  };
-  const { mutate: reorderCategoryGroup } = useReorderCategoryGroupMutation();
-  const { mutate: sortCategories } = useSortCategoriesMutation();
+  // Saves settle once the change is applied, so the sidebar can show the
+  // new name until then. Failures are reported as a notification.
+  const saveCategory = useSaveCategory();
+  const onSaveCategory = category => saveCategory({ category });
+  const deleteCategory = useDeleteCategory();
+  const onDeleteCategory = id => void deleteCategory({ id });
+  const reorderCategory = useReorderCategory();
+  const onReorderCategory = sortInfo => void reorderCategory(sortInfo);
+  const saveCategoryGroup = useSaveCategoryGroup();
+  const onSaveCategoryGroup = group => saveCategoryGroup({ group });
+  const deleteCategoryGroup = useDeleteCategoryGroup();
+  const onDeleteCategoryGroup = id => void deleteCategoryGroup({ id });
+  const moveCategoryGroup = useMoveCategoryGroup();
+  const onReorderCategoryGroup = ({ id, targetId }) =>
+    void moveCategoryGroup({ id, targetId });
+  const sortCategories = useSortCategories();
+  // Not the result object, which changes on every state transition and
+  // would hand the whole budget table new callbacks on every save
   const { mutate: applyBudgetAction } = useBudgetActions();
 
   const onBudgetAction = (month, type, args) => {
@@ -184,10 +176,10 @@ export function Budget() {
         onSaveGroup={onSaveCategoryGroup}
         onBudgetAction={onBudgetAction}
         onShowActivity={onShowActivity}
-        onReorderCategory={reorderCategory}
-        onReorderGroup={reorderCategoryGroup}
+        onReorderCategory={onReorderCategory}
+        onReorderGroup={onReorderCategoryGroup}
         onSortCategories={(groupId, direction) =>
-          sortCategories({ groupId, direction })
+          void sortCategories({ groupId, direction })
         }
       />
     </EnvelopeBudgetProvider>

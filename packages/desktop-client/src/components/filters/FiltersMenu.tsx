@@ -172,11 +172,11 @@ function ConfigureField<T extends RuleConditionEntity>({
       return payee?.name ?? '';
     }
     if (field === 'category' && subfield === 'category_group') {
-      const group = categories.data?.grouped.find(group => group.id === value);
+      const group = categories.grouped.find(group => group.id === value);
       return group?.name ?? '';
     }
     if (field === 'category' && subfield === 'category') {
-      for (const group of categories.data?.grouped || []) {
+      for (const group of categories.grouped) {
         const category = group.categories?.find(
           category => category.id === value,
         );
@@ -202,13 +202,12 @@ function ConfigureField<T extends RuleConditionEntity>({
       return matches.length === 1 ? matches[0].id : null;
     }
     if (field === 'category' && subfield === 'category_group') {
-      const matches =
-        categories.data?.grouped.filter(group => group.name === value) ?? [];
+      const matches = categories.grouped.filter(group => group.name === value);
       return matches.length === 1 ? matches[0].id : null;
     }
     if (field === 'category' && subfield === 'category') {
       const matches = [];
-      for (const group of categories.data?.grouped || []) {
+      for (const group of categories.grouped) {
         for (const category of group.categories || []) {
           if (category.name === value) {
             matches.push(category);
