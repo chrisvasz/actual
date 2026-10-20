@@ -1,5 +1,4 @@
 import { send } from '@actual-app/core/platform/client/connection';
-import { readSync } from '@actual-app/core/platform/client/live-reads';
 import type { IntegerAmount } from '@actual-app/core/shared/util';
 import type {
   CategoryEntity,
@@ -11,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useReportErrors } from '#hooks/useReportErrors';
 import { pushModal } from '#modals/modalsSlice';
 import { addNotification } from '#notifications/notificationsSlice';
+import { getLiveRead } from '#queries/liveStore';
 import { useDispatch } from '#redux';
 import type { AppDispatch } from '#redux/store';
 
@@ -18,11 +18,18 @@ import type { AppDispatch } from '#redux/store';
 // A change is applied, and the categories read again on the next render,
 // by the time its call resolves.
 
+// The cached read: it doesn't throw, keeping the last good result if a
+// read fails (which the backend already reports)
 function readCategories(): {
   grouped: CategoryGroupEntity[];
   list: CategoryEntity[];
 } {
-  return readSync('get-categories').data;
+  return (
+    getLiveRead('get-categories').getSnapshot().data ?? {
+      grouped: [],
+      list: [],
+    }
+  );
 }
 
 function dispatchErrorNotification(
@@ -185,7 +192,11 @@ export function useReorderCategory() {
   return async ({ id, groupId, targetId }: MoveCategoryPayload) => {
     const { grouped: categoryGroups, list: categories } = readCategories();
 
-    const moveCandidate = categories.filter(c => c.id === id)[0];
+    const moveCandidate = categories.find(c => c.id === id);
+    // Deleted (by a sync or an undo) while it was being dragged
+    if (!moveCandidate) {
+      return;
+    }
     const group = categoryGroups.find(g => g.id === groupId);
     const categoriesInGroup = group?.categories ?? [];
     const exists = categoriesInGroup.some(
