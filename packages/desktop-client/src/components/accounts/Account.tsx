@@ -23,6 +23,7 @@ import type { Query } from '@actual-app/core/shared/query';
 import type { RegisterGroup } from '@actual-app/core/shared/register-rows';
 import {
   flattenGroups,
+  makeSearchMatcher,
   matchGroups,
   runningBalances,
   scopeGroups,
@@ -50,7 +51,7 @@ import type {
   TransactionFilterEntity,
 } from '@actual-app/core/types/models';
 import { parseISO } from 'date-fns';
-import { debounce, isEqual } from 'es-toolkit/compat';
+import { isEqual } from 'es-toolkit/compat';
 import { v4 as uuidv4 } from 'uuid';
 
 import { useReopenAccount, useUpdateAccount } from '#accounts';
@@ -254,7 +255,7 @@ type AccountInternalProps = {
   onBatchDelete: ReturnType<typeof useTransactionBatchActions>['onBatchDelete'];
   categoryId?: string;
   location: ReturnType<typeof useLocation>;
-  dateFormat: ReturnType<typeof useDateFormat>;
+  dateFormat: string;
   payees: PayeeEntity[];
   categoryGroups: CategoryGroupEntity[];
   hideFraction: boolean;
@@ -285,8 +286,8 @@ type AccountInternalState = {
   isAdding: boolean;
   sort: RegisterSort | null;
   /**
-   * The ids of the rows the filter conditions and the search match, read by
-   * a query of them; null with neither
+   * The ids of the rows the filter conditions match, read by a query of
+   * them; null without conditions
    */
   matches: ReadonlySet<TransactionEntity['id']> | null;
 };
@@ -366,6 +367,23 @@ class AccountInternal extends PureComponent<
           matchGroups(
             groups,
             row => matches.has(row.id) && (showReconciled || !row.reconciled),
+          ),
+  );
+  searchMatcher = memoizeOne(
+    (search: string, dateFormat: string, lookups: RegisterLookups) =>
+      search === '' ? null : makeSearchMatcher(search, dateFormat, lookups),
+  );
+  searched = memoizeOne(
+    (
+      groups: readonly RegisterGroup[],
+      isMatch: ((row: TransactionEntity) => boolean) | null,
+      showReconciled: boolean,
+    ) =>
+      isMatch == null
+        ? groups
+        : matchGroups(
+            groups,
+            row => isMatch(row) && (showReconciled || !row.reconciled),
           ),
   );
   sorted = memoizeOne(
@@ -470,24 +488,29 @@ class AccountInternal extends PureComponent<
 
   /** What the register shows now. */
   getView() {
-    const { registerRows, accountId, lookups } = this.props;
-    const { matches, sort, showReconciled, showBalances } = this.state;
+    const { registerRows, accountId, lookups, dateFormat } = this.props;
+    const { matches, search, sort, showReconciled, showBalances } = this.state;
+    const searchMatcher = this.searchMatcher(search, dateFormat, lookups);
     const groups = this.sorted(
-      this.matched(
-        this.scoped(
-          registerRows.groups,
-          accountId,
-          lookups,
-          registerRows.groupsByAccount,
+      this.searched(
+        this.matched(
+          this.scoped(
+            registerRows.groups,
+            accountId,
+            lookups,
+            registerRows.groupsByAccount,
+          ),
+          matches,
+          showReconciled,
         ),
-        matches,
+        searchMatcher,
         showReconciled,
       ),
       sort,
       lookups,
     );
     const transactions = this.flattened(groups);
-    const isFiltered = matches != null;
+    const isFiltered = matches != null || searchMatcher != null;
     return {
       groups,
       transactions,
@@ -536,67 +559,46 @@ class AccountInternal extends PureComponent<
   };
 
   // Match the rows against the filter conditions (already applied to
-  // `currentQuery`) and the search, and keep matching them as they change
+  // `currentQuery`), and keep matching them as they change
   updateMatches = () => {
-    const { filterConditions, search } = this.state;
-    let query: Query | null =
-      filterConditions.length > 0 ? this.currentQuery : null;
-    if (search !== '') {
-      query = queries.transactionsSearch(
-        this.currentQuery,
-        search,
-        this.props.dateFormat,
-        {
-          payees: this.props.payees,
-          categories: this.props.categoryGroups.flatMap(
-            group => group.categories ?? [],
-          ),
-          accounts: this.props.accounts,
-        },
-      );
-    }
-
-    // A new set of rows starts at the top, with filtered splits collapsed
-    this.table.current?.setRowAnimation(false);
-    this.props.splitsExpandedDispatch({
-      type: 'set-mode',
-      mode: query == null && this.props.expandSplits ? 'expand' : 'collapse',
-    });
-    const onShown = () => {
-      this.table.current?.scrollToTop();
-      setTimeout(() => {
-        this.table.current?.setRowAnimation(true);
-      }, 0);
-    };
-
     this.stopMatches?.();
     this.stopMatches = undefined;
-    if (query == null) {
-      this.setState({ matches: null }, onShown);
+    if (this.state.filterConditions.length === 0) {
+      this.setState({ matches: null }, this.onNewRows);
       return;
     }
     let isFirst = true;
     this.stopMatches = watchLiveQuery<MatchedGroup[]>(
-      query.select(['id']),
+      this.currentQuery.select(['id']),
       result => {
         this.setState(
           { matches: matchedIds(result) },
-          isFirst ? onShown : undefined,
+          isFirst ? this.onNewRows : undefined,
         );
         isFirst = false;
       },
     );
   };
 
-  onSearch = (value: string) => {
-    this.setState({ search: value }, this.onSearchDone);
+  // A new set of rows starts at the top, with filtered splits collapsed
+  onNewRows = () => {
+    const isFiltered =
+      this.state.filterConditions.length > 0 || this.state.search !== '';
+    this.props.splitsExpandedDispatch({
+      type: 'set-mode',
+      mode: !isFiltered && this.props.expandSplits ? 'expand' : 'collapse',
+    });
+    this.table.current?.setRowAnimation(false);
+    this.table.current?.scrollToTop();
+    setTimeout(() => {
+      this.table.current?.setRowAnimation(true);
+    }, 0);
   };
 
-  // Searching a large budget blocks the main thread (the backend runs on
-  // it), so wait for a pause in typing rather than searching per keystroke
-  onSearchDone = debounce(() => {
-    this.updateMatches();
-  }, 300);
+  // The rows are in memory: each keystroke searches them
+  onSearch = (value: string) => {
+    this.setState({ search: value }, this.onNewRows);
+  };
 
   onImport = async () => {
     const accountId = this.props.accountId;

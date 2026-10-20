@@ -1,5 +1,7 @@
-// The register's scopes and sort in JS, against the SQL queries the
-// register ran for them before its rows were kept in memory.
+// The register's scopes, search and sort in JS, against the SQL queries
+// the register ran for them before its rows were kept in memory.
+import { isValid as isDateValid, parse as parseDate } from 'date-fns';
+
 import { aqlQuery } from '#server/aql';
 import {
   generateBudget,
@@ -8,12 +10,22 @@ import {
 import * as db from '#server/db';
 import type { TransactionEntity } from '#types/models';
 
+import {
+  dayFromDate,
+  getDayMonthFormat,
+  getDayMonthRegex,
+  getShortYearFormat,
+  getShortYearRegex,
+} from './months';
+import { getNormalisedString } from './normalisation';
 import { q } from './query';
 import type { Query } from './query';
 import { createRegisterRows } from './register-rows';
 import type { RegisterGroup } from './register-rows';
 import {
   flattenGroups,
+  makeSearchMatcher,
+  matchGroups,
   runningBalances,
   scopeGroups,
   sortGroups,
@@ -23,8 +35,11 @@ import type {
   RegisterScope,
   RegisterSort,
 } from './register-view';
+import { amountToInteger, currencyToAmount } from './util';
 
 beforeEach(global.emptyDatabase());
+
+const DATE_FORMAT = 'MM/dd/yyyy';
 
 function run(query: Query) {
   return aqlQuery(query) as { data: unknown; dependencies: string[] };
@@ -72,6 +87,63 @@ function scopeQuery(scope: RegisterScope) {
     default:
       return query.filter({ account: scope });
   }
+}
+
+// desktop-client's `queries.transactionsSearch`, which names are matched
+// against in JS and notes in SQL
+function searchQuery(
+  query: Query,
+  search: string,
+  {
+    payees,
+    categories,
+    accounts,
+  }: {
+    payees: Array<{ id: string; name: string }>;
+    categories: Array<{ id: string; name: string }>;
+    accounts: Array<{ id: string; name: string }>;
+  },
+) {
+  const amount = currencyToAmount(search);
+  const escapedSearch = search.replace(/[\\%?]/g, '\\$&');
+
+  let parsedDate;
+  if (getDayMonthRegex(DATE_FORMAT).test(search)) {
+    parsedDate = parseDate(search, getDayMonthFormat(DATE_FORMAT), new Date());
+  } else if (getShortYearRegex(DATE_FORMAT).test(search)) {
+    parsedDate = parseDate(search, getShortYearFormat(DATE_FORMAT), new Date());
+  } else {
+    parsedDate = parseDate(search, DATE_FORMAT, new Date());
+  }
+
+  const term = getNormalisedString(search);
+  const matchingIds = (items: Array<{ id: string; name: string }>) =>
+    items
+      .filter(item => getNormalisedString(item.name ?? '').includes(term))
+      .map(item => item.id);
+  const payeeIds = matchingIds(payees);
+  const categoryIds = matchingIds(categories);
+  const accountIds = matchingIds(accounts);
+
+  return query.filter({
+    $or: [
+      payeeIds.length > 0 && { payee: { $oneof: payeeIds } },
+      categoryIds.length > 0 && { category: { $oneof: categoryIds } },
+      accountIds.length > 0 && { account: { $oneof: accountIds } },
+      { notes: { $like: `%${escapedSearch}%` } },
+      isDateValid(parsedDate) && { date: dayFromDate(parsedDate) },
+      amount != null && {
+        amount: { $transform: '$abs', $eq: amountToInteger(amount) },
+      },
+      amount != null &&
+        Number.isInteger(amount) && {
+          amount: {
+            $transform: { $abs: { $idiv: ['$', 100] } },
+            $eq: amount,
+          },
+        },
+    ].filter(Boolean),
+  });
 }
 
 // The register's sorted query (`applySort` in desktop-client's Account)
@@ -201,6 +273,69 @@ describe('scopeGroups', () => {
         row => row._unmatched,
       ),
     ).toBe(true);
+  });
+});
+
+describe('makeSearchMatcher', () => {
+  it('matches what the search query matched', async () => {
+    const { lookups, lists, groups } = await setUpBudget();
+    const sample = flattenGroups(groups).find(
+      row => !row.is_parent && row.amount % 100 !== 0,
+    ) as TransactionEntity;
+    const [year, month, day] = sample.date.split('-');
+    const amount = Math.abs(sample.amount) / 100;
+
+    const terms = [
+      'cafe',
+      'CAFÉ',
+      'müller',
+      'lodz',
+      'łódź',
+      'strasse',
+      'ß',
+      '%',
+      '100%',
+      '?',
+      'what?',
+      '\\',
+      'back\\s',
+      '_',
+      'a_b',
+      'memo cafe',
+      ' ',
+      'acct-sav',
+      'acct',
+      'cat-1',
+      'income',
+      'zzzz-no-match',
+      String(amount),
+      `-${amount}`,
+      String(Math.trunc(amount)),
+      '1,000.50',
+      `${month}/${day}/${year}`,
+      `${month}/${day}`,
+      `${month}/${day}/${year.slice(2)}`,
+      '13/45/2020',
+    ];
+
+    let matched = 0;
+    for (const scope of [undefined, 'acct-checking', 'uncategorized']) {
+      const scoped = scopeGroups(groups, scope, lookups);
+      for (const term of terms) {
+        const sql = readGroups(searchQuery(scopeQuery(scope), term, lists));
+        const js = matchGroups(
+          scoped,
+          makeSearchMatcher(term, DATE_FORMAT, lookups),
+        );
+        expect({ scope, term, groups: js }).toEqual({
+          scope,
+          term,
+          groups: sql,
+        });
+        matched += js.length;
+      }
+    }
+    expect(matched).toBeGreaterThan(1000);
   });
 });
 
