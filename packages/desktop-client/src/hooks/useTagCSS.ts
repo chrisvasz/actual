@@ -9,7 +9,7 @@ import { useTheme } from '#style';
 import { useTags } from './useTags';
 
 export function useTagCSS(opts?: { ellipsis?: boolean }) {
-  const { data: tags = [] } = useTags();
+  const tags = useTags();
   const [theme] = useTheme();
 
   return useCallback(

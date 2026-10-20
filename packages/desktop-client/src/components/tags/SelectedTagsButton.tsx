@@ -4,11 +4,7 @@ import type { TagEntity } from '@actual-app/core/types/models';
 import { SelectedItemsButton } from '#components/table';
 import { useHotkeys } from '#hooks/useHotkeys';
 import { useSelectedDispatch, useSelectedItems } from '#hooks/useSelected';
-import {
-  useDeleteTagsMutation,
-  useHideTagsMutation,
-  useUnhideTagsMutation,
-} from '#tags';
+import { useDeleteTags, useHideTags, useUnhideTags } from '#tags';
 
 type Actions = 'rename-tag' | 'delete-tags' | 'hide-tags' | 'unhide-tags';
 
@@ -19,15 +15,14 @@ type SelectedTagsButtonProps = {
 export function SelectedTagsButton({ onRename }: SelectedTagsButtonProps) {
   const dispatch = useSelectedDispatch();
   const selectedItems = useSelectedItems();
-  const { mutate: deleteTags } = useDeleteTagsMutation();
-  const { mutate: hideTags } = useHideTagsMutation();
-  const { mutate: unhideTags } = useUnhideTagsMutation();
+  const deleteTags = useDeleteTags();
+  const hideTags = useHideTags();
+  const unhideTags = useUnhideTags();
 
   async function handleDelete(tagIds: string[]) {
-    deleteTags(
-      { ids: tagIds },
-      { onSuccess: () => dispatch({ type: 'select-none' }) },
-    );
+    if ((await deleteTags({ ids: tagIds })) !== undefined) {
+      dispatch({ type: 'select-none' });
+    }
   }
 
   // The closing menu restores focus to its trigger, so clear the selection
@@ -43,9 +38,9 @@ export function SelectedTagsButton({ onRename }: SelectedTagsButtonProps) {
     } else if (name === 'delete-tags') {
       void handleDelete(tagIds);
     } else if (name === 'hide-tags') {
-      hideTags({ ids: [...tagIds] });
+      void hideTags({ ids: [...tagIds] });
     } else if (name === 'unhide-tags') {
-      unhideTags({ ids: [...tagIds] });
+      void unhideTags({ ids: [...tagIds] });
     } else {
       console.error('Unhandled action', name);
     }

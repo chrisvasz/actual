@@ -25,14 +25,14 @@ export function TagMultiAutocomplete({
   const tags = useMemo(() => {
     return extractTagsForFilter(value);
   }, [value]);
-  const { data: allTags } = useTags();
+  const allTags = useTags();
   const allTagItems = useMemo(
     () =>
-      allTags?.map(tag => ({
+      allTags.map(tag => ({
         ...tag,
         id: '#' + tag.tag,
         name: '#' + tag.tag,
-      })) ?? [],
+      })),
     [allTags],
   );
 

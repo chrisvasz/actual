@@ -11,7 +11,7 @@ import {
   createTestQueryClient,
   TestProviders,
 } from '#mocks';
-import { tagQueries } from '#tags';
+import { initLiveReads } from '#mocks/live-reads';
 
 import { ManageTags } from './ManageTags';
 
@@ -34,10 +34,15 @@ describe('ManageTags', () => {
 
   beforeEach(async () => {
     renameTag = createRenameTagMock();
-    initServer({ 'tags-get': async () => tags, 'tags-rename': renameTag });
+    initServer({ 'tags-rename': renameTag });
+    initLiveReads(null, name => {
+      if (name !== 'tags-get') {
+        throw new Error(`read unknown live read: ${name}`);
+      }
+      return { data: tags, dependencies: ['tags'] };
+    });
 
     const queryClient = createTestQueryClient();
-    queryClient.setQueryData(tagQueries.list().queryKey, tags);
     store = configureTestAppStore({ queryClient });
 
     render(

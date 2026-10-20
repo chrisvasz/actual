@@ -12,7 +12,7 @@ import { InputCell, Row, useTableNavigator } from '#components/table';
 import { useInitialMount } from '#hooks/useInitialMount';
 import { useProperFocus } from '#hooks/useProperFocus';
 import { useTagCSS } from '#hooks/useTagCSS';
-import { useCreateTagMutation } from '#tags';
+import { useCreateTag } from '#tags';
 
 type TagCreationRowProps = {
   tags: TagEntity[];
@@ -58,14 +58,14 @@ export const TagCreationRow = ({ onClose, tags }: TagCreationRowProps) => {
     );
   };
 
-  const { mutate: createTag } = useCreateTagMutation();
+  const createTag = useCreateTag();
 
   const onAddTag = () => {
     if (!isTagValid()) {
       return;
     }
 
-    createTag({ tag: { tag, color, description } });
+    void createTag({ tag: { tag, color, description } });
     resetInputs();
   };
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {

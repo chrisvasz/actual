@@ -1,5 +1,6 @@
 import { createApp } from '#server/app';
 import * as db from '#server/db';
+import { liveRead, registerLiveReads } from '#server/live-reads';
 import { mutator } from '#server/mutators';
 import { batchMessages } from '#server/sync';
 import { undoable } from '#server/undo';
@@ -33,10 +34,23 @@ const collator = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: 'base',
 });
-async function getTags(): Promise<TagEntity[]> {
+
+export const tagLiveReads = registerLiveReads({
+  'tags-get': liveRead({
+    tables: ['tags'],
+    empty: () => [],
+    read: readTags,
+  }),
+});
+
+function readTags(): TagEntity[] {
   const tags = db.getTags();
   tags.sort((a, b) => collator.compare(a.tag, b.tag));
   return tags.map(tag => ({ ...tag, hidden: !!tag.hidden }));
+}
+
+async function getTags(): Promise<TagEntity[]> {
+  return readTags();
 }
 
 async function createTag({

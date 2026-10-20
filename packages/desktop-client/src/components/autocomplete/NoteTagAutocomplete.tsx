@@ -37,7 +37,7 @@ export function NoteTagAutocomplete({ inputRef }: NoteTagAutocompleteProps) {
   const leadingHashCount = currentWord.match(/^#+/)?.[0].length ?? 0;
   const hasSingleLeadingHash = leadingHashCount === 1;
   const currentWordNoHash = hasSingleLeadingHash ? currentWord.slice(1) : '';
-  const { data: filteredTags, refetch } = useFilteredTags(
+  const filteredTags = useFilteredTags(
     hasSingleLeadingHash ? currentWord : '',
     true,
   );
@@ -63,7 +63,6 @@ export function NoteTagAutocomplete({ inputRef }: NoteTagAutocompleteProps) {
     if (!inputRef.current) return;
     try {
       await send('tags-create', { tag });
-      void refetch();
       if (inputRef.current && inputRef.current.value === note) {
         handleSelect(tag);
       }

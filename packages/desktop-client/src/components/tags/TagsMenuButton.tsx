@@ -12,11 +12,11 @@ import { Popover } from '@actual-app/components/popover';
 import { View } from '@actual-app/components/view';
 
 import { useSyncedPref } from '#hooks/useSyncedPref';
-import { useDiscoverTagsMutation } from '#tags';
+import { useDiscoverTags } from '#tags';
 
 export function TagsMenuButton() {
   const [open, setOpen] = useState(false);
-  const { mutate: discoverTags } = useDiscoverTagsMutation();
+  const discoverTags = useDiscoverTags();
   const [showHidden, setShowHidden] = useSyncedPref('show-hidden-tags');
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -64,7 +64,7 @@ export function TagsMenuButton() {
                 setShowHidden('true');
                 break;
               case 'discover-tags':
-                discoverTags();
+                void discoverTags();
                 break;
               default:
                 console.error('Unhandled menu option', name);

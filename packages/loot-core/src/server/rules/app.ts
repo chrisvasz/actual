@@ -2,6 +2,7 @@
 import { logger } from '#platform/server/log';
 import { createApp } from '#server/app';
 import { RuleError } from '#server/errors';
+import { liveRead, registerLiveReads } from '#server/live-reads';
 import { mutator } from '#server/mutators';
 import { batchMessages } from '#server/sync';
 import * as rules from '#server/transactions/transaction-rules';
@@ -180,8 +181,20 @@ async function getRule({
   return rule ? rule.serialize() : null;
 }
 
+export const ruleLiveReads = registerLiveReads({
+  'rules-get': liveRead({
+    tables: rules.RULES_TABLES,
+    empty: () => [],
+    read: readRules,
+  }),
+});
+
+function readRules(): RuleEntity[] {
+  return rules.serializeRules(rankRules(rules.getRules()));
+}
+
 async function getRules() {
-  return rankRules(rules.getRules()).map(rule => rule.serialize());
+  return readRules();
 }
 
 async function runRules({

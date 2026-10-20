@@ -47,7 +47,6 @@ import { SpreadsheetProvider } from '#hooks/useSpreadsheet';
 import { createTestQueryClient, TestProviders } from '#mocks';
 import { initLiveReads } from '#mocks/live-reads';
 import * as modalsSlice from '#modals/modalsSlice';
-import { tagQueries } from '#tags/queries';
 
 import {
   DEFAULT_AMOUNT_COLUMN_WIDTHS,
@@ -96,7 +95,6 @@ const tags: TagEntity[] = [
   { id: 'tag2', tag: 'taxes' },
   { id: 'tag3', tag: 'groceries' },
 ];
-queryClient.setQueryData(tagQueries.list().queryKey, tags);
 
 const categoryGroups = generateCategoryGroups([
   {
@@ -272,6 +270,8 @@ function initBasicServer() {
         return { data: payees, dependencies: ['payees', 'accounts'] };
       case 'accounts-get':
         return { data: accounts, dependencies: ['accounts'] };
+      case 'tags-get':
+        return { data: tags, dependencies: ['tags'] };
       default:
         throw new Error(`read unknown live read: ${name}`);
     }
@@ -288,7 +288,6 @@ function initBasicServer() {
       grouped: categoryGroups,
       list: categories,
     }),
-    'tags-get': async () => tags,
     'tags-create': async (tag: Omit<TagEntity, 'id'>) => ({
       id: 'new-tag',
       ...tag,

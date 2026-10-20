@@ -221,6 +221,15 @@ export function getRules() {
   return [...allRules.values()];
 }
 
+// The tables the in-memory rules follow: their rows, and the mappings that
+// remap the ids they refer to (see `onApplySync`)
+export const RULES_TABLES = ['rules', 'payee_mapping', 'category_mapping'];
+
+/** Plain copies of `rules`, sharing nothing with the in-memory rules. */
+export function serializeRules(rules: Rule[]): RuleEntity[] {
+  return structuredClone(rules.map(rule => rule.serialize()));
+}
+
 export function insertRule(rule: Omit<RuleEntity, 'id'> & { id?: string }) {
   rule = ruleModel.validate(rule);
   return db.insertWithUUID('rules', ruleModel.fromJS(rule));

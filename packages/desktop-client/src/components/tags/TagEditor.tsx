@@ -5,7 +5,7 @@ import { ColorPicker } from '@actual-app/components/color-picker';
 import type { TagEntity } from '@actual-app/core/types/models';
 
 import { useTagCSS } from '#hooks/useTagCSS';
-import { useUpdateTagMutation } from '#tags';
+import { useUpdateTag } from '#tags';
 
 type TagEditorProps = {
   tag: TagEntity;
@@ -14,7 +14,7 @@ type TagEditorProps = {
 
 export const TagEditor = ({ tag, ref }: TagEditorProps) => {
   const getTagCSS = useTagCSS({ ellipsis: true });
-  const { mutate: updateTag } = useUpdateTagMutation();
+  const updateTag = useUpdateTag();
 
   const formattedTag = <>#{tag.tag}</>;
 
@@ -22,7 +22,7 @@ export const TagEditor = ({ tag, ref }: TagEditorProps) => {
     <ColorPicker
       value={tag.color ?? undefined}
       onChange={color => {
-        updateTag({ tag: { ...tag, color: color.toString('hex') } });
+        void updateTag({ tag: { ...tag, color: color.toString('hex') } });
       }}
     >
       <Button variant="bare" className={getTagCSS(tag.tag)} ref={ref}>

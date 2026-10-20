@@ -6,6 +6,7 @@ import { app, payeeLiveReads } from '#server/payees/app';
 import { createSchedule, updateSchedule } from '#server/schedules/app';
 import {
   deleteRule,
+  getRules,
   insertRule,
   loadRules,
   resetState,
@@ -133,4 +134,68 @@ describe('payees app', () => {
       ).toBe(true);
     });
   });
+
+  describe('payees-get-rules', () => {
+    it("reads copies that share nothing with the app's rules", () => {
+      const payeeId = db.insertPayee({ name: 'Shop' });
+      const otherId = db.insertPayee({ name: 'Other' });
+      insertRule({
+        stage: 'pre',
+        conditionsOp: 'and',
+        conditions: [
+          { op: 'oneOf', field: 'payee', value: [payeeId, otherId] },
+        ],
+        actions: [{ op: 'set', field: 'category', value: null }],
+      });
+
+      const read = () =>
+        payeeLiveReads['payees-get-rules'].read({ id: payeeId });
+      const first = read();
+      // The client freezes what it reads
+      deepFreeze(first);
+
+      const second = read();
+      expect(second).toEqual(first);
+      expect(second[0].conditions[0].value).not.toBe(
+        first[0].conditions[0].value,
+      );
+      expect(Object.isFrozen(getRules()[0].conditions[0].value)).toBe(false);
+    });
+
+    it('reports a merge as a change to a table the rules read', async () => {
+      const mergedId = db.insertPayee({ name: 'Merged' });
+      const targetId = db.insertPayee({ name: 'Target' });
+      insertRule({
+        stage: 'pre',
+        conditionsOp: 'and',
+        conditions: [{ op: 'is', field: 'payee', value: mergedId }],
+        actions: [{ op: 'set', field: 'category', value: null }],
+      });
+
+      const changes: BudgetChanges[] = [];
+      const stop = liveReads.onChanges(change => changes.push(change));
+      await app.handlers['payees-merge']({ targetId, mergeIds: [mergedId] });
+      stop();
+
+      const { read, tables } = payeeLiveReads['payees-get-rules'];
+      expect(read({ id: targetId })).toHaveLength(1);
+      expect(
+        changes.some(
+          change =>
+            change === 'all' ||
+            change.tables.some(table => tables.includes(table)),
+        ),
+      ).toBe(true);
+    });
+  });
 });
+
+function deepFreeze(value: unknown) {
+  if (value == null || typeof value !== 'object' || Object.isFrozen(value)) {
+    return;
+  }
+  Object.freeze(value);
+  for (const child of Object.values(value)) {
+    deepFreeze(child);
+  }
+}
