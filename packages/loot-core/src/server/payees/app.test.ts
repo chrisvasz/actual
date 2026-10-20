@@ -1,6 +1,8 @@
+import type { BudgetChanges } from '#platform/in-process-channel';
 import * as db from '#server/db';
 import { loadMappings } from '#server/db/mappings';
-import { app } from '#server/payees/app';
+import { liveReads } from '#server/live-reads';
+import { app, payeeLiveReads } from '#server/payees/app';
 import { createSchedule, updateSchedule } from '#server/schedules/app';
 import {
   deleteRule,
@@ -99,6 +101,36 @@ describe('payees app', () => {
 
       expect(counts[activePayeeId]).toBe(1);
       expect(counts[completedPayeeId]).toBeUndefined();
+    });
+
+    it('reports a merge as a change to a table the counts read', async () => {
+      const mergedId = db.insertPayee({ name: 'Merged' });
+      const targetId = db.insertPayee({ name: 'Target' });
+      insertRule({
+        stage: 'pre',
+        conditionsOp: 'and',
+        conditions: [{ op: 'is', field: 'payee', value: mergedId }],
+        actions: [{ op: 'set', field: 'category', value: null }],
+      });
+
+      const changes: BudgetChanges[] = [];
+      const stop = liveReads.onChanges(change => changes.push(change));
+      await app.handlers['payees-merge']({ targetId, mergeIds: [mergedId] });
+      stop();
+
+      const counts = await app.handlers['payees-get-rule-counts']();
+      expect(counts[targetId]).toBe(1);
+      expect(counts[mergedId]).toBeUndefined();
+
+      // So a live read of the counts is refreshed
+      const { tables } = payeeLiveReads['payees-get-rule-counts'];
+      expect(
+        changes.some(
+          change =>
+            change === 'all' ||
+            change.tables.some(table => tables.includes(table)),
+        ),
+      ).toBe(true);
     });
   });
 });

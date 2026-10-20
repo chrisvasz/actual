@@ -13,10 +13,7 @@ import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 import type { AccountGroupEntity } from '@actual-app/core/types/models';
 
-import {
-  useDeleteAccountGroupMutation,
-  useUpdateAccountGroupMutation,
-} from '#account-groups';
+import { useDeleteAccountGroup, useUpdateAccountGroup } from '#account-groups';
 import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 
@@ -38,8 +35,8 @@ export function AccountGroupRow({
   onMoveDown,
 }: AccountGroupRowProps) {
   const dispatch = useDispatch();
-  const updateGroup = useUpdateAccountGroupMutation();
-  const deleteGroup = useDeleteAccountGroupMutation();
+  const updateGroup = useUpdateAccountGroup();
+  const deleteGroup = useDeleteAccountGroup();
   const [isEditing, setIsEditing] = useState(false);
 
   const onRename = (name: string) => {
@@ -48,10 +45,13 @@ export function AccountGroupRow({
       setIsEditing(false);
       return;
     }
-    updateGroup.mutate(
-      { id: group.id, name: trimmed },
-      { onSuccess: () => setIsEditing(false) },
-    );
+    // The new name is shown by the time it's saved; a failed save keeps
+    // the input open with the typed name
+    void updateGroup({ id: group.id, name: trimmed }).then(saved => {
+      if (saved) {
+        setIsEditing(false);
+      }
+    });
   };
 
   const onDelete = () => {
@@ -61,7 +61,7 @@ export function AccountGroupRow({
           name: 'confirm-delete',
           options: {
             message: `Are you sure you want to delete the group "${group.name}"? Any accounts in it will be kept but left ungrouped.`,
-            onConfirm: () => deleteGroup.mutate({ id: group.id }),
+            onConfirm: () => void deleteGroup({ id: group.id }),
           },
         },
       }),

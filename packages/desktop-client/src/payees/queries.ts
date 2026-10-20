@@ -1,4 +1,3 @@
-import { send } from '@actual-app/core/platform/client/connection';
 import { memoizeOne } from '@actual-app/core/shared/memoize';
 import { groupById } from '@actual-app/core/shared/util';
 import type {
@@ -12,38 +11,10 @@ import { getAccountsById } from '#accounts/accountsSlice';
 
 import { locationService } from './location';
 
+// Payee lists are live reads (`usePayees` and friends); only nearby payees,
+// which need the device's location, are fetched here
 export const payeeQueries = {
   all: () => ['payees'],
-  lists: () => [...payeeQueries.all(), 'lists'],
-  list: () =>
-    queryOptions<PayeeEntity[]>({
-      queryKey: [...payeeQueries.lists()],
-      queryFn: async () => (await send('payees-get')) ?? [],
-      placeholderData: [],
-      // Manually invalidated when payees change via sync events
-      staleTime: Infinity,
-    }),
-  listOrphaned: () =>
-    queryOptions<Pick<PayeeEntity, 'id'>[]>({
-      queryKey: [...payeeQueries.lists(), 'orphaned'],
-      queryFn: async () => {
-        const payees: Pick<PayeeEntity, 'id'>[] =
-          (await send('payees-get-orphaned')) ?? [];
-        return payees;
-      },
-      placeholderData: [],
-      // Manually invalidated when payees change via sync events
-      staleTime: Infinity,
-    }),
-  ruleCounts: () =>
-    queryOptions<Map<PayeeEntity['id'], number>>({
-      queryKey: [...payeeQueries.lists(), 'ruleCounts'],
-      queryFn: async () => {
-        const counts = await send('payees-get-rule-counts');
-        return new Map(Object.entries(counts ?? {}));
-      },
-      placeholderData: new Map(),
-    }),
   listNearby: () =>
     queryOptions<NearbyPayeeEntity[]>({
       queryKey: [...payeeQueries.all(), 'nearby'],

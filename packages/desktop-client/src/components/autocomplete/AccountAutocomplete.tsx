@@ -169,7 +169,7 @@ export function AccountAutocomplete({
   inputProps,
   ...props
 }: AccountAutocompleteProps) {
-  const { data: accounts = [] } = useAccounts();
+  const accounts = useAccounts();
 
   //remove closed accounts if needed
   //then sort by closed, then offbudget

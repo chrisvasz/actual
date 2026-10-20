@@ -2,8 +2,6 @@ import { listen, send } from '@actual-app/core/platform/client/connection';
 import type { ServerEvents } from '@actual-app/core/types/server-events';
 import type { QueryClient } from '@tanstack/react-query';
 
-import { accountGroupQueries } from './account-groups';
-import { accountQueries } from './accounts';
 import { resetSync, sync } from './app/appSlice';
 import { categoryQueries } from './budget';
 import {
@@ -14,7 +12,6 @@ import { pushModal } from './modals/modalsSlice';
 import { noteQueries } from './notes/queries';
 import { addNotification } from './notifications/notificationsSlice';
 import type { Notification } from './notifications/notificationsSlice';
-import { payeeQueries } from './payees';
 import { loadPrefs } from './prefs/prefsSlice';
 import type { AppStore } from './redux/store';
 import { ruleQueries } from './rules';
@@ -113,29 +110,6 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
       ) {
         void queryClient.invalidateQueries({
           queryKey: categoryQueries.lists(),
-        });
-      }
-
-      if (
-        // Sync on accounts change because so that transfer payees are updated
-        tables.includes('accounts') ||
-        tables.includes('payees') ||
-        tables.includes('payee_mapping')
-      ) {
-        void queryClient.invalidateQueries({
-          queryKey: payeeQueries.lists(),
-        });
-      }
-
-      if (tables.includes('accounts')) {
-        void queryClient.invalidateQueries({
-          queryKey: accountQueries.lists(),
-        });
-      }
-
-      if (tables.includes('account_groups')) {
-        void queryClient.invalidateQueries({
-          queryKey: accountGroupQueries.lists(),
         });
       }
 

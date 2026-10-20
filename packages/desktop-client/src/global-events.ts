@@ -3,7 +3,6 @@ import * as undo from '@actual-app/core/platform/client/undo';
 // @ts-strict-ignore
 import type { QueryClient } from '@tanstack/react-query';
 
-import { accountQueries } from './accounts';
 import { setAppState } from './app/appSlice';
 import { categoryQueries } from './budget';
 import { closeBudgetUI } from './budgetfiles/budgetfilesSlice';
@@ -13,7 +12,6 @@ import {
   addGenericErrorNotification,
   addNotification,
 } from './notifications/notificationsSlice';
-import { payeeQueries } from './payees';
 import { loadPrefs } from './prefs/prefsSlice';
 import type { AppStore } from './redux/store';
 import * as syncEvents from './sync-events';
@@ -61,24 +59,6 @@ export function handleGlobalEvents(store: AppStore, queryClient: QueryClient) {
       promises.push(
         queryClient.invalidateQueries({
           queryKey: categoryQueries.lists(),
-        }),
-      );
-    }
-
-    if (
-      tables.includes('accounts') ||
-      tables.includes('payees') ||
-      tables.includes('payee_mapping')
-    ) {
-      void queryClient.invalidateQueries({
-        queryKey: payeeQueries.lists(),
-      });
-    }
-
-    if (tables.includes('accounts')) {
-      promises.push(
-        queryClient.invalidateQueries({
-          queryKey: accountQueries.lists(),
         }),
       );
     }

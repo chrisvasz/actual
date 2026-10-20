@@ -1,7 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import type { AccountEntity } from '@actual-app/core/types/models';
 
-import { accountQueries } from '#accounts';
+import { useLiveRead } from './useLiveRead';
 
-export function useAccounts() {
-  return useQuery(accountQueries.list());
+const NO_ACCOUNTS: AccountEntity[] = [];
+
+/** Every account, open and closed, in sidebar order. */
+export function useAccounts(): AccountEntity[] {
+  return useLiveRead('accounts-get').data ?? NO_ACCOUNTS;
 }

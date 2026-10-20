@@ -46,11 +46,7 @@ import { parseISO } from 'date-fns';
 import { debounce, isEqual } from 'es-toolkit/compat';
 import { v4 as uuidv4 } from 'uuid';
 
-import {
-  accountQueries,
-  useReopenAccountMutation,
-  useUpdateAccountMutation,
-} from '#accounts';
+import { useReopenAccount, useUpdateAccount } from '#accounts';
 import { markAccountRead } from '#accounts/accountsSlice';
 import * as reconciliation from '#accounts/reconciliation';
 import { categoryQueries } from '#budget';
@@ -63,9 +59,11 @@ import type {
 import { TransactionList } from '#components/transactions/TransactionList';
 import { validateAccountName } from '#components/util/accountValidation';
 import { useAccountPreviewTransactions } from '#hooks/useAccountPreviewTransactions';
+import { useAccounts } from '#hooks/useAccounts';
 import { SchedulesProvider } from '#hooks/useCachedSchedules';
 import { useDateFormat } from '#hooks/useDateFormat';
 import { useLocalPref } from '#hooks/useLocalPref';
+import { usePayees } from '#hooks/usePayees';
 import { getSchedulesQuery } from '#hooks/useSchedules';
 import { SelectedProviderWithItems } from '#hooks/useSelected';
 import type { Actions } from '#hooks/useSelected';
@@ -90,7 +88,7 @@ import {
 import type { ConfirmTransactionEditReason } from '#modals/modalsSlice';
 import { noteQueries } from '#notes/queries';
 import { addNotification } from '#notifications/notificationsSlice';
-import { payeeQueries, useCreatePayeeMutation } from '#payees';
+import { useCreatePayee } from '#payees';
 import * as queries from '#queries';
 import { aqlQuery } from '#queries/aqlQuery';
 import { useDispatch, useSelector } from '#redux';
@@ -346,7 +344,9 @@ type AccountInternalProps = {
   onSetTransfer: ReturnType<typeof useTransactionBatchActions>['onSetTransfer'];
   onReopenAccount: (id: AccountEntity['id']) => void;
   onUpdateAccount: (account: AccountEntity) => Promise<unknown>;
-  onCreatePayee: (name: PayeeEntity['name']) => Promise<PayeeEntity['id']>;
+  onCreatePayee: (
+    name: PayeeEntity['name'],
+  ) => Promise<PayeeEntity['id'] | null>;
   preload: AccountPreload;
   queryClient: QueryClient;
 };
@@ -2307,19 +2307,17 @@ export function Account() {
   // Suspend until the screen has what it needs to draw complete. Navigations
   // run in a transition, so React keeps the previous screen up meanwhile
   // instead of drawing this one empty and filling it in. Without these lists
-  // rows would draw with blank payees and categories, and with no accounts
-  // the screen would mistake the account for a deleted one and redirect.
-  // Notes are needed so the header can link the account name on first draw.
+  // rows would draw with blank categories. Notes are needed so the header
+  // can link the account name on first draw. Accounts and payees are read
+  // synchronously, so they need no wait.
+  const accounts = useAccounts();
+  const payees = usePayees();
   const [
-    { data: accounts },
-    { data: payees },
     {
       data: { grouped: categoryGroups },
     },
   ] = useSuspenseQueries({
     queries: [
-      accountQueries.list(),
-      payeeQueries.list(),
       categoryQueries.list(),
       // Only suspend on notes; the header subscribes to the one note it
       // needs, so this screen shouldn't re-render whenever any note changes.
@@ -2357,18 +2355,19 @@ export function Account() {
     [params.id],
   );
 
-  const { mutate: reopenAccount } = useReopenAccountMutation();
-  const onReopenAccount = (id: AccountEntity['id']) => reopenAccount({ id });
+  const reopenAccount = useReopenAccount();
+  const onReopenAccount = (id: AccountEntity['id']) =>
+    void reopenAccount({ id });
 
-  // Settles once the change is in the cache, so the header can show the new
-  // name until then. Failures are already reported by the mutation.
-  const { mutateAsync: updateAccount } = useUpdateAccountMutation();
+  // Settles once the change is applied, so the header can show the new name
+  // until then. Failures are reported as a notification.
+  const updateAccount = useUpdateAccount();
   const onUpdateAccount = (account: AccountEntity) =>
-    updateAccount({ account }).catch(() => undefined);
+    updateAccount({ account });
 
-  const createPayee = useCreatePayeeMutation();
-  const onCreatePayee = (name: PayeeEntity['name']) =>
-    createPayee.mutateAsync({ name });
+  const createPayee = useCreatePayee();
+  const onCreatePayee = async (name: PayeeEntity['name']) =>
+    (await createPayee({ name })) ?? null;
 
   const spreadsheet = useSpreadsheet();
   const showReconciled = String(hideReconciled) !== 'true';

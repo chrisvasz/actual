@@ -12,7 +12,7 @@ import { View } from '@actual-app/components/view';
 import type { AccountEntity } from '@actual-app/core/types/models';
 import { css } from '@emotion/css';
 
-import { useReopenAccountMutation, useUpdateAccountMutation } from '#accounts';
+import { useReopenAccount, useUpdateAccount } from '#accounts';
 import { useContextMenu } from '#hooks/useContextMenu';
 import { usePendingValue } from '#hooks/usePendingValue';
 import { useUpdatedAccounts } from '#hooks/useUpdatedAccounts';
@@ -41,8 +41,8 @@ export function AccountRow({ account, isClosed }: AccountRowProps) {
   const href = `/accounts/${account.id}`;
   const isActive = location.pathname === href;
 
-  const reopenAccount = useReopenAccountMutation();
-  const updateAccount = useUpdateAccountMutation();
+  const reopenAccount = useReopenAccount();
+  const updateAccount = useUpdateAccount();
   const { valueOr: pendingNameOr, showUntil: showNameUntil } =
     usePendingValue<string>();
   const name = pendingNameOr(account.name);
@@ -61,7 +61,7 @@ export function AccountRow({ account, isClosed }: AccountRowProps) {
         ? {
             name: 'account-reopen',
             text: 'Reopen',
-            onClick: () => reopenAccount.mutate({ id: account.id }),
+            onClick: () => void reopenAccount({ id: account.id }),
           }
         : {
             name: 'account-close',
@@ -144,7 +144,7 @@ export function AccountRow({ account, isClosed }: AccountRowProps) {
                     if (newAccountName.trim() !== '') {
                       showNameUntil(
                         newAccountName,
-                        updateAccount.mutateAsync({
+                        updateAccount({
                           account: { id: account.id, name: newAccountName },
                         }),
                       );

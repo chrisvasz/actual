@@ -1,5 +1,6 @@
 import { createApp } from '#server/app';
 import * as db from '#server/db';
+import { liveRead, registerLiveReads } from '#server/live-reads';
 import { mutator } from '#server/mutators';
 import { undoable } from '#server/undo';
 import type { AccountGroupEntity } from '#types/models';
@@ -19,13 +20,25 @@ app.method('account-group-update', mutator(undoable(updateAccountGroup)));
 app.method('account-group-delete', mutator(undoable(deleteAccountGroup)));
 app.method('account-group-move', mutator(undoable(moveAccountGroup)));
 
-async function getAccountGroups(): Promise<AccountGroupEntity[]> {
+export const accountGroupLiveReads = registerLiveReads({
+  'account-groups-get': liveRead({
+    tables: ['account_groups'],
+    empty: () => [],
+    read: readAccountGroups,
+  }),
+});
+
+function readAccountGroups(): AccountGroupEntity[] {
   const groups = db.getAccountGroups();
   return groups.map(group => ({
     id: group.id,
     name: group.name,
     sort_order: group.sort_order,
   }));
+}
+
+async function getAccountGroups(): Promise<AccountGroupEntity[]> {
+  return readAccountGroups();
 }
 
 async function createAccountGroup({

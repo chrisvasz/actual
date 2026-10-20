@@ -61,8 +61,8 @@ export function DisplayPayeeProvider({
     ];
   }, [queriedSubtransactions, transactions]);
 
-  const { data: accounts = [] } = useAccounts();
-  const { data: payeesById = {} } = usePayeesById();
+  const accounts = useAccounts();
+  const payeesById = usePayeesById();
 
   const displayPayees = useMemo(() => {
     return transactions.reduce(

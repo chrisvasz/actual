@@ -164,11 +164,11 @@ function ConfigureField<T extends RuleConditionEntity>({
       return '';
     }
     if (field === 'account') {
-      const account = accounts.data?.find(account => account.id === value);
+      const account = accounts.find(account => account.id === value);
       return account?.name ?? '';
     }
     if (field === 'payee') {
-      const payee = payees.data?.find(payee => payee.id === value);
+      const payee = payees.find(payee => payee.id === value);
       return payee?.name ?? '';
     }
     if (field === 'category' && subfield === 'category_group') {
@@ -194,12 +194,11 @@ function ConfigureField<T extends RuleConditionEntity>({
       return null;
     }
     if (field === 'account') {
-      const matches =
-        accounts.data?.filter(account => account.name === value) ?? [];
+      const matches = accounts.filter(account => account.name === value);
       return matches.length === 1 ? matches[0].id : null;
     }
     if (field === 'payee') {
-      const matches = payees.data?.filter(payee => payee.name === value) ?? [];
+      const matches = payees.filter(payee => payee.name === value);
       return matches.length === 1 ? matches[0].id : null;
     }
     if (field === 'category' && subfield === 'category_group') {

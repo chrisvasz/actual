@@ -38,7 +38,7 @@ import { useNearbyPayees } from '#hooks/useNearbyPayees';
 import { usePayees } from '#hooks/usePayees';
 import {
   getActivePayees,
-  useCreatePayeeMutation,
+  useCreatePayee,
   useDeletePayeeLocationMutation,
 } from '#payees';
 
@@ -352,7 +352,7 @@ export function PayeeAutocomplete({
   importedPayee,
   ...props
 }: PayeeAutocompleteProps) {
-  const { data: retrievedPayees = [] } = usePayees();
+  const retrievedPayees = usePayees();
   const { isGranted } = useLocationPermission();
   const { data: retrievedNearbyPayees = [] } = useNearbyPayees({
     enabled: isGranted,
@@ -360,14 +360,14 @@ export function PayeeAutocomplete({
   if (!payees) {
     payees = retrievedPayees;
   }
-  const createPayeeMutation = useCreatePayeeMutation();
+  const createPayee = useCreatePayee();
   const deletePayeeLocationMutation = useDeletePayeeLocationMutation();
 
   if (!nearbyPayees) {
     nearbyPayees = retrievedNearbyPayees;
   }
 
-  const { data: cachedAccounts = [] } = useAccounts();
+  const cachedAccounts = useAccounts();
   if (!accounts) {
     accounts = cachedAccounts;
   }
@@ -452,8 +452,7 @@ export function PayeeAutocomplete({
     if (!clearOnBlur) {
       onSelect?.(makeNew(idOrIds, rawInputValue), rawInputValue);
     } else {
-      const create = payeeName =>
-        createPayeeMutation.mutateAsync({ name: payeeName });
+      const create = payeeName => createPayee({ name: payeeName });
 
       if (Array.isArray(idOrIds)) {
         idOrIds = await Promise.all(
@@ -463,6 +462,10 @@ export function PayeeAutocomplete({
         if (idOrIds === 'new') {
           idOrIds = await create(rawInputValue);
         }
+      }
+      // A payee that failed to save was reported as a notification
+      if ([idOrIds].flat().some(id => id === undefined)) {
+        return;
       }
       onSelect?.(idOrIds, rawInputValue);
     }

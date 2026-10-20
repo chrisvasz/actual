@@ -34,9 +34,9 @@ type UseAccountPreviewTransactionsResult = ReturnType<
 export function useAccountPreviewTransactions({
   accountId,
 }: UseAccountPreviewTransactionsProps): UseAccountPreviewTransactionsResult {
-  const { data: accounts = [] } = useAccounts();
+  const accounts = useAccounts();
   const accountsById = useMemo(() => groupById(accounts), [accounts]);
-  const { data: payees = [] } = usePayees();
+  const payees = usePayees();
   const payeesById = useMemo(() => groupById(payees), [payees]);
 
   const getPayeeByTransferAccount = useCallback(

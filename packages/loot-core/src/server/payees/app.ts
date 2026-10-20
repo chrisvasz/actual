@@ -1,5 +1,6 @@
 import { createApp } from '#server/app';
 import * as db from '#server/db';
+import { liveRead, registerLiveReads } from '#server/live-reads';
 import { payeeModel } from '#server/models';
 import { mutator } from '#server/mutators';
 import { getCompletedScheduleRuleIds } from '#server/schedules/app';
@@ -63,16 +64,58 @@ async function getCommonPayees(): Promise<PayeeEntity[]> {
   return db.getCommonPayees().map(p => payeeModel.fromDb(p));
 }
 
-async function getPayees(): Promise<PayeeEntity[]> {
+export const payeeLiveReads = registerLiveReads({
+  'payees-get': liveRead({
+    // Transfer payees take their account's name
+    tables: ['payees', 'accounts'],
+    empty: () => [],
+    read: readPayees,
+  }),
+  'payees-get-orphaned': liveRead({
+    // Payees no transaction or rule uses; transactions are read through
+    // `v_transactions_internal_alive`
+    tables: [
+      'payees',
+      'payee_mapping',
+      'transactions',
+      'category_mapping',
+      'rules',
+    ],
+    empty: () => [],
+    read: readOrphanedPayees,
+  }),
+  'payees-get-rule-counts': liveRead({
+    // The rules app's rules, kept in step with `rules` and the mappings
+    // (a merge remaps their payees) before a change is reported, less those
+    // of completed schedules
+    tables: ['rules', 'payee_mapping', 'schedules'],
+    empty: () => ({}),
+    read: readPayeeRuleCounts,
+  }),
+});
+
+function readPayees(): PayeeEntity[] {
   // TODO: Update to an AQL query. Server must return AQL entities not the raw DB data.
   return db.getPayees().map(p => payeeModel.fromDb(p));
 }
 
-async function getOrphanedPayees(): Promise<Array<Pick<PayeeEntity, 'id'>>> {
+async function getPayees(): Promise<PayeeEntity[]> {
+  return readPayees();
+}
+
+function readOrphanedPayees(): Array<Pick<PayeeEntity, 'id'>> {
   return db.syncGetOrphanedPayees();
 }
 
+async function getOrphanedPayees(): Promise<Array<Pick<PayeeEntity, 'id'>>> {
+  return readOrphanedPayees();
+}
+
 async function getPayeeRuleCounts() {
+  return readPayeeRuleCounts();
+}
+
+function readPayeeRuleCounts(): Record<PayeeEntity['id'], number> {
   const payeeCounts: Record<PayeeEntity['id'], number> = {};
   const completedScheduleRules = new Set(getCompletedScheduleRuleIds());
 

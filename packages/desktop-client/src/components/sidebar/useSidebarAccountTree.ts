@@ -61,10 +61,10 @@ export function buildAccountSide(
 }
 
 export function useSidebarAccountTree(): SidebarAccountTree {
-  const { data: groups = [] } = useAccountGroups();
-  const { data: onBudgetAccounts = [] } = useOnBudgetAccounts();
-  const { data: offBudgetAccounts = [] } = useOffBudgetAccounts();
-  const { data: closedAccounts = [] } = useClosedAccounts();
+  const groups = useAccountGroups();
+  const onBudgetAccounts = useOnBudgetAccounts();
+  const offBudgetAccounts = useOffBudgetAccounts();
+  const closedAccounts = useClosedAccounts();
 
   return {
     onBudget: buildAccountSide(onBudgetAccounts, groups),

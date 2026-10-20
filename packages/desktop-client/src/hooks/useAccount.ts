@@ -1,11 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-
-import { accountQueries } from '#accounts';
+import { useAccounts } from './useAccounts';
 
 export function useAccount(id: string) {
-  const query = useQuery({
-    ...accountQueries.list(),
-    select: data => data.find(c => c.id === id),
-  });
-  return query.data;
+  return useAccounts().find(account => account.id === id);
 }

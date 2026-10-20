@@ -39,7 +39,7 @@ function AccountDisplayId({ id, noneColor }) {
 }
 
 function PayeeDisplayId({ id, noneColor }) {
-  const { data: payee } = usePayee(id);
+  const payee = usePayee(id);
   return (
     <TextOneLine
       style={payee == null ? { color: noneColor } : null}

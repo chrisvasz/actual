@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { createApp } from '#server/app';
 import * as db from '#server/db';
 import { APIError, TransactionError } from '#server/errors';
+import { liveRead, registerLiveReads } from '#server/live-reads';
 import { app as mainApp } from '#server/main-app';
 import { mutator } from '#server/mutators';
 import { batchMessages } from '#server/sync';
@@ -52,7 +53,15 @@ async function updateAccount({
   return {};
 }
 
-async function getAccounts(): Promise<AccountEntity[]> {
+export const accountLiveReads = registerLiveReads({
+  'accounts-get': liveRead({
+    tables: ['accounts'],
+    empty: () => [],
+    read: readAccounts,
+  }),
+});
+
+function readAccounts(): AccountEntity[] {
   const dbAccounts = db.getAccounts();
   return dbAccounts.map(
     dbAccount =>
@@ -67,6 +76,10 @@ async function getAccounts(): Promise<AccountEntity[]> {
         account_group_id: dbAccount.account_group_id ?? null,
       }) satisfies AccountEntity,
   );
+}
+
+async function getAccounts(): Promise<AccountEntity[]> {
+  return readAccounts();
 }
 
 async function getAccountBalance({

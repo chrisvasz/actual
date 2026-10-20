@@ -6,6 +6,7 @@ import { act, render, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useLiveQuery } from '#hooks/useLiveQuery';
+import { useLiveRead } from '#hooks/useLiveRead';
 import { changeTables, initLiveReads } from '#mocks/live-reads';
 
 import { getLiveQuery, replaceEqualDeep, watchLiveQuery } from './liveStore';
@@ -318,6 +319,39 @@ describe('liveStore', () => {
     expect(handle.getSnapshot()).toBe(read);
     expect(readsOf('transactions')).toBe(1);
     unsubscribe();
+  });
+
+  it('caches a named read with the tables it declares', async () => {
+    let accounts = [{ id: 'a1', name: 'Checking' }];
+    const read = vi.fn((name: string) => {
+      if (name !== 'accounts-get') {
+        throw new Error(`no read ${name}`);
+      }
+      return {
+        data: accounts.map(row => ({ ...row })),
+        dependencies: ['accounts'],
+      };
+    });
+    initLiveReads(runQuery, read);
+
+    const first = renderHook(() => useLiveRead('accounts-get'));
+    const second = renderHook(() => useLiveRead('accounts-get'));
+    expect(first.result.current.data).toEqual(accounts);
+    // One read, shared by both
+    expect(second.result.current).toBe(first.result.current);
+    expect(read).toHaveBeenCalledTimes(1);
+
+    // A table it doesn't read leaves it alone
+    change('transactions');
+    await flushNotifications();
+    expect(read).toHaveBeenCalledTimes(1);
+
+    accounts = [{ id: 'a1', name: 'Savings' }];
+    change('accounts');
+    await flushNotifications();
+    expect(first.result.current.data).toEqual(accounts);
+    expect(second.result.current).toBe(first.result.current);
+    expect(read).toHaveBeenCalledTimes(2);
   });
 
   it('watches a query outside React', async () => {

@@ -35,7 +35,7 @@ export function ConfirmPayeesMergeModal({
   targetPayeeId,
   onConfirm,
 }: ConfirmPayeesMergeModalProps) {
-  const { data: allPayees = [] } = usePayees();
+  const allPayees = usePayees();
 
   const mergePayees = allPayees.filter(p => payeeIds.includes(p.id));
 

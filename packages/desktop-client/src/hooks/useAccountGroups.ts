@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import type { AccountGroupEntity } from '@actual-app/core/types/models';
 
-import { accountGroupQueries } from '#account-groups';
+import { useLiveRead } from './useLiveRead';
 
-export function useAccountGroups() {
-  return useQuery(accountGroupQueries.list());
+const NO_GROUPS: AccountGroupEntity[] = [];
+
+export function useAccountGroups(): AccountGroupEntity[] {
+  return useLiveRead('account-groups-get').data ?? NO_GROUPS;
 }

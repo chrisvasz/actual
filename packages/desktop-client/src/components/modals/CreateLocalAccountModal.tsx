@@ -13,7 +13,7 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { toRelaxedNumber } from '@actual-app/core/shared/util';
 
-import { useCreateAccountMutation } from '#accounts';
+import { useCreateAccount } from '#accounts';
 import { Link } from '#components/common/Link';
 import {
   Modal,
@@ -32,7 +32,7 @@ import { useDispatch } from '#redux';
 export function CreateLocalAccountModal() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { data: accounts = [] } = useAccounts();
+  const accounts = useAccounts();
   const [name, setName] = useState('');
   const [offbudget, setOffbudget] = useState(false);
   const [balance, setBalance] = useState('0');
@@ -52,7 +52,7 @@ export function CreateLocalAccountModal() {
     }
   };
 
-  const createAccount = useCreateAccountMutation();
+  const createAccount = useCreateAccount();
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -63,19 +63,15 @@ export function CreateLocalAccountModal() {
     setBalanceError(balanceError);
 
     if (!nameError && !balanceError) {
-      createAccount.mutate(
-        {
-          name,
-          balance: toRelaxedNumber(balance),
-          offBudget: offbudget,
-        },
-        {
-          onSuccess: id => {
-            dispatch(closeModal());
-            void navigate('/accounts/' + id);
-          },
-        },
-      );
+      const id = await createAccount({
+        name,
+        balance: toRelaxedNumber(balance),
+        offBudget: offbudget,
+      });
+      if (id) {
+        dispatch(closeModal());
+        void navigate('/accounts/' + id);
+      }
     }
   };
   return (
