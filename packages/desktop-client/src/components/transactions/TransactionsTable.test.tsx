@@ -225,7 +225,6 @@ function LiveTransactionTable(props: LiveTransactionTableProps) {
               <TransactionTable
                 {...props}
                 transactions={transactions}
-                loadMoreTransactions={vi.fn()}
                 // @ts-expect-error TODO: fix me
                 commonPayees={[]}
                 payees={payees}
@@ -1879,7 +1878,10 @@ describe('useAmountColumnWidths', () => {
 
   it('widens the balance column for a long formatted balance value', () => {
     const { result } = renderHook(() =>
-      useAmountColumnWidths([transaction(150)], { 'tx-1': 123456789012345 }),
+      useAmountColumnWidths(
+        [transaction(150)],
+        new Map([['tx-1', 123456789012345]]),
+      ),
     );
 
     expect(result.current.balance).toBeGreaterThan(
@@ -1899,16 +1901,22 @@ describe('useAmountColumnWidths', () => {
 
   it('sizes the balance column for a wide negative balance', () => {
     const { result: withNegative } = renderHook(() =>
-      useAmountColumnWidths([transaction(150)], {
-        'tx-1': 100,
-        'tx-2': -123456789012345,
-      }),
+      useAmountColumnWidths(
+        [transaction(150)],
+        new Map([
+          ['tx-1', 100],
+          ['tx-2', -123456789012345],
+        ]),
+      ),
     );
     const { result: withPositive } = renderHook(() =>
-      useAmountColumnWidths([transaction(150)], {
-        'tx-1': 100,
-        'tx-2': 123456789012345,
-      }),
+      useAmountColumnWidths(
+        [transaction(150)],
+        new Map([
+          ['tx-1', 100],
+          ['tx-2', 123456789012345],
+        ]),
+      ),
     );
 
     // The minus sign adds one character.
@@ -1923,9 +1931,7 @@ describe('useAmountColumnWidths', () => {
       -100000, 123456789, -123456789, 999999999999, -999999999999,
     ];
     const transactions = amounts.map(transaction);
-    const balances = Object.fromEntries(
-      amounts.map((amount, i) => [`tx-${i}`, amount]),
-    );
+    const balances = amounts.map((amount, i) => [`tx-${i}`, amount] as const);
 
     try {
       for (const { value: format } of numberFormats) {
@@ -1936,7 +1942,7 @@ describe('useAmountColumnWidths', () => {
             const { result } = renderHook(() =>
               useAmountColumnWidths(
                 transactions.slice(0, size),
-                Object.fromEntries(Object.entries(balances).slice(0, size)),
+                new Map(balances.slice(0, size)),
               ),
             );
             const widest = (values: string[]) =>
