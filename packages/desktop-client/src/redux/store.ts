@@ -4,7 +4,6 @@ import {
   createListenerMiddleware,
   isRejected,
 } from '@reduxjs/toolkit';
-import type { QueryClient } from '@tanstack/react-query';
 
 import {
   name as accountsSliceName,
@@ -73,20 +72,13 @@ notifyOnRejectedActionsMiddleware.startListening({
   },
 });
 
-export function configureAppStore({
-  queryClient,
-}: {
-  queryClient: QueryClient;
-}) {
+export function configureAppStore() {
   return configureStore({
     reducer: rootReducer,
     middleware: getDefaultMiddleware =>
       getDefaultMiddleware({
         // TODO: Fix this in a separate PR. Remove non-serializable states in the store.
         serializableCheck: false,
-        thunk: {
-          extraArgument: { queryClient } as ExtraArguments,
-        },
       }).prepend(notifyOnRejectedActionsMiddleware.middleware),
   });
 }
@@ -94,6 +86,3 @@ export function configureAppStore({
 export type AppStore = ReturnType<typeof configureAppStore>;
 export type RootState = ReturnType<AppStore['getState']>;
 export type AppDispatch = AppStore['dispatch'];
-export type ExtraArguments = {
-  queryClient: QueryClient;
-};
