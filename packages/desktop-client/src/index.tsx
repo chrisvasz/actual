@@ -9,7 +9,6 @@ import type { NavigateFunction } from 'react-router';
 import { send } from '@actual-app/core/platform/client/connection';
 import { q } from '@actual-app/core/shared/query';
 import { bindActionCreators } from '@reduxjs/toolkit';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import * as accountsSlice from './accounts/accountsSlice';
 import * as appSlice from './app/appSlice';
@@ -26,14 +25,10 @@ import * as transactionsSlice from './transactions/transactionsSlice';
 import { redo, undo } from './undo';
 import * as usersSlice from './users/usersSlice';
 
-// React Query is left only for the account register's transaction pages
-// (loaded in pages, and replaced by an in-memory register store later).
-// Everything else kept on screen reads synchronously through live reads
-// (`useLiveQuery`/`useLiveRead`); one-off reads still use `aqlQuery`.
-const queryClient = new QueryClient();
-window.__TANSTACK_QUERY_CLIENT__ = queryClient;
-
-const store = configureAppStore({ queryClient });
+// What's kept on screen reads synchronously through live reads
+// (`useLiveQuery`/`useLiveRead`, the register's rows); one-off reads use
+// `aqlQuery`.
+const store = configureAppStore();
 
 // Read the account registers' rows in the background as each budget opens
 listenForRegisterRows();
@@ -92,13 +87,11 @@ if (!container) {
 }
 const root = createRoot(container);
 root.render(
-  <QueryClientProvider client={queryClient}>
-    <Provider store={store}>
-      <ServerProvider>
-        <App />
-      </ServerProvider>
-    </Provider>
-  </QueryClientProvider>,
+  <Provider store={store}>
+    <ServerProvider>
+      <App />
+    </ServerProvider>
+  </Provider>,
 );
 
 declare global {
@@ -115,8 +108,6 @@ declare global {
     $send: typeof send;
     $query: typeof aqlQuery;
     $q: typeof q;
-
-    __TANSTACK_QUERY_CLIENT__: QueryClient;
   }
 }
 

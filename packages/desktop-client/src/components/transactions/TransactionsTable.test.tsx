@@ -44,7 +44,7 @@ import { SchedulesProvider } from '#hooks/useCachedSchedules';
 import { SelectedProviderWithItems } from '#hooks/useSelected';
 import { SplitsExpandedProvider } from '#hooks/useSplitsExpanded';
 import { SpreadsheetProvider } from '#hooks/useSpreadsheet';
-import { createTestQueryClient, TestProviders } from '#mocks';
+import { TestProviders } from '#mocks';
 import { initLiveReads } from '#mocks/live-reads';
 import * as modalsSlice from '#modals/modalsSlice';
 
@@ -53,8 +53,6 @@ import {
   TransactionTable,
   useAmountColumnWidths,
 } from './TransactionsTable';
-
-const queryClient = createTestQueryClient();
 
 vi.mock(
   '@actual-app/core/platform/client/connection',
@@ -213,7 +211,7 @@ function LiveTransactionTable(props: LiveTransactionTableProps) {
   // implementation properly uses the right latest state even if the
   // hook dependencies haven't changed
   return (
-    <TestProviders queryClient={queryClient}>
+    <TestProviders>
       <SpreadsheetProvider>
         <SchedulesProvider>
           <SelectedProviderWithItems
