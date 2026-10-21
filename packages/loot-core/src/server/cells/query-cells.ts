@@ -132,7 +132,8 @@ function runOverRows(cell: QueryCell, rowsSql: string): number | null {
 
 // Binds the cell `name` to `query` and runs it, unless it's already bound to
 // an equal query. Whoever binds it reads the new value, so it isn't reported
-// as a change.
+// as a change. A name is only ever bound to one query at a time: a reader of
+// the same name with another query wouldn't be told it was replaced.
 export function createQueryCell(name: string, query: QueryState) {
   released.delete(name);
   const queryKey = JSON.stringify(query);

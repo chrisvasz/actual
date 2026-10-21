@@ -4,6 +4,7 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { changeTables, initLiveReads } from '#mocks/live-reads';
+import { getLiveCell } from '#queries/liveStore';
 
 import { useSheetValue } from './useSheetValue';
 
@@ -166,6 +167,30 @@ describe('useSheetValue', () => {
       // Bound again, and read afresh, by the next screen that shows it
       renderHook(() => useCell({ name: 'balance', query }));
       expect(readsOf('__global!balance')).toBe(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('reads a released query cell again when its handle comes back', () => {
+    vi.useFakeTimers();
+    try {
+      const query = q('transactions').calculate({ $sum: '$amount' });
+      // One handle hidden and shown again, like a kept page
+      const handle = getLiveCell('__global', 'balance', query);
+      const unsubscribe = handle.subscribe(vi.fn());
+      expect(handle.getSnapshot().data).toBe(42);
+
+      unsubscribe();
+      vi.runAllTimers();
+      expect(releaseCell).toHaveBeenCalledTimes(1);
+
+      // Not told of changes once released, so it can't trust its value
+      cells.set('__global!balance', 50);
+      const stop = handle.subscribe(vi.fn());
+      expect(handle.getSnapshot().data).toBe(50);
+      expect(readsOf('__global!balance')).toBe(2);
+      stop();
     } finally {
       vi.useRealTimers();
     }

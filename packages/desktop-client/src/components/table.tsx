@@ -746,8 +746,11 @@ export function SheetCell<
               // Always handle a rejection: the mutation already reports it,
               // and the cell only needs to drop the amount it was showing.
               const saved = onSave(newValue);
-              if (saved && dismiss) {
-                saved.then(dismiss, dismiss);
+              if (saved) {
+                saved.then(
+                  () => dismiss?.(),
+                  () => dismiss?.(),
+                );
               }
             }}
             {...inputProps}

@@ -82,6 +82,13 @@ function handleChanges(changes: BudgetChanges) {
   changeCount++;
   if (changes === 'all') {
     epoch++;
+    // Every result is out of date, so the versions of the last budget's
+    // cells (there can be tens of thousands) needn't be kept
+    for (const dependency of tableVersions.keys()) {
+      if (dependency.startsWith(CELL_PREFIX)) {
+        tableVersions.delete(dependency);
+      }
+    }
     for (const entry of entries.values()) {
       if (entry.listeners.size > 0) {
         toNotify.add(entry);
@@ -117,8 +124,9 @@ function markChanged(dependency: string) {
 
 // What a cell's result depends on, kept with the tables it can't be
 // confused with: a cell's name always has a `!`, a table's never does
+const CELL_PREFIX = 'cell:';
 function cellDependency(cell: string) {
-  return `cell:${cell}`;
+  return CELL_PREFIX + cell;
 }
 
 function notify() {
@@ -198,7 +206,11 @@ function index(entry: Entry) {
 function unindex(entry: Entry) {
   listenedWithoutDependencies.delete(entry);
   for (const table of entry.dependencies ?? []) {
-    listenedByTable.get(table)?.delete(entry);
+    const listened = listenedByTable.get(table);
+    listened?.delete(entry);
+    if (listened?.size === 0) {
+      listenedByTable.delete(table);
+    }
   }
 }
 

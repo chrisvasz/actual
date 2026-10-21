@@ -3,7 +3,7 @@ import { Timestamp } from '@actual-app/crdt';
 import type { BudgetChanges } from '#platform/in-process-channel';
 import * as connection from '#platform/server/connection';
 import * as db from '#server/db';
-import { applyMessages, setSyncingMode } from '#server/sync';
+import { addSyncListener, applyMessages, setSyncingMode } from '#server/sync';
 import { q } from '#shared/query';
 
 import { accountLiveReads } from './accounts/app';
@@ -345,6 +345,36 @@ describe('liveReads cells', () => {
     expect((changes[0] as Exclude<BudgetChanges, 'all'>).cells).toContain(
       'budget201703!budget-cat',
     );
+  });
+
+  it('reports the cells a change changed even if a later step fails', async () => {
+    await openBudget();
+    liveReads.cell('__global', 'balance', balance);
+    const changes: BudgetChanges[] = [];
+    const stop = liveReads.onChanges(change => changes.push(change));
+    const stopFailing = addSyncListener(() => {
+      throw new Error('listener bug');
+    });
+
+    try {
+      expect(() =>
+        db.insertTransaction({
+          id: 't1',
+          account: 'acct',
+          amount: 100,
+          date: '2017-01-05',
+        }),
+      ).toThrow('listener bug');
+    } finally {
+      stopFailing();
+      stop();
+    }
+
+    expect(changes).toHaveLength(1);
+    expect((changes[0] as Exclude<BudgetChanges, 'all'>).cells).toContain(
+      '__global!balance',
+    );
+    expect(liveReads.cell('__global', 'balance')).toBe(100);
   });
 
   it('keeps the most recently released query cells current', async () => {
