@@ -1,3 +1,5 @@
+import { isValid as isDateValid, parse as parseDate } from 'date-fns';
+
 import type {
   AccountEntity,
   CategoryEntity,
@@ -5,14 +7,24 @@ import type {
   TransactionEntity,
 } from '#types/models';
 
+import { likePatternToRegex } from './like';
+import {
+  dayFromDate,
+  getDayMonthFormat,
+  getDayMonthRegex,
+  getShortYearFormat,
+  getShortYearRegex,
+} from './months';
+import { getNormalisedString } from './normalisation';
 import { compareByKeys } from './register-rows';
 import type { OrderKey, RegisterGroup } from './register-rows';
+import { amountToInteger, currencyToAmount } from './util';
 
 // What an account register shows of the rows in memory (`register-rows`):
-// its scope, sort and running balances, worked out in JS the way the SQL
-// queries the register used to run work them out.
+// its scope, search, sort and running balances, worked out in JS the way
+// the SQL queries the register used to run work them out.
 //
-// Rows a split shows without matching (a scope or filter matching only some
+// Rows a split shows without matching (a scope or search matching only some
 // of a split's rows) are marked `_unmatched`, like a `splits: grouped`
 // query marks them. Marking copies the row: the rows in memory are shared.
 
@@ -140,6 +152,78 @@ export function matchGroups(
     });
   }
   return matched;
+}
+
+const normalisedNotes = new WeakMap<TransactionEntity, string>();
+
+// A row's notes as SQL's `NORMALISE` gives them to a LIKE, cached: rows in
+// memory don't change
+function getNormalisedNotes(row: TransactionEntity) {
+  let notes = normalisedNotes.get(row);
+  if (notes == null) {
+    notes = row.notes ? getNormalisedString(row.notes) : '';
+    normalisedNotes.set(row, notes);
+  }
+  return notes;
+}
+
+/**
+ * Whether a row matches the register's search for `search`: its payee's,
+ * category's or account's name contains it (ignoring case and accents), so
+ * do its notes, or it is the row's date (in `dateFormat`), or amount.
+ */
+export function makeSearchMatcher(
+  search: string,
+  dateFormat: string,
+  { accounts, payees, categories }: RegisterLookups,
+): (row: TransactionEntity) => boolean {
+  const amount = currencyToAmount(search);
+
+  // Support various date formats
+  let parsedDate;
+  if (getDayMonthRegex(dateFormat).test(search)) {
+    parsedDate = parseDate(search, getDayMonthFormat(dateFormat), new Date());
+  } else if (getShortYearRegex(dateFormat).test(search)) {
+    parsedDate = parseDate(search, getShortYearFormat(dateFormat), new Date());
+  } else {
+    parsedDate = parseDate(search, dateFormat, new Date());
+  }
+  const date = isDateValid(parsedDate) ? dayFromDate(parsedDate) : null;
+
+  // A transfer payee's name is its account's name
+  const term = getNormalisedString(search);
+  const matchingIds = (
+    items: ReadonlyMap<string, { name: string | null | undefined }>,
+  ) => {
+    const ids = new Set<string>();
+    for (const [id, { name }] of items) {
+      if (getNormalisedString(name ?? '').includes(term)) {
+        ids.add(id);
+      }
+    }
+    return ids;
+  };
+  const payeeIds = matchingIds(payees);
+  const categoryIds = matchingIds(categories);
+  const accountIds = matchingIds(accounts);
+
+  const notes = likePatternToRegex(
+    getNormalisedString(`%${search.replace(/[\\%?]/g, '\\$&')}%`),
+  );
+  const integerAmount = amount != null ? amountToInteger(amount) : null;
+  const wholeAmount =
+    amount != null && Number.isInteger(amount) ? amount : null;
+
+  return row =>
+    payeeIds.has(row.payee ?? '') ||
+    categoryIds.has(row.category ?? '') ||
+    accountIds.has(row.account) ||
+    notes.test(getNormalisedNotes(row)) ||
+    (date != null && row.date === date) ||
+    (integerAmount != null && Math.abs(row.amount) === integerAmount) ||
+    // Integer division in SQL truncates
+    (wholeAmount != null &&
+      Math.abs(Math.trunc(row.amount / 100)) === wholeAmount);
 }
 
 function sortKeys(
