@@ -180,12 +180,22 @@ async function createCategory({
 
 async function updateCategory(category: CategoryEntity): Promise<void> {
   try {
-    db.updateCategory(
-      categoryModel.toDb(
-        { ...category, name: category.name.trim() },
-        { update: true },
-      ),
-    );
+    // The API types `fields` as a Partial, and db.update() only writes the
+    // keys it is given, so a partial that omits `name` must stay omitted
+    // rather than being trimmed into a TypeError (#8857).
+    const payload = {
+      ...category,
+      ...(category.name !== undefined && { name: category.name.trim() }),
+    };
+    // Convert first so ignored/underscore fields are dropped before we decide
+    // whether anything writable remains (e.g. `{ id, _ignored: true }` → `{ id }`).
+    const update = categoryModel.toDb(payload, { update: true });
+    const hasWritableField = Object.keys(update).some(key => key !== 'id');
+    if (!hasWritableField) {
+      throw APIError('No fields to update');
+    }
+
+    db.updateCategory(update);
   } catch (e) {
     if (
       e instanceof Error &&
