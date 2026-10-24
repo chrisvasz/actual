@@ -54,12 +54,6 @@ type SyncEvent = {
 
 type BackupUpdatedEvent = Backup[];
 
-// A cell bound to a query can hold any query result, e.g. a list of rows.
-type CellsChangedEvent = Array<{
-  name: string;
-  value: unknown;
-}>;
-
 type StorageWriteErrorEvent = undefined;
 type FinishImportEvent = undefined;
 type FinishLoadEvent = undefined;
@@ -105,7 +99,6 @@ type ApiFetchRedirectedEvent = undefined;
 
 export type ServerEvents = {
   'backups-updated': BackupUpdatedEvent;
-  'cells-changed': CellsChangedEvent;
   'finish-import': FinishImportEvent;
   'finish-load': FinishLoadEvent;
   'import-progress': ImportProgressEvent;

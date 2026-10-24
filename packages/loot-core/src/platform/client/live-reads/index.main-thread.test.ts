@@ -5,7 +5,9 @@ import { q } from '#shared/query';
 import {
   connectLiveReads,
   onChanges,
+  readCellSync,
   readSync,
+  releaseCellSync,
   runQuerySync,
 } from './index.main-thread';
 
@@ -23,6 +25,8 @@ describe('live reads (main thread)', () => {
     const reads: LiveReads = {
       query: vi.fn(() => ({ data: [{ id: 't1' }], dependencies: ['x'] })),
       read: vi.fn(() => ({ data: [{ id: 'a1' }], dependencies: ['accounts'] })),
+      cell: vi.fn(() => 42),
+      releaseCell: vi.fn(),
       onChanges: listener => {
         backendListener = listener;
         return vi.fn();
@@ -44,12 +48,39 @@ describe('live reads (main thread)', () => {
       dependencies: ['accounts'],
     });
     expect(reads.read).toHaveBeenCalledWith('accounts-get', undefined);
+    const balance = q('transactions').calculate({ $sum: '$amount' });
+    expect(readCellSync('__global', 'balance', balance)).toBe(42);
+    expect(reads.cell).toHaveBeenCalledWith(
+      '__global',
+      'balance',
+      balance.serialize(),
+    );
+    expect(readCellSync('budget202601', 'to-budget')).toBe(42);
+    expect(reads.cell).toHaveBeenCalledWith(
+      'budget202601',
+      'to-budget',
+      undefined,
+    );
+    releaseCellSync('__global', 'balance', balance);
+    expect(reads.releaseCell).toHaveBeenCalledWith(
+      '__global',
+      'balance',
+      balance.serialize(),
+    );
 
-    const change = { tables: ['transactions'], ids: { transactions: ['t1'] } };
+    const change = {
+      tables: ['transactions'],
+      ids: { transactions: ['t1'] },
+      cells: ['__global!balance'],
+    };
     backendListener!(change);
     backendListener!('all');
     stop();
-    backendListener!({ tables: ['accounts'], ids: { accounts: ['a1'] } });
+    backendListener!({
+      tables: ['accounts'],
+      ids: { accounts: ['a1'] },
+      cells: [],
+    });
     expect(changes).toEqual([change, 'all']);
   });
 });

@@ -18,7 +18,6 @@ import { handleGlobalEvents } from '#global-events';
 import { useIsTestEnv } from '#hooks/useIsTestEnv';
 import { useMetadataPref } from '#hooks/useMetadataPref';
 import { useOnVisible } from '#hooks/useOnVisible';
-import { SpreadsheetProvider } from '#hooks/useSpreadsheet';
 import { addNotification } from '#notifications/notificationsSlice';
 import { loadGlobalPrefs } from '#prefs/prefsSlice';
 import { useDispatch, useSelector, useStore } from '#redux';
@@ -184,46 +183,42 @@ export function App() {
       <ExposeNavigate />
       <AriaRouterProvider>
         <HotkeysProvider initiallyActiveScopes={['app']}>
-          <SpreadsheetProvider>
-            <SidebarProvider>
-              <BudgetMonthCountProvider>
-                <DndProvider backend={HTML5Backend}>
+          <SidebarProvider>
+            <BudgetMonthCountProvider>
+              <DndProvider backend={HTML5Backend}>
+                <View
+                  data-theme={theme}
+                  style={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                >
                   <View
-                    data-theme={theme}
+                    key={hiddenScrollbars ? 'hidden-scrollbars' : 'scrollbars'}
                     style={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
+                      flexGrow: 1,
+                      overflow: 'hidden',
+                      ...styles.lightScrollbar,
                     }}
                   >
-                    <View
-                      key={
-                        hiddenScrollbars ? 'hidden-scrollbars' : 'scrollbars'
-                      }
-                      style={{
-                        flexGrow: 1,
-                        overflow: 'hidden',
-                        ...styles.lightScrollbar,
-                      }}
-                    >
-                      <ErrorBoundary FallbackComponent={ErrorFallback}>
-                        {import.meta.env.REACT_APP_REVIEW_ID && !isTestEnv && (
-                          <DevelopmentTopBar />
-                        )}
-                        <AppInner />
-                      </ErrorBoundary>
-                      <ThemeStyle />
-                      <CustomThemeStyle />
-                      <ErrorBoundary FallbackComponent={FatalError}>
-                        <Modals />
-                      </ErrorBoundary>
-                      <UpdateNotification />
-                    </View>
+                    <ErrorBoundary FallbackComponent={ErrorFallback}>
+                      {import.meta.env.REACT_APP_REVIEW_ID && !isTestEnv && (
+                        <DevelopmentTopBar />
+                      )}
+                      <AppInner />
+                    </ErrorBoundary>
+                    <ThemeStyle />
+                    <CustomThemeStyle />
+                    <ErrorBoundary FallbackComponent={FatalError}>
+                      <Modals />
+                    </ErrorBoundary>
+                    <UpdateNotification />
                   </View>
-                </DndProvider>
-              </BudgetMonthCountProvider>
-            </SidebarProvider>
-          </SpreadsheetProvider>
+                </View>
+              </DndProvider>
+            </BudgetMonthCountProvider>
+          </SidebarProvider>
         </HotkeysProvider>
       </AriaRouterProvider>
     </AppRouter>

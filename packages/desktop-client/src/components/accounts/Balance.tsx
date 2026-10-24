@@ -167,7 +167,7 @@ function BalanceStatLayout({ label, color, children }: BalanceStatLayoutProps) {
 
 // Number of uncleared transactions in the view; the cleared balance is only
 // worth showing when it can differ from the total.
-export function unclearedCountCell(balanceQuery: {
+function unclearedCountCell(balanceQuery: {
   name: `balance-query-${string}`;
   query: Query;
 }) {

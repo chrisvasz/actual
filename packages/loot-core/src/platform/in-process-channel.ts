@@ -38,14 +38,17 @@ export type ServerMessage = { type: string; id?: string } & Record<
  * rows written in each (deleted rows too, since a delete is a tombstone).
  * `ids` is keyed by the table the rows are in, so `schedules_next_date`
  * rows appear under that name though `tables` reports them as
- * `schedules`. `'all'` when a budget opened or closed: anything may have
- * changed.
+ * `schedules`. `cells` names (as `<sheet>!<name>`) every cell whose value
+ * the change changed; a change can change cells and no table, like the
+ * budget covering another month. `'all'` when a budget opened or closed:
+ * anything may have changed.
  */
 export type BudgetChanges =
   | 'all'
   | {
       tables: readonly string[];
       ids: Readonly<Record<string, readonly string[]>>;
+      cells: readonly string[];
     };
 
 /** Synchronous reads of the open budget, installed by the backend. */
@@ -63,6 +66,20 @@ export type LiveReads = {
    * `args`. Returns its result and the tables it reads, like `query`.
    */
   read(name: string, args: unknown): { data: unknown; dependencies: string[] };
+  /**
+   * Read the cell `<sheetName>!<name>` now: a budget value, or with
+   * `query`, the result of that query, which binds the cell to it (see
+   * `server/cells/query-cells.ts`). Null with no budget open. Throws like
+   * `query`. A cell's value changes only with a change that lists it in
+   * `cells`.
+   */
+  cell(sheetName: string, name: string, query?: QueryState): unknown;
+  /**
+   * Say nothing reads the cell `<sheetName>!<name>` bound to `query` any
+   * more, so the backend can stop keeping it current; a cell since bound to
+   * another query is kept.
+   */
+  releaseCell(sheetName: string, name: string, query: QueryState): void;
   /**
    * Call `listener` after each change to the open budget is committed,
    * before anything else can read it.

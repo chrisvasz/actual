@@ -15,7 +15,6 @@ import { View } from '@actual-app/components/view';
 import { listen, send } from '@actual-app/core/platform/client/connection';
 import * as undo from '@actual-app/core/platform/client/undo';
 import type { UndoState } from '@actual-app/core/server/undo';
-import { currentDay } from '@actual-app/core/shared/months';
 import { q } from '@actual-app/core/shared/query';
 import type { Query } from '@actual-app/core/shared/query';
 import {
@@ -70,7 +69,6 @@ import {
   SplitsExpandedProvider,
   useSplitsExpanded,
 } from '#hooks/useSplitsExpanded';
-import { useSpreadsheet } from '#hooks/useSpreadsheet';
 import { useSyncedPref } from '#hooks/useSyncedPref';
 import { useTransactionBatchActions } from '#hooks/useTransactionBatchActions';
 import { useTransactionFilters } from '#hooks/useTransactionFilters';
@@ -101,9 +99,7 @@ import { updateNewTransactions } from '#transactions/transactionsSlice';
 import { clearPendingUndo } from '#undo';
 
 import { AccountEmptyMessage } from './AccountEmptyMessage';
-import { unclearedCountCell } from './Balance';
 import { AccountHeader } from './Header';
-import { clearedBalanceCell } from './Reconcile';
 
 type ConditionEntity = Partial<RuleConditionEntity> | TransactionFilterEntity;
 
@@ -2180,41 +2176,13 @@ type AccountHackProps = Omit<
   | 'queryClient'
 >;
 
-// Computes the header's balance cells and seeds the spreadsheet cache with
-// them, so the header binds to real values instead of drawing 0.00 first.
-// Names and queries mirror `getBalanceQuery` and the header's `Balances`.
-async function prewarmHeaderBalances(
-  spreadsheet: ReturnType<typeof useSpreadsheet>,
-  accountId: AccountInternalProps['accountId'],
-) {
-  const name = `balance-query-${accountId}` as const;
-  const query = queries.transactions(accountId).calculate({ $sum: '$amount' });
-  // Today's cleared balance is always needed: the reconcile panel opens on it
-  const cells: Array<{ name: string; query: Query }> = [
-    { name, query },
-    clearedBalanceCell({ name, query }, currentDay()),
-    { name: `${name}-cleared`, query: query.filter({ cleared: true }) },
-    unclearedCountCell({ name, query }),
-  ];
-
-  await Promise.all(
-    cells.map(async cell => {
-      const { data } = await aqlQuery(cell.query);
-      const fullName = `__global!${cell.name}`;
-      spreadsheet.prewarmCache(fullName, { name: fullName, value: data });
-    }),
-  );
-}
-
 async function loadAccountPreload({
-  spreadsheet,
   accounts,
   accountId,
   filterConditions,
   showBalances,
   showReconciled,
 }: {
-  spreadsheet: ReturnType<typeof useSpreadsheet>;
   accounts: AccountEntity[];
   accountId: AccountInternalProps['accountId'];
   filterConditions: ConditionEntity[];
@@ -2222,10 +2190,9 @@ async function loadAccountPreload({
   showReconciled: boolean;
 }): Promise<AccountPreload> {
   const isFiltered = filterConditions.length > 0;
-  const [, filters] = await Promise.all([
-    prewarmHeaderBalances(spreadsheet, accountId),
-    isFiltered ? makeTransactionFilters(filterConditions) : null,
-  ]);
+  const filters = isFiltered
+    ? await makeTransactionFilters(filterConditions)
+    : null;
   // A screen always opens with its conditions combined by `and`.
   const rootQuery = filters
     ? queries.transactions(accountId).filter({ $and: filters })
@@ -2352,7 +2319,6 @@ export function Account() {
   const onCreatePayee = async (name: PayeeEntity['name']) =>
     (await createPayee({ name })) ?? null;
 
-  const spreadsheet = useSpreadsheet();
   const showReconciled = String(hideReconciled) !== 'true';
   // Only the screen's first render reads this, so it never refetches while
   // mounted; it's dropped once the screen unmounts, so coming back loads fresh.
@@ -2361,7 +2327,6 @@ export function Account() {
     queryKey: ['account-screen-preload', location.key],
     queryFn: () =>
       loadAccountPreload({
-        spreadsheet,
         accounts,
         accountId: params.id,
         filterConditions,

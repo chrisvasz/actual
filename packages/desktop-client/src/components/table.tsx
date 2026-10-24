@@ -685,7 +685,7 @@ export type SheetCellProps<
   > & {
     onBlur?: () => void;
   };
-  // May return the save's promise; if it rejects, the cell drops the value
+  // May return the save's promise; once it settles, the cell drops the value
   // it was showing and goes back to the spreadsheet's.
   onSave?: (value) => void | Promise<unknown>;
   textAlign?: CSSProperties['textAlign'];
@@ -703,10 +703,9 @@ export function SheetCell<
 }: SheetCellProps<SheetName, FieldName>) {
   const { binding, type, getValueStyle, formatExpr, unformatExpr } = valueProps;
 
-  // The value just saved from the input is shown until the spreadsheet
-  // reports the new value, so the cell doesn't flash the old one while the
-  // save round-trips to the server. The save resolves before the
-  // spreadsheet recomputes, so only a failed save drops it early.
+  // The value just saved from the input is shown until the save settles, so
+  // the cell doesn't flash the old one while it round-trips to the server.
+  // By then the cell reads the saved value.
   const pending = usePendingValue<Spreadsheets[SheetName][FieldName]>();
   const latestSheetValue = useSheetValue(binding, () => {
     pending.reset();
@@ -748,7 +747,10 @@ export function SheetCell<
               // and the cell only needs to drop the amount it was showing.
               const saved = onSave(newValue);
               if (saved) {
-                saved.then(undefined, () => dismiss?.());
+                saved.then(
+                  () => dismiss?.(),
+                  () => dismiss?.(),
+                );
               }
             }}
             {...inputProps}

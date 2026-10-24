@@ -39,6 +39,21 @@ export const readSync: T.ReadSync = function (name, args?: unknown) {
   return reads.read(name, args) as any;
 };
 
+export const readCellSync: T.ReadCellSync = function (sheetName, name, query) {
+  if (!reads) {
+    throw new Error('The backend has not been started');
+  }
+  return reads.cell(sheetName, name, query?.serialize());
+};
+
+export const releaseCellSync: T.ReleaseCellSync = function (
+  sheetName,
+  name,
+  query,
+) {
+  reads?.releaseCell(sheetName, name, query.serialize());
+};
+
 export const onChanges: T.OnChanges = function (listener) {
   listeners.add(listener);
   return () => {

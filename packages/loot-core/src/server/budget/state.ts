@@ -1,6 +1,5 @@
 import { captureBreadcrumb } from '#platform/exceptions';
 import { logger } from '#platform/server/log';
-import type { CellChange } from '#server/cells/types';
 import * as monthUtils from '#shared/months';
 
 import { diffBudgetCells, getBudgetCell } from './cells';
@@ -25,8 +24,10 @@ import type { Spending } from './spending';
 // The open budget's values, kept in memory: what was spent per category per
 // month, the stored amounts, carryover flags and holds, and everything
 // `computeBudget` derives from them. Applied changes update the inputs, and
-// the whole budget is computed again, coalesced to once per tick and done
-// straight away whenever a value is read.
+// the whole budget is computed again: `applyMessages` does so straight away,
+// to report the cells that changed along with the change; anything else is
+// coalesced to once per tick, and done straight away whenever a value is
+// read.
 
 type State = {
   // Consecutive months the budget covers, oldest first. Empty until the
@@ -51,7 +52,7 @@ type State = {
 type DataMap = Map<string, unknown>;
 
 let state: State | null = null;
-let listener: ((changes: CellChange[]) => void) | null = null;
+let listener: ((cells: string[]) => void) | null = null;
 let flushScheduled = false;
 
 const EMPTY: ComputedBudget = { months: [], groups: [], values: new Map() };
@@ -72,8 +73,10 @@ function readState(months: string[]): State {
   };
 }
 
+// `onChange` is told the names of the cells that changed, except for those
+// `applyMessages` takes with `takeBudgetCellChanges`.
 export async function loadBudgetState(
-  onChange?: (changes: CellChange[]) => void,
+  onChange?: (cells: string[]) => void,
 ): Promise<void> {
   captureBreadcrumb({ message: 'loading budget values', category: 'server' });
   listener = onChange ?? null;
@@ -150,11 +153,20 @@ function markDirty(s: State) {
 }
 
 // Brings the computed budget up to date with every applied change and tells
-// the client which cells changed.
+// the listener which cells changed.
 export function flush(): void {
+  const cells = takeBudgetCellChanges();
+  if (listener && cells.length > 0) {
+    listener(cells);
+  }
+}
+
+// Brings the computed budget up to date with every applied change and
+// returns the names of the cells that changed, for the caller to report.
+export function takeBudgetCellChanges(): string[] {
   const s = state;
   if (!s || !s.dirty) {
-    return;
+    return [];
   }
   s.dirty = false;
 
@@ -184,26 +196,13 @@ export function flush(): void {
     // rather than failing every read. Cells changed meanwhile are sent once
     // computing works again.
     logger.error('Could not compute the budget', e);
-    return;
+    return [];
   }
 
-  if (listener) {
-    const changes = new Map<string, unknown>();
-    diffBudgetCells(prev, s.computed, s, (name, value) =>
-      changes.set(name, value),
-    );
-    for (const full of s.rowCells) {
-      const idx = full.indexOf('!');
-      changes.set(
-        full,
-        getBudgetCell(s.computed, s, full.slice(0, idx), full.slice(idx + 1)),
-      );
-    }
-    if (changes.size > 0) {
-      listener([...changes].map(([name, value]) => ({ name, value })));
-    }
-  }
+  const changed = new Set<string>(s.rowCells);
+  diffBudgetCells(prev, s.computed, s, name => changed.add(name));
   s.rowCells.clear();
+  return [...changed];
 }
 
 function rowsOf(data: DataMap, table: string) {

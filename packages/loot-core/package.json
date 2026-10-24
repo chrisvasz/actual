@@ -125,7 +125,6 @@
     "./client/query-helpers": "./src/client/query-helpers.ts",
     "./client/query-hooks": "./src/client/query-hooks.ts",
     "./client/shared-listeners": "./src/client/shared-listeners.ts",
-    "./client/SpreadsheetProvider": "./src/client/SpreadsheetProvider.tsx",
     "./client/transfer": "./src/client/transfer.ts",
     "./client/undo": "./src/client/undo.ts",
     "./mocks": "./src/mocks/index.ts",
