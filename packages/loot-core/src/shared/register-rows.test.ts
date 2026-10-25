@@ -299,6 +299,40 @@ describe('createRegisterRows', () => {
     expect(rows.getGroups()).toBe(after);
   });
 
+  it('moves a group SQLite ordered differently from its order here', async () => {
+    await setUpBudget();
+    // The oldest rows, on one date. SQLite orders the NULL
+    // `starting_balance_flag` first, but it reads as false here, so this
+    // order puts that row last.
+    const ids = ['old-0', 'old-1', 'old-2', 'old-3', 'old-4', 'old-5'];
+    batchUpdateTransactions({
+      added: ids.map(
+        (id, i) =>
+          ({
+            id,
+            account: 'acct-checking',
+            date: '2000-01-01',
+            amount: -100,
+            sort_order: i,
+          }) as TransactionEntity,
+      ),
+    });
+    db.runQuery(
+      "UPDATE transactions SET starting_balance_flag = NULL WHERE id = 'old-0'",
+    );
+    const rows = createRegisterRows(run);
+    const stop = liveReads.onChanges(changes => rows.applyChanges(changes));
+    onTestFinished(stop);
+    const before = rows.getGroups();
+    expect(before.at(-ids.length)?.parent.id).toBe('old-0');
+
+    batchUpdateTransactions({ updated: [{ id: 'old-0', amount: -200 }] });
+    const after = rows.getGroups().map(group => group.parent.id);
+
+    expect(after).toHaveLength(before.length);
+    expect(after.filter(id => id === 'old-0')).toHaveLength(1);
+  });
+
   it('ignores changes to tables it does not read', async () => {
     await setUpBudget();
     const runQuery = vi.fn(run);

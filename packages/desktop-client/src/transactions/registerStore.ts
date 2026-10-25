@@ -35,16 +35,26 @@ type Entry = {
   snapshot: RegisterSnapshot | null;
   listeners: Set<() => void>;
   handle: RegisterHandle;
+  /** `changeCount` when the entry was collected; it missed later changes */
+  collectedAt: number | null;
 };
 
 const NO_GROUPS: readonly RegisterGroup[] = [];
+
+// How long rows read during a render are kept for it to commit and
+// subscribe. Navigations render in a transition, a slice at a time, so a
+// large register's first render can take far longer than a tick.
+const UNSUBSCRIBED_GRACE_MS = 10_000;
 
 const entries = new Map<string, Entry>();
 const toNotify = new Set<Entry>();
 let isNotifyScheduled = false;
 let stopListening: (() => void) | null = null;
+// Every change seen, for a collected entry to tell whether it missed any
+let changeCount = 0;
 
 function handleChanges(changes: BudgetChanges) {
+  changeCount++;
   for (const entry of entries.values()) {
     if (entry.rows.applyChanges(changes)) {
       toNotify.add(entry);
@@ -85,13 +95,14 @@ function read(entry: Entry): RegisterSnapshot {
 
 // Drop rows nothing shows. Not right away: a screen that remounts (or a
 // Strict Mode effect re-run) picks them back up.
-function collectLater(key: string, entry: Entry) {
+function collectLater(key: string, entry: Entry, delay = 0) {
   setTimeout(() => {
     if (entry.listeners.size === 0 && entries.get(key) === entry) {
       entries.delete(key);
       toNotify.delete(entry);
+      entry.collectedAt = changeCount;
     }
-  }, 0);
+  }, delay);
 }
 
 /** The rows of `scope`'s register, read when first asked for. */
@@ -107,12 +118,17 @@ export function getRegisterRows(scope: RegisterScope): RegisterHandle {
       }),
       snapshot: null,
       listeners: new Set(),
+      collectedAt: null,
       handle: {
         getSnapshot: () => read(created),
         subscribe: listener => {
-          // Collected meanwhile, it missed changes: read everything again
+          // Collected meanwhile: put it back, reading everything again if
+          // it missed a change
           if (entries.get(key) !== created) {
-            created.rows.applyChanges('all');
+            if (created.collectedAt !== changeCount) {
+              created.rows.applyChanges('all');
+            }
+            created.collectedAt = null;
             entries.set(key, created);
           }
           created.listeners.add(listener);
@@ -127,8 +143,8 @@ export function getRegisterRows(scope: RegisterScope): RegisterHandle {
     };
     entry = created;
     entries.set(key, entry);
-    // Read during a render that never commits
-    collectLater(key, entry);
+    // Read during a render that may never commit
+    collectLater(key, entry, UNSUBSCRIBED_GRACE_MS);
   }
   return entry.handle;
 }

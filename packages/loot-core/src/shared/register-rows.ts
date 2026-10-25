@@ -438,16 +438,19 @@ function lowerBound(list: readonly RegisterGroup[], group: RegisterGroup) {
 
 function removeSorted(list: RegisterGroup[], group: RegisterGroup) {
   let index = lowerBound(list, group);
-  while (index < list.length && list[index] !== group) {
-    if (compareRegisterOrder(list[index].parent, group.parent) !== 0) {
-      // Not where its order puts it (a list SQLite sorted slightly
-      // differently): look for it
-      index = list.indexOf(group);
-      break;
-    }
+  while (
+    index < list.length &&
+    list[index] !== group &&
+    compareRegisterOrder(list[index].parent, group.parent) === 0
+  ) {
     index++;
   }
-  if (index >= 0 && index < list.length) {
+  if (list[index] !== group) {
+    // Not where its order puts it (a list SQLite sorted slightly
+    // differently, e.g. by a NULL that reads as false): look for it
+    index = list.indexOf(group);
+  }
+  if (index >= 0) {
     list.splice(index, 1);
   }
 }

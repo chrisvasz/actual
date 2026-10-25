@@ -145,6 +145,43 @@ describe('registerStore', () => {
     expect(fullReads()).toBe(2);
   });
 
+  it('keeps rows read during a slow render for it to subscribe', async () => {
+    vi.useFakeTimers();
+    const store = await loadStore();
+    const handle = store.getRegisterRows('a');
+    handle.getSnapshot();
+
+    // A transition render that yields for a while before it commits
+    await vi.advanceTimersByTimeAsync(1000);
+    handle.subscribe(vi.fn());
+    handle.getSnapshot();
+
+    expect(store.getRegisterRows('a')).toBe(handle);
+    expect(fullReads()).toBe(1);
+  });
+
+  it('reads a collected register again only if it missed a change', async () => {
+    vi.useFakeTimers();
+    const store = await loadStore();
+    const handle = store.getRegisterRows('a');
+    const stop = handle.subscribe(vi.fn());
+    handle.getSnapshot();
+    stop();
+    await vi.runAllTimersAsync();
+
+    // Nothing changed meanwhile
+    const again = handle.subscribe(vi.fn());
+    handle.getSnapshot();
+    expect(fullReads()).toBe(1);
+    again();
+    await vi.runAllTimersAsync();
+
+    changeTables(['transactions'], { transactions: ['t2'] });
+    handle.subscribe(vi.fn());
+    handle.getSnapshot();
+    expect(fullReads()).toBe(2);
+  });
+
   it('keeps the last rows, with the error, when a read fails', async () => {
     const store = await loadStore();
     const handle = store.getRegisterRows(undefined);
