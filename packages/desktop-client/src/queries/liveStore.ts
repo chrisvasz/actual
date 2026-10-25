@@ -446,7 +446,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 // Results are shared by every reader of a query; freezing them in
 // development catches code that changes one in place
-function freezeInDev<T>(value: T): T {
+export function freezeInDev<T>(value: T): T {
   if (import.meta.env.DEV) {
     deepFreeze(value);
   }

@@ -13,10 +13,12 @@ import * as bindings from '#spreadsheet/bindings';
 
 import { useAccounts } from './useAccounts';
 import { usePayees } from './usePayees';
-import { usePreviewTransactions } from './usePreviewTransactions';
+import {
+  calculateRunningBalancesBottomUp,
+  usePreviewTransactions,
+} from './usePreviewTransactions';
 import { useSheetValue } from './useSheetValue';
 import { useSyncedPref } from './useSyncedPref';
-import { calculateRunningBalancesBottomUp } from './useTransactions';
 
 type UseAccountPreviewTransactionsProps = {
   accountId?: AccountEntity['id'] | undefined;

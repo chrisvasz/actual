@@ -195,7 +195,6 @@ function shouldPreserveImportSettingsForParse(
 export function ImportTransactionsModal({
   filename: originalFileName,
   accountId,
-  onImported,
 }) {
   const dateFormat = useDateFormat() || ('MM/dd/yyyy' as const);
   const [prefs, savePrefs] = useSyncedPrefs();
@@ -786,10 +785,6 @@ export function ImportTransactionsModal({
     // A failed import was reported as a notification
     if (didChange === undefined) {
       return;
-    }
-
-    if (onImported) {
-      onImported(didChange);
     }
 
     close();

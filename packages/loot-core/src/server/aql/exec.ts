@@ -23,12 +23,41 @@ import { convertInputType, convertOutputType } from './schema-helpers';
 //   global "field lookup" table that other filter/groupBy/etc
 //   expressions can reference
 
-function applyTypes(data: Record<string, unknown>[], outputTypes: OutputTypes) {
+// The output types `convertOutputType` changes values of; it returns any
+// other type's values as they are
+const CONVERTED_TYPES = new Set<unknown>([
+  'date',
+  'date-month',
+  'date-year',
+  'boolean',
+  'json',
+  'json/fallback',
+]);
+
+/**
+ * Convert the values of `data`'s rows, read in one query (so with the same
+ * columns), to their output types.
+ */
+export function applyTypes(
+  data: Record<string, unknown>[],
+  outputTypes: OutputTypes,
+) {
+  if (data.length === 0) {
+    return;
+  }
+  // Only the columns whose values change, found once rather than per row
+  const converted = Object.keys(data[0]).flatMap(name => {
+    const type = outputTypes.get(name);
+    return CONVERTED_TYPES.has(type) ? [{ name, type }] : [];
+  });
+  if (converted.length === 0) {
+    return;
+  }
   for (let i = 0; i < data.length; i++) {
     const item = data[i];
-    Object.keys(item).forEach(name => {
-      item[name] = convertOutputType(item[name], outputTypes.get(name));
-    });
+    for (const { name, type } of converted) {
+      item[name] = convertOutputType(item[name], type);
+    }
   }
 }
 

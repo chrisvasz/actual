@@ -39,25 +39,9 @@ import { useDispatch } from '#redux';
 import { shouldApplyRuleChange } from './table/utils';
 import { TransactionTable } from './TransactionsTable';
 import type { TransactionTableProps } from './TransactionsTable';
-// When data changes, there are two ways to update the UI:
-//
-// * Optimistic updates: we apply the needed updates to local data
-//   and rerender immediately, and send off the changes to the
-//   server. Currently, it assumes the server request is successful.
-//   If it fails the user will see a generic error which isn't
-//   great, but since the server is local a failure is very
-//   unlikely. Still, we should notify errors better.
-//
-// * A full refetch and rerender: this is needed when applying
-//   updates locally is too complex. Usually this happens when
-//   changing a field that data is sorted on: we're not going
-//   to resort the data in memory, we want to rely on the database
-//   for that. So we need to do a full refresh.
-//
-// When writing updates, it's up to you to decide which one to do.
-// Optimistic updates feel snappy, but they might show data
-// differently than a full refresh. It's up to you to decide which
-// one to use when doing updates.
+// A saved change reaches the rows shown on its own: the register's rows are
+// kept in memory, and updated as each change is committed (before anything
+// is drawn). `onChange` is told about edits to note the transactions edited.
 
 async function saveDiff(diff, learnCategories) {
   const remoteUpdates = await send('transactions-batch-update', {
@@ -94,7 +78,6 @@ type TransactionListProps = Pick<
   | 'isAdding'
   | 'isMatched'
   | 'isNew'
-  | 'loadMoreTransactions'
   | 'onBatchDelete'
   | 'onBatchDuplicate'
   | 'onBatchLinkSchedule'
@@ -130,14 +113,12 @@ type TransactionListProps = Pick<
   onApplyFilter: (
     f: Partial<RuleConditionEntity> | TransactionFilterEntity,
   ) => void;
-  onRefetch: () => void;
 };
 
 export function TransactionList({
   tableRef,
   transactions,
   allTransactions,
-  loadMoreTransactions,
   account,
   accounts,
   category,
@@ -162,7 +143,6 @@ export function TransactionList({
   sortField,
   ascDesc,
   onChange,
-  onRefetch,
   onCloseAddTransaction,
   onCreatePayee,
   onApplyFilter,
@@ -190,9 +170,8 @@ export function TransactionList({
     async (newTransactions: TransactionEntity[]) => {
       newTransactions = realizeTempTransactions(newTransactions);
       await saveDiff({ added: newTransactions }, isLearnCategoriesEnabled);
-      onRefetch();
     },
-    [isLearnCategoriesEnabled, onRefetch],
+    [isLearnCategoriesEnabled],
   );
 
   const onSave = useCallback(
@@ -209,7 +188,6 @@ export function TransactionList({
           if (dateChanged) {
             changes.diff.updated[0].sort_order = Date.now();
             await saveDiff(changes.diff, isLearnCategoriesEnabled);
-            onRefetch();
           } else {
             onChange(changes.newTransaction, changes.data);
             void saveDiffAndApply(
@@ -224,7 +202,7 @@ export function TransactionList({
 
       await saveTransaction();
     },
-    [isLearnCategoriesEnabled, onChange, onRefetch],
+    [isLearnCategoriesEnabled, onChange],
   );
 
   const onAddSplit = useCallback(
@@ -407,7 +385,6 @@ export function TransactionList({
           id: draggedTrans.schedule,
           targetId: apiTargetId,
         });
-        onRefetch();
         return;
       }
 
@@ -437,7 +414,6 @@ export function TransactionList({
           accountId: draggedTrans.account,
           targetId: apiTargetId,
         });
-        onRefetch();
         return;
       }
 
@@ -506,9 +482,8 @@ export function TransactionList({
         accountId: trans.account,
         targetId: apiTargetId,
       });
-      onRefetch();
     },
-    [sortField, ascDesc, isFiltered, allTransactions, onRefetch],
+    [sortField, ascDesc, isFiltered, allTransactions],
   );
 
   return (
@@ -516,7 +491,6 @@ export function TransactionList({
       <TransactionTable
         ref={tableRef}
         transactions={allTransactions}
-        loadMoreTransactions={loadMoreTransactions}
         accounts={accounts}
         categoryGroups={categoryGroups}
         payees={payees}

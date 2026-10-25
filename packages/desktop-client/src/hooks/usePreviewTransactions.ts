@@ -12,7 +12,6 @@ import type {
 
 import { useCachedSchedules } from './useCachedSchedules';
 import { useSyncedPref } from './useSyncedPref';
-import { calculateRunningBalancesBottomUp } from './useTransactions';
 
 type UsePreviewTransactionsProps = {
   filter?: (schedule: ScheduleEntity) => boolean;
@@ -171,4 +170,30 @@ export function usePreviewTransactions({
     isLoading: isLoading || isSchedulesLoading,
     ...(returnError && { error: returnError }),
   };
+}
+
+// Mirrors the `splits` AQL option from the server
+type TransactionSplitsOption = 'all' | 'inline' | 'grouped' | 'none';
+
+/**
+ * Each transaction's running balance, from the bottom up: `startingBalance`
+ * plus its amount and every amount below it. With `splits: 'all'`, split
+ * children are skipped (their parent's amount includes theirs).
+ */
+export function calculateRunningBalancesBottomUp(
+  transactions: readonly TransactionEntity[],
+  splits: TransactionSplitsOption,
+  startingBalance: IntegerAmount = 0,
+) {
+  const balances = new Map<TransactionEntity['id'], IntegerAmount>();
+  let balance = startingBalance;
+  for (let i = transactions.length - 1; i >= 0; i--) {
+    const transaction = transactions[i];
+    if (splits === 'all' && transaction.parent_id) {
+      continue;
+    }
+    balance += transaction.amount;
+    balances.set(transaction.id, balance);
+  }
+  return balances;
 }

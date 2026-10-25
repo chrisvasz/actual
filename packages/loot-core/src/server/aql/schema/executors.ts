@@ -6,9 +6,8 @@ import type {
   OutputTypes,
   SqlPieces,
 } from '#server/aql/compiler';
-import { execQuery } from '#server/aql/exec';
+import { applyTypes, execQuery } from '#server/aql/exec';
 import type { AqlQueryExecutor } from '#server/aql/exec';
-import { convertOutputType } from '#server/aql/schema-helpers';
 import * as db from '#server/db';
 import { whereIn } from '#server/db/util';
 import { q } from '#shared/query';
@@ -255,11 +254,9 @@ function execTransactionsGrouped(
     { parents: [], children: new Map() },
   );
 
-  const mapper = trans => {
-    Object.keys(trans).forEach(name => {
-      trans[name] = convertOutputType(trans[name], outputTypes.get(name));
-    });
+  applyTypes(allRows, outputTypes);
 
+  const mapper = trans => {
     if (matched && !matched.has(trans.id)) {
       trans._unmatched = true;
     }
