@@ -32,30 +32,50 @@ export function DisplayPayeeProvider({
   const payeesById = usePayeesById();
 
   // A fresh context value re-renders every consumer (one per row shown), so
-  // keep its identity tied to what it reads. Each row's payee is worked out
-  // when the row first asks: a register can have many more rows than show.
-  const value = useMemo(() => {
-    const accountsById = new Map(accounts.map(a => [a.id, a]));
-    const childrenByParent = new Map<
-      TransactionEntity['id'],
-      TransactionEntity[]
-    >();
-    for (const transaction of transactions) {
-      if (transaction.is_child && transaction.parent_id) {
-        const siblings = childrenByParent.get(transaction.parent_id);
-        if (siblings) {
-          siblings.push(transaction);
-        } else {
-          childrenByParent.set(transaction.parent_id, [transaction]);
-        }
+  // keep its identity tied to what it reads
+  const value = useMemo(
+    () => createDisplayPayees(transactions, payeesById, accounts),
+    [transactions, payeesById, accounts],
+  );
+
+  return (
+    <DisplayPayeeContext.Provider value={value}>
+      {children}
+    </DisplayPayeeContext.Provider>
+  );
+}
+
+// Each row's payee is worked out when the row first asks: a register can
+// have many more rows than show. Built outside the component so its cache is
+// new with each set of rows (the compiler keeps a `new Map()` in a component
+// body for the component's life).
+function createDisplayPayees(
+  transactions: readonly TransactionEntity[],
+  payeesById: Record<PayeeEntity['id'], PayeeEntity>,
+  accounts: readonly AccountEntity[],
+): DisplayPayeeContextValue {
+  const accountsById = new Map(accounts.map(a => [a.id, a]));
+  const childrenByParent = new Map<
+    TransactionEntity['id'],
+    TransactionEntity[]
+  >();
+  for (const transaction of transactions) {
+    if (transaction.is_child && transaction.parent_id) {
+      const siblings = childrenByParent.get(transaction.parent_id);
+      if (siblings) {
+        siblings.push(transaction);
+      } else {
+        childrenByParent.set(transaction.parent_id, [transaction]);
       }
     }
-    const displayPayees = new Map<TransactionEntity['id'], string>();
+  }
+  const displayPayees = new Map<TransactionEntity['id'], string>();
 
-    const transferAccount = (payee: PayeeEntity | undefined) =>
-      payee?.transfer_acct ? accountsById.get(payee.transfer_acct) : undefined;
+  const transferAccount = (payee: PayeeEntity | undefined) =>
+    payee?.transfer_acct ? accountsById.get(payee.transfer_acct) : undefined;
 
-    function getDisplayPayee(transaction: TransactionEntity) {
+  return {
+    getDisplayPayee(transaction) {
       let displayPayee = displayPayees.get(transaction.id);
       if (displayPayee == null) {
         displayPayee = getSplitPayee(
@@ -67,16 +87,8 @@ export function DisplayPayeeProvider({
         displayPayees.set(transaction.id, displayPayee);
       }
       return displayPayee;
-    }
-
-    return { getDisplayPayee };
-  }, [transactions, payeesById, accounts]);
-
-  return (
-    <DisplayPayeeContext.Provider value={value}>
-      {children}
-    </DisplayPayeeContext.Provider>
-  );
+    },
+  };
 }
 
 // A split shows its most common payee, and how many others it has

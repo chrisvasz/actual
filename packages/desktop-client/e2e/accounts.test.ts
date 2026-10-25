@@ -134,6 +134,9 @@ test.describe('Accounts', () => {
     await accountPage.setTransactionColumnVisibility('balance', true);
     await expect(accountPage.getNthTransaction(0).balance).toHaveText('110.00');
 
+    // The column setting is saved in the background; a reload before it
+    // reaches storage loses it, so wait for the pending writes first
+    await page.evaluate(() => window.$send('app-hidden'));
     await page.reload();
     await accountPage.waitFor();
 
