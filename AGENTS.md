@@ -567,7 +567,7 @@ When running the app for manual testing or demos, use **"View demo"** on the ini
 
 ### Gotchas
 
-- The `engines` field requires **Node.js >=22** and **Yarn ^4.9.1**. The `.nvmrc` specifies `v24.18.1`.
+- The `engines` field requires **Node.js ^22.23.4, ^24.22.1 or >=26.12.1** (the CVE-2026-111497 fixes) and **Yarn ^4.9.1**. The `.nvmrc` specifies `v24.22.1`.
 - Pre-commit hook runs `nano-staged` (oxfmt + oxlint, configured in `.nano-staged.json`) via Husky. Run `yarn prepare` once after install to set up hooks.
 - Lage caches test results in `.lage/`. If tests behave unexpectedly, clear with `rm -rf .lage`.
 - Native modules (`better-sqlite3`, `bcrypt`) require build tools (`gcc`, `make`, `python3`). These are pre-installed in the Cloud VM.
