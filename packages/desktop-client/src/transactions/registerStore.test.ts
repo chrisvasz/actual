@@ -197,4 +197,23 @@ describe('registerStore', () => {
     expect(failed.error?.message).toBe('broken');
     expect(handle.getSnapshot()).toBe(failed);
   });
+
+  it('reads again when retried after a failed read', async () => {
+    const store = await loadStore();
+    initLiveReads(() => {
+      throw new Error('broken');
+    });
+    const handle = store.getRegisterRows(undefined);
+    const listener = vi.fn();
+    handle.subscribe(listener);
+    expect(handle.getSnapshot().error?.message).toBe('broken');
+
+    initLiveReads(runQuery);
+    handle.retry();
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    const retried = handle.getSnapshot();
+    expect(retried.error).toBeUndefined();
+    expect(retried.groups).toHaveLength(3);
+  });
 });

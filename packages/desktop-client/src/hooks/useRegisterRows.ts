@@ -13,3 +13,8 @@ export function useRegisterRows(scope: RegisterScope): RegisterSnapshot {
   const handle = getRegisterRows(scope);
   return useSyncExternalStore(handle.subscribe, handle.getSnapshot);
 }
+
+/** Read `scope`'s register again, after its read failed. */
+export function retryRegisterRows(scope: RegisterScope) {
+  getRegisterRows(scope).retry();
+}

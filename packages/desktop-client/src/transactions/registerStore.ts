@@ -28,6 +28,8 @@ export type RegisterSnapshot = {
 export type RegisterHandle = {
   getSnapshot: () => RegisterSnapshot;
   subscribe: (listener: () => void) => () => void;
+  /** Read everything again, as after a failed read. */
+  retry: () => void;
 };
 
 type Entry = {
@@ -138,6 +140,12 @@ export function getRegisterRows(scope: RegisterScope): RegisterHandle {
               collectLater(key, created);
             }
           };
+        },
+        retry: () => {
+          created.rows.applyChanges('all');
+          for (const listener of [...created.listeners]) {
+            listener();
+          }
         },
       },
     };

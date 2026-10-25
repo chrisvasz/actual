@@ -72,7 +72,7 @@ import { useDateFormat } from '#hooks/useDateFormat';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { usePayees } from '#hooks/usePayees';
 import { calculateRunningBalancesBottomUp } from '#hooks/usePreviewTransactions';
-import { useRegisterRows } from '#hooks/useRegisterRows';
+import { retryRegisterRows, useRegisterRows } from '#hooks/useRegisterRows';
 import { getSchedulesQuery } from '#hooks/useSchedules';
 import { SelectedProviderWithItems } from '#hooks/useSelected';
 import type { Actions } from '#hooks/useSelected';
@@ -262,8 +262,10 @@ type AccountInternalProps = {
   onCreatePayee: (
     name: PayeeEntity['name'],
   ) => Promise<PayeeEntity['id'] | null>;
-  /** The register's rows (`useRegisterRows`) */
+  /** The register's rows (`useRegisterRows`), redrawn in the background */
   registerRows: RegisterSnapshot;
+  /** Why the rows couldn't be read, as of now (not deferred) */
+  registerError: Error | undefined;
   lookups: RegisterLookups;
 };
 
@@ -1482,6 +1484,11 @@ class AccountInternal extends PureComponent<
   };
 
   render() {
+    // A failed read shows the error boundary's message, whose retry reads
+    // again; the rows it left are out of date
+    if (this.props.registerError) {
+      throw this.props.registerError;
+    }
     const {
       accounts,
       categoryGroups,
@@ -1781,7 +1788,8 @@ export function Account() {
   const showReconciled = String(hideReconciled) !== 'true';
   // A change redraws the register in the background, a little at a time:
   // it's computed from every row, and can take longer than a frame
-  const registerRows = useDeferredValue(useRegisterRows(params.id));
+  const currentRows = useRegisterRows(params.id);
+  const registerRows = useDeferredValue(currentRows);
   const lookups = useMemo(
     (): RegisterLookups => ({
       accounts: new Map(accounts.map(account => [account.id, account])),
@@ -1796,7 +1804,10 @@ export function Account() {
   );
 
   return (
-    <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
+    <ErrorBoundary
+      FallbackComponent={FeatureErrorFallback}
+      onReset={() => retryRegisterRows(params.id)}
+    >
       <SchedulesProvider query={schedulesQuery}>
         <SplitsExpandedProvider
           // A filtered screen collapses splits on its first load; start it
@@ -1833,6 +1844,7 @@ export function Account() {
             onUpdateAccount={onUpdateAccount}
             onCreatePayee={onCreatePayee}
             registerRows={registerRows}
+            registerError={currentRows.error}
             lookups={lookups}
           />
         </SplitsExpandedProvider>
