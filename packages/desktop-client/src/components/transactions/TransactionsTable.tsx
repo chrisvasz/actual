@@ -2070,6 +2070,10 @@ const Transaction = memo(function Transaction({
           ':hover .hover-visible': {
             opacity: 1,
           },
+          // Keep the cell editor in front of the "Today" divider
+          ...(showTodayDivider && {
+            '& input': { position: 'relative', zIndex: 2 },
+          }),
           ...(highlighted || selected
             ? { color: theme.tableRowBackgroundHighlightText }
             : { color: theme.tableText }),
