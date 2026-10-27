@@ -148,58 +148,47 @@ function execTransactionsGrouped(
     return execQuery(queryState, compilerState, s, params, outputTypes);
   }
 
-  let rows;
-  let matched = null;
+  const t = sqlPieces.from;
+  const alive = `IFNULL(${t}.tombstone, 0) = 0`;
+  const isHappyPath = isHappyPathQuery(queryState);
+  // The filter without its `WHERE`. A filter can compile to nothing
+  // (e.g. `{ amount: [] }`) and still be off the happy path
+  const matches = sqlPieces.where.replace(/^WHERE /, '') || '1';
+  const page = `
+    ${sqlPieces.orderBy}
+    ${sqlPieces.limit != null ? `LIMIT ${sqlPieces.limit}` : ''}
+    ${sqlPieces.offset != null ? `OFFSET ${sqlPieces.offset}` : ''}
+  `;
 
-  if (isHappyPathQuery(queryState)) {
-    // This is just an optimization - we can just filter out children
-    // directly and only list parents
-    const rowSql = `
-      SELECT ${sqlPieces.from}.id as group_id
-      FROM ${sqlPieces.from}
+  // A page of groups, each given by its parent (or standalone)
+  // transaction. Account and date filters match a split's parent and
+  // children alike, so filtering the parents is enough, and SQLite
+  // walks them in order until the page is full. Other filters can
+  // match a child but not its parent, so collect the groups of the
+  // alive rows that match, then sort only those groups' rows. A group
+  // whose parent is dead is left out, like its children.
+  const rowSql = isHappyPath
+    ? `
+      SELECT ${t}.id as group_id
+      FROM ${t}
       ${sqlPieces.joins}
       ${appendWhere(sqlPieces.where, `is_child = 0 ${whereDead}`)}
-      ${sqlPieces.orderBy}
-      ${sqlPieces.limit != null ? `LIMIT ${sqlPieces.limit}` : ''}
-      ${sqlPieces.offset != null ? `OFFSET ${sqlPieces.offset}` : ''}
-    `;
-    rows = db.all<db.DbViewTransactionInternal>(rowSql, params);
-  } else {
-    // TODO: phew, what a doozy. write docs why it works this way
-    //
-    // The join back to the view is an inner join. A LEFT JOIN stops
-    // SQLite from flattening the view, so it materializes every
-    // transaction just to look up a page of groups. A group whose own
-    // row isn't in the view has no parent to show below anyway.
-    const rowSql = `
-      SELECT group_id, matched FROM (
-        SELECT
-          group_id,
-          GROUP_CONCAT(id) as matched
-          FROM (
-            SELECT ${sqlPieces.from}.id, IFNULL(${sqlPieces.from}.parent_id, ${sqlPieces.from}.id) as group_id
-            FROM ${sqlPieces.from}
-            LEFT JOIN transactions _t2 ON ${sqlPieces.from}.is_child = 1 AND _t2.id = ${sqlPieces.from}.parent_id
-            ${sqlPieces.joins}
-            ${appendWhere(sqlPieces.where, `IFNULL(${sqlPieces.from}.tombstone, 0) = 0 AND IFNULL(_t2.tombstone, 0) = 0`)}
-          )
-        GROUP BY group_id
-      )
-      JOIN ${sqlPieces.from} ON ${sqlPieces.from}.id = group_id
+      ${page}
+    `
+    : `
+      SELECT ${t}.id as group_id
+      FROM (
+        SELECT DISTINCT IFNULL(${t}.parent_id, ${t}.id) AS _group_id
+        FROM ${t}
+        ${sqlPieces.joins}
+        WHERE ${alive} AND ${matches}
+      ) _groups
+      CROSS JOIN ${t} ON ${t}.id = _groups._group_id
       ${sqlPieces.joins}
-      ${sqlPieces.orderBy}
-      ${sqlPieces.limit != null ? `LIMIT ${sqlPieces.limit}` : ''}
-      ${sqlPieces.offset != null ? `OFFSET ${sqlPieces.offset}` : ''}
+      WHERE ${alive}
+      ${page}
     `;
-
-    rows = db.all<db.DbViewTransactionInternal>(rowSql, params);
-    matched = new Set(
-      [].concat.apply(
-        [],
-        rows.map(row => row.matched.split(',')),
-      ),
-    );
-  }
+  const rows = db.all<{ group_id: string }>(rowSql, params);
 
   const groupIds = rows.map(row => row.group_id);
   const where = whereIn(
@@ -224,8 +213,13 @@ function execTransactionsGrouped(
         CROSS JOIN ${sqlPieces.from}
           ON ${sqlPieces.from}.id = _candidates._candidate_id`
       : sqlPieces.from;
+  // Off the happy path, mark the rows that didn't match the filter
+  const matchedColumn = isHappyPath
+    ? ''
+    : `, ${alive} AND ${matches} AS _matched`;
   const finalSql = `
-    SELECT ${sqlPieces.select}, parent_id AS _parent_id FROM ${from}
+    SELECT ${sqlPieces.select}, parent_id AS _parent_id${matchedColumn}
+    FROM ${from}
     ${sqlPieces.joins}
     WHERE ${where} ${whereDead}
     ${sqlPieces.orderBy}
@@ -234,8 +228,9 @@ function execTransactionsGrouped(
   const allRows = db.all<
     db.DbViewTransactionInternal & {
       _parent_id: db.DbViewTransactionInternal['parent_id'];
+      _matched?: number | null;
     }
-  >(finalSql);
+  >(finalSql, isHappyPath ? [] : params);
 
   // Group the parents and children up
   const { parents, children } = allRows.reduce(
@@ -255,12 +250,12 @@ function execTransactionsGrouped(
     { parents: [], children: new Map() },
   );
 
-  const mapper = trans => {
+  const mapper = ({ _matched, ...trans }) => {
     Object.keys(trans).forEach(name => {
       trans[name] = convertOutputType(trans[name], outputTypes.get(name));
     });
 
-    if (matched && !matched.has(trans.id)) {
+    if (!isHappyPath && !_matched) {
       trans._unmatched = true;
     }
     return trans;
