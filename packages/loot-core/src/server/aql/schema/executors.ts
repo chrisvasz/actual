@@ -151,8 +151,9 @@ function execTransactionsGrouped(
   const t = sqlPieces.from;
   const alive = `IFNULL(${t}.tombstone, 0) = 0`;
   const isHappyPath = isHappyPathQuery(queryState);
-  // The filter without its `WHERE`; off the happy path there is one
-  const matches = sqlPieces.where.replace(/^WHERE /, '');
+  // The filter without its `WHERE`. A filter can compile to nothing
+  // (e.g. `{ amount: [] }`) and still be off the happy path
+  const matches = sqlPieces.where.replace(/^WHERE /, '') || '1';
   const page = `
     ${sqlPieces.orderBy}
     ${sqlPieces.limit != null ? `LIMIT ${sqlPieces.limit}` : ''}

@@ -744,8 +744,10 @@ const compileOp = saveStack('op', (state, fieldRef, opData) => {
       }
       // A validated ref reads the id through a join that drops dead
       // rows. Compare the row's own column against the listed ids that
-      // are alive instead: a subquery SQLite runs once, so a query that
-      // only filters on the ref doesn't need the join on every row
+      // are alive instead: a subquery SQLite runs once, so the filter
+      // doesn't read the join on every row. (The join is still
+      // compiled, which also keeps the table a dependency.) A dead ref
+      // gives 0 here where the join gave NULL; both are false.
       const { column, tableName } = lhs.ref;
       const alias = uid(tableName);
       return `${column} IN (

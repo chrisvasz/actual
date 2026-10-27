@@ -560,10 +560,15 @@ describe('transaction executors', () => {
       expect(pages).toEqual(all);
     });
 
+    // Matches t1, p1 only through its children, and the dead p1/c3,
+    // p2/c1 and t2
+    const between = {
+      $and: [{ amount: { $gte: -200 } }, { amount: { $lte: -50 } }],
+    };
+
     it('pages filtered groups in order, marking unmatched rows', async () => {
-      // Matches t1, p1 through a child, and p1's dead child
       const query = q('transactions')
-        .filter({ amount: { $lte: -100 } })
+        .filter(between)
         .options({ splits: 'grouped' })
         .select('*');
       const pages = [];
@@ -575,7 +580,45 @@ describe('transaction executors', () => {
       expect(pages).toEqual(all);
       expect(shape(all)).toEqual([
         { id: 't1', subtransactions: [] },
-        { id: 'p1', subtransactions: ['p1/c2 (unmatched)', 'p1/c1'] },
+        {
+          id: 'p1',
+          _unmatched: true,
+          subtransactions: ['p1/c2', 'p1/c1'],
+        },
+      ]);
+    });
+
+    it('marks dead rows unmatched with `withDead`', async () => {
+      const { data } = aqlQuery(
+        q('transactions')
+          .filter(between)
+          .options({ splits: 'grouped' })
+          .withDead()
+          .select('*')
+          .serialize(),
+      );
+      // Dead rows don't match, so they only show in a matching group
+      expect(shape(data)).toEqual([
+        { id: 't1', subtransactions: [] },
+        {
+          id: 'p1',
+          _unmatched: true,
+          subtransactions: ['p1/c3 (unmatched)', 'p1/c2', 'p1/c1'],
+        },
+      ]);
+    });
+
+    it('lists every group for a filter that compiles to nothing', async () => {
+      const { data } = aqlQuery(
+        q('transactions')
+          .filter({ amount: [] })
+          .options({ splits: 'grouped' })
+          .select('*')
+          .serialize(),
+      );
+      expect(shape(data)).toEqual([
+        { id: 't1', subtransactions: [] },
+        { id: 'p1', subtransactions: ['p1/c2', 'p1/c1'] },
       ]);
     });
 
