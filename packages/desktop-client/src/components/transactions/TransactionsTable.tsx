@@ -995,6 +995,7 @@ type TransactionProps = {
   onDrop?: OnDropCallback;
   index: number;
   amountColumnWidths: AmountColumnWidths;
+  showTodayDivider?: boolean;
 };
 
 function getNoTransaction() {
@@ -1059,6 +1060,7 @@ const Transaction = memo(function Transaction({
   onDrop,
   index,
   amountColumnWidths,
+  showTodayDivider = false,
 }: TransactionProps) {
   const dispatch = useDispatch();
   const dispatchSelected = useSelectedDispatch();
@@ -1558,7 +1560,7 @@ const Transaction = memo(function Transaction({
             textAlign="flex"
             exposed={focusedField === 'date'}
             value={date}
-            valueStyle={valueStyle}
+            valueStyle={{ ...styles.tnum, ...valueStyle }}
             formatter={date =>
               date ? formatDate(parseISO(date), dateFormat) : ''
             }
@@ -1582,7 +1584,11 @@ const Transaction = memo(function Transaction({
               <DateSelect
                 value={date || ''}
                 dateFormat={dateFormat}
-                inputProps={{ onBlur, onKeyDown, style: inputStyle }}
+                inputProps={{
+                  onBlur,
+                  onKeyDown,
+                  style: { ...inputStyle, ...styles.tnum },
+                }}
                 shouldSaveFromKey={shouldSaveFromKey}
                 clearOnBlur
                 onUpdate={onUpdate}
@@ -2040,6 +2046,7 @@ const Transaction = memo(function Transaction({
       }}
     >
       <DropHighlight pos={showDropHighlight ? dropPos : null} />
+      {showTodayDivider && <TodayDivider dateFormat={dateFormat} />}
       <TransactionDragRow
         rowRef={triggerRef}
         item={originalTransaction}
@@ -2314,6 +2321,100 @@ function NotesCell({
         />
       )}
     </CustomCell>
+  );
+}
+
+// Returns the row that the "Today" divider sits on top of: the first real
+// (non-preview) row on the other side of today from the rows above it,
+// shown only when the top row is in the future.
+// Schedule previews are always listed first, so they only count as the
+// future side when sorted newest-first.
+function findTodayDividerId(
+  transactions: readonly TransactionEntity[],
+  sortField: string,
+  ascDesc: 'asc' | 'desc',
+): string | null {
+  if (sortField && sortField !== 'date') {
+    return null;
+  }
+  // Nothing to separate when the register doesn't start in the future.
+  const topRow = transactions.find(row => !row.is_child);
+  if (!topRow || !isFutureTransaction(topRow)) {
+    return null;
+  }
+  const isNewestFirst = !sortField || ascDesc === 'desc';
+  let hasRowAbove = false;
+  for (const row of transactions) {
+    if (row.is_child) {
+      continue;
+    }
+    const isPreview = isPreviewId(row.id);
+    const isFuture = isFutureTransaction(row);
+    if (!isPreview && hasRowAbove && isFuture !== isNewestFirst) {
+      return row.id;
+    }
+    if (isNewestFirst ? isFuture : !isFuture && !isPreview) {
+      hasRowAbove = true;
+    }
+  }
+  return null;
+}
+
+function TodayDivider({ dateFormat }: { dateFormat: string }) {
+  return (
+    <View
+      aria-hidden
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 2,
+        backgroundColor: theme.buttonPrimaryBackground,
+        zIndex: 1,
+        pointerEvents: 'none',
+      }}
+    >
+      {/* Sized by an invisible date in the row's font, so the chip centers
+          over the date column's text whatever the date format. */}
+      <View
+        style={{
+          position: 'absolute',
+          top: -6,
+          left: 25,
+          height: 14,
+          alignItems: 'center',
+        }}
+      >
+        <Text
+          style={{
+            ...styles.tnum,
+            height: 0,
+            overflow: 'hidden',
+            visibility: 'hidden',
+          }}
+        >
+          {formatDate(new Date(), dateFormat)}
+        </Text>
+        <Text
+          style={{
+            height: 14,
+            lineHeight: '14px',
+            padding: '0 5px',
+            borderRadius: 7,
+            fontSize: 8,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: 0.4,
+            whiteSpace: 'nowrap',
+            color: theme.buttonPrimaryText,
+            backgroundColor: theme.buttonPrimaryBackground,
+          }}
+        >
+          Today
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -2744,6 +2845,12 @@ function TransactionTableInner({
     props.balances,
   );
 
+  const todayDividerId = findTodayDividerId(
+    transactionsToRender,
+    props.sortField,
+    props.ascDesc,
+  );
+
   const renderRow: TableProps<TransactionEntity>['renderItem'] = ({
     item,
     index,
@@ -2895,6 +3002,7 @@ function TransactionTableInner({
         onDragChange={props.onDragChange}
         onDrop={props.onDrop}
         index={index}
+        showTodayDivider={trans.id === todayDividerId}
       />
     );
   };
