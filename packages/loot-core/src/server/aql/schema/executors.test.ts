@@ -559,6 +559,47 @@ describe('transaction executors', () => {
       const { data: all } = aqlQuery(query.serialize());
       expect(pages).toEqual(all);
     });
+
+    it('pages filtered groups in order, marking unmatched rows', async () => {
+      // Matches t1, p1 through a child, and p1's dead child
+      const query = q('transactions')
+        .filter({ amount: { $lte: -100 } })
+        .options({ splits: 'grouped' })
+        .select('*');
+      const pages = [];
+      for (let offset = 0; offset < 3; offset++) {
+        const { data } = aqlQuery(query.limit(1).offset(offset).serialize());
+        pages.push(...data);
+      }
+      const { data: all } = aqlQuery(query.serialize());
+      expect(pages).toEqual(all);
+      expect(shape(all)).toEqual([
+        { id: 't1', subtransactions: [] },
+        { id: 'p1', subtransactions: ['p1/c2 (unmatched)', 'p1/c1'] },
+      ]);
+    });
+
+    it("doesn't match a dead payee listed in `$oneof`", () => {
+      db.insertPayee({ id: 'alive', name: 'Alive' });
+      db.insertPayee({ id: 'dead', name: 'Dead' });
+      db.deletePayee({ id: 'dead' });
+      db.runQuery(
+        `UPDATE transactions SET description = 'alive' WHERE id = 't1'`,
+      );
+      db.runQuery(
+        `UPDATE transactions SET description = 'dead' WHERE id = 'p1/c1'`,
+      );
+
+      const { data } = aqlQuery(
+        q('transactions')
+          .filter({ payee: { $oneof: ['alive', 'dead'] } })
+          .options({ splits: 'grouped' })
+          .select('*')
+          .serialize(),
+      );
+      expect(shape(data)).toEqual([{ id: 't1', subtransactions: [] }]);
+      expect(data[0].payee).toBe('alive');
+    });
   });
 
   it('treats transactions with a NULL tombstone as alive', async () => {

@@ -830,6 +830,25 @@ describe('sheet language', () => {
     );
     expect(result.sql).toMatch("id IN ('one','two','three')");
   });
+
+  it('$oneof compares a ref to the listed ids that are alive', () => {
+    const result = generateSQLWithState(
+      q('transactions')
+        .filter({ payee: { $oneof: ['p1', 'p2', 'p1'] } })
+        .select(['amount'])
+        .serialize(),
+      schemaWithTombstone,
+    );
+    // The row's own column, not the joined id
+    expect(sqlLines(result.sql).join('\n')).toContain(
+      sqlLines(`
+        WHERE (transactions.payee IN (
+          SELECT payees2.id FROM payees payees2
+          WHERE payees2.id IN ('p1','p2') AND payees2.tombstone = 0
+        ))
+      `).join('\n'),
+    );
+  });
 });
 
 describe('Type conversions', () => {

@@ -2,7 +2,8 @@
 // generated budget. Run with:
 //   SEARCH_BENCH=1 yarn workspace @actual-app/core vitest --run src/server/aql/search.bench.test.ts
 // Set SEARCH_BENCH_EXPORT to a .zip path to also write the budget there, for
-// the web app's "Import file" > Actual.
+// the web app's "Import file" > Actual. Set SEARCH_BENCH_SCALE to multiply the
+// number of transactions (4 gives about 200k).
 //
 // It runs the queries the register runs for a search (a page of rows and the
 // filtered total) through better-sqlite3, then replays the same SQL in the
@@ -100,7 +101,7 @@ describe.skipIf(!process.env.SEARCH_BENCH)('search benchmark', () => {
     await generateBudget({
       seed: 1,
       years: 10,
-      transactionsPerMonth: 340,
+      transactionsPerMonth: 340 * Number(process.env.SEARCH_BENCH_SCALE ?? 1),
       groupCount: 8,
       categoriesPerGroup: 7,
     });
@@ -187,10 +188,22 @@ describe.skipIf(!process.env.SEARCH_BENCH)('search benchmark', () => {
         }),
       );
 
+      // Count the calls of one run, then time each statement's median of 3
       calls.NORMALISE = calls.UNICODE_LIKE = 0;
-      const start = performance.now();
       const webRows = sqls.map(sql => webSqlite.runQuery(web, sql, [], true));
-      const webMs = performance.now() - start;
+      const callCounts = { ...calls };
+      const statementMs = sqls.map(sql =>
+        Math.round(
+          median(
+            Array.from({ length: 3 }, () => {
+              const start = performance.now();
+              webSqlite.runQuery(web, sql, [], true);
+              return performance.now() - start;
+            }),
+          ),
+        ),
+      );
+      const webMs = statementMs.reduce((a, b) => a + b, 0);
 
       // Both engines return the same rows
       expect(webRows).toEqual(sqls.map(sql => prepare(sql).all()));
@@ -198,8 +211,10 @@ describe.skipIf(!process.env.SEARCH_BENCH)('search benchmark', () => {
       report[accountId ? `${term} (${accountId})` : term] = {
         ...result,
         betterSqlite3Ms: Math.round(node),
-        sqliteWasmMs: Math.round(webMs),
-        ...calls,
+        sqliteWasmMs: webMs,
+        // Each statement the search ran, in order
+        sqliteWasmStatementMs: statementMs,
+        ...callCounts,
       };
     }
     webSqlite.closeDatabase(web);

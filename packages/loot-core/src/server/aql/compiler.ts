@@ -152,6 +152,7 @@ function transformField(state, name) {
 
   let field = originalField;
   let pathInfo;
+  let ref;
   if (path === '') {
     pathInfo = {
       tableName: state.implicitTableName,
@@ -187,12 +188,18 @@ function transformField(state, name) {
       state.paths.set(refPath, refPathInfo);
     }
 
+    // The id stored on the row, before the join validates it, so
+    // `$oneof` can compare it without the join
+    ref = {
+      column: pathInfo.tableId + '.' + quoteAlias(field),
+      tableName: refPathInfo.tableName,
+    };
     field = 'id';
     pathInfo = refPathInfo;
   }
 
   const fieldStr = pathInfo.tableId + '.' + field;
-  const expr = typed(fieldStr, fieldDesc.type);
+  const expr = { ...typed(fieldStr, fieldDesc.type), ...(ref && { ref }) };
   // Remember the joined table a field comes from, so `$like` can match
   // that table's rows once instead of once per row of the query
   return path === '' ? expr : { ...expr, join: pathInfo };
@@ -730,12 +737,21 @@ const compileOp = saveStack('op', (state, fieldRef, opData) => {
       const [left, right] = valArray(state, [lhs, rhs], [null, 'array']);
       // Dedupe the ids
       const ids = [...new Set(right)];
+      const list = ids.map(id => `'${String(id)}'`).join(',');
 
-      return (
-        `${String(left)} IN (` +
-        ids.map(id => `'${String(id)}'`).join(',') +
-        ')'
-      );
+      if (lhs.ref == null) {
+        return `${String(left)} IN (${list})`;
+      }
+      // A validated ref reads the id through a join that drops dead
+      // rows. Compare the row's own column against the listed ids that
+      // are alive instead: a subquery SQLite runs once, so a query that
+      // only filters on the ref doesn't need the join on every row
+      const { column, tableName } = lhs.ref;
+      const alias = uid(tableName);
+      return `${column} IN (
+        SELECT ${alias}.id FROM ${state.tableRef(tableName, true)} ${alias}
+        WHERE ${joinCondition(state, tableName, alias, `${alias}.id IN (${list})`)}
+      )`;
     }
     case '$like': {
       const [left, right] = valArray(state, [lhs, rhs], ['string', 'string']);
@@ -873,28 +889,33 @@ function addDependency(state: CompilerState, tableName: string) {
   }
 }
 
-function compileJoins(state, tableRef, internalTableFilters) {
+// The condition a joined row of `tableName` must meet: `on`, the
+// table's internal filters, and being alive
+function joinCondition(state, tableName, tableId, on) {
+  const filters = state.internalTableFilters(tableName);
+  if (filters.length > 0) {
+    on +=
+      ' AND ' +
+      compileAnd(
+        { ...state, implicitTableName: tableName, implicitTableId: tableId },
+        filters,
+      );
+  }
+  return addTombstone(state.schema, tableName, tableId, on);
+}
+
+function compileJoins(state, tableRef) {
   const joins = [];
   state.paths.forEach((desc, path) => {
     const { tableName, tableId, joinField, joinTable } = state.paths.get(path);
 
-    let on = `${tableId}.id = ${tableRef(joinTable)}.${quoteAlias(joinField)}`;
-
-    const filters = internalTableFilters(tableName);
-    if (filters.length > 0) {
-      on +=
-        ' AND ' +
-        compileAnd(
-          { ...state, implicitTableName: tableName, implicitTableId: tableId },
-          filters,
-        );
-    }
+    const on = `${tableId}.id = ${tableRef(joinTable)}.${quoteAlias(joinField)}`;
 
     joins.push(
       `LEFT JOIN ${tableRef(
         tableName,
         true,
-      )} ${tableId} ON ${addTombstone(state.schema, tableName, tableId, on)}`,
+      )} ${tableId} ON ${joinCondition(state, tableName, tableId, on)}`,
     );
 
     addDependency(state, tableName);
@@ -1104,6 +1125,7 @@ export type CompilerState = {
   validateRefs: boolean;
   namedParameters: NamedParameter[];
   tableRef: (name: string, isJoin?: boolean) => string;
+  internalTableFilters: (name: string) => unknown[];
 };
 
 export type SqlPieces = {
@@ -1184,6 +1206,7 @@ export function compileQuery(
     validateRefs,
     namedParameters: [],
     tableRef,
+    internalTableFilters,
   };
   addDependency(state, tableName);
 
@@ -1224,7 +1247,7 @@ export function compileQuery(
     }
 
     if (state.paths.size > 0) {
-      joins = compileJoins(state, tableRef, internalTableFilters);
+      joins = compileJoins(state, tableRef);
     }
   } catch (e) {
     if (e instanceof CompileError) {
