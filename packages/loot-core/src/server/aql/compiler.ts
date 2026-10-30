@@ -755,6 +755,18 @@ const compileOp = saveStack('op', (state, fieldRef, opData) => {
         WHERE ${joinCondition(state, tableName, alias, `${alias}.id IN (${list})`)}
       )`;
     }
+    case '$oneofbound': {
+      // Like `$oneof`, but the ids are bound as one JSON parameter instead
+      // of written into the SQL, for a list too long to inline
+      const [left, right] = valArray(state, [lhs, rhs], [null, 'array']);
+      state.namedParameters.push({
+        value: '?',
+        type: 'param',
+        paramName: '$oneofbound',
+        boundValue: JSON.stringify(right),
+      });
+      return `${String(left)} IN (SELECT value FROM json_each(?))`;
+    }
     case '$like': {
       const [left, right] = valArray(state, [lhs, rhs], ['string', 'string']);
       const pattern = getNormalisedString(right);
@@ -1110,6 +1122,8 @@ type NamedParameter = {
   paramName: string;
   paramType?: string;
   value: string;
+  // A value the query itself binds, rather than one passed in `params`
+  boundValue?: string;
 };
 
 // TODO: Type this

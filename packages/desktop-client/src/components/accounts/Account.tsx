@@ -87,6 +87,8 @@ import { addNotification } from '#notifications/notificationsSlice';
 import { useCreatePayee } from '#payees';
 import * as queries from '#queries';
 import { aqlQuery } from '#queries/aqlQuery';
+import { createNotesCache } from '#queries/notesCache';
+import type { NotesCache, NotesCacheHandle } from '#queries/notesCache';
 import { useDispatch, useSelector } from '#redux';
 import type { AppDispatch } from '#redux/store';
 import {
@@ -390,6 +392,10 @@ class AccountInternal extends PureComponent<
   rowsQuery: Query | null = null;
   rowsLimit = TRANSACTIONS_PAGE_COUNT;
   stopRows?: () => void;
+  // The register's notes for search, read when the search bar is focused,
+  // and the notes the current search matched (null when not searching)
+  notesCache: NotesCacheHandle | null = null;
+  _searchNotes: NotesCache | null = null;
   _isLoadingMoreRows = false;
   // Whether the last fetched rows filled the limit. Kept apart from the rows
   // on screen, which an optimistic delete can shorten.
@@ -480,7 +486,9 @@ class AccountInternal extends PureComponent<
       }
     };
 
-    const unlistens = [listen('undo-event', onUndo)];
+    const notesCache = createNotesCache();
+    this.notesCache = notesCache;
+    const unlistens = [listen('undo-event', onUndo), notesCache.stop];
 
     this.unlisten = () => {
       unlistens.forEach(unlisten => unlisten());
@@ -558,7 +566,7 @@ class AccountInternal extends PureComponent<
 
   refetchTransactions = async () => {
     const rows = this.rows;
-    if (rows == null) {
+    if (rows == null || this.refreshSearchNotes()) {
       return;
     }
     // A refetch joins a fetch that's already running unless there are rows
@@ -593,6 +601,7 @@ class AccountInternal extends PureComponent<
 
   updateQuery(query: Query, isFiltered: boolean = false) {
     this.stopRows?.();
+    this._searchNotes = null;
 
     const rowsQuery = selectTransactionRows(query, {
       showReconciled: this.state.showReconciled,
@@ -640,7 +649,9 @@ class AccountInternal extends PureComponent<
         dependencies == null ||
         event.tables.some(table => dependencies.includes(table))
       ) {
-        void rows.refetch();
+        if (!this.refreshSearchNotes()) {
+          void rows.refetch();
+        }
       }
     });
 
@@ -771,7 +782,7 @@ class AccountInternal extends PureComponent<
         pageSize: TRANSACTIONS_PAGE_COUNT,
       });
       // The query may have changed while the page loaded
-      if (this.rows === rows) {
+      if (this.rows === rows && this.rowsQuery === query) {
         this.rowsLimit = next.limit;
         rows.setOptions(rowsQueryOptions(next));
       }
@@ -785,6 +796,38 @@ class AccountInternal extends PureComponent<
     this.setState({ search: value }, this.onSearchDone);
   };
 
+  // The rows a search can show, before its own filter
+  searchableQuery() {
+    return selectTransactionRows(this.currentQuery, {
+      showReconciled: this.state.showReconciled,
+      showBalances: this.state.showBalances,
+      canCalculateBalance: false,
+    });
+  }
+
+  // Read the notes before the first search, which then needn't wait for them
+  onSearchFocus = () => {
+    this.notesCache?.read(this.searchableQuery());
+  };
+
+  makeSearchQuery() {
+    const notes = this.notesCache?.read(this.searchableQuery()) ?? null;
+    const query = queries.transactionsSearch(
+      this.currentQuery,
+      this.state.search,
+      this.props.dateFormat,
+      {
+        payees: this.props.payees,
+        categories: this.props.categoryGroups.flatMap(
+          group => group.categories ?? [],
+        ),
+        accounts: this.props.accounts,
+        notes,
+      },
+    );
+    return { query, notes };
+  }
+
   // Searching a large budget blocks the main thread (the backend runs on
   // it), so wait for a pause in typing rather than searching per keystroke
   onSearchDone = debounce(() => {
@@ -794,23 +837,39 @@ class AccountInternal extends PureComponent<
         this.state.filterConditions.length > 0,
       );
     } else {
-      this.updateQuery(
-        queries.transactionsSearch(
-          this.currentQuery,
-          this.state.search,
-          this.props.dateFormat,
-          {
-            payees: this.props.payees,
-            categories: this.props.categoryGroups.flatMap(
-              group => group.categories ?? [],
-            ),
-            accounts: this.props.accounts,
-          },
-        ),
-        true,
-      );
+      const { query, notes } = this.makeSearchQuery();
+      this.updateQuery(query, true);
+      this._searchNotes = notes;
     }
   }, 300);
+
+  // A search matches the notes by the ids it was given, so a refetch after
+  // the notes change has to search them again. Points the rows on screen at
+  // the search with the latest notes, which fetches them, and returns
+  // whether it did.
+  refreshSearchNotes() {
+    const rows = this.rows;
+    const searchNotes = this._searchNotes;
+    if (
+      rows == null ||
+      searchNotes == null ||
+      this.notesCache?.isCurrent(searchNotes) !== false
+    ) {
+      return false;
+    }
+    const { query, notes } = this.makeSearchQuery();
+    const rowsQuery = selectTransactionRows(query, {
+      showReconciled: this.state.showReconciled,
+      showBalances: this.state.showBalances,
+      canCalculateBalance: this.canCalculateBalance(),
+    });
+    this.rowsQuery = rowsQuery;
+    this._searchNotes = notes;
+    rows.setOptions(
+      rowsQueryOptions({ query: rowsQuery, limit: this.rowsLimit }),
+    );
+    return true;
+  }
 
   onImport = async () => {
     const accountId = this.props.accountId;
@@ -2046,6 +2105,7 @@ class AccountInternal extends PureComponent<
                 filterConditions={this.state.filterConditions}
                 filterConditionsOp={this.state.filterConditionsOp}
                 onSearch={this.onSearch}
+                onSearchFocus={this.onSearchFocus}
                 onShowTransactions={this.onShowTransactions}
                 onMenuSelect={this.onMenuSelect}
                 onAddTransaction={this.onAddTransaction}

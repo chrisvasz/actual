@@ -21,6 +21,8 @@ import type { SyncedPrefs } from '@actual-app/core/types/prefs';
 // @ts-strict-ignore
 import { isValid as isDateValid, parse as parseDate } from 'date-fns';
 
+import type { NotesCache } from './notesCache';
+
 export function accountFilter(
   accountId?:
     | AccountEntity['id']
@@ -93,10 +95,13 @@ export function transactionsSearch(
     payees,
     categories,
     accounts,
+    notes,
   }: {
     payees: PayeeEntity[];
     categories: CategoryEntity[];
     accounts: AccountEntity[];
+    // The register's normalised notes, if it could read them
+    notes?: NotesCache | null;
   },
 ) {
   const amount = currencyToAmount(search);
@@ -124,13 +129,26 @@ export function transactionsSearch(
   const payeeIds = matchingIds(payees);
   const categoryIds = matchingIds(categories);
   const accountIds = matchingIds(accounts);
+  // Notes differ on every row, so without the register's cache they're
+  // matched in SQL, calling into JS for every row. Matching the cache
+  // passes the ids as one bound parameter: always present, even empty, so
+  // a search matching nothing shows nothing.
+  const notesFilter = notes
+    ? {
+        id: {
+          $oneofbound: [...notes]
+            .filter(([, value]) => value.includes(term))
+            .map(([id]) => id),
+        },
+      }
+    : { notes: { $like: `%${escapedSearch}%` } };
 
   return currentQuery.filter({
     $or: [
       payeeIds.length > 0 && { payee: { $oneof: payeeIds } },
       categoryIds.length > 0 && { category: { $oneof: categoryIds } },
       accountIds.length > 0 && { account: { $oneof: accountIds } },
-      { notes: { $like: `%${escapedSearch}%` } },
+      notesFilter,
       isDateValid(parsedDate) && { date: dayFromDate(parsedDate) },
       amount != null && {
         amount: { $transform: '$abs', $eq: amountToInteger(amount) },
