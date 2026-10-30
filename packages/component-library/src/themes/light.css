@@ -246,8 +246,6 @@
   --color-budgetGoalChipBackground: var(--palette-purple100);
   --color-budgetGoalChipText: var(--palette-purple700);
   --color-budgetGoalTrack: var(--palette-purple125);
-  --color-budgetGoalBehindProgress: var(--palette-terracotta500);
-  --color-budgetGoalBehindTrack: var(--palette-terracotta150);
   --color-budgetHeaderOtherMonth: var(--color-budgetHeaderCurrentMonth);
   --color-budgetSummaryAmountBackground: var(--palette-navy50);
 
