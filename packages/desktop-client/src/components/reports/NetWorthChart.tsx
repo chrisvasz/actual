@@ -20,7 +20,7 @@ const MARGIN = { top: 12, right: 16, bottom: 28, left: 52 };
 const MAX_X_LABELS = 8;
 const BAND_OPACITY = 0.28;
 /** How far below the lowest month a broken axis starts, as a fraction */
-const AXIS_FLOOR_GAP = 0.2;
+const AXIS_FLOOR_GAP = 0.1;
 
 const axisFormat = new Intl.NumberFormat(undefined, {
   notation: 'compact',
