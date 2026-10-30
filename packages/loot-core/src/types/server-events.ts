@@ -62,6 +62,8 @@ type IndexeddbQuotaErrorEvent = undefined;
 type OrphanedPayeesEvent = {
   orphanedIds: string[];
   updatedPayeeIds: string[];
+  // Names of the orphaned and updated payees, by id
+  payeeNames: Record<string, string>;
 };
 
 export type ImportStep =

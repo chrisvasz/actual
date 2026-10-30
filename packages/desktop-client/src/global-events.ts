@@ -13,6 +13,7 @@ import {
 import { loadPrefs } from './prefs/prefsSlice';
 import type { AppStore } from './redux/store';
 import * as syncEvents from './sync-events';
+import { undo as undoLastChange } from './undo';
 
 export function handleGlobalEvents(store: AppStore) {
   const unlistenServerError = listen('server-error', () => {
@@ -21,8 +22,20 @@ export function handleGlobalEvents(store: AppStore) {
 
   const unlistenOrphanedPayees = listen(
     'orphaned-payees',
-    ({ orphanedIds, updatedPayeeIds }) => {
-      // Right now, it prompts to merge into the first payee
+    ({ orphanedIds, updatedPayeeIds, payeeNames }) => {
+      if (updatedPayeeIds.length === 1) {
+        void mergeOrphanedPayees(
+          store,
+          orphanedIds,
+          updatedPayeeIds[0],
+          payeeNames,
+        );
+        return;
+      }
+
+      // With several new payees there's no telling which one each orphan
+      // was replaced by, so ask. Right now, it prompts to merge into the
+      // first payee
       store.dispatch(
         pushModal({
           modal: {
@@ -174,4 +187,62 @@ export function handleGlobalEvents(store: AppStore) {
     unlistenShowBudgets();
     unlistenApiFetchRedirected();
   };
+}
+
+// A payee replaced on its only transaction is almost always a duplicate of
+// the new one, so merge it straight away and offer to undo
+async function mergeOrphanedPayees(
+  store: AppStore,
+  orphanedIds: string[],
+  targetId: string,
+  payeeNames: Record<string, string>,
+) {
+  await send('payees-merge', { targetId, mergeIds: orphanedIds });
+
+  const targetName = payeeNames[targetId];
+  const fromNames = orphanedIds.map(id => payeeNames[id]).filter(Boolean);
+  const merged =
+    orphanedIds.length === 1
+      ? `"${fromNames[0]}"`
+      : `${orphanedIds.length} unused payees`;
+  // Rules can't be created while one is being edited
+  const isEditingRule = store
+    .getState()
+    .modals.modalStack.some(m => m.name === 'edit-rule');
+
+  store.dispatch(
+    addNotification({
+      notification: {
+        type: 'message',
+        timeout: 20000,
+        message:
+          `Merged ${merged} into "${targetName}"` +
+          (isEditingRule ? '' : ` [Edit rename rule](#createRule)`),
+        messageActions: {
+          createRule: () =>
+            void createPayeeRenameRule(store, fromNames, targetId),
+        },
+        button: { title: 'Undo', action: undoLastChange },
+      },
+    }),
+  );
+}
+
+async function createPayeeRenameRule(
+  store: AppStore,
+  fromNames: string[],
+  targetId: string,
+) {
+  const ruleId = await send('rule-add-payee-rename', {
+    fromNames,
+    to: targetId,
+  });
+  const rule = await send('rule-get', { id: ruleId });
+  if (!rule) {
+    return;
+  }
+
+  store.dispatch(
+    pushModal({ modal: { name: 'edit-rule', options: { rule } } }),
+  );
 }
