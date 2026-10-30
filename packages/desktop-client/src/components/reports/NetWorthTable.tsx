@@ -24,7 +24,10 @@ type NetWorthTableProps = {
   colors: ReadonlyMap<string, string>;
 };
 
-/** Each account group's balance, share, and change; expands to its accounts. */
+/**
+ * Each account group's starting balance, balance, share, and change; expands
+ * to its accounts.
+ */
 export function NetWorthTable({ data, colors }: NetWorthTableProps) {
   const format = useFormat();
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
@@ -40,9 +43,10 @@ export function NetWorthTable({ data, colors }: NetWorthTableProps) {
   function cells(
     row: NetWorthRow,
     name: ReactNode,
-  ): [ReactNode, ReactNode, ReactNode, ReactNode] {
+  ): [ReactNode, ReactNode, ReactNode, ReactNode, ReactNode] {
     return [
       name,
+      format(row.balance - row.changeAmount, 'financial'),
       format(row.balance, 'financial'),
       row.share == null ? '' : shareFormat.format(row.share),
       <PercentChange
@@ -65,14 +69,15 @@ export function NetWorthTable({ data, colors }: NetWorthTableProps) {
     >
       <colgroup>
         <col />
-        <col style={{ width: 160 }} />
+        <col style={{ width: 130 }} />
+        <col style={{ width: 130 }} />
         <col style={{ width: 80 }} />
         <col style={{ width: 110 }} />
       </colgroup>
       <thead>
         <NetWorthTableRow
           isHeader
-          cells={['Group', 'Balance', 'Share', 'Change']}
+          cells={['Group', 'Starting', 'Balance', 'Share', 'Change']}
           style={{
             color: theme.tableHeaderText,
             fontSize: 13,

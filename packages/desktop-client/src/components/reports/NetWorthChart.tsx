@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import type { PointerEvent } from 'react';
 
 import { styles } from '@actual-app/components/styles';
@@ -32,8 +32,8 @@ type NetWorthChartProps = {
 };
 
 /**
- * Each month-end's change since the baseline month, stacked by account group
- * with gains above zero and losses below, and net worth's change as a line.
+ * Each month's change in balance, stacked by account group with gains above
+ * zero and losses below, and net worth's change as a line.
  * Plotting change rather than balance gives the slope the full height and
  * keeps every group visible, however small next to the total.
  */
@@ -95,7 +95,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
             width={width}
             height={HEIGHT}
             role="img"
-            aria-label={`Change in net worth since ${formatMonth(data.baselineMonth)} by account group, ${formatMonth(months[0])} to ${formatMonth(months[lastIndex])}`}
+            aria-label={`Monthly change in net worth by account group, ${formatMonth(months[0])} to ${formatMonth(months[lastIndex])}`}
             style={{ display: 'block', overflow: 'visible' }}
           >
             {ticks.map(tick => (
@@ -234,36 +234,70 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
             }}
           >
             <Text style={{ fontWeight: 600, fontSize: 13 }}>
-              Change from {formatMonth(data.baselineMonth)} to{' '}
-              {formatMonth(months[hoverIndex])}
+              End of {formatMonth(months[hoverIndex])}
             </Text>
-            {groups.map(group => (
-              <View
-                key={group.id}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
-              >
-                <ColorSwatch color={colors.get(group.id)} size={8} />
-                <Text style={{ flex: 1, color: theme.pageTextSubdued }}>
-                  {group.name}
-                </Text>
-                <FinancialText>
-                  {formatChange(changes(group)[hoverIndex])}
-                </FinancialText>
-              </View>
-            ))}
             <View
               style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                gap: 12,
-                fontWeight: 600,
-                borderTop: `1px solid ${theme.tooltipBorder}`,
-                paddingTop: 6,
+                display: 'grid',
+                gridTemplateColumns: 'auto 1fr auto auto',
+                alignItems: 'center',
+                columnGap: 8,
+                rowGap: 6,
               }}
             >
-              <Text>Net worth</Text>
-              <FinancialText>
+              <Text
+                style={{
+                  gridColumn: 3,
+                  textAlign: 'right',
+                  color: theme.pageTextSubdued,
+                }}
+              >
+                vs.{' '}
+                {monthUtils.format(
+                  monthUtils.prevMonth(months[hoverIndex]),
+                  'MMM',
+                )}
+              </Text>
+              <Text
+                style={{
+                  gridColumn: 4,
+                  textAlign: 'right',
+                  paddingLeft: 8,
+                  color: theme.pageTextSubdued,
+                }}
+              >
+                Balance
+              </Text>
+              {groups.map(group => (
+                <Fragment key={group.id}>
+                  <ColorSwatch color={colors.get(group.id)} size={8} />
+                  <Text style={{ color: theme.pageTextSubdued }}>
+                    {group.name}
+                  </Text>
+                  <FinancialText style={{ textAlign: 'right' }}>
+                    {formatChange(changes(group)[hoverIndex])}
+                  </FinancialText>
+                  <FinancialText style={{ textAlign: 'right', paddingLeft: 8 }}>
+                    {format(group.history[hoverIndex], 'financial')}
+                  </FinancialText>
+                </Fragment>
+              ))}
+              <View
+                style={{
+                  gridColumn: '1 / -1',
+                  borderTop: `1px solid ${theme.tooltipBorder}`,
+                }}
+              />
+              <Text style={{ gridColumn: '1 / 3', fontWeight: 600 }}>
+                Net worth
+              </Text>
+              <FinancialText style={{ textAlign: 'right', fontWeight: 600 }}>
                 {formatChange(totalChanges[hoverIndex])}
+              </FinancialText>
+              <FinancialText
+                style={{ textAlign: 'right', paddingLeft: 8, fontWeight: 600 }}
+              >
+                {format(data.total.history[hoverIndex], 'financial')}
               </FinancialText>
             </View>
           </View>
@@ -315,10 +349,15 @@ type Band = {
   edge: number[];
 };
 
-/** A row's month-end balances, less its balance at the baseline */
+/**
+ * How much a row's balance moved in each month: from the previous month-end,
+ * or from the baseline for the first month
+ */
 function changes({ history, balance, changeAmount }: NetWorthRow) {
   const baseline = balance - changeAmount;
-  return history.map(value => value - baseline);
+  return history.map(
+    (value, i) => value - (i === 0 ? baseline : history[i - 1]),
+  );
 }
 
 /**
