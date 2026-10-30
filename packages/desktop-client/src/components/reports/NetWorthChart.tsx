@@ -157,17 +157,6 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
               );
             })}
 
-            {/* Drawn over the bands so it stays visible where they meet */}
-            <line
-              x1={MARGIN.left}
-              x2={width - MARGIN.right}
-              y1={y(0)}
-              y2={y(0)}
-              stroke={theme.numberNegative}
-              strokeWidth={1.5}
-              pointerEvents="none"
-            />
-
             <path
               d={linePath(totalChanges, x, y)}
               fill="none"
@@ -175,6 +164,17 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
               strokeWidth={2.5}
               strokeLinejoin="round"
               strokeLinecap="round"
+              pointerEvents="none"
+            />
+            {/* Drawn over the bands and the net worth line so it stays
+                visible in flat months */}
+            <line
+              x1={MARGIN.left}
+              x2={width - MARGIN.right}
+              y1={y(0)}
+              y2={y(0)}
+              stroke={theme.numberNegative}
+              strokeWidth={1.5}
               pointerEvents="none"
             />
             <circle
