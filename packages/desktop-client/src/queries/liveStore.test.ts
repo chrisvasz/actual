@@ -396,6 +396,38 @@ describe('replaceEqualDeep', () => {
     expect(replaceEqualDeep(prev, [1, 2, 3])).toEqual([1, 2, 3]);
   });
 
+  it('matches rows by id when one is added or removed', () => {
+    const prev = [
+      { id: 'a', x: 1 },
+      { id: 'b', x: 2 },
+      { id: 'c', x: 3 },
+    ];
+
+    const removed = replaceEqualDeep(
+      prev,
+      structuredClone([prev[0], prev[2]]),
+    ) as typeof prev;
+    expect(removed).toEqual([prev[0], prev[2]]);
+    expect(removed[1]).toBe(prev[2]);
+
+    const added = replaceEqualDeep(
+      prev,
+      structuredClone([{ id: 'z', x: 0 }, ...prev]),
+    ) as typeof prev;
+    expect(added[0]).toEqual({ id: 'z', x: 0 });
+    expect(added.slice(1)).toEqual(prev);
+    added.slice(1).forEach((row, i) => expect(row).toBe(prev[i]));
+
+    const reordered = replaceEqualDeep(
+      prev,
+      structuredClone([...prev].reverse()),
+    );
+    expect(reordered).not.toBe(prev);
+    expect((reordered as typeof prev)[0]).toBe(prev[2]);
+
+    expect(replaceEqualDeep(prev, structuredClone(prev))).toBe(prev);
+  });
+
   it('counts NaN as equal to itself', () => {
     const prev = [{ x: NaN }];
     expect(replaceEqualDeep(prev, [{ x: NaN }])).toBe(prev);

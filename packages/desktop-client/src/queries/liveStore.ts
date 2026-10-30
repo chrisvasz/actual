@@ -402,7 +402,8 @@ export function watchLiveQuery<Data = unknown>(
 /**
  * `next`, reusing every part of `previous` that is deeply equal to it, so
  * a re-read that changed one row hands back the other rows (and an
- * unchanged read the whole result) by reference.
+ * unchanged read the whole result) by reference. Rows with an `id` are
+ * matched by it, so adding or removing one doesn't shift the rest.
  */
 export function replaceEqualDeep(previous: unknown, next: unknown): unknown {
   if (Object.is(previous, next)) {
@@ -411,6 +412,12 @@ export function replaceEqualDeep(previous: unknown, next: unknown): unknown {
   const isArray = Array.isArray(previous) && Array.isArray(next);
   if (!isArray && !(isPlainObject(previous) && isPlainObject(next))) {
     return next;
+  }
+  if (isArray) {
+    const byId = previousRowsById(previous as unknown[]);
+    if (byId) {
+      return replaceEqualRows(previous as unknown[], next as unknown[], byId);
+    }
   }
 
   const prevItems = previous as Record<string, unknown>;
@@ -434,6 +441,45 @@ export function replaceEqualDeep(previous: unknown, next: unknown): unknown {
     ? (previous as unknown[]).length
     : (prevKeys as string[]).length;
   return prevSize === size && equalCount === size ? previous : copy;
+}
+
+function rowId(value: unknown): string | undefined {
+  return isPlainObject(value) && typeof value.id === 'string'
+    ? value.id
+    : undefined;
+}
+
+// `null` unless every row has a distinct `id`
+function previousRowsById(rows: unknown[]): Map<string, unknown> | null {
+  const byId = new Map<string, unknown>();
+  for (const row of rows) {
+    const id = rowId(row);
+    if (id === undefined || byId.has(id)) {
+      return null;
+    }
+    byId.set(id, row);
+  }
+  return byId.size > 0 ? byId : null;
+}
+
+function replaceEqualRows(
+  previous: unknown[],
+  next: unknown[],
+  previousById: Map<string, unknown>,
+): unknown[] {
+  let isUnchanged = previous.length === next.length;
+  const copy = next.map((row, i) => {
+    const id = rowId(row);
+    const value = replaceEqualDeep(
+      id === undefined ? undefined : previousById.get(id),
+      row,
+    );
+    if (!Object.is(value, previous[i])) {
+      isUnchanged = false;
+    }
+    return value;
+  });
+  return isUnchanged ? previous : copy;
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
