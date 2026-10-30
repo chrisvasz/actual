@@ -131,41 +131,7 @@ export function NetWorthReport({ start, end }: NetWorthReportProps) {
         </Text>
       ) : (
         <>
-          <NetWorthChart
-            data={(() => {
-              const mk = (
-                src: (typeof data.groups)[number],
-                id: string,
-                deltas: number[],
-              ) => {
-                const base = 100000_00;
-                let b = base;
-                const h = deltas.map(d => (b += d * 100));
-                return {
-                  ...src,
-                  id,
-                  name: id,
-                  history: h,
-                  balance: h[h.length - 1],
-                  changeAmount: h[h.length - 1] - base,
-                  accounts: [],
-                };
-              };
-              const g = [
-                mk(data.groups[0], data.groups[0].id, [3000, 3000, -10000]),
-                mk(data.groups[0], data.groups[1].id, [9000, -3000, 0]),
-                mk(data.groups[0], 'third', [1000, 0, 10000]),
-              ];
-              const t = mk(data.groups[0], 'net-worth', [13000, 0, 0]);
-              return {
-                ...data,
-                months: data.months.slice(-3),
-                groups: g,
-                total: t,
-              };
-            })()}
-            colors={new Map([...colors, ['third', '#e9906a']])}
-          />
+          <NetWorthChart data={data} colors={colors} />
           <NetWorthTable data={data} colors={colors} />
         </>
       )}
