@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import type { PointerEvent } from 'react';
 
 import { styles } from '@actual-app/components/styles';
@@ -13,18 +13,17 @@ import { useFormat } from '#hooks/useFormat';
 import { useResizeObserver } from '#hooks/useResizeObserver';
 
 import { ColorSwatch } from './ColorSwatch';
-import type { NetWorthData } from './netWorth';
+import type { NetWorthData, NetWorthRow } from './netWorth';
 
 const HEIGHT = 260;
 const MARGIN = { top: 12, right: 16, bottom: 28, left: 52 };
 const MAX_X_LABELS = 8;
 const BAND_OPACITY = 0.28;
-/** How far below the lowest month a broken axis starts, as a fraction */
-const AXIS_FLOOR_GAP = 0.2;
 
 const axisFormat = new Intl.NumberFormat(undefined, {
   notation: 'compact',
   maximumFractionDigits: 1,
+  signDisplay: 'exceptZero',
 });
 
 type NetWorthChartProps = {
@@ -33,11 +32,15 @@ type NetWorthChartProps = {
 };
 
 /**
- * Month-end balances stacked by account group, assets above zero and debts
- * below, with net worth as a line.
+ * Each month-end's change since the baseline month, stacked by account group
+ * with gains above zero and losses below, and net worth's change as a line.
+ * Plotting change rather than balance gives the slope the full height and
+ * keeps every group visible, however small next to the total.
  */
 export function NetWorthChart({ data, colors }: NetWorthChartProps) {
   const format = useFormat();
+  const formatChange = (value: number) =>
+    `${value > 0 ? '+' : ''}${format(value, 'financial')}`;
   const [width, setWidth] = useState(0);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const containerRef = useResizeObserver<HTMLDivElement>(
@@ -46,20 +49,12 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
   );
 
   const { months, groups } = data;
-  const stacks = stackGroups(data);
-  // With no debts and net worth always positive, start the axis below the
-  // lowest month instead of at zero, so changes near the top aren't flattened
-  const hasDebts = stacks.lowest.some(value => value < 0);
-  const lowest = Math.min(
-    ...data.total.history,
-    ...(hasDebts ? stacks.lowest : []),
-  );
+  const totalChanges = changes(data.total);
+  const stacks = stackChanges(data);
   const [yMin, yMax, ticks] = niceScale(
-    lowest > 0 ? lowest * (1 - AXIS_FLOOR_GAP) : lowest,
-    Math.max(0, ...stacks.highest, ...data.total.history),
+    Math.min(0, ...stacks.lowest, ...totalChanges),
+    Math.max(0, ...stacks.highest, ...totalChanges),
   );
-  const isAxisBroken = yMin > 0;
-  const clipId = useId();
 
   const plotWidth = Math.max(0, width - MARGIN.left - MARGIN.right);
   const plotHeight = HEIGHT - MARGIN.top - MARGIN.bottom;
@@ -86,7 +81,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
   // and in the half of the plot it isn't in
   const tooltipOnLeft = hoverIndex != null && x(hoverIndex) > width / 2;
   const tooltipAtBottom =
-    hoverIndex != null && y(data.total.history[hoverIndex]) < HEIGHT / 2;
+    hoverIndex != null && y(totalChanges[hoverIndex]) < HEIGHT / 2;
 
   return (
     <View style={{ gap: 12 }}>
@@ -100,7 +95,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
             width={width}
             height={HEIGHT}
             role="img"
-            aria-label={`Net worth by account group, ${formatMonth(months[0])} to ${formatMonth(months[lastIndex])}`}
+            aria-label={`Change in net worth since ${formatMonth(data.baselineMonth)} by account group, ${formatMonth(months[0])} to ${formatMonth(months[lastIndex])}`}
             style={{ display: 'block', overflow: 'visible' }}
           >
             {ticks.map(tick => (
@@ -143,26 +138,10 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
               />
             )}
 
-            <defs>
-              <clipPath id={clipId}>
-                <rect
-                  x={0}
-                  y={0}
-                  width={width}
-                  height={HEIGHT - MARGIN.bottom}
-                />
-              </clipPath>
-            </defs>
-
             {stacks.bands.map(band => {
               const color = colors.get(band.groupId);
               return (
-                <g
-                  key={band.key}
-                  pointerEvents="none"
-                  // Bands stack up from zero, below a broken axis's floor
-                  clipPath={`url(#${clipId})`}
-                >
+                <g key={band.key} pointerEvents="none">
                   <path
                     d={areaPath(band.base, band.edge, x, y)}
                     fill={color}
@@ -179,24 +158,8 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
               );
             })}
 
-            {isAxisBroken && (
-              // A "//" mark where the bottom gridline meets the axis labels,
-              // signalling that the axis doesn't start at zero
-              <g
-                transform={`translate(${MARGIN.left}, ${HEIGHT - MARGIN.bottom})`}
-                pointerEvents="none"
-              >
-                <path d="M-3,5L3,-5H7L1,5Z" fill={theme.tableBackground} />
-                <path
-                  d="M-3,5L3,-5M1,5L7,-5"
-                  stroke={theme.pageTextSubdued}
-                  strokeWidth={1.25}
-                />
-              </g>
-            )}
-
             <path
-              d={linePath(data.total.history, x, y)}
+              d={linePath(totalChanges, x, y)}
               fill="none"
               stroke={theme.pageText}
               strokeWidth={2.5}
@@ -206,7 +169,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
             />
             <circle
               cx={x(hoverIndex ?? lastIndex)}
-              cy={y(data.total.history[hoverIndex ?? lastIndex])}
+              cy={y(totalChanges[hoverIndex ?? lastIndex])}
               r={4}
               fill={theme.pageText}
               stroke={theme.tableBackground}
@@ -271,7 +234,8 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
             }}
           >
             <Text style={{ fontWeight: 600, fontSize: 13 }}>
-              End of {formatMonth(months[hoverIndex])}
+              Change from {formatMonth(data.baselineMonth)} to{' '}
+              {formatMonth(months[hoverIndex])}
             </Text>
             {groups.map(group => (
               <View
@@ -283,7 +247,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
                   {group.name}
                 </Text>
                 <FinancialText>
-                  {format(group.history[hoverIndex], 'financial')}
+                  {formatChange(changes(group)[hoverIndex])}
                 </FinancialText>
               </View>
             ))}
@@ -299,7 +263,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
             >
               <Text>Net worth</Text>
               <FinancialText>
-                {format(data.total.history[hoverIndex], 'financial')}
+                {formatChange(totalChanges[hoverIndex])}
               </FinancialText>
             </View>
           </View>
@@ -326,7 +290,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
               backgroundColor: theme.pageText,
             }}
           />
-          <Text>Net worth</Text>
+          <Text>Net worth change</Text>
         </View>
         {groups.map(group => (
           <View
@@ -351,27 +315,32 @@ type Band = {
   edge: number[];
 };
 
+/** A row's month-end balances, less its balance at the baseline */
+function changes({ history, balance, changeAmount }: NetWorthRow) {
+  const baseline = balance - changeAmount;
+  return history.map(value => value - baseline);
+}
+
 /**
- * Stacks each group's assets up from zero and its debts down from it, in
- * table order. Assets and debts are split by account, so a group holding a
- * house and its mortgage shows both rather than their difference.
+ * Stacks each group's gains up from zero and its losses down from it, in
+ * table order. A group that gains in some months and loses in others gets a
+ * band on each side, so bands never cross zero.
  */
-function stackGroups({ months, groups }: NetWorthData) {
-  const assetTop = months.map(() => 0);
-  const debtBottom = months.map(() => 0);
+function stackChanges({ months, groups }: NetWorthData) {
+  const gainTop = months.map(() => 0);
+  const lossBottom = months.map(() => 0);
   const bands: Band[] = [];
   for (const group of groups) {
-    for (const stack of [assetTop, debtBottom]) {
-      const isDebt = stack === debtBottom;
+    const groupChanges = changes(group);
+    for (const stack of [gainTop, lossBottom]) {
+      const isLoss = stack === lossBottom;
       const base = [...stack];
-      for (const account of group.accounts) {
-        account.history.forEach((value, i) => {
-          stack[i] += isDebt ? Math.min(0, value) : Math.max(0, value);
-        });
-      }
+      groupChanges.forEach((value, i) => {
+        stack[i] += isLoss ? Math.min(0, value) : Math.max(0, value);
+      });
       if (stack.some((value, i) => value !== base[i])) {
         bands.push({
-          key: `${group.id}-${isDebt ? 'debts' : 'assets'}`,
+          key: `${group.id}-${isLoss ? 'losses' : 'gains'}`,
           groupId: group.id,
           base,
           edge: [...stack],
@@ -379,7 +348,7 @@ function stackGroups({ months, groups }: NetWorthData) {
       }
     }
   }
-  return { bands, highest: assetTop, lowest: debtBottom };
+  return { bands, highest: gainTop, lowest: lossBottom };
 }
 
 /**

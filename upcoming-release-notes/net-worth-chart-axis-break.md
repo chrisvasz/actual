@@ -3,4 +3,4 @@ category: Enhancements
 authors: [chrisvasz]
 ---
 
-Start the net worth chart above zero when net worth stays positive, so month-to-month changes are easier to see
+Chart how much net worth changed over the range, broken down by account group, so month-to-month movement is easier to see
