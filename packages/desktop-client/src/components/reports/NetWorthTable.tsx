@@ -77,7 +77,7 @@ export function NetWorthTable({ data, colors }: NetWorthTableProps) {
       <thead>
         <NetWorthTableRow
           isHeader
-          cells={['Group', 'Starting balance', 'Balance', 'Share', 'Change']}
+          cells={['Group', 'Starting', 'Balance', 'Share', 'Change']}
           style={{
             color: theme.tableHeaderText,
             fontSize: 13,
