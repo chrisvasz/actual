@@ -100,8 +100,15 @@ export class Navigation {
     return budgetPage;
   }
 
+  // Schedules has no sidebar link, so open it through the command bar.
   async goToSchedulesPage() {
-    await this.page.getByRole('link', { name: 'Schedules' }).click();
+    await this.page.keyboard.press('ControlOrMeta+k');
+    const commandBar = this.page.getByRole('combobox', { name: 'Command Bar' });
+    await commandBar.fill('schedules');
+    await this.page.keyboard.press('Enter');
+    await expect(
+      this.page.getByRole('button', { name: 'Add new schedule' }),
+    ).toBeVisible();
 
     return new SchedulesPage(this.page);
   }

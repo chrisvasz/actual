@@ -5,7 +5,6 @@ import {
   SvgUserGroup,
   SvgWallet,
 } from '@actual-app/components/icons/v1';
-import { SvgCalendar3 } from '@actual-app/components/icons/v2';
 import { spacing } from '@actual-app/components/tokens';
 import { View } from '@actual-app/components/view';
 
@@ -21,7 +20,6 @@ export function PrimaryNav() {
     >
       <NavRow title="Budget" Icon={SvgWallet} to="/budget" />
       <NavRow title="Reports" Icon={SvgReports} to="/reports" />
-      <NavRow title="Schedules" Icon={SvgCalendar3} to="/schedules" />
       <NavRow title="Payees" Icon={SvgUserGroup} to="/payees" />
       <NavRow title="Rules" Icon={SvgTuning} to="/rules" />
       <NavRow title="Tags" Icon={SvgTag} to="/tags" />
