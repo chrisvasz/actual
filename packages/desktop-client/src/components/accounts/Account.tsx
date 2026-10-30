@@ -1,7 +1,7 @@
 import React, {
   createRef,
   PureComponent,
-  startTransition,
+  use,
   useEffect,
   useMemo,
 } from 'react';
@@ -34,12 +34,6 @@ import type {
   TransactionEntity,
   TransactionFilterEntity,
 } from '@actual-app/core/types/models';
-import {
-  QueryObserver,
-  useQueryClient,
-  useSuspenseQuery,
-} from '@tanstack/react-query';
-import type { QueryClient } from '@tanstack/react-query';
 import { parseISO } from 'date-fns';
 import { debounce, isEqual } from 'es-toolkit/compat';
 import { v4 as uuidv4 } from 'uuid';
@@ -87,14 +81,9 @@ import { addNotification } from '#notifications/notificationsSlice';
 import { useCreatePayee } from '#payees';
 import * as queries from '#queries';
 import { aqlQuery } from '#queries/aqlQuery';
+import { getLiveQuery } from '#queries/liveStore';
 import { useDispatch, useSelector } from '#redux';
 import type { AppDispatch } from '#redux/store';
-import {
-  hasMoreTransactions,
-  loadMoreTransactions,
-  transactionQueries,
-} from '#transactions';
-import type { TransactionsSnapshot } from '#transactions';
 import { updateNewTransactions } from '#transactions/transactionsSlice';
 import { clearPendingUndo } from '#undo';
 
@@ -155,12 +144,6 @@ type AccountPreload = {
   balances: Record<TransactionEntity['id'], IntegerAmount> | null;
   filteredAmount: number | null;
 } | null;
-
-// Every fetch counts as new rows, even when they come back unchanged, so a
-// refetch always recomputes the totals that an optimistic edit skips.
-function rowsQueryOptions(args: Parameters<typeof transactionQueries.aql>[0]) {
-  return { ...transactionQueries.aql(args), structuralSharing: false };
-}
 
 function isTransactionFilterEntity(
   filter: ConditionEntity,
@@ -342,7 +325,6 @@ type AccountInternalProps = {
     name: PayeeEntity['name'],
   ) => Promise<PayeeEntity['id'] | null>;
   preload: AccountPreload;
-  queryClient: QueryClient;
 };
 
 type AccountInternalState = {
@@ -384,18 +366,18 @@ class AccountInternal extends PureComponent<
   AccountInternalProps,
   AccountInternalState
 > {
-  // The rows on screen: the first `rowsLimit` rows of `rowsQuery`, read as
-  // one snapshot. Loading more raises the limit.
-  rows: QueryObserver<TransactionsSnapshot> | null = null;
+  // The rows on screen: the first `rowsLimit` rows of `rowsQuery`, read
+  // live as one snapshot. Loading more raises the limit.
   rowsQuery: Query | null = null;
   rowsLimit = TRANSACTIONS_PAGE_COUNT;
   stopRows?: () => void;
-  _isLoadingMoreRows = false;
-  // Whether the last fetched rows filled the limit. Kept apart from the rows
-  // on screen, which an optimistic delete can shorten.
+  // Reads the rows now, if they've changed since last read
+  readRows: (() => void) | null = null;
+  _isRowsQueryFiltered = false;
+  // The rows on screen, as last read
+  _shownRows: readonly TransactionEntity[] | null = null;
+  // Whether the rows on screen filled the limit
   _hasMoreRows = false;
-  // Rows set by an optimistic update, which skip the aggregate queries
-  _optimisticRows: TransactionsSnapshot | null = null;
   rootQuery!: Query;
   currentQuery!: Query;
   table: TableRef;
@@ -556,22 +538,10 @@ class AccountInternal extends PureComponent<
     });
   };
 
+  // The rows are read live, so they're current already: a change shows
+  // them in a microtask. This shows them now instead.
   refetchTransactions = async () => {
-    const rows = this.rows;
-    if (rows == null) {
-      return;
-    }
-    // A refetch joins a fetch that's already running unless there are rows
-    // to keep showing meanwhile, and that fetch may predate the change being
-    // refetched for. Cancel it so this one reads the latest rows.
-    const { data, isPlaceholderData } = rows.getCurrentResult();
-    if (data == null || isPlaceholderData) {
-      await this.props.queryClient.cancelQueries({
-        queryKey: rows.options.queryKey,
-        exact: true,
-      });
-    }
-    void rows.refetch();
+    this.readRows?.();
   };
 
   fetchTransactions = (filterConditions?: ConditionEntity[]) => {
@@ -601,63 +571,11 @@ class AccountInternal extends PureComponent<
     });
     this.rowsQuery = rowsQuery;
     this.rowsLimit = TRANSACTIONS_PAGE_COUNT;
-    this._hasMoreRows = false;
-
-    const rows = new QueryObserver(
-      this.props.queryClient,
-      rowsQueryOptions({ query: rowsQuery, limit: this.rowsLimit }),
-    );
-    this.rows = rows;
-
-    let shownRows: TransactionsSnapshot | null = null;
-    const unsubscribeRows = rows.subscribe(result => {
-      // Placeholder rows are the smaller snapshot, still shown while the
-      // larger one loads
-      if (
-        result.data == null ||
-        result.isPlaceholderData ||
-        result.data === shownRows
-      ) {
-        return;
-      }
-      const prevRows = shownRows;
-      shownRows = result.data;
-      if (result.data !== this._optimisticRows) {
-        this._hasMoreRows = hasMoreTransactions(result.data, this.rowsLimit);
-      }
-      void this.onRows(result.data, prevRows, isFiltered);
-    });
-
-    // As before, local changes reach this screen through optimistic updates
-    // and its own refetches, so only refetch for changes synced from other
-    // devices.
-    const unlistenSync = listen('sync-event', event => {
-      if (event.type !== 'success') {
-        return;
-      }
-      const dependencies = rows.getCurrentResult().data?.dependencies;
-      if (
-        dependencies == null ||
-        event.tables.some(table => dependencies.includes(table))
-      ) {
-        void rows.refetch();
-      }
-    });
-
-    this.stopRows = () => {
-      unsubscribeRows();
-      unlistenSync();
-      // Drop the rows now rather than on the next tick, so running the same
-      // query again reads it fresh instead of finding these still cached.
-      this.props.queryClient.removeQueries({
-        queryKey: rows.options.queryKey,
-        exact: true,
-      });
-      this.rows = null;
-    };
+    this._isRowsQueryFiltered = isFiltered;
+    this._shownRows = null;
 
     // The balance total depends on the query, not on the rows that come
-    // back, so start it alongside the first page instead of waiting for it.
+    // back, so start it before the rows are read, which shows them.
     const pendingBalanceTotal = this.state.showBalances
       ? this.getBalanceTotal()
       : null;
@@ -666,43 +584,58 @@ class AccountInternal extends PureComponent<
     // sees the rejection if it does await this promise.
     pendingBalanceTotal?.catch(() => null);
     this._pendingBalanceTotal = pendingBalanceTotal;
+
+    this.watchRows();
+  }
+
+  // Reads the first `rowsLimit` rows of `rowsQuery` and shows them, then
+  // again whenever they change. The backend answers synchronously, so the
+  // rows are shown before this returns.
+  watchRows() {
+    this.stopRows?.();
+    const rowsQuery = this.rowsQuery;
+    if (rowsQuery == null) {
+      return;
+    }
+    const limit = this.rowsLimit;
+    const rows = getLiveQuery<TransactionEntity[]>(rowsQuery.limit(limit));
+    this._hasMoreRows = false;
+
+    const readRows = () => {
+      // A failed read keeps the rows on screen
+      const { data } = rows.getSnapshot();
+      if (data == null || data === this._shownRows) {
+        return;
+      }
+      this._hasMoreRows = data.length >= limit;
+      this.showRows(data);
+    };
+    const unsubscribe = rows.subscribe(readRows);
+    this.readRows = readRows;
+    readRows();
+
+    this.stopRows = () => {
+      unsubscribe();
+      this.readRows = null;
+      this.stopRows = undefined;
+    };
+  }
+
+  showRows(rows: readonly TransactionEntity[]) {
+    const prevRows = this._shownRows;
+    this._shownRows = rows;
+    void this.onRows(rows, prevRows, this._isRowsQueryFiltered);
   }
 
   // Shows a new snapshot of the rows. `prevRows` is null on a query's first
   // load.
   onRows = async (
-    snapshot: TransactionsSnapshot,
-    prevRows: TransactionsSnapshot | null,
+    rows: readonly TransactionEntity[],
+    prevRows: readonly TransactionEntity[] | null,
     isFiltered: boolean,
   ) => {
-    const data = ungroupTransactions([...snapshot.data]);
+    const data = ungroupTransactions([...rows]);
     const firstLoad = prevRows == null;
-
-    // Fast path for optimistic updates (e.g. field edits): skip the
-    // expensive aggregate DB queries (calculateBalances, getFilteredAmount)
-    // and just update the transaction list in state directly. Balances and
-    // filteredAmount will be refreshed on the next full DB-driven onRows.
-    if (snapshot === this._optimisticRows) {
-      this._optimisticRows = null;
-      const transactionsSnapshot = data;
-      const balances = this.state.showBalances
-        ? await this.calculateBalances(data)
-        : null;
-      // Wrap in startTransition so React treats this as a low-priority
-      // update. Without this, setState blocks the main thread for the
-      // full duration of the re-render (~40–220ms with large transaction
-      // lists), preventing input events from being processed and making
-      // the UI feel frozen. startTransition lets React break the render
-      // into chunks and yield to the browser between them, keeping the
-      // UI responsive while the row update happens in the background.
-      startTransition(() => {
-        this.setState({
-          transactions: transactionsSnapshot,
-          balances,
-        });
-      });
-      return;
-    }
 
     if (firstLoad) {
       this.table.current?.setRowAnimation(false);
@@ -753,31 +686,13 @@ class AccountInternal extends PureComponent<
     );
   };
 
-  loadMoreRows = async () => {
-    const rows = this.rows;
-    const query = this.rowsQuery;
-    if (rows == null || query == null || this._isLoadingMoreRows) {
+  // Reads every row shown so far plus one more page, as one snapshot
+  loadMoreRows = () => {
+    if (this.rowsQuery == null || !this._hasMoreRows) {
       return;
     }
-    if (rows.getCurrentResult().isPlaceholderData || !this._hasMoreRows) {
-      return;
-    }
-
-    this._isLoadingMoreRows = true;
-    try {
-      const next = await loadMoreTransactions(this.props.queryClient, {
-        query,
-        limit: this.rowsLimit,
-        pageSize: TRANSACTIONS_PAGE_COUNT,
-      });
-      // The query may have changed while the page loaded
-      if (this.rows === rows) {
-        this.rowsLimit = next.limit;
-        rows.setOptions(rowsQueryOptions(next));
-      }
-    } finally {
-      this._isLoadingMoreRows = false;
-    }
+    this.rowsLimit += TRANSACTIONS_PAGE_COUNT;
+    this.watchRows();
   };
 
   onSearch = (value: string) => {
@@ -864,25 +779,10 @@ class AccountInternal extends PureComponent<
     );
   };
 
+  // The edit itself reaches the rows when it's saved: saving runs on this
+  // thread, and the rows are read again in the microtask after it, before
+  // the screen draws.
   onTransactionsChange = (updatedTransaction: TransactionEntity) => {
-    // Apply changes to the rows optimistically. `onRows` recognizes these
-    // rows and skips the expensive aggregate DB queries for them.
-    const rows = this.rows;
-    const current = rows?.getCurrentResult().data;
-    if (rows && current) {
-      const data = updatedTransaction._deleted
-        ? current.data.filter(t => t.id !== updatedTransaction.id)
-        : current.data.map(t =>
-            t.id === updatedTransaction.id ? updatedTransaction : t,
-          );
-      // Set before `setQueryData`, which notifies `onRows` synchronously
-      this._optimisticRows = { ...current, data };
-      this.props.queryClient.setQueryData(
-        rows.options.queryKey,
-        this._optimisticRows,
-      );
-    }
-
     this.props.dispatch(updateNewTransactions({ id: updatedTransaction.id }));
   };
 
@@ -2173,7 +2073,6 @@ type AccountHackProps = Omit<
   | 'onBatchUnlinkSchedule'
   | 'onBatchDelete'
   | 'onSetTransfer'
-  | 'queryClient'
 >;
 
 async function loadAccountPreload({
@@ -2236,10 +2135,42 @@ async function loadAccountPreload({
   };
 }
 
+// Each navigation's preload, while the screen that read it is mounted
+const accountPreloads = new Map<string, Promise<AccountPreload>>();
+
+// The preload for the navigation `key`, suspending until it's loaded. Only
+// the screen's first render reads it, so it's never loaded again while
+// mounted; it's dropped once the screen unmounts, so coming back loads
+// fresh. Keyed by the navigation, since a path can open with different
+// filters.
+function useAccountPreload(
+  key: string,
+  load: () => Promise<AccountPreload>,
+): AccountPreload {
+  let preload = accountPreloads.get(key);
+  if (!preload) {
+    const loading = load();
+    // A failed preload is loaded again by the next render that asks for it
+    loading.catch(() => {
+      if (accountPreloads.get(key) === loading) {
+        accountPreloads.delete(key);
+      }
+    });
+    accountPreloads.set(key, loading);
+    preload = loading;
+  }
+  useEffect(
+    () => () => {
+      accountPreloads.delete(key);
+    },
+    [key],
+  );
+  return use(preload);
+}
+
 function AccountHack(props: AccountHackProps) {
   const { dispatch: splitsExpandedDispatch } = useSplitsExpanded();
   const dispatch = useDispatch();
-  const queryClient = useQueryClient();
   const {
     onBatchEdit,
     onBatchDuplicate,
@@ -2259,7 +2190,6 @@ function AccountHack(props: AccountHackProps) {
       onBatchUnlinkSchedule={onBatchUnlinkSchedule}
       onBatchDelete={onBatchDelete}
       onSetTransfer={onSetTransfer}
-      queryClient={queryClient}
       {...props}
     />
   );
@@ -2320,22 +2250,15 @@ export function Account() {
     (await createPayee({ name })) ?? null;
 
   const showReconciled = String(hideReconciled) !== 'true';
-  // Only the screen's first render reads this, so it never refetches while
-  // mounted; it's dropped once the screen unmounts, so coming back loads fresh.
-  // Keyed by the navigation, since a path can open with different filters.
-  const { data: preload } = useSuspenseQuery({
-    queryKey: ['account-screen-preload', location.key],
-    queryFn: () =>
-      loadAccountPreload({
-        accounts,
-        accountId: params.id,
-        filterConditions,
-        showBalances,
-        showReconciled,
-      }),
-    staleTime: Infinity,
-    gcTime: 0,
-  });
+  const preload = useAccountPreload(location.key, () =>
+    loadAccountPreload({
+      accounts,
+      accountId: params.id,
+      filterConditions,
+      showBalances,
+      showReconciled,
+    }),
+  );
 
   return (
     <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
