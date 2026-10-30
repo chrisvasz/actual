@@ -1,7 +1,6 @@
 import React, {
   createRef,
   PureComponent,
-  startTransition,
   use,
   useEffect,
   useMemo,
@@ -375,15 +374,10 @@ class AccountInternal extends PureComponent<
   // Reads the rows now, if they've changed since last read
   readRows: (() => void) | null = null;
   _isRowsQueryFiltered = false;
-  // The rows last read, and the rows on screen: the same, except after an
-  // optimistic edit, until the next read
-  _readRows: readonly TransactionEntity[] | null = null;
+  // The rows on screen, as last read
   _shownRows: readonly TransactionEntity[] | null = null;
-  // Whether the last read rows filled the limit. Kept apart from the rows
-  // on screen, which an optimistic delete can shorten.
+  // Whether the rows on screen filled the limit
   _hasMoreRows = false;
-  // Rows set by an optimistic update, which skip the aggregate queries
-  _optimisticRows: readonly TransactionEntity[] | null = null;
   rootQuery!: Query;
   currentQuery!: Query;
   table: TableRef;
@@ -544,15 +538,10 @@ class AccountInternal extends PureComponent<
     });
   };
 
-  // The rows are read live, so they're current already, but the screen may
-  // still show an optimistic edit the change didn't make. Show the rows
-  // read instead, which also recomputes the totals that edit skipped.
+  // The rows are read live, so they're current already: a change shows
+  // them in a microtask. This shows them now instead.
   refetchTransactions = async () => {
     this.readRows?.();
-    const rows = this._readRows;
-    if (rows != null && rows !== this._shownRows) {
-      this.showRows(rows);
-    }
   };
 
   fetchTransactions = (filterConditions?: ConditionEntity[]) => {
@@ -584,7 +573,6 @@ class AccountInternal extends PureComponent<
     this.rowsLimit = TRANSACTIONS_PAGE_COUNT;
     this._isRowsQueryFiltered = isFiltered;
     this._shownRows = null;
-    this._optimisticRows = null;
 
     // The balance total depends on the query, not on the rows that come
     // back, so start it before the rows are read, which shows them.
@@ -611,16 +599,14 @@ class AccountInternal extends PureComponent<
     }
     const limit = this.rowsLimit;
     const rows = getLiveQuery<TransactionEntity[]>(rowsQuery.limit(limit));
-    this._readRows = null;
     this._hasMoreRows = false;
 
     const readRows = () => {
       // A failed read keeps the rows on screen
       const { data } = rows.getSnapshot();
-      if (data == null || data === this._readRows) {
+      if (data == null || data === this._shownRows) {
         return;
       }
-      this._readRows = data;
       this._hasMoreRows = data.length >= limit;
       this.showRows(data);
     };
@@ -650,32 +636,6 @@ class AccountInternal extends PureComponent<
   ) => {
     const data = ungroupTransactions([...rows]);
     const firstLoad = prevRows == null;
-
-    // Fast path for optimistic updates (e.g. field edits): skip the
-    // expensive aggregate DB queries (calculateBalances, getFilteredAmount)
-    // and just update the transaction list in state directly. Balances and
-    // filteredAmount will be refreshed on the next full DB-driven onRows.
-    if (rows === this._optimisticRows) {
-      this._optimisticRows = null;
-      const transactionsSnapshot = data;
-      const balances = this.state.showBalances
-        ? await this.calculateBalances(data)
-        : null;
-      // Wrap in startTransition so React treats this as a low-priority
-      // update. Without this, setState blocks the main thread for the
-      // full duration of the re-render (~40–220ms with large transaction
-      // lists), preventing input events from being processed and making
-      // the UI feel frozen. startTransition lets React break the render
-      // into chunks and yield to the browser between them, keeping the
-      // UI responsive while the row update happens in the background.
-      startTransition(() => {
-        this.setState({
-          transactions: transactionsSnapshot,
-          balances,
-        });
-      });
-      return;
-    }
 
     if (firstLoad) {
       this.table.current?.setRowAnimation(false);
@@ -819,19 +779,10 @@ class AccountInternal extends PureComponent<
     );
   };
 
+  // The edit itself reaches the rows when it's saved: saving runs on this
+  // thread, and the rows are read again in the microtask after it, before
+  // the screen draws.
   onTransactionsChange = (updatedTransaction: TransactionEntity) => {
-    // Apply changes to the rows optimistically. `onRows` recognizes these
-    // rows and skips the expensive aggregate DB queries for them.
-    const current = this._shownRows;
-    if (current) {
-      this._optimisticRows = updatedTransaction._deleted
-        ? current.filter(t => t.id !== updatedTransaction.id)
-        : current.map(t =>
-            t.id === updatedTransaction.id ? updatedTransaction : t,
-          );
-      this.showRows(this._optimisticRows);
-    }
-
     this.props.dispatch(updateNewTransactions({ id: updatedTransaction.id }));
   };
 
