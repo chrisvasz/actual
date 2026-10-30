@@ -42,7 +42,7 @@ export function GoalProgressFill({ target, column }: GoalProgressFillProps) {
         right: 0,
         bottom: column === 'budgeted' ? BOTTOM_BORDER_WIDTH : 0,
         height: 2,
-        backgroundColor: theme.budgetGoalBehindTrack,
+        backgroundColor: theme.budgetGoalTrack,
         pointerEvents: 'none',
       }}
     >
@@ -50,7 +50,7 @@ export function GoalProgressFill({ target, column }: GoalProgressFillProps) {
         style={{
           height: '100%',
           width: `${progress * 100}%`,
-          backgroundColor: theme.budgetGoalBehindProgress,
+          backgroundColor: theme.budgetGoalProgress,
         }}
       />
     </View>

@@ -253,8 +253,6 @@
   --color-budgetGoalChipBackground: var(--palette-purple800);
   --color-budgetGoalChipText: var(--palette-purple150);
   --color-budgetGoalTrack: var(--palette-purple800);
-  --color-budgetGoalBehindProgress: var(--palette-terracotta400);
-  --color-budgetGoalBehindTrack: var(--palette-terracotta800);
   --color-budgetSummaryAmountBackground: var(--color-tableHeaderBackground);
 
   --color-floatingActionBarBackground: var(--palette-gray900);

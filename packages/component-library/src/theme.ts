@@ -240,8 +240,6 @@ export const theme = {
   budgetGoalChipBackground: 'var(--color-budgetGoalChipBackground)',
   budgetGoalChipText: 'var(--color-budgetGoalChipText)',
   budgetGoalTrack: 'var(--color-budgetGoalTrack)',
-  budgetGoalBehindProgress: 'var(--color-budgetGoalBehindProgress)',
-  budgetGoalBehindTrack: 'var(--color-budgetGoalBehindTrack)',
   floatingActionBarBackground: 'var(--color-floatingActionBarBackground)',
   floatingActionBarBorder: 'var(--color-floatingActionBarBorder)',
   floatingActionBarText: 'var(--color-floatingActionBarText)',
