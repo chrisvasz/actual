@@ -58,6 +58,17 @@ describe('ReconcilingMessage', () => {
     await userEvent.type(input, value);
   }
 
+  async function addAdjustment() {
+    await userEvent.click(screen.getByRole('button', { name: /^Difference/ }));
+    await userEvent.click(screen.getByText('Add adjustment transaction'));
+  }
+
+  function expectNoDifferenceMenu() {
+    expect(
+      screen.queryByRole('button', { name: /^Difference/ }),
+    ).not.toBeInTheDocument();
+  }
+
   test('starts on today with an empty balance', async () => {
     vi.mocked(useSheetValue).mockReturnValue(5000);
     renderMessage();
@@ -69,7 +80,8 @@ describe('ReconcilingMessage', () => {
     await waitFor(() => expect(dateInput).toHaveFocus());
     expect(screen.getByLabelText('Balance')).toHaveValue('');
     expect(screen.getByText('—')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Adjust' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Lock' })).toBeDisabled();
+    expectNoDifferenceMenu();
   });
 
   test('the right arrow fills in the cleared balance', async () => {
@@ -97,12 +109,30 @@ describe('ReconcilingMessage', () => {
     await enterDate('09/15/2026');
     await enterTarget('60');
 
-    await userEvent.click(screen.getByText('Adjust'));
+    await addAdjustment();
     expect(onCreateTransaction).toHaveBeenCalledWith(1000, '2026-09-15');
 
     await enterTarget('50');
     await userEvent.click(screen.getByText('Lock'));
     expect(onDone).toHaveBeenCalledWith(5000, '2026-09-15');
+  });
+
+  test('a difference offers an adjustment and keeps Lock disabled', async () => {
+    vi.mocked(useSheetValue).mockReturnValue(5000);
+    const onDone = vi.fn();
+    const onCreateTransaction = vi.fn();
+    renderMessage({ onDone, onCreateTransaction });
+
+    await enterTarget('60');
+    const lockButton = screen.getByRole('button', { name: 'Lock' });
+    expect(lockButton).toBeDisabled();
+
+    await addAdjustment();
+    expect(onCreateTransaction).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByText('Add adjustment transaction'),
+    ).not.toBeInTheDocument();
+    expect(onDone).not.toHaveBeenCalled();
   });
 
   test('counts only cleared transactions on or before the date', async () => {
@@ -128,7 +158,7 @@ describe('ReconcilingMessage', () => {
 
     await enterTarget('50');
     expect(screen.getByLabelText('Reconciled')).toBeInTheDocument();
-    expect(screen.queryByText('Adjust')).not.toBeInTheDocument();
+    expectNoDifferenceMenu();
 
     await userEvent.click(screen.getByText('Lock'));
     expect(onDone).toHaveBeenCalledWith(5000, monthUtils.currentDay());
@@ -159,7 +189,7 @@ describe('ReconcilingMessage', () => {
     expect(screen.getByText('30.00')).toBeInTheDocument();
     expect(screen.getByText('+70.00')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByText('Adjust'));
+    await addAdjustment();
     expect(onCreateTransaction).toHaveBeenCalledWith(
       7000,
       monthUtils.currentDay(),
@@ -177,7 +207,7 @@ describe('ReconcilingMessage', () => {
     expect(screen.getByText('120.00')).toBeInTheDocument();
     expect(screen.getByText('-20.00')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByText('Adjust'));
+    await addAdjustment();
     expect(onCreateTransaction).toHaveBeenCalledWith(
       -2000,
       monthUtils.currentDay(),
@@ -200,7 +230,7 @@ describe('ReconcilingMessage', () => {
     renderMessage({ onCreateTransaction });
 
     await enterTarget('100+25.50-10');
-    await userEvent.click(screen.getByText('Adjust'));
+    await addAdjustment();
 
     // 100 + 25.50 - 10 = 115.50, minus the 123.45 cleared
     expect(onCreateTransaction).toHaveBeenCalledWith(
@@ -217,7 +247,8 @@ describe('ReconcilingMessage', () => {
     await enterTarget('5');
     await userEvent.clear(screen.getByLabelText('Balance'));
 
-    expect(screen.getByRole('button', { name: 'Adjust' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Lock' })).toBeDisabled();
+    expectNoDifferenceMenu();
 
     await userEvent.click(
       screen.getByRole('button', { name: 'Exit reconciliation' }),
@@ -230,7 +261,8 @@ describe('ReconcilingMessage', () => {
     renderMessage();
 
     expect(screen.getAllByText('—')).toHaveLength(2);
-    expect(screen.getByRole('button', { name: 'Adjust' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Lock' })).toBeDisabled();
+    expectNoDifferenceMenu();
   });
 
   test('Enter locks once the target matches', async () => {
@@ -261,7 +293,7 @@ describe('ReconcilingMessage', () => {
 
     await enterTarget('40000');
     await userEvent.tab();
-    await userEvent.click(screen.getByText('Adjust'));
+    await addAdjustment();
     expect(onCreateTransaction).toHaveBeenCalledWith(
       4000000,
       monthUtils.currentDay(),
