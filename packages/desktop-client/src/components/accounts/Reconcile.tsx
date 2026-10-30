@@ -1,11 +1,15 @@
 import React, { useId, useState } from 'react';
 import type { Ref } from 'react';
+import { Dialog, DialogTrigger } from 'react-aria-components';
 
 import { Button, ButtonWithLoading } from '@actual-app/components/button';
 import { SvgDelete } from '@actual-app/components/icons/v0';
+import { SvgCheveronDown } from '@actual-app/components/icons/v1';
 import { SvgCheckCircle1 } from '@actual-app/components/icons/v2';
 import { InitialFocus } from '@actual-app/components/initial-focus';
 import { Input } from '@actual-app/components/input';
+import { Menu } from '@actual-app/components/menu';
+import { Popover } from '@actual-app/components/popover';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
@@ -155,38 +159,35 @@ export function ReconcilingMessage({
         <FormulaOperator>−</FormulaOperator>
         <FormulaTerm label="Cleared" value={clearedBalance} />
         <FormulaOperator>=</FormulaOperator>
-        <FormulaTerm
-          label="Difference"
-          value={difference}
-          isEmphasized
-          isReconciled={targetDiff === 0}
-        />
-      </View>
-      {targetDiff === 0 ? (
-        <ButtonWithLoading
-          variant="primary"
-          isLoading={pendingAction === 'done'}
-          isDisabled={pendingAction !== null}
-          onPress={lock}
-        >
-          Lock
-        </ButtonWithLoading>
-      ) : (
-        <ButtonWithLoading
-          variant="normal"
-          isLoading={pendingAction === 'create-transaction'}
-          isDisabled={pendingAction !== null || targetDiff == null}
-          onPress={() => {
-            if (targetDiff != null) {
+        {targetDiff != null && targetDiff !== 0 ? (
+          <DifferenceMenu
+            value={difference}
+            isDisabled={pendingAction !== null}
+            onAddAdjustment={() =>
               void runAction('create-transaction', () =>
                 onCreateTransaction(targetDiff, date),
-              );
+              )
             }
-          }}
-        >
-          Adjust
-        </ButtonWithLoading>
-      )}
+          />
+        ) : (
+          <FormulaTerm
+            label="Difference"
+            value={difference}
+            isEmphasized
+            isReconciled={targetDiff === 0}
+          />
+        )}
+      </View>
+      {/* Lock never trades places with another action, so a quick second
+          click can't lock something the first click just changed */}
+      <ButtonWithLoading
+        variant={targetDiff === 0 ? 'primary' : 'normal'}
+        isLoading={pendingAction === 'done'}
+        isDisabled={pendingAction !== null || targetDiff !== 0}
+        onPress={lock}
+      >
+        Lock
+      </ButtonWithLoading>
       <Button
         variant="bare"
         aria-label="Exit reconciliation"
@@ -363,6 +364,62 @@ function FormulaTerm({
         )}
       </View>
       <Text style={formulaLabelStyle}>{label}</Text>
+    </View>
+  );
+}
+
+type DifferenceMenuProps = {
+  value: string;
+  isDisabled: boolean;
+  onAddAdjustment: () => void;
+};
+
+// An unreconciled difference opens a menu of ways to resolve it, so fixing it
+// happens at the number itself rather than where Lock sits
+function DifferenceMenu({
+  value,
+  isDisabled,
+  onAddAdjustment,
+}: DifferenceMenuProps) {
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <DialogTrigger>
+        <Button
+          variant="bare"
+          aria-label={`Difference ${value}`}
+          isDisabled={isDisabled}
+          style={{
+            ...formulaValueBoxStyle,
+            gap: 3,
+            // Hover padding that doesn't push the formula apart
+            padding: '1px 4px',
+            margin: '0 -4px',
+          }}
+        >
+          <FinancialText style={{ ...formulaValueTextStyle, fontWeight: 700 }}>
+            {value}
+          </FinancialText>
+          <SvgCheveronDown
+            style={{ width: 10, height: 10, color: theme.pageTextLight }}
+          />
+        </Button>
+        <Popover placement="bottom">
+          <Dialog>
+            <Menu
+              slot="close"
+              onMenuSelect={name => {
+                if (name === 'add-adjustment') {
+                  onAddAdjustment();
+                }
+              }}
+              items={[
+                { name: 'add-adjustment', text: 'Add adjustment transaction' },
+              ]}
+            />
+          </Dialog>
+        </Popover>
+      </DialogTrigger>
+      <Text style={formulaLabelStyle}>Difference</Text>
     </View>
   );
 }
