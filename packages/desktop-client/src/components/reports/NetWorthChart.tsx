@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { PointerEvent } from 'react';
 
 import { styles } from '@actual-app/components/styles';
@@ -19,6 +19,8 @@ const HEIGHT = 260;
 const MARGIN = { top: 12, right: 16, bottom: 28, left: 52 };
 const MAX_X_LABELS = 8;
 const BAND_OPACITY = 0.28;
+/** How far below the lowest month a broken axis starts, as a fraction */
+const AXIS_FLOOR_GAP = 0.2;
 
 const axisFormat = new Intl.NumberFormat(undefined, {
   notation: 'compact',
@@ -45,10 +47,19 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
 
   const { months, groups } = data;
   const stacks = stackGroups(data);
+  // With no debts and net worth always positive, start the axis below the
+  // lowest month instead of at zero, so changes near the top aren't flattened
+  const hasDebts = stacks.lowest.some(value => value < 0);
+  const lowest = Math.min(
+    ...data.total.history,
+    ...(hasDebts ? stacks.lowest : []),
+  );
   const [yMin, yMax, ticks] = niceScale(
-    Math.min(0, ...stacks.lowest, ...data.total.history),
+    lowest > 0 ? lowest * (1 - AXIS_FLOOR_GAP) : lowest,
     Math.max(0, ...stacks.highest, ...data.total.history),
   );
+  const isAxisBroken = yMin > 0;
+  const clipId = useId();
 
   const plotWidth = Math.max(0, width - MARGIN.left - MARGIN.right);
   const plotHeight = HEIGHT - MARGIN.top - MARGIN.bottom;
@@ -132,10 +143,26 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
               />
             )}
 
+            <defs>
+              <clipPath id={clipId}>
+                <rect
+                  x={0}
+                  y={0}
+                  width={width}
+                  height={HEIGHT - MARGIN.bottom}
+                />
+              </clipPath>
+            </defs>
+
             {stacks.bands.map(band => {
               const color = colors.get(band.groupId);
               return (
-                <g key={band.key} pointerEvents="none">
+                <g
+                  key={band.key}
+                  pointerEvents="none"
+                  // Bands stack up from zero, below a broken axis's floor
+                  clipPath={`url(#${clipId})`}
+                >
                   <path
                     d={areaPath(band.base, band.edge, x, y)}
                     fill={color}
@@ -151,6 +178,22 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
                 </g>
               );
             })}
+
+            {isAxisBroken && (
+              // A "//" mark where the bottom gridline meets the axis labels,
+              // signalling that the axis doesn't start at zero
+              <g
+                transform={`translate(${MARGIN.left}, ${HEIGHT - MARGIN.bottom})`}
+                pointerEvents="none"
+              >
+                <path d="M-3,5L3,-5H7L1,5Z" fill={theme.tableBackground} />
+                <path
+                  d="M-3,5L3,-5M1,5L7,-5"
+                  stroke={theme.pageTextSubdued}
+                  strokeWidth={1.25}
+                />
+              </g>
+            )}
 
             <path
               d={linePath(data.total.history, x, y)}
@@ -392,7 +435,7 @@ function linePath(
   return `M${values.map((value, i) => `${x(i)},${y(value)}`).join('L')}`;
 }
 
-/** A domain covering `min`..`max` with round tick values, zero included. */
+/** A domain covering `min`..`max` with round tick values. */
 function niceScale(min: number, max: number): [number, number, number[]] {
   if (min === max) {
     return [min - 100, max + 100, [min]];
