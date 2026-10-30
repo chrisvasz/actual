@@ -49,10 +49,10 @@ describe('computeNetWorth', () => {
     });
 
     expect(data.baselineMonth).toBe('2026-01');
-    expect(data.history).toEqual([-900, 0]);
-    expect(data.netWorth).toBe(0);
+    expect(data.total.history).toEqual([-900, 0]);
+    expect(data.total.balance).toBe(0);
     // Net worth started below zero
-    expect(data.change).toBeNull();
+    expect(data.total.change).toBeNull();
 
     const [cash, loans] = data.groups;
     expect(cash).toMatchObject({
@@ -84,7 +84,7 @@ describe('computeNetWorth', () => {
     });
 
     expect(data.baselineMonth).toBe('2026-01');
-    expect(data.change).toBe(0.5);
+    expect(data.total.change).toBe(0.5);
     expect(data.groups[0].change).toBe(0.5);
   });
 
@@ -113,7 +113,7 @@ describe('computeNetWorth', () => {
       [UNGROUPED_OFF_BUDGET_ID, 'Off budget', 1],
     ]);
     expect(data.groups[0].accounts.map(row => row.id)).toEqual(['b', 'a']);
-    expect(data.netWorth).toBe(35);
+    expect(data.total.balance).toBe(35);
   });
 
   it('keeps closed accounts for the months they had a balance', () => {
@@ -127,7 +127,7 @@ describe('computeNetWorth', () => {
       groups,
     });
 
-    expect(data.history).toEqual([300, 0]);
+    expect(data.total.history).toEqual([300, 0]);
     expect(data.groups[0].change).toBe(-1);
   });
 

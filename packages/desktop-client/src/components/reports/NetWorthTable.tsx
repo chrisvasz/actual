@@ -9,6 +9,7 @@ import { theme } from '@actual-app/components/theme';
 
 import { useFormat } from '#hooks/useFormat';
 
+import { ColorSwatch } from './ColorSwatch';
 import type { NetWorthData, NetWorthRow } from './netWorth';
 import { NetWorthTableRow } from './NetWorthTableRow';
 import { PercentChange } from './PercentChange';
@@ -30,15 +31,13 @@ export function NetWorthTable({ data, colors }: NetWorthTableProps) {
 
   function toggle(id: string) {
     const next = new Set(expanded);
-    if (next.has(id)) {
-      next.delete(id);
-    } else {
+    if (!next.delete(id)) {
       next.add(id);
     }
     setExpanded(next);
   }
 
-  function rowCells(
+  function cells(
     row: NetWorthRow,
     name: ReactNode,
   ): [ReactNode, ReactNode, ReactNode, ReactNode] {
@@ -89,7 +88,7 @@ export function NetWorthTable({ data, colors }: NetWorthTableProps) {
             <NetWorthTableRow
               onClick={() => toggle(group.id)}
               style={{ fontWeight: 500 }}
-              cells={rowCells(
+              cells={cells(
                 group,
                 // The row takes the click; the button gives keyboard and
                 // screen reader users the same toggle
@@ -110,16 +109,7 @@ export function NetWorthTable({ data, colors }: NetWorthTableProps) {
                     height={10}
                     style={{ flexShrink: 0, color: theme.pageTextSubdued }}
                   />
-                  <span
-                    aria-hidden
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: 2,
-                      flexShrink: 0,
-                      backgroundColor: colors.get(group.id),
-                    }}
-                  />
+                  <ColorSwatch color={colors.get(group.id)} />
                   {group.name}
                 </button>,
               )}
@@ -133,7 +123,7 @@ export function NetWorthTable({ data, colors }: NetWorthTableProps) {
                     fontSize: 13,
                     '& > td': { height: 34 },
                   }}
-                  cells={rowCells(
+                  cells={cells(
                     account,
                     <span style={{ paddingLeft: 36 }}>{account.name}</span>,
                   )}
@@ -149,16 +139,7 @@ export function NetWorthTable({ data, colors }: NetWorthTableProps) {
             fontSize: 15,
             '& > td': { height: 48, borderBottom: 'none' },
           }}
-          cells={[
-            'Net worth',
-            format(data.netWorth, 'financial'),
-            '',
-            <PercentChange
-              key="change"
-              change={data.change}
-              isGood={data.change != null && data.change > 0}
-            />,
-          ]}
+          cells={cells(data.total, data.total.name)}
         />
       </tfoot>
     </table>

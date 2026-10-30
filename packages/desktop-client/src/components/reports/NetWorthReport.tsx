@@ -102,7 +102,7 @@ export function NetWorthReport({ start, end }: NetWorthReportProps) {
           data-testid="net-worth-total"
           style={{ fontSize: 30, fontWeight: 600, lineHeight: 1.3 }}
         >
-          {format(data.netWorth, 'financial')}
+          {format(data.total.balance, 'financial')}
         </FinancialText>
         <View
           style={{
@@ -113,12 +113,12 @@ export function NetWorthReport({ start, end }: NetWorthReportProps) {
           }}
         >
           <PercentChange
-            change={data.change}
-            isGood={data.change != null && data.change > 0}
+            change={data.total.change}
+            isGood={data.total.changeAmount > 0}
             style={{ fontWeight: 600 }}
           />
           <Text style={{ color: theme.pageTextSubdued }}>
-            {data.change == null
+            {data.total.change == null
               ? `No percentage: net worth was at or below zero in ${baselineLabel}`
               : `since ${baselineLabel}`}
           </Text>

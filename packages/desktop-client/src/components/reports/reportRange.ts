@@ -1,12 +1,13 @@
 import * as monthUtils from '@actual-app/core/shared/months';
 
+/** `months` is how many months a rolling preset spans, the current one included */
 export const REPORT_RANGE_PRESETS = [
-  { key: '3M', label: '3M' },
-  { key: '6M', label: '6M' },
-  { key: 'YTD', label: 'YTD' },
-  { key: '1Y', label: '1Y' },
-  { key: '5Y', label: '5Y' },
-  { key: 'all', label: 'All' },
+  { key: '3M', label: '3M', months: 3 },
+  { key: '6M', label: '6M', months: 6 },
+  { key: 'YTD', label: 'YTD', months: null },
+  { key: '1Y', label: '1Y', months: 12 },
+  { key: '5Y', label: '5Y', months: 60 },
+  { key: 'all', label: 'All', months: null },
 ] as const;
 
 export type ReportRangePresetKey = (typeof REPORT_RANGE_PRESETS)[number]['key'];
@@ -37,43 +38,16 @@ export function resolveReportRange(
       ? { start: range.start, end: range.end }
       : { start: range.end, end: range.start };
   }
-  switch (range.preset) {
-    case '3M':
-      return {
-        start: monthUtils.subMonths(currentMonth, 2),
-        end: currentMonth,
-      };
-    case '6M':
-      return {
-        start: monthUtils.subMonths(currentMonth, 5),
-        end: currentMonth,
-      };
-    case 'YTD':
-      return {
-        start: `${monthUtils.getYear(currentMonth)}-01`,
-        end: currentMonth,
-      };
-    case '1Y':
-      return {
-        start: monthUtils.subMonths(currentMonth, 11),
-        end: currentMonth,
-      };
-    case '5Y':
-      return {
-        start: monthUtils.subMonths(currentMonth, 59),
-        end: currentMonth,
-      };
-    case 'all':
-      return {
-        start:
-          earliestMonth && earliestMonth < currentMonth
-            ? earliestMonth
-            : currentMonth,
-        end: currentMonth,
-      };
-    default:
-      throw new Error(`Unknown report range preset: ${String(range.preset)}`);
+  const preset = REPORT_RANGE_PRESETS.find(p => p.key === range.preset);
+  let start = currentMonth;
+  if (preset?.months) {
+    start = monthUtils.subMonths(currentMonth, preset.months - 1);
+  } else if (range.preset === 'YTD') {
+    start = `${monthUtils.getYear(currentMonth)}-01`;
+  } else if (range.preset === 'all' && earliestMonth) {
+    start = earliestMonth < currentMonth ? earliestMonth : currentMonth;
   }
+  return { start, end: currentMonth };
 }
 
 /** Reads a stored range, falling back to the default when it's malformed. */

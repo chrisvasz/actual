@@ -12,6 +12,7 @@ import { FinancialText } from '#components/FinancialText';
 import { useFormat } from '#hooks/useFormat';
 import { useResizeObserver } from '#hooks/useResizeObserver';
 
+import { ColorSwatch } from './ColorSwatch';
 import type { NetWorthData } from './netWorth';
 
 const HEIGHT = 260;
@@ -45,8 +46,8 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
   const { months, groups } = data;
   const stacks = stackGroups(data);
   const [yMin, yMax, ticks] = niceScale(
-    Math.min(0, ...stacks.lowest, ...data.history),
-    Math.max(0, ...stacks.highest, ...data.history),
+    Math.min(0, ...stacks.lowest, ...data.total.history),
+    Math.max(0, ...stacks.highest, ...data.total.history),
   );
 
   const plotWidth = Math.max(0, width - MARGIN.left - MARGIN.right);
@@ -74,7 +75,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
   // and in the half of the plot it isn't in
   const tooltipOnLeft = hoverIndex != null && x(hoverIndex) > width / 2;
   const tooltipAtBottom =
-    hoverIndex != null && y(data.history[hoverIndex]) < HEIGHT / 2;
+    hoverIndex != null && y(data.total.history[hoverIndex]) < HEIGHT / 2;
 
   return (
     <View style={{ gap: 12 }}>
@@ -136,13 +137,12 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
               return (
                 <g key={band.key} pointerEvents="none">
                   <path
-                    d={areaPath(band.lower, band.upper, x, y)}
+                    d={areaPath(band.base, band.edge, x, y)}
                     fill={color}
                     fillOpacity={BAND_OPACITY}
                   />
-                  {/* The edge away from zero, where the band ends */}
                   <path
-                    d={linePath(band.isDebt ? band.lower : band.upper, x, y)}
+                    d={linePath(band.edge, x, y)}
                     fill="none"
                     stroke={color}
                     strokeWidth={1.5}
@@ -153,7 +153,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
             })}
 
             <path
-              d={linePath(data.history, x, y)}
+              d={linePath(data.total.history, x, y)}
               fill="none"
               stroke={theme.pageText}
               strokeWidth={2.5}
@@ -163,7 +163,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
             />
             <circle
               cx={x(hoverIndex ?? lastIndex)}
-              cy={y(data.history[hoverIndex ?? lastIndex])}
+              cy={y(data.total.history[hoverIndex ?? lastIndex])}
               r={4}
               fill={theme.pageText}
               stroke={theme.tableBackground}
@@ -178,13 +178,11 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
                 y={HEIGHT - 8}
                 // Keep the edge labels inside the plot
                 textAnchor={
-                  months.length === 1
-                    ? 'middle'
-                    : index === 0
-                      ? 'start'
-                      : index === lastIndex
-                        ? 'end'
-                        : 'middle'
+                  lastIndex > 0 && index === 0
+                    ? 'start'
+                    : lastIndex > 0 && index === lastIndex
+                      ? 'end'
+                      : 'middle'
                 }
                 fontSize={11}
                 fill={theme.pageTextSubdued}
@@ -237,16 +235,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
                 key={group.id}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
               >
-                <View
-                  aria-hidden
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 2,
-                    flexShrink: 0,
-                    backgroundColor: colors.get(group.id),
-                  }}
-                />
+                <ColorSwatch color={colors.get(group.id)} size={8} />
                 <Text style={{ flex: 1, color: theme.pageTextSubdued }}>
                   {group.name}
                 </Text>
@@ -267,7 +256,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
             >
               <Text>Net worth</Text>
               <FinancialText>
-                {format(data.history[hoverIndex], 'financial')}
+                {format(data.total.history[hoverIndex], 'financial')}
               </FinancialText>
             </View>
           </View>
@@ -301,14 +290,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
             key={group.id}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
           >
-            <View
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: 2,
-                backgroundColor: colors.get(group.id),
-              }}
-            />
+            <ColorSwatch color={colors.get(group.id)} />
             <Text>{group.name}</Text>
           </View>
         ))}
@@ -320,57 +302,41 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
 type Band = {
   key: string;
   groupId: string;
-  isDebt: boolean;
-  lower: number[];
-  upper: number[];
+  /** The side nearest zero */
+  base: number[];
+  /** The side away from zero, drawn as a line */
+  edge: number[];
 };
 
 /**
  * Stacks each group's assets up from zero and its debts down from it, in
- * table order, so the largest groups sit nearest zero. Assets and debts are
- * split by account, so a group holding a house and its mortgage shows both
- * rather than their difference.
+ * table order. Assets and debts are split by account, so a group holding a
+ * house and its mortgage shows both rather than their difference.
  */
 function stackGroups({ months, groups }: NetWorthData) {
-  const positiveTop = months.map(() => 0);
-  const negativeBottom = months.map(() => 0);
+  const assetTop = months.map(() => 0);
+  const debtBottom = months.map(() => 0);
   const bands: Band[] = [];
   for (const group of groups) {
-    const posLower = [...positiveTop];
-    const negUpper = [...negativeBottom];
-    let hasAssets = false;
-    let hasDebts = false;
-    for (const account of group.accounts) {
-      account.history.forEach((value, i) => {
-        if (value > 0) {
-          positiveTop[i] += value;
-          hasAssets = true;
-        } else if (value < 0) {
-          negativeBottom[i] += value;
-          hasDebts = true;
-        }
-      });
-    }
-    if (hasAssets) {
-      bands.push({
-        key: `${group.id}-assets`,
-        groupId: group.id,
-        isDebt: false,
-        lower: posLower,
-        upper: [...positiveTop],
-      });
-    }
-    if (hasDebts) {
-      bands.push({
-        key: `${group.id}-debts`,
-        groupId: group.id,
-        isDebt: true,
-        lower: [...negativeBottom],
-        upper: negUpper,
-      });
+    for (const stack of [assetTop, debtBottom]) {
+      const isDebt = stack === debtBottom;
+      const base = [...stack];
+      for (const account of group.accounts) {
+        account.history.forEach((value, i) => {
+          stack[i] += isDebt ? Math.min(0, value) : Math.max(0, value);
+        });
+      }
+      if (stack.some((value, i) => value !== base[i])) {
+        bands.push({
+          key: `${group.id}-${isDebt ? 'debts' : 'assets'}`,
+          groupId: group.id,
+          base,
+          edge: [...stack],
+        });
+      }
     }
   }
-  return { bands, highest: positiveTop, lowest: negativeBottom };
+  return { bands, highest: assetTop, lowest: debtBottom };
 }
 
 /**
@@ -401,18 +367,18 @@ function pickMonthLabels(months: string[]) {
 }
 
 function areaPath(
-  lower: number[],
-  upper: number[],
+  base: number[],
+  edge: number[],
   x: (i: number) => number,
   y: (value: number) => number,
 ) {
-  if (upper.length === 1) {
+  if (edge.length === 1) {
     // A single month: draw a narrow column so it's visible
-    return `M${x(0) - 12},${y(upper[0])}H${x(0) + 12}V${y(lower[0])}H${x(0) - 12}Z`;
+    return `M${x(0) - 12},${y(edge[0])}H${x(0) + 12}V${y(base[0])}H${x(0) - 12}Z`;
   }
-  const top = upper.map((value, i) => `${x(i)},${y(value)}`);
-  const bottom = lower.map((value, i) => `${x(i)},${y(value)}`).reverse();
-  return `M${top.join('L')}L${bottom.join('L')}Z`;
+  const out = edge.map((value, i) => `${x(i)},${y(value)}`);
+  const back = base.map((value, i) => `${x(i)},${y(value)}`).reverse();
+  return `M${out.join('L')}L${back.join('L')}Z`;
 }
 
 function linePath(
