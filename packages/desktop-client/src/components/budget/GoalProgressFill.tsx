@@ -19,14 +19,18 @@ const BOTTOM_BORDER_WIDTH = 1;
 /**
  * Draws a thin track along the bottom of its (relatively positioned) parent
  * cell, filled from the left in proportion to how much of the goal the cell's
- * value covers. The track shows a goal exists even when nothing is met yet.
+ * value covers. Only shows while the goal isn't met, so the cells that need
+ * attention stand out from the ones already on track.
  */
 export function GoalProgressFill({ target, column }: GoalProgressFillProps) {
   if (!target) {
     return null;
   }
 
-  const progress = Math.min(getGoalProgress(target), 1);
+  const progress = getGoalProgress(target);
+  if (progress >= 1) {
+    return null;
+  }
 
   return (
     <View
@@ -38,7 +42,7 @@ export function GoalProgressFill({ target, column }: GoalProgressFillProps) {
         right: 0,
         bottom: column === 'budgeted' ? BOTTOM_BORDER_WIDTH : 0,
         height: 2,
-        backgroundColor: theme.budgetGoalTrack,
+        backgroundColor: theme.budgetGoalBehindTrack,
         pointerEvents: 'none',
       }}
     >
@@ -46,7 +50,7 @@ export function GoalProgressFill({ target, column }: GoalProgressFillProps) {
         style={{
           height: '100%',
           width: `${progress * 100}%`,
-          backgroundColor: theme.budgetGoalProgress,
+          backgroundColor: theme.budgetGoalBehindProgress,
         }}
       />
     </View>
