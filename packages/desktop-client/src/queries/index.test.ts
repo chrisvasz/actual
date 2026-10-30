@@ -22,11 +22,12 @@ const accounts = [
   { id: 'acct-savings', name: 'Savings' },
 ] as AccountEntity[];
 
-function searchFilter(search: string) {
+function searchFilter(search: string, notes?: Map<string, string>) {
   const query = transactionsSearch(q('transactions'), search, 'MM/dd/yyyy', {
     payees,
     categories,
     accounts,
+    notes,
   });
   return query.serialize().filterExpressions.at(-1);
 }
@@ -64,6 +65,27 @@ describe('transactionsSearch', () => {
     });
     expect(searchFilter('#')).toEqual({
       $or: [{ notes: { $like: '%#%' } }],
+    });
+  });
+
+  it("matches the register's normalised notes by id", () => {
+    const notes = new Map([
+      ['t-strasse', 'strasse 5'],
+      ['t-lodz', 'trip to lodz'],
+      ['t-other', 'rent'],
+    ]);
+    expect(searchFilter('STRAẞE', notes)).toEqual({
+      $or: [{ id: { $oneofbound: ['t-strasse'] } }],
+    });
+    expect(searchFilter('Łódź', notes)).toEqual({
+      $or: [
+        { payee: { $oneof: ['payee-lodz'] } },
+        { id: { $oneofbound: ['t-lodz'] } },
+      ],
+    });
+    // Matching no notes still filters, rather than dropping the condition
+    expect(searchFilter('zzz', notes)).toEqual({
+      $or: [{ id: { $oneofbound: [] } }],
     });
   });
 });

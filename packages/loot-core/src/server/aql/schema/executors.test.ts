@@ -546,6 +546,37 @@ describe('transaction executors', () => {
       ]);
     });
 
+    it('matches a child by a bound list of ids', async () => {
+      const query = q('transactions')
+        .filter({
+          $or: [
+            { id: { $oneofbound: ['p1/c2', '$t1'] } },
+            { amount: ':amount' },
+          ],
+        })
+        .options({ splits: 'grouped' })
+        .select('*');
+      const { data } = aqlQuery(query.serialize(), { amount: -200 });
+      // A listed id that looks like a field reference is just an id
+      expect(shape(data)).toEqual([
+        { id: 'p1', _unmatched: true, subtransactions: ['p1/c2', 'p1/c1'] },
+      ]);
+      const { data: total } = aqlQuery(
+        query.calculate({ $sum: '$amount' }).serialize(),
+        { amount: -200 },
+      );
+      expect(total).toBe(-250);
+
+      const { data: none } = aqlQuery(
+        q('transactions')
+          .filter({ id: { $oneofbound: [] } })
+          .options({ splits: 'grouped' })
+          .select('*')
+          .serialize(),
+      );
+      expect(none).toEqual([]);
+    });
+
     it('pages groups without splitting them', async () => {
       const query = q('transactions')
         .options({ splits: 'grouped' })

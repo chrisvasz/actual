@@ -831,6 +831,22 @@ describe('sheet language', () => {
     expect(result.sql).toMatch("id IN ('one','two','three')");
   });
 
+  it('$oneofbound binds the ids as one parameter', () => {
+    const result = generateSQLWithState(
+      q('transactions')
+        .filter({ id: { $oneofbound: ['one', "it's", '$two'] } })
+        .select(['amount'])
+        .serialize(),
+      schemaWithRefs,
+    );
+    expect(result.sql).toMatch(
+      'transactions.id IN (SELECT value FROM json_each(?))',
+    );
+    expect(result.state.namedParameters).toEqual([
+      expect.objectContaining({ boundValue: '["one","it\'s","$two"]' }),
+    ]);
+  });
+
   it('$oneof compares a ref to the listed ids that are alive', () => {
     const result = generateSQLWithState(
       q('transactions')

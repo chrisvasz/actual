@@ -69,6 +69,9 @@ export function runCompiledAqlQuery(
   { params = {}, executors = {} }: RunCompiledAqlQueryOptions = {},
 ) {
   const paramArray = compilerState.namedParameters.map(param => {
+    if (param.boundValue !== undefined) {
+      return param.boundValue;
+    }
     const name = param.paramName;
     if (params[name] === undefined) {
       throw new Error(`Parameter ${name} not provided to query`);

@@ -13,6 +13,7 @@ type SearchProps = {
   ref?: Ref<HTMLInputElement>;
   value: string;
   onChange: (value: string) => void;
+  onFocus?: () => void;
   placeholder: string;
   isInModal?: boolean;
   width?: number | '100%';
@@ -24,6 +25,7 @@ export function Search({
   ref,
   value,
   onChange,
+  onFocus,
   placeholder,
   isInModal = false,
   width = 250,
@@ -96,6 +98,7 @@ export function Search({
         })}
         onFocus={() => {
           setFocused(true);
+          onFocus?.();
         }}
         onBlur={() => {
           setFocused(false);

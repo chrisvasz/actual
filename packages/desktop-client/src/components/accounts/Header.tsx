@@ -75,6 +75,7 @@ type AccountHeaderProps = {
   filterConditions: RuleConditionEntity[];
   filterConditionsOp: 'and' | 'or';
   onSearch: (newSearch: string) => void;
+  onSearchFocus?: () => void;
   onAddTransaction: () => void;
   onShowTransactions: ComponentProps<
     typeof SelectedTransactionsButton
@@ -140,6 +141,7 @@ export function AccountHeader({
   filterConditions,
   filterConditionsOp,
   onSearch,
+  onSearchFocus,
   onAddTransaction,
   onShowTransactions,
   onDoneReconciling,
@@ -349,6 +351,7 @@ export function AccountHeader({
             placeholder="Search"
             value={search}
             onChange={onSearch}
+            onFocus={onSearchFocus}
             ref={searchInput}
           />
           {workingHard ? (
