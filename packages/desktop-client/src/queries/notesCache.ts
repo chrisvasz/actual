@@ -14,7 +14,7 @@ export type NotesCache = ReadonlyMap<TransactionEntity['id'], string>;
  * The notes of every transaction `query` can show, split children
  * included, since a search matches their notes too.
  */
-export function notesCacheQuery(query: Query) {
+function notesCacheQuery(query: Query) {
   return query
     .serialize()
     .filterExpressions.reduce(

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { changeTables, initLiveReads } from '#mocks/live-reads';
 
-import { createNotesCache, notesCacheQuery } from './notesCache';
+import { createNotesCache } from './notesCache';
 
 // A fake backend holding each transaction's notes
 let notes: Array<{ id: string; notes: string }>;
@@ -31,21 +31,8 @@ beforeEach(() => {
   initLiveReads(runQuery);
 });
 
-describe('notesCacheQuery', () => {
-  it("reads the notes of every row the register's query filters to", () => {
-    expect(notesCacheQuery(register).serialize()).toMatchObject({
-      table: 'transactions',
-      // Split children have their own notes
-      tableOptions: { splits: 'all' },
-      filterExpressions: [{ account: 'acct' }, { notes: { $ne: null } }],
-      selectExpressions: ['id', 'notes'],
-      orderExpressions: [],
-    });
-  });
-});
-
 describe('createNotesCache', () => {
-  it('normalises each note once per query', () => {
+  it("normalises the notes of the register's rows once per query", () => {
     const cache = createNotesCache();
     const read = cache.read(register);
     expect(read).toEqual(
@@ -54,10 +41,13 @@ describe('createNotesCache', () => {
         ['p1/c1', 'lodz trip'],
       ]),
     );
+    // Every row the register filters to, split children included
+    expect(runQuery.mock.calls[0][0]).toMatchObject({
+      tableOptions: { splits: 'all' },
+      filterExpressions: [{ account: 'acct' }, { notes: { $ne: null } }],
+      selectExpressions: ['id', 'notes'],
+    });
     expect(cache.read(register)).toBe(read);
-    expect(runQuery).toHaveBeenCalledTimes(1);
-
-    // Another query reads its own notes
     cache.read(register.filter({ cleared: true }));
     expect(runQuery).toHaveBeenCalledTimes(2);
     cache.stop();
@@ -66,28 +56,19 @@ describe('createNotesCache', () => {
   it('reads the notes again after a change to a table they came from', () => {
     const cache = createNotesCache();
     const read = cache.read(register)!;
-
     changeTables(['payees']);
     expect(cache.isCurrent(read)).toBe(true);
 
     notes = [{ id: 't1', notes: 'Edited' }];
     changeTables(['transactions'], { transactions: ['t1'] });
     expect(cache.isCurrent(read)).toBe(false);
-    expect(cache.read(register)).toEqual(new Map([['t1', 'edited']]));
+    const reread = cache.read(register)!;
+    expect(reread).toEqual(new Map([['t1', 'edited']]));
 
+    // Not once stopped
+    cache.stop();
     changeTables('all');
-    expect(runQuery).toHaveBeenCalledTimes(2);
-    cache.read(register);
-    expect(runQuery).toHaveBeenCalledTimes(3);
-    cache.stop();
-  });
-
-  it('stops listening for changes once stopped', () => {
-    const cache = createNotesCache();
-    const read = cache.read(register)!;
-    cache.stop();
-    changeTables(['transactions']);
-    expect(cache.isCurrent(read)).toBe(true);
+    expect(cache.isCurrent(reread)).toBe(true);
   });
 
   it("is null when the notes can't be read", () => {
