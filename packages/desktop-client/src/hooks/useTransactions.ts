@@ -1,21 +1,14 @@
-import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useState } from 'react';
 
-import { listen } from '@actual-app/core/platform/client/connection';
 import type { Query } from '@actual-app/core/shared/query';
 import type { IntegerAmount } from '@actual-app/core/shared/util';
 import type { TransactionEntity } from '@actual-app/core/types/models';
-import type { ServerEvents } from '@actual-app/core/types/server-events';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { UseQueryResult } from '@tanstack/react-query';
 
-import {
-  hasMoreTransactions,
-  loadMoreTransactions,
-  transactionQueries,
-} from '#transactions';
-import type { TransactionsSnapshot } from '#transactions';
+import { useLiveQuery } from './useLiveQuery';
 
-const NO_TRANSACTIONS: TransactionEntity[] = [];
+const NO_TRANSACTIONS: ReadonlyArray<TransactionEntity> = [];
+const NO_RUNNING_BALANCES: ReadonlyMap<TransactionEntity['id'], IntegerAmount> =
+  new Map();
 
 // Mirrors the `splits` AQL option from the server
 type TransactionSplitsOption = 'all' | 'inline' | 'grouped' | 'none';
@@ -25,7 +18,7 @@ type CalculateRunningBalancesOption =
       transactions: readonly TransactionEntity[],
       splits: TransactionSplitsOption,
       startingBalance?: IntegerAmount,
-    ) => Map<TransactionEntity['id'], IntegerAmount>)
+    ) => ReadonlyMap<TransactionEntity['id'], IntegerAmount>)
   | boolean;
 
 type UseTransactionsProps = {
@@ -67,26 +60,25 @@ type UseTransactionsProps = {
      * @default 0
      */
     startingBalance?: IntegerAmount;
-
-    /**
-     * Whether to refetch transactions when a sync event is emitted.
-     * @default true
-     */
-    refetchOnSync?: boolean;
   };
 };
 
-type UseTransactionsResult = UseQueryResult<TransactionsSnapshot, Error> & {
+type UseTransactionsResult = {
   /**
    * The transactions returned by the query.
    */
   transactions: ReadonlyArray<TransactionEntity>;
   /**
+   * The error from the last read of the query, if it failed. The
+   * transactions from the read before it are kept.
+   */
+  error?: Error;
+  /**
    * The running balances for the transactions returned by the query.
    * This is only populated if `calculateRunningBalances` is either set to `true`
    * or a function that implements the calculation in the options.
    */
-  runningBalances: Map<TransactionEntity['id'], IntegerAmount>;
+  runningBalances: ReadonlyMap<TransactionEntity['id'], IntegerAmount>;
   /**
    * Whether the query has more rows than the ones loaded so far.
    */
@@ -94,9 +86,13 @@ type UseTransactionsResult = UseQueryResult<TransactionsSnapshot, Error> & {
   /**
    * Load one more page of rows.
    */
-  fetchNextPage: () => Promise<void>;
+  fetchNextPage: () => void;
 };
 
+/**
+ * The first pages of `query`'s rows, kept current as the tables it reads
+ * change. Read synchronously, so the first render has the rows.
+ */
 export function useTransactions({
   query,
   options,
@@ -105,110 +101,47 @@ export function useTransactions({
     pageSize = 50,
     calculateRunningBalances = false,
     startingBalance,
-    refetchOnSync = true,
   } = options ?? {};
 
-  const [runningBalances, setRunningBalances] = useState<
-    Map<TransactionEntity['id'], IntegerAmount>
-  >(new Map());
-
-  const queryClient = useQueryClient();
   // The rows loaded so far, starting over from one page when the query
   // changes. Loading more raises the limit of a single query rather than
-  // adding a page, so a refetch reads every loaded row in one snapshot.
+  // adding a page, so every loaded row is read in one snapshot.
   const [loaded, setLoaded] = useState<{
     query: Query;
     pageSize: number;
     limit: number;
-    initialData?: () => TransactionsSnapshot | undefined;
   } | null>(null);
-  const args =
+  const limit =
     loaded != null && loaded.query === query && loaded.pageSize === pageSize
-      ? loaded
-      : { query, limit: pageSize };
+      ? loaded.limit
+      : pageSize;
 
-  const queryResult = useQuery(transactionQueries.aql(args));
-  const hasNextPage =
-    !queryResult.isPlaceholderData &&
-    hasMoreTransactions(queryResult.data, args.limit);
+  const { data, error } = useLiveQuery<TransactionEntity>(
+    () => query?.limit(limit) ?? null,
+    [query, limit],
+  );
+  const transactions = data ?? NO_TRANSACTIONS;
+  const hasNextPage = pageSize > 0 && data != null && data.length >= limit;
 
-  const isLoadingMoreRef = useRef(false);
-  const fetchNextPage = async () => {
-    if (!query || !hasNextPage || isLoadingMoreRef.current) {
-      return;
-    }
-    isLoadingMoreRef.current = true;
-    try {
-      const next = await loadMoreTransactions(queryClient, {
-        query,
-        limit: args.limit,
-        pageSize,
-      });
-      setLoaded({ ...next, query, pageSize });
-    } finally {
-      isLoadingMoreRef.current = false;
+  const fetchNextPage = () => {
+    if (query && hasNextPage) {
+      setLoaded({ query, pageSize, limit: limit + pageSize });
     }
   };
 
-  const onSyncEvent = useEffectEvent((event: ServerEvents['sync-event']) => {
-    if (event.type === 'applied') {
-      const tables = event.tables;
-      if (
-        tables.includes('transactions') ||
-        tables.includes('category_mapping') ||
-        tables.includes('payee_mapping')
-      ) {
-        void queryResult.refetch();
-      }
-    }
-  });
-
-  useEffect(() => {
-    if (!refetchOnSync) {
-      return;
-    }
-    return listen('sync-event', onSyncEvent);
-  }, [refetchOnSync]);
-
-  const calculateRunningBalancesOptionFn = getCalculateRunningBalancesFn(
+  const calculateRunningBalancesFn = getCalculateRunningBalancesFn(
     calculateRunningBalances,
   );
   const splitsOption = query?.state.tableOptions
     ?.splits as TransactionSplitsOption;
-
-  // Recalculate running balances whenever the transactions change or the
-  // calculation options change (for example, when toggling show/hide
-  // running balances). We intentionally keep the main data subscription
-  // dependent only on `query` above, but this effect ensures running
-  // balances are updated in-place when the caller changes options.
-  useEffect(() => {
-    if (calculateRunningBalancesOptionFn) {
-      if (queryResult.isSuccess) {
-        const transactions = queryResult.data.data;
-        setRunningBalances(
-          calculateRunningBalancesOptionFn(
-            transactions,
-            splitsOption,
-            startingBalance,
-          ),
-        );
-      }
-    } else {
-      setRunningBalances(new Map());
-    }
-  }, [
-    queryResult.data,
-    queryResult.isSuccess,
-    calculateRunningBalancesOptionFn,
-    startingBalance,
-    splitsOption,
-  ]);
-
-  const transactions = queryResult.data?.data ?? NO_TRANSACTIONS;
+  const runningBalances =
+    calculateRunningBalancesFn && data != null
+      ? calculateRunningBalancesFn(data, splitsOption, startingBalance)
+      : NO_RUNNING_BALANCES;
 
   return {
-    ...queryResult,
     transactions,
+    ...(error && { error }),
     runningBalances,
     hasNextPage,
     fetchNextPage,
