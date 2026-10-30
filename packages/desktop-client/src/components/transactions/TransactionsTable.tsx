@@ -2051,7 +2051,9 @@ const Transaction = memo(function Transaction({
       }}
     >
       <DropHighlight pos={showDropHighlight ? dropPos : null} />
-      {showTodayDivider && <TodayDivider dateFormat={dateFormat} />}
+      {showTodayDivider && (
+        <TodayDivider dateFormat={dateFormat} isTopRow={index === 0} />
+      )}
       <TransactionDragRow
         rowRef={triggerRef}
         item={originalTransaction}
@@ -2335,7 +2337,9 @@ function NotesCell({
 
 // Returns the row that the "Today" divider sits on top of: the first real
 // (non-preview) row on the other side of today from the rows above it,
-// shown only when the top row is in the future.
+// shown only when the top row is in the future. When sorted newest-first
+// and the first real row is already past, it sits on that row, so it's
+// clear that today isn't somewhere further down.
 // Schedule previews are always listed first, so they only count as the
 // future side when sorted newest-first.
 function findTodayDividerId(
@@ -2346,12 +2350,26 @@ function findTodayDividerId(
   if (sortField && sortField !== 'date') {
     return null;
   }
-  // Nothing to separate when the register doesn't start in the future.
-  const topRow = transactions.find(row => !row.is_child);
-  if (!topRow || !isFutureTransaction(topRow)) {
-    return null;
-  }
   const isNewestFirst = !sortField || ascDesc === 'desc';
+  if (isNewestFirst) {
+    // Real rows decide: an overdue preview on top can still have future
+    // real rows below it.
+    const topRealRow = transactions.find(
+      row => !row.is_child && !isPreviewId(row.id),
+    );
+    if (!topRealRow) {
+      return null;
+    }
+    if (!isFutureTransaction(topRealRow)) {
+      return topRealRow.id;
+    }
+  } else {
+    // Nothing to separate when the register doesn't start in the future.
+    const topRow = transactions.find(row => !row.is_child);
+    if (!topRow || !isFutureTransaction(topRow)) {
+      return null;
+    }
+  }
   let hasRowAbove = false;
   for (const row of transactions) {
     if (row.is_child) {
@@ -2369,13 +2387,22 @@ function findTodayDividerId(
   return null;
 }
 
-function TodayDivider({ dateFormat }: { dateFormat: string }) {
+function TodayDivider({
+  dateFormat,
+  isTopRow,
+}: {
+  dateFormat: string;
+  isTopRow: boolean;
+}) {
+  // The top row starts 1px above the list's clipping edge (Table offsets
+  // every row by -1px), so the line is nudged down to stay whole and the
+  // chip, which would be cut off, is left out.
   return (
     <View
       aria-hidden
       style={{
         position: 'absolute',
-        top: 0,
+        top: isTopRow ? 1 : 0,
         left: 0,
         right: 0,
         height: 2,
@@ -2386,43 +2413,45 @@ function TodayDivider({ dateFormat }: { dateFormat: string }) {
     >
       {/* Sized by an invisible date in the row's font, so the chip centers
           over the date column's text whatever the date format. */}
-      <View
-        style={{
-          position: 'absolute',
-          top: -6,
-          left: 25,
-          height: 14,
-          alignItems: 'center',
-        }}
-      >
-        <Text
+      {!isTopRow && (
+        <View
           style={{
-            ...styles.tnum,
-            height: 0,
-            overflow: 'hidden',
-            visibility: 'hidden',
-          }}
-        >
-          {formatDate(new Date(), dateFormat)}
-        </Text>
-        <Text
-          style={{
+            position: 'absolute',
+            top: -6,
+            left: 25,
             height: 14,
-            lineHeight: '14px',
-            padding: '0 5px',
-            borderRadius: 7,
-            fontSize: 8,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: 0.4,
-            whiteSpace: 'nowrap',
-            color: theme.buttonPrimaryText,
-            backgroundColor: theme.buttonPrimaryBackground,
+            alignItems: 'center',
           }}
         >
-          Today
-        </Text>
-      </View>
+          <Text
+            style={{
+              ...styles.tnum,
+              height: 0,
+              overflow: 'hidden',
+              visibility: 'hidden',
+            }}
+          >
+            {formatDate(new Date(), dateFormat)}
+          </Text>
+          <Text
+            style={{
+              height: 14,
+              lineHeight: '14px',
+              padding: '0 5px',
+              borderRadius: 7,
+              fontSize: 8,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: 0.4,
+              whiteSpace: 'nowrap',
+              color: theme.buttonPrimaryText,
+              backgroundColor: theme.buttonPrimaryBackground,
+            }}
+          >
+            Today
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
