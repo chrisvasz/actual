@@ -6,8 +6,8 @@ import { theme } from '@actual-app/components/theme';
 import { css } from '@emotion/css';
 
 type NetWorthTableRowProps = {
-  /** Name, balance, share, and change */
-  cells: [ReactNode, ReactNode, ReactNode, ReactNode];
+  /** Name, starting balance, balance, share, and change */
+  cells: [ReactNode, ReactNode, ReactNode, ReactNode, ReactNode];
   isHeader?: boolean;
   style?: CSSProperties;
   onClick?: () => void;
