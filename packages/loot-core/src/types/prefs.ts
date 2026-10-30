@@ -87,6 +87,8 @@ export type LocalPrefs = Partial<{
   'schedules.showCompleted': boolean;
   sidebarWidth: number;
   'mobile.showSpentColumn': boolean;
+  /** A preset key like `1Y`, or a custom range of `yyyy-MM` months */
+  'reports.range': { preset: string } | { start: string; end: string };
 }>;
 
 export type Theme = 'light' | 'dark' | 'auto' | 'midnight' | string;
