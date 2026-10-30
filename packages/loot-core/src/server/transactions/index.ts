@@ -184,16 +184,25 @@ export function batchUpdateTransactions({
     // them
 
     if (updated) {
-      const newPayeeIds = updated.map(u => u.payee).filter(Boolean);
-      if (newPayeeIds.length > 0) {
+      // Payees can't be merged into a transfer payee
+      const newPayees = [...new Set(updated.map(u => u.payee).filter(Boolean))]
+        .map(id => db.getPayee(id))
+        .filter(payee => payee && payee.transfer_acct == null);
+      if (newPayees.length > 0) {
         const allOrphaned = new Set(db.getOrphanedPayees());
 
         const orphanedIds = [...oldPayees].filter(id => allOrphaned.has(id));
 
         if (orphanedIds.length > 0) {
+          const payeeNames = Object.fromEntries(
+            [...orphanedIds.map(id => db.getPayee(id)), ...newPayees]
+              .filter(Boolean)
+              .map(payee => [payee.id, payee.name]),
+          );
           connection.send('orphaned-payees', {
             orphanedIds,
-            updatedPayeeIds: newPayeeIds,
+            updatedPayeeIds: newPayees.map(payee => payee.id),
+            payeeNames,
           });
         }
       }
