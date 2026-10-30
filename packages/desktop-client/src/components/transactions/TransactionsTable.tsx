@@ -125,6 +125,7 @@ import type {
 import { useHotkeys } from '#hooks/useHotkeys';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { useMergedRefs } from '#hooks/useMergedRefs';
+import { usePayees } from '#hooks/usePayees';
 import { usePrevious } from '#hooks/usePrevious';
 import { useProperFocus } from '#hooks/useProperFocus';
 import { useResizeObserver } from '#hooks/useResizeObserver';
@@ -642,11 +643,8 @@ type PayeeCellProps = {
   id: TransactionEntity['id'];
   payee?: PayeeEntity;
   focused: boolean;
-  payees: PayeeEntity[];
   accounts: AccountEntity[];
-  transferAccountsByTransaction: {
-    [id: TransactionEntity['id']]: AccountEntity | null;
-  };
+  transferAccount: AccountEntity | null;
   valueStyle: CSSProperties | null;
   transaction: SerializedTransaction;
   schedule: ScheduleEntity | null;
@@ -664,9 +662,8 @@ function PayeeCell({
   id,
   payee,
   focused,
-  payees,
   accounts,
-  transferAccountsByTransaction,
+  transferAccount,
   valueStyle,
   transaction,
   schedule,
@@ -682,8 +679,6 @@ function PayeeCell({
   const isCreatingPayee = useRef(false);
 
   const dispatch = useDispatch();
-
-  const transferAccount = transferAccountsByTransaction[transaction.id];
 
   const displayPayee = useDisplayPayee({ transaction });
 
@@ -821,8 +816,8 @@ function PayeeCell({
         shouldSaveFromKey,
         inputStyle,
       }) => (
-        <PayeeAutocomplete
-          payees={payees}
+        <PayeeCellAutocomplete
+          accountId={transaction.account}
           accounts={accounts}
           value={payee?.id ?? null}
           shouldSaveFromKey={shouldSaveFromKey}
@@ -842,6 +837,23 @@ function PayeeCell({
       )}
     </CustomCell>
   );
+}
+
+type PayeeCellAutocompleteProps = ComponentProps<typeof PayeeAutocomplete> & {
+  accountId: AccountEntity['id'];
+};
+
+// Reads the payees itself rather than taking them from the row, so a
+// payee change re-renders only the row being edited instead of every row.
+function PayeeCellAutocomplete({
+  accountId,
+  ...props
+}: PayeeCellAutocompleteProps) {
+  // The current account is not a valid transfer
+  const payees = usePayees().filter(
+    payee => !payee.transfer_acct || payee.transfer_acct !== accountId,
+  );
+  return <PayeeAutocomplete {...props} payees={payees} />;
 }
 
 const payeeIconButtonStyle = {
@@ -931,9 +943,10 @@ type TransactionProps = {
   // so that schedules loading only re-renders the rows linked to one.
   schedule: ScheduleEntity | null;
   subtransactions: TransactionEntity[] | null;
-  transferAccountsByTransaction: {
-    [id: TransactionEntity['id']]: AccountEntity | null;
-  };
+  // Looked up by the table, so a payee change only re-renders the rows it
+  // touches.
+  payee: PayeeEntity | undefined;
+  transferAccount: AccountEntity | null;
   editing: boolean;
   columns: TransactionTableColumnId[];
   showZeroInDeposit?: boolean;
@@ -945,7 +958,6 @@ type TransactionProps = {
   expanded?: boolean;
   focusedField?: string;
   categoryGroups: CategoryGroupEntity[];
-  payees: PayeeEntity[];
   accounts: AccountEntity[];
   // `null` while the running balances are still loading.
   balance: number | null;
@@ -1007,7 +1019,8 @@ const Transaction = memo(function Transaction({
   transaction: originalTransaction,
   schedule,
   subtransactions,
-  transferAccountsByTransaction,
+  payee,
+  transferAccount,
   editing,
   columns,
   showZeroInDeposit,
@@ -1019,7 +1032,6 @@ const Transaction = memo(function Transaction({
   expanded,
   focusedField,
   categoryGroups,
-  payees,
   accounts,
   balance,
   dateFormat = 'MM/dd/yyyy',
@@ -1294,7 +1306,6 @@ const Transaction = memo(function Transaction({
     amount,
     debit,
     credit,
-    payee: payeeId,
     imported_payee: importedPayee,
     notes,
     date,
@@ -1310,15 +1321,13 @@ const Transaction = memo(function Transaction({
   const previewStatus = forceUpcoming ? 'upcoming' : categoryId;
 
   // Join in some data
-  const payee =
-    (payees && payeeId && getPayeesById(payees)[payeeId]) || undefined;
   const account = accounts && accountId && getAccountsById(accounts)[accountId];
 
   const isChild = transaction.is_child;
   const transferAcct =
     isTemporaryId(id) && payee?.transfer_acct
       ? getAccountsById(accounts)[payee.transfer_acct]
-      : transferAccountsByTransaction[id];
+      : transferAccount;
   const isBudgetTransfer = transferAcct && transferAcct.offbudget === 0;
   const isOffBudget = account && account.offbudget === 1;
 
@@ -1681,14 +1690,10 @@ const Transaction = memo(function Transaction({
             focused={focusedField === 'payee'}
             /* Filter out the account we're currently in as it is not a valid transfer */
             accounts={accounts.filter(account => account.id !== accountId)}
-            payees={payees.filter(
-              payee =>
-                !payee.transfer_acct || payee.transfer_acct !== accountId,
-            )}
             valueStyle={valueStyle}
             transaction={transaction}
             schedule={schedule}
-            transferAccountsByTransaction={transferAccountsByTransaction}
+            transferAccount={transferAccount}
             importedPayee={importedPayee}
             isPreview={isPreview}
             onEdit={onEdit}
@@ -2607,7 +2612,13 @@ function NewTransaction({
           editing={editingTransaction === transaction.id}
           transaction={transaction}
           subtransactions={transaction.is_parent ? childTransactions : null}
-          transferAccountsByTransaction={transferAccountsByTransaction}
+          payee={
+            (transaction.payee && getPayeesById(payees)[transaction.payee]) ||
+            undefined
+          }
+          transferAccount={
+            transferAccountsByTransaction[transaction.id] ?? null
+          }
           columns={columns}
           focusedField={
             editingTransaction === transaction.id ? focusedField : undefined
@@ -2615,7 +2626,6 @@ function NewTransaction({
           showZeroInDeposit={isDeposit}
           accounts={accounts}
           categoryGroups={categoryGroups}
-          payees={payees}
           dateFormat={dateFormat}
           hideFraction={!!hideFraction}
           expanded
@@ -2943,7 +2953,8 @@ function TransactionTableInner({
         editing={editing}
         transaction={trans}
         schedule={(trans.schedule && schedulesById.get(trans.schedule)) || null}
-        transferAccountsByTransaction={props.transferAccountsByTransaction}
+        payee={(trans.payee && getPayeesById(payees)[trans.payee]) || undefined}
+        transferAccount={props.transferAccountsByTransaction[trans.id] ?? null}
         subtransactions={childTransactions}
         columns={columns}
         selected={selected}
@@ -2957,7 +2968,6 @@ function TransactionTableInner({
         focusedField={editing ? tableNavigator.focusedField : undefined}
         accounts={accounts}
         categoryGroups={categoryGroups}
-        payees={payees}
         dateFormat={dateFormat}
         hideFraction={hideFraction}
         onEdit={tableNavigator.onEdit}

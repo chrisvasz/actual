@@ -186,6 +186,13 @@ export function TransactionList({
     transactionsLatest.current = transactions;
   }, [transactions]);
 
+  // Read at drop time, so `onReorder` keeps its identity across refetches
+  // and every row doesn't re-render when the list reloads.
+  const allTransactionsLatest = useRef<readonly TransactionEntity[]>([]);
+  useLayoutEffect(() => {
+    allTransactionsLatest.current = allTransactions;
+  }, [allTransactions]);
+
   const onAdd = useCallback(
     async (newTransactions: TransactionEntity[]) => {
       newTransactions = realizeTempTransactions(newTransactions);
@@ -365,6 +372,8 @@ export function TransactionList({
         return;
       }
 
+      const allTransactions = allTransactionsLatest.current;
+
       // Find the transaction being dragged to determine if it's a child
       const draggedTrans = allTransactions.find(t => t.id === id);
       if (!draggedTrans) {
@@ -508,7 +517,7 @@ export function TransactionList({
       });
       onRefetch();
     },
-    [sortField, ascDesc, isFiltered, allTransactions, onRefetch],
+    [sortField, ascDesc, isFiltered, onRefetch],
   );
 
   return (
