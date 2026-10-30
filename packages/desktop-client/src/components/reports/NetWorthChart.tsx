@@ -100,17 +100,16 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
           >
             {ticks.map(tick => (
               <g key={tick}>
-                <line
-                  x1={MARGIN.left}
-                  x2={width - MARGIN.right}
-                  y1={y(tick)}
-                  y2={y(tick)}
-                  stroke={
-                    tick === 0 ? theme.tableHeaderText : theme.tableBorder
-                  }
-                  strokeOpacity={tick === 0 ? 0.5 : 1}
-                  shapeRendering="crispEdges"
-                />
+                {tick !== 0 && (
+                  <line
+                    x1={MARGIN.left}
+                    x2={width - MARGIN.right}
+                    y1={y(tick)}
+                    y2={y(tick)}
+                    stroke={theme.tableBorder}
+                    shapeRendering="crispEdges"
+                  />
+                )}
                 <text
                   x={MARGIN.left - 10}
                   y={y(tick)}
@@ -157,6 +156,17 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
                 </g>
               );
             })}
+
+            {/* Drawn over the bands so it stays visible where they meet */}
+            <line
+              x1={MARGIN.left}
+              x2={width - MARGIN.right}
+              y1={y(0)}
+              y2={y(0)}
+              stroke={theme.numberNegative}
+              strokeWidth={1.5}
+              pointerEvents="none"
+            />
 
             <path
               d={linePath(totalChanges, x, y)}
