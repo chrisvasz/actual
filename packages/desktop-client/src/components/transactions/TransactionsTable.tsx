@@ -2333,8 +2333,8 @@ function NotesCell({
 // Returns the row that the "Today" divider sits on top of: the first real
 // (non-preview) row on the other side of today from the rows above it,
 // shown only when the top row is in the future. When sorted newest-first
-// with nothing in the future, it sits on the first real row instead, so
-// it's clear that today isn't somewhere further down.
+// and the first real row is already past, it sits on that row, so it's
+// clear that today isn't somewhere further down.
 // Schedule previews are always listed first, so they only count as the
 // future side when sorted newest-first.
 function findTodayDividerId(
@@ -2345,21 +2345,25 @@ function findTodayDividerId(
   if (sortField && sortField !== 'date') {
     return null;
   }
-  const topRow = transactions.find(row => !row.is_child);
-  if (!topRow) {
-    return null;
-  }
   const isNewestFirst = !sortField || ascDesc === 'desc';
-  if (!isFutureTransaction(topRow)) {
-    if (!isNewestFirst) {
-      return null;
-    }
+  if (isNewestFirst) {
+    // Real rows decide: an overdue preview on top can still have future
+    // real rows below it.
     const topRealRow = transactions.find(
       row => !row.is_child && !isPreviewId(row.id),
     );
-    return topRealRow && !isFutureTransaction(topRealRow)
-      ? topRealRow.id
-      : null;
+    if (!topRealRow) {
+      return null;
+    }
+    if (!isFutureTransaction(topRealRow)) {
+      return topRealRow.id;
+    }
+  } else {
+    // Nothing to separate when the register doesn't start in the future.
+    const topRow = transactions.find(row => !row.is_child);
+    if (!topRow || !isFutureTransaction(topRow)) {
+      return null;
+    }
   }
   let hasRowAbove = false;
   for (const row of transactions) {
@@ -2385,8 +2389,9 @@ function TodayDivider({
   dateFormat: string;
   isTopRow: boolean;
 }) {
-  // The top row starts 1px above the list's clipping edge, so the line is
-  // nudged down to stay whole and the chip, which would be cut off, is left out.
+  // The top row starts 1px above the list's clipping edge (Table offsets
+  // every row by -1px), so the line is nudged down to stay whole and the
+  // chip, which would be cut off, is left out.
   return (
     <View
       aria-hidden
