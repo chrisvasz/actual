@@ -95,12 +95,10 @@ export const loadBudget = createAppAsyncThunk(
 
 export const closeBudget = createAppAsyncThunk(
   `${sliceName}/closeBudget`,
-  async (_, { dispatch, getState, extra: { queryClient } }) => {
+  async (_, { dispatch, getState }) => {
     const prefs = getState().prefs.local;
     if (prefs && prefs.id) {
       dispatch(resetApp());
-      // Drops the closed budget's register pages
-      queryClient.clear();
       dispatch(setAppState({ loadingText: 'Closing...' }));
       await send('close-budget');
       dispatch(setAppState({ loadingText: null }));
@@ -110,12 +108,10 @@ export const closeBudget = createAppAsyncThunk(
 
 export const closeBudgetUI = createAppAsyncThunk(
   `${sliceName}/closeBudgetUI`,
-  async (_, { dispatch, getState, extra: { queryClient } }) => {
+  async (_, { dispatch, getState }) => {
     const prefs = getState().prefs.local;
     if (prefs && prefs.id) {
       dispatch(resetApp());
-      // As in `closeBudget`
-      queryClient.clear();
     }
   },
 );
