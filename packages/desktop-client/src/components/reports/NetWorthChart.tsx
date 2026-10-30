@@ -167,16 +167,26 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
               pointerEvents="none"
             />
             {/* Drawn over the bands and the net worth line so it stays
-                visible in flat months */}
-            <line
-              x1={MARGIN.left}
-              x2={width - MARGIN.right}
-              y1={y(0)}
-              y2={y(0)}
-              stroke={theme.numberNegative}
-              strokeWidth={1.5}
-              pointerEvents="none"
-            />
+                visible in flat months, with a halo to set it apart from
+                bands of a similar color */}
+            <g pointerEvents="none">
+              <line
+                x1={MARGIN.left}
+                x2={width - MARGIN.right}
+                y1={y(0)}
+                y2={y(0)}
+                stroke={theme.tableBackground}
+                strokeWidth={5}
+              />
+              <line
+                x1={MARGIN.left}
+                x2={width - MARGIN.right}
+                y1={y(0)}
+                y2={y(0)}
+                stroke={theme.numberNegative}
+                strokeWidth={2}
+              />
+            </g>
             <circle
               cx={x(hoverIndex ?? lastIndex)}
               cy={y(totalChanges[hoverIndex ?? lastIndex])}
