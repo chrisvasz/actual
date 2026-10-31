@@ -191,4 +191,28 @@ describe('category-update', () => {
       } as unknown as UpdateArgs),
     ).rejects.toThrow('No fields to update');
   });
+
+  it.each([null, ''])(
+    'rejects an empty group (%j) and keeps the current one',
+    async group => {
+      const id = db.insertCategory({ name: 'foo', cat_group: 'group1' });
+
+      await expect(
+        app.handlers['category-update']({ id, group } as unknown as UpdateArgs),
+      ).rejects.toThrow('groupId is required');
+      expect(getCategory(id)).toMatchObject({ cat_group: 'group1' });
+    },
+  );
+
+  it('rejects a group that does not exist or was deleted', async () => {
+    const id = db.insertCategory({ name: 'foo', cat_group: 'group1' });
+    db.deleteCategoryGroup({ id: 'group2' });
+
+    for (const group of ['missing-group', 'group2']) {
+      await expect(
+        app.handlers['category-update']({ id, group } as UpdateArgs),
+      ).rejects.toThrow('category group does not exist');
+    }
+    expect(getCategory(id)).toMatchObject({ cat_group: 'group1' });
+  });
 });

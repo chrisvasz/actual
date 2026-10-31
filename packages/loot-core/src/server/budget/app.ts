@@ -180,6 +180,22 @@ async function createCategory({
 
 async function updateCategory(category: CategoryEntity): Promise<void> {
   try {
+    // Moving a category to a missing or deleted group would orphan it (#8856)
+    if (category.group !== undefined) {
+      if (!category.group) {
+        throw APIError('Updating a category: groupId is required');
+      }
+
+      const existingGroup = db.first<{ id: string }>(
+        'SELECT id FROM category_groups WHERE id = ? AND tombstone = 0',
+        [category.group],
+      );
+
+      if (!existingGroup) {
+        throw APIError('Updating a category: category group does not exist');
+      }
+    }
+
     // The API types `fields` as a Partial, and db.update() only writes the
     // keys it is given, so a partial that omits `name` must stay omitted
     // rather than being trimmed into a TypeError (#8857).
