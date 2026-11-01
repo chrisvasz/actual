@@ -11,11 +11,7 @@ import { captureException } from '#platform/exceptions';
 import * as asyncStorage from '#platform/server/asyncStorage';
 import * as connection from '#platform/server/connection';
 import { logger } from '#platform/server/log';
-import {
-  applyBudgetChanges,
-  isBudgetStateLoaded,
-  takeBudgetCellChanges,
-} from '#server/budget/state';
+import { applyBudgetChanges, isBudgetStateLoaded } from '#server/budget/state';
 import {
   beginQueryCellUpdate,
   triggerQueryCells,
@@ -562,15 +558,16 @@ export function applyMessages(
   );
   const tables = getTablesFromMessages(written);
 
-  // The cells the change changed, reported with it. They're reported even
-  // if something below fails: the budget and query cells have already
-  // taken the change in. In testing, sometimes no budget is loaded, and
-  // that's ok
+  // The query cells the change changed, and whether it can have changed
+  // budget values, reported with it. They're reported even if something
+  // below fails: the budget and query cells have already taken the change
+  // in. In testing, sometimes no budget is loaded, and that's ok
   let cells: string[] = [];
+  let budget = false;
   try {
     if (isBudgetStateLoaded()) {
       try {
-        applyBudgetChanges(oldData, newData);
+        budget = applyBudgetChanges(oldData, newData);
       } finally {
         // Query cells are adjusted by each change rather than run in full,
         // so missing one would leave them wrong until the budget is
@@ -583,15 +580,19 @@ export function applyMessages(
           ]),
           cellUpdate,
         );
-        cells = cells.concat(takeBudgetCellChanges());
       }
     }
 
     _syncListeners.forEach(func => func(oldData, newData));
     app.events.emit('sync', { type: 'applied', tables });
   } finally {
-    if (written.length > 0 || cells.length > 0) {
-      notifyChanges({ tables, ids: getIdsFromMessages(written), cells });
+    if (written.length > 0 || cells.length > 0 || budget) {
+      notifyChanges({
+        tables,
+        ids: getIdsFromMessages(written),
+        cells,
+        budget,
+      });
     }
   }
 

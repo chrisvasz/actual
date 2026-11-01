@@ -72,6 +72,7 @@ describe('live reads (main thread)', () => {
       tables: ['transactions'],
       ids: { transactions: ['t1'] },
       cells: ['__global!balance'],
+      budget: false,
     };
     backendListener!(change);
     backendListener!('all');
@@ -80,6 +81,7 @@ describe('live reads (main thread)', () => {
       tables: ['accounts'],
       ids: { accounts: ['a1'] },
       cells: [],
+      budget: false,
     });
     expect(changes).toEqual([change, 'all']);
   });

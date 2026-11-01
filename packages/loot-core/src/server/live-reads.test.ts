@@ -14,7 +14,7 @@ import {
   unloadBudgetState,
 } from './budget/state';
 import { hasQueryCell } from './cells/query-cells';
-import { liveReads, notifyCellChanges, notifyChanges } from './live-reads';
+import { liveReads, notifyBudgetChanges, notifyChanges } from './live-reads';
 // Registers the payees app's named reads
 import './payees/app';
 
@@ -89,17 +89,38 @@ describe('liveReads', () => {
     db.deleteTransaction({ id: 't1' });
 
     expect(changes).toEqual([
-      { tables: ['accounts'], ids: { accounts: ['acct'] }, cells: [] },
+      {
+        tables: ['accounts'],
+        ids: { accounts: ['acct'] },
+        cells: [],
+        budget: false,
+      },
       // Along with the rows it writes for it
       {
         tables: ['payees', 'payee_mapping'],
         ids: { payees: ['payee'], payee_mapping: ['payee'] },
         cells: [],
+        budget: false,
       },
-      { tables: ['transactions'], ids: { transactions: ['t1'] }, cells: [] },
-      { tables: ['transactions'], ids: { transactions: ['t1'] }, cells: [] },
+      {
+        tables: ['transactions'],
+        ids: { transactions: ['t1'] },
+        cells: [],
+        budget: false,
+      },
+      {
+        tables: ['transactions'],
+        ids: { transactions: ['t1'] },
+        cells: [],
+        budget: false,
+      },
       // A delete is a tombstone, and reports its row
-      { tables: ['transactions'], ids: { transactions: ['t1'] }, cells: [] },
+      {
+        tables: ['transactions'],
+        ids: { transactions: ['t1'] },
+        cells: [],
+        budget: false,
+      },
     ]);
 
     stop();
@@ -148,6 +169,7 @@ describe('liveReads', () => {
         tables: ['accounts', 'schedules'],
         ids: { accounts: ['a1', 'a2'], schedules_next_date: ['nd1'] },
         cells: [],
+        budget: false,
       },
     ]);
     stop();
@@ -185,7 +207,12 @@ describe('liveReads', () => {
       applyMessages([amount], true);
 
       expect(changes).toEqual([
-        { tables: ['transactions'], ids: { transactions: ['t1'] }, cells: [] },
+        {
+          tables: ['transactions'],
+          ids: { transactions: ['t1'] },
+          cells: [],
+          budget: false,
+        },
       ]);
       stop();
     });
@@ -275,7 +302,7 @@ describe('liveReads cells', () => {
     db.insertAccount({ id: 'acct', name: 'Checking' });
     const group = db.insertCategoryGroup({ id: 'group', name: 'Bills' });
     db.insertCategory({ id: 'cat', name: 'Rent', cat_group: group });
-    await loadBudgetState(notifyCellChanges);
+    await loadBudgetState(notifyBudgetChanges);
     extendBudgetMonths(['2017-01', '2017-02']);
   }
 
@@ -296,7 +323,7 @@ describe('liveReads cells', () => {
     expect(liveReads.cell('__global', 'balance')).toBe(0);
   });
 
-  it('reports the cells each change changed, with its tables', async () => {
+  it('reports the query cells and budget values each change changed', async () => {
     await openBudget();
     liveReads.cell('__global', 'balance', balance);
     liveReads.cell('budget201701', 'budget-cat');
@@ -317,34 +344,28 @@ describe('liveReads cells', () => {
       Exclude<BudgetChanges, 'all'>
     >;
     expect(transaction.tables).toEqual(['transactions']);
-    expect(transaction.cells).toContain('__global!balance');
-    expect(transaction.cells).not.toContain('budget201701!budget-cat');
+    expect(transaction.cells).toEqual(['__global!balance']);
+    // An uncategorized transaction changes no budget value
+    expect(transaction.budget).toBe(false);
     expect(liveReads.cell('__global', 'balance')).toBe(100);
     expect(budget.tables).toEqual(['zero_budgets']);
-    expect(budget.cells).toEqual(
-      expect.arrayContaining([
-        'budget201701!budget-cat',
-        'budget201701!leftover-cat',
-        'budget201701!to-budget',
-      ]),
-    );
-    expect(budget.cells).not.toContain('__global!balance');
+    expect(budget.cells).toEqual([]);
+    expect(budget.budget).toBe(true);
+    expect(liveReads.cell('budget201701', 'budget-cat')).toBe(300);
   });
 
-  it('reports cells that change without a write', async () => {
+  it('reports budget values that change without a write', async () => {
     await openBudget();
     const changes: BudgetChanges[] = [];
     const stop = liveReads.onChanges(change => changes.push(change));
 
     extendBudgetMonths(['2017-03']);
-    await Promise.resolve();
+    // Already covered
+    extendBudgetMonths(['2017-02']);
     stop();
 
-    expect(changes).toHaveLength(1);
-    expect(changes[0]).toMatchObject({ tables: [], ids: {} });
-    expect((changes[0] as Exclude<BudgetChanges, 'all'>).cells).toContain(
-      'budget201703!budget-cat',
-    );
+    expect(changes).toEqual([{ tables: [], ids: {}, cells: [], budget: true }]);
+    expect(liveReads.cell('budget201703', 'budget-cat')).toBe(0);
   });
 
   it('reports the cells a change changed even if a later step fails', async () => {

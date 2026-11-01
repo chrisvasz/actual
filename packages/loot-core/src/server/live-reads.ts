@@ -29,10 +29,12 @@ import * as db from './db';
 //   `applyMessages` (replaying pending messages, migrations, rebuilding
 //   derived tables) only happen while a budget opens, before that.
 //
-// The change also names the cells (budget values and query cells, see
-// `cells`) whose values it changed, so a client reads a cell again only when
-// it did. Cells can also change without a write, as the budget comes to
-// cover more months; `notifyCellChanges` reports those.
+// The change also names the query cells (see `cells`) whose values it
+// changed, so a client reads one again only when it did, and says whether it
+// can have changed budget values (see `budget/state`), which a client then
+// reads again: React keeps a value that reads the same from re-rendering.
+// Budget values can also change without a write, as the budget comes to
+// cover more months; `notifyBudgetChanges` reports those.
 //
 // Besides AQL queries, a backend app can offer named reads (`liveRead`,
 // `registerLiveReads`) for data an AQL query can't build. Each one declares
@@ -93,11 +95,9 @@ function reportFailedRead(nativeError: unknown): never {
 
 const listeners = new Set<(changes: BudgetChanges) => void>();
 
-/** Report cells whose values changed without a write. */
-export function notifyCellChanges(cells: string[]) {
-  if (cells.length > 0) {
-    notifyChanges({ tables: [], ids: {}, cells });
-  }
+/** Report that budget values may have changed without a write. */
+export function notifyBudgetChanges() {
+  notifyChanges({ tables: [], ids: {}, cells: [], budget: true });
 }
 
 /** Report a committed change to every `onChanges` listener. */

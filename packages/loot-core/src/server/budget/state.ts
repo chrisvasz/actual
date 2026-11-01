@@ -2,7 +2,7 @@ import { captureBreadcrumb } from '#platform/exceptions';
 import { logger } from '#platform/server/log';
 import * as monthUtils from '#shared/months';
 
-import { diffBudgetCells, getBudgetCell } from './cells';
+import { getBudgetCell } from './cells';
 import type { CellValue } from './cells';
 import { computeBudget, setByMonth } from './compute';
 import type {
@@ -23,11 +23,11 @@ import type { Spending } from './spending';
 
 // The open budget's values, kept in memory: what was spent per category per
 // month, the stored amounts, carryover flags and holds, and everything
-// `computeBudget` derives from them. Applied changes update the inputs, and
-// the whole budget is computed again: `applyMessages` does so straight away,
-// to report the cells that changed along with the change; anything else is
-// coalesced to once per tick, and done straight away whenever a value is
-// read.
+// `computeBudget` derives from them. Applied changes update the inputs and
+// mark the budget out of date; it's computed again, in full, the next time a
+// value is read. Which values changed isn't worked out: a change that can
+// change any of them is reported as a budget change, and the client reads
+// the values it shows again.
 
 type State = {
   // Consecutive months the budget covers, oldest first. Empty until the
@@ -44,16 +44,12 @@ type State = {
   reloadSpending: boolean;
   reloadGroups: boolean;
   spendingPairs: Map<string, [string, string]>;
-  // Cells read straight from stored rows, which `diffBudgetCells` can't see
-  // change.
-  rowCells: Set<string>;
 };
 
 type DataMap = Map<string, unknown>;
 
 let state: State | null = null;
-let listener: ((cells: string[]) => void) | null = null;
-let flushScheduled = false;
+let listener: (() => void) | null = null;
 
 const EMPTY: ComputedBudget = { months: [], groups: [], values: new Map() };
 
@@ -69,19 +65,17 @@ function readState(months: string[]): State {
     reloadSpending: false,
     reloadGroups: false,
     spendingPairs: new Map(),
-    rowCells: new Set(),
   };
 }
 
-// `onChange` is told the names of the cells that changed, except for those
-// `applyMessages` takes with `takeBudgetCellChanges`.
-export async function loadBudgetState(
-  onChange?: (cells: string[]) => void,
-): Promise<void> {
+// `onChange` is called when budget values may have changed, except by the
+// changes `applyMessages` applies with `applyBudgetChanges`, which reports
+// them itself.
+export async function loadBudgetState(onChange?: () => void): Promise<void> {
   captureBreadcrumb({ message: 'loading budget values', category: 'server' });
   listener = onChange ?? null;
   state = readState([]);
-  flush();
+  computeIfDirty();
 }
 
 export function unloadBudgetState(): void {
@@ -100,20 +94,7 @@ export function reloadBudgetState(): void {
     const old = state;
     state = readState(old.months);
     state.computed = old.computed;
-    // Stored amounts the comparison of computed values can't see changing.
-    for (const rows of [old, state]) {
-      for (const [month, byCategory] of rows.budgets) {
-        const sheetName = monthUtils.sheetForMonth(month);
-        for (const categoryId of byCategory.keys()) {
-          state.rowCells.add(`${sheetName}!budget-${categoryId}`);
-          state.rowCells.add(`${sheetName}!carryover-${categoryId}`);
-        }
-      }
-      for (const month of rows.buffered.keys()) {
-        state.rowCells.add(`${monthUtils.sheetForMonth(month)}!buffered`);
-      }
-    }
-    flush();
+    listener?.();
   }
 }
 
@@ -137,39 +118,20 @@ export function extendBudgetMonths(months: string[]): void {
     last !== state.months[state.months.length - 1]
   ) {
     state.months = monthUtils.rangeInclusive(first, last);
-    markDirty(state);
+    state.dirty = true;
+    listener?.();
   }
 }
 
-function markDirty(s: State) {
-  s.dirty = true;
-  if (!flushScheduled) {
-    flushScheduled = true;
-    queueMicrotask(() => {
-      flushScheduled = false;
-      flush();
-    });
-  }
-}
-
-// Brings the computed budget up to date with every applied change and tells
-// the listener which cells changed.
-export function flush(): void {
-  const cells = takeBudgetCellChanges();
-  if (listener && cells.length > 0) {
-    listener(cells);
-  }
-}
-
-// Brings the computed budget up to date with every applied change and
-// returns the names of the cells that changed, for the caller to report.
-export function takeBudgetCellChanges(): string[] {
+// Brings the computed budget up to date with every applied change.
+function computeIfDirty(): void {
   const s = state;
   if (!s || !s.dirty) {
-    return [];
+    return;
   }
-  s.dirty = false;
 
+  // A read that fails leaves the budget out of date, so the next read
+  // tries again rather than computing from inputs it missed
   if (s.reloadSpending) {
     s.spending = loadSpending();
   } else if (s.spendingPairs.size > 0) {
@@ -181,8 +143,8 @@ export function takeBudgetCellChanges(): string[] {
     s.groups = loadBudgetGroups();
     s.reloadGroups = false;
   }
+  s.dirty = false;
 
-  const prev = s.computed;
   try {
     s.computed = computeBudget({
       months: s.months,
@@ -193,16 +155,9 @@ export function takeBudgetCellChanges(): string[] {
     });
   } catch (e) {
     // An amount too large to add up safely: keep showing the last values
-    // rather than failing every read. Cells changed meanwhile are sent once
-    // computing works again.
+    // rather than failing every read. The next change computes them again.
     logger.error('Could not compute the budget', e);
-    return [];
   }
-
-  const changed = new Set<string>(s.rowCells);
-  diffBudgetCells(prev, s.computed, s, name => changed.add(name));
-  s.rowCells.clear();
-  return [...changed];
 }
 
 function rowsOf(data: DataMap, table: string) {
@@ -211,11 +166,15 @@ function rowsOf(data: DataMap, table: string) {
 }
 
 // Updates the inputs from a batch of changes applied by sync. `oldData` and
-// `newData` map table names to the touched rows before and after.
-export function applyBudgetChanges(oldData: DataMap, newData: DataMap): void {
+// `newData` map table names to the touched rows before and after. Returns
+// whether budget values may have changed, for the caller to report.
+export function applyBudgetChanges(
+  oldData: DataMap,
+  newData: DataMap,
+): boolean {
   const s = state;
   if (!s) {
-    return;
+    return false;
   }
   let changed = false;
 
@@ -233,15 +192,11 @@ export function applyBudgetChanges(oldData: DataMap, newData: DataMap): void {
     if (row.month && row.category) {
       const month = monthFromDbMonth(row.month);
       setByMonth(s.budgets, month, row.category, budgetRowFromDb(row));
-      const sheetName = monthUtils.sheetForMonth(month);
-      s.rowCells.add(`${sheetName}!budget-${row.category}`);
-      s.rowCells.add(`${sheetName}!carryover-${row.category}`);
       changed = true;
     }
   }
   for (const row of rowsOf(newData, 'zero_budget_months')?.values() ?? []) {
     s.buffered.set(row.id, row.buffered);
-    s.rowCells.add(`${monthUtils.sheetForMonth(row.id)}!buffered`);
     changed = true;
   }
 
@@ -251,15 +206,16 @@ export function applyBudgetChanges(oldData: DataMap, newData: DataMap): void {
   }
 
   if (changed) {
-    markDirty(s);
+    s.dirty = true;
   }
+  return changed;
 }
 
 export function getBudgetCellValue(sheetName: string, name: string): CellValue {
   if (!state) {
     return null;
   }
-  flush();
+  computeIfDirty();
   return getBudgetCell(state.computed, state, sheetName, name);
 }
 
@@ -268,6 +224,6 @@ export function getComputedBudget(): ComputedBudget {
   if (!state) {
     return EMPTY;
   }
-  flush();
+  computeIfDirty();
   return state.computed;
 }

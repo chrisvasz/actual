@@ -38,10 +38,12 @@ export type ServerMessage = { type: string; id?: string } & Record<
  * rows written in each (deleted rows too, since a delete is a tombstone).
  * `ids` is keyed by the table the rows are in, so `schedules_next_date`
  * rows appear under that name though `tables` reports them as
- * `schedules`. `cells` names (as `<sheet>!<name>`) every cell whose value
- * the change changed; a change can change cells and no table, like the
- * budget covering another month. `'all'` when a budget opened or closed:
- * anything may have changed.
+ * `schedules`. `cells` names (as `<sheet>!<name>`) every query cell whose
+ * value the change changed. `budget` says whether any budget value (a
+ * `budget<YYYYMM>!…` cell that isn't a query cell) may have changed; which
+ * ones isn't tracked, so a client reads the budget values it shows again. A
+ * change can change cells and no table, like the budget covering another
+ * month. `'all'` when a budget opened or closed: anything may have changed.
  */
 export type BudgetChanges =
   | 'all'
@@ -49,6 +51,7 @@ export type BudgetChanges =
       tables: readonly string[];
       ids: Readonly<Record<string, readonly string[]>>;
       cells: readonly string[];
+      budget: boolean;
     };
 
 /** Synchronous reads of the open budget, installed by the backend. */
@@ -70,8 +73,8 @@ export type LiveReads = {
    * Read the cell `<sheetName>!<name>` now: a budget value, or with
    * `query`, the result of that query, which binds the cell to it (see
    * `server/cells/query-cells.ts`). Null with no budget open. Throws like
-   * `query`. A cell's value changes only with a change that lists it in
-   * `cells`.
+   * `query`. A query cell's value changes only with a change that lists it
+   * in `cells`; a budget value only with a change that has `budget`.
    */
   cell(sheetName: string, name: string, query?: QueryState): unknown;
   /**
