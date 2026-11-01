@@ -23,9 +23,14 @@ function readsOf(full: string) {
   ).length;
 }
 
-// Cells change with no table change, as the budget reports them
+// Query cells change with no table change, as the backend reports them
 function changeCells(...changed: string[]) {
   changeTables([], {}, changed);
+}
+
+// Budget values may have changed; which ones isn't said
+function changeBudget() {
+  changeTables([], {}, [], true);
 }
 
 function flushNotifications() {
@@ -65,7 +70,7 @@ describe('useSheetValue', () => {
     );
   });
 
-  it('re-reads and re-renders only for a change that names its cell', async () => {
+  it('re-reads budget values for a budget change, re-rendering only changed ones', async () => {
     let toBudgetRenders = 0;
     let leftoverRenders = 0;
     const toBudget = renderHook(() => {
@@ -77,21 +82,45 @@ describe('useSheetValue', () => {
       return useCell('budget202601!leftover-cat1');
     });
 
+    // Neither a table change nor another cell's change concerns them
     changeTables(['zero_budgets']);
-    changeCells('budget202601!other');
+    changeCells('__global!balance');
     await flushNotifications();
     expect(toBudgetRenders).toBe(1);
     expect(readsOf('budget202601!to-budget')).toBe(1);
 
     cells.set('budget202601!to-budget', 90);
-    changeCells('budget202601!to-budget');
+    changeBudget();
     await flushNotifications();
     expect(toBudget.result.current).toBe(90);
     expect(toBudgetRenders).toBe(2);
     expect(readsOf('budget202601!to-budget')).toBe(2);
+    // Read again, but the same value doesn't re-render
     expect(leftover.result.current).toBe(5);
     expect(leftoverRenders).toBe(1);
-    expect(readsOf('budget202601!leftover-cat1')).toBe(1);
+    expect(readsOf('budget202601!leftover-cat1')).toBe(2);
+  });
+
+  it('re-reads a query cell read by name when its cell changes', async () => {
+    const { result } = renderHook(() => useCell('__global!balance'));
+
+    cells.set('__global!balance', 50);
+    changeCells('__global!balance');
+    await flushNotifications();
+    expect(result.current).toBe(50);
+  });
+
+  it("doesn't re-read a query cell for a budget change", async () => {
+    renderHook(() =>
+      useCell({
+        name: 'balance',
+        query: q('transactions').calculate({ $sum: '$amount' }),
+      }),
+    );
+
+    changeBudget();
+    await flushNotifications();
+    expect(readsOf('__global!balance')).toBe(1);
   });
 
   it('reads and renders once for a burst of changes', async () => {
@@ -103,7 +132,7 @@ describe('useSheetValue', () => {
 
     for (let i = 1; i <= 100; i++) {
       cells.set('budget202601!to-budget', 100 - i);
-      changeCells('budget202601!to-budget');
+      changeBudget();
     }
     await flushNotifications();
 
@@ -129,7 +158,7 @@ describe('useSheetValue', () => {
     expect(onChange).not.toHaveBeenCalled();
 
     cells.set('budget202601!to-budget', 80);
-    changeCells('budget202601!to-budget');
+    changeBudget();
     await flushNotifications();
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledWith({

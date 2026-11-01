@@ -1,6 +1,6 @@
 import { createTestBudget } from '#mocks/budget';
 import * as db from '#server/db';
-import { liveReads, notifyCellChanges } from '#server/live-reads';
+import { liveReads, notifyBudgetChanges } from '#server/live-reads';
 import { handlers } from '#server/main';
 import { batchMessages } from '#server/sync';
 import * as monthUtils from '#shared/months';
@@ -13,9 +13,9 @@ import { computeBudget } from './compute';
 import { loadBudgetGroups, loadBudgetRows, loadBufferedRows } from './inputs';
 import { loadSpending } from './spending';
 import {
-  flush,
   getBudgetCellValue,
   getBudgetMonths,
+  getComputedBudget,
   loadBudgetState,
   reloadBudgetState,
   unloadBudgetState,
@@ -166,29 +166,32 @@ describe('computeBudget', () => {
 
   describe('after changes', () => {
     let budget: GeneratedBudget;
-    // What a client that read every cell at load would show, re-reading
-    // only the cells each notified change names.
+    // What a client that shows every cell would show: it reads them all
+    // at load, and again only after a change says budget values may have
+    // changed.
     let client: Map<string, unknown>;
+    let isClientStale: boolean;
     let stopListening: () => void;
 
-    beforeEach(async () => {
-      budget = await generateBudget({ seed: 7, years: 3 });
+    function readClient(names: Iterable<string>) {
       client = new Map();
-      stopListening = liveReads.onChanges(changes => {
-        if (changes !== 'all') {
-          for (const full of changes.cells) {
-            const [sheetName, name] = splitName(full);
-            client.set(full, getBudgetCellValue(sheetName, name));
-          }
-        }
-      });
-      await loadBudgetState(notifyCellChanges);
-      await createAllBudgets();
-      const months = budgetMonths();
-      for (const full of createReferenceBudget(months).names()) {
+      for (const full of names) {
         const [sheetName, name] = splitName(full);
         client.set(full, getBudgetCellValue(sheetName, name));
       }
+      isClientStale = false;
+    }
+
+    beforeEach(async () => {
+      budget = await generateBudget({ seed: 7, years: 3 });
+      stopListening = liveReads.onChanges(changes => {
+        if (changes !== 'all' && changes.budget) {
+          isClientStale = true;
+        }
+      });
+      await loadBudgetState(notifyBudgetChanges);
+      await createAllBudgets();
+      readClient(createReferenceBudget(budgetMonths()).names());
     });
 
     afterEach(() => stopListening());
@@ -197,11 +200,13 @@ describe('computeBudget', () => {
     // reference and `computeBudget` evaluated from scratch, and so does what
     // the notified client shows in the budget's months.
     async function expectMatches() {
-      flush();
       const months = budgetMonths();
       const reference = createReferenceBudget(months);
       const computed = computeFromDb(months);
       const names = [...reference.names(), ...computed.names()];
+      if (isClientStale) {
+        readClient(names);
+      }
       expectSameValues(names, [
         stateSource,
         { label: 'reference', get: reference.get },
@@ -464,7 +469,7 @@ describe('computeBudget', () => {
         amount: MAX_SAFE_NUMBER,
         date: date(month()),
       });
-      flush();
+      getComputedBudget();
       // ...while stored amounts keep changing
       await actions.setCategoryCarryover({
         startMonth: month(),
@@ -476,7 +481,7 @@ describe('computeBudget', () => {
         month: month(),
         amount: 4321,
       });
-      flush();
+      getComputedBudget();
 
       db.deleteTransaction({ id: 'huge' });
       db.deleteTransaction({ id: 'huge-2' });

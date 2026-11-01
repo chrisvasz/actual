@@ -58,7 +58,8 @@ export type ReleaseCellSync = typeof releaseCellSync;
 
 /**
  * Call `listener`, synchronously, after each change the backend commits,
- * with the tables and rows it wrote and the cells it changed (or `'all'`).
+ * with the tables and rows it wrote, the query cells it changed, and
+ * whether it can have changed budget values (or `'all'`).
  * Returns a function that stops listening.
  */
 export declare function onChanges(

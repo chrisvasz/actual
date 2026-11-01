@@ -7,7 +7,6 @@ import * as connection from '#platform/server/connection';
 import * as fs from '#platform/server/fs';
 import {
   extendBudgetMonths,
-  flush,
   getBudgetCellValue,
   getBudgetMonths,
   loadBudgetState,
@@ -17,7 +16,7 @@ import * as monthUtils from '#shared/months';
 import * as budgetActions from './budget/actions';
 import * as budget from './budget/base';
 import * as db from './db';
-import { liveReads, notifyCellChanges } from './live-reads';
+import { liveReads, notifyBudgetChanges } from './live-reads';
 import { handlers } from './main';
 import {
   disableGlobalMutations,
@@ -276,27 +275,25 @@ describe('Budget', () => {
   });
 
   test('budget updates when changing a category', async () => {
-    let notified: string[] = [];
+    let budgetChanges = 0;
     onTestFinished(
       liveReads.onChanges(changes => {
-        if (changes !== 'all') {
-          notified = notified.concat(changes.cells);
+        if (changes !== 'all' && changes.budget) {
+          budgetChanges++;
         }
       }),
     );
-    await loadBudgetState(notifyCellChanges);
-    async function captureChangedCells(func: () => Promise<unknown>) {
-      notified = [];
+    await loadBudgetState(notifyBudgetChanges);
+    async function countBudgetChanges(func: () => Promise<unknown>) {
+      budgetChanges = 0;
       await func();
-      flush();
-      return notified;
+      return budgetChanges;
     }
 
-    // Only the cells whose values changed are reported
     extendBudgetMonths(monthUtils.rangeInclusive('2017-01', '2017-04'));
 
     let categories;
-    await captureChangedCells(async () => {
+    await countBudgetChanges(async () => {
       await runMutator(async () =>
         db.insertCategoryGroup({ id: 'group1', name: 'group1' }),
       );
@@ -307,14 +304,6 @@ describe('Budget', () => {
         }),
         await runHandler(handlers['category-create'], {
           name: 'bar',
-          groupId: 'group1',
-        }),
-        await runHandler(handlers['category-create'], {
-          name: 'baz',
-          groupId: 'group1',
-        }),
-        await runHandler(handlers['category-create'], {
-          name: 'biz',
           groupId: 'group1',
         }),
       ];
@@ -328,30 +317,42 @@ describe('Budget', () => {
       account: 'boa',
       category: categories[0],
     };
-    // Test insertions
-    let changed = await captureChangedCells(() =>
-      runHandler(handlers['transaction-add'], trans),
-    );
+    const spent = () =>
+      getBudgetCellValue('budget201702', 'sum-amount-' + categories[0]);
+
+    // Each change that moves a budget value is reported...
     expect(
-      changed.sort((a, b) => (a > b ? 1 : a < b ? -1 : 0)),
-    ).toMatchSnapshot();
-    // Test updates
-    changed = await captureChangedCells(async () => {
-      await runHandler(handlers['transaction-update'], {
-        ...db.getTransaction(trans.id),
-        amount: 7000,
-      });
-    });
+      await countBudgetChanges(() =>
+        runHandler(handlers['transaction-add'], trans),
+      ),
+    ).toBe(1);
+    expect(spent()).toBe(5000);
     expect(
-      changed.sort((a, b) => (a > b ? 1 : a < b ? -1 : 0)),
-    ).toMatchSnapshot();
-    // Test deletions
-    changed = await captureChangedCells(async () => {
-      await runHandler(handlers['transaction-delete'], { id: trans.id });
-    });
+      await countBudgetChanges(() =>
+        runHandler(handlers['transaction-update'], {
+          ...db.getTransaction(trans.id),
+          amount: 7000,
+        }),
+      ),
+    ).toBe(1);
+    expect(spent()).toBe(7000);
+
+    // ...and one that can't isn't
     expect(
-      changed.sort((a, b) => (a > b ? 1 : a < b ? -1 : 0)),
-    ).toMatchSnapshot();
+      await countBudgetChanges(() =>
+        runHandler(handlers['transaction-update'], {
+          ...db.getTransaction(trans.id),
+          notes: 'lunch',
+        }),
+      ),
+    ).toBe(0);
+
+    expect(
+      await countBudgetChanges(() =>
+        runHandler(handlers['transaction-delete'], { id: trans.id }),
+      ),
+    ).toBe(1);
+    expect(spent()).toBe(0);
   });
 });
 

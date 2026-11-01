@@ -7,7 +7,7 @@ import { createAllBudgets } from './base';
 import { computeBudget } from './compute';
 import { loadBudgetGroups, loadBudgetRows, loadBufferedRows } from './inputs';
 import { loadSpending, querySpent } from './spending';
-import { flush, getBudgetMonths, loadBudgetState } from './state';
+import { getBudgetMonths, getComputedBudget, loadBudgetState } from './state';
 import { generateBudget, seededRandom } from './test-helpers/generate-budget';
 
 beforeEach(global.emptyDatabase());
@@ -62,7 +62,7 @@ describe.skipIf(!process.env.BUDGET_BENCH)('budget benchmark', () => {
     report.load = await timeAsync(async () => {
       await loadBudgetState();
       await createAllBudgets();
-      flush();
+      getComputedBudget();
     });
     const months = getBudgetMonths();
     report.months = months.length;
@@ -91,7 +91,7 @@ describe.skipIf(!process.env.BUDGET_BENCH)('budget benchmark', () => {
       editTimes.push(
         time(() => {
           db.updateTransaction({ id, amount: -random.int(100, 9000) });
-          flush();
+          getComputedBudget();
         })[1],
       );
     }

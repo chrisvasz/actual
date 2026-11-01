@@ -51,16 +51,17 @@ export function clearLiveReads() {
 }
 
 /**
- * Report a change to `tables` (and `cells`), as the backend does after
- * applying one.
+ * Report a change to `tables` (and query `cells`, and budget values with
+ * `budget`), as the backend does after applying one.
  */
 export function changeTables(
   tables: readonly string[] | 'all',
   ids: Record<string, string[]> = {},
   cells: readonly string[] = [],
+  budget = false,
 ) {
   const changes: BudgetChanges =
-    tables === 'all' ? 'all' : { tables, ids, cells };
+    tables === 'all' ? 'all' : { tables, ids, cells, budget };
   for (const listener of [...listeners]) {
     listener(changes);
   }

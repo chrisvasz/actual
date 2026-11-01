@@ -20,8 +20,12 @@ import type { Query } from '@actual-app/core/shared/query';
 //
 // Each read's result is cached, keyed by the serialized query (or the
 // read's name and arguments, or the cell's name and query), along with the
-// tables it read. A cell instead depends on itself: the backend names the
-// cells each change changed, so a change re-reads only those. A change to
+// tables it read. A query cell instead depends on itself: the backend names
+// the query cells each change changed, so a change re-reads only those. A
+// budget value depends on the budget as a whole: the backend only says
+// whether a change can have changed budget values, and every budget value
+// shown is read again; one that reads the same keeps its result, so it
+// doesn't re-render. A change to
 // one of its dependencies only marks the result out of date; it's read again the next time someone asks for it. Whoever
 // listens to the query is told in a microtask, so the changes one backend
 // call applies in a row cost each shown query one read, however many there
@@ -62,7 +66,8 @@ type Entry = {
 const entries = new Map<string, Entry>();
 const handles = new WeakMap<Query, LiveQueryHandle<unknown>>();
 
-// Bumped for each change to a table, or to a cell (see `cellDependency`)
+// Bumped for each change to a table, to a query cell (see `cellDependency`),
+// or to the budget (`BUDGET_DEPENDENCY`)
 const tableVersions = new Map<string, number>();
 // Bumped for each change to any table
 let changeCount = 0;
@@ -101,6 +106,9 @@ function handleChanges(changes: BudgetChanges) {
     for (const cell of changes.cells) {
       markChanged(cellDependency(cell));
     }
+    if (changes.budget) {
+      markChanged(BUDGET_DEPENDENCY);
+    }
     for (const entry of listenedWithoutDependencies) {
       toNotify.add(entry);
     }
@@ -128,6 +136,8 @@ const CELL_PREFIX = 'cell:';
 function cellDependency(cell: string) {
   return CELL_PREFIX + cell;
 }
+// What every budget value depends on, kept apart from tables the same way
+const BUDGET_DEPENDENCY = 'budget!';
 
 function notify() {
   isNotifyScheduled = false;
@@ -346,9 +356,9 @@ export function getLiveRead<Name extends LiveReadName>(
 
 /**
  * The live value of the cell `<sheetName>!<name>`: a budget value, or with
- * `query`, that query's result. Re-read only when a change changes it. A
- * query cell is released once nothing listens to it. Each call makes a new
- * handle; keep it stable for `useSyncExternalStore`.
+ * `query`, that query's result. Re-read when a change can have changed it.
+ * A query cell is released once nothing listens to it. Each call makes a
+ * new handle; keep it stable for `useSyncExternalStore`.
  */
 export function getLiveCell<Data = unknown>(
   sheetName: string,
@@ -356,7 +366,11 @@ export function getLiveCell<Data = unknown>(
   query?: Query,
 ): LiveQueryHandle<Data> {
   const cell = `${sheetName}!${name}`;
-  const dependencies = [cellDependency(cell)];
+  // Read without its query, a cell can still be a query cell another
+  // screen bound, so it depends on both
+  const dependencies = query
+    ? [cellDependency(cell)]
+    : [cellDependency(cell), BUDGET_DEPENDENCY];
   return makeHandle(
     query
       ? `cell:${cell}:${JSON.stringify(query.serialize())}`
