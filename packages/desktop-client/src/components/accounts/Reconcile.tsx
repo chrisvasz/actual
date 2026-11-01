@@ -1,6 +1,7 @@
-import React, { useId, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 import type { Ref } from 'react';
 import { Dialog, DialogTrigger } from 'react-aria-components';
+import { flushSync } from 'react-dom';
 
 import { Button, ButtonWithLoading } from '@actual-app/components/button';
 import { SvgDelete } from '@actual-app/components/icons/v0';
@@ -74,6 +75,8 @@ export function ReconcilingMessage({
     null,
   );
 
+  const lockRef = useRef<HTMLButtonElement>(null);
+
   async function runAction(
     action: ReconcilingAction,
     perform: () => void | Promise<void>,
@@ -82,7 +85,8 @@ export function ReconcilingMessage({
     try {
       await perform();
     } finally {
-      setPendingAction(null);
+      // Rendered right away so a caller can focus what the action enabled
+      flushSync(() => setPendingAction(null));
     }
   }
 
@@ -163,11 +167,15 @@ export function ReconcilingMessage({
           <DifferenceMenu
             value={difference}
             isDisabled={pendingAction !== null}
-            onAddAdjustment={() =>
-              void runAction('create-transaction', () =>
+            onAddAdjustment={async () => {
+              await runAction('create-transaction', () =>
                 onCreateTransaction(targetDiff, date),
-              )
-            }
+              );
+              // The adjustment removed the menu that had focus. The cleared
+              // balance is already updated (the backend reports a write's
+              // cells before it returns), so Lock is enabled now
+              lockRef.current?.focus();
+            }}
           />
         ) : (
           <FormulaTerm
@@ -181,6 +189,7 @@ export function ReconcilingMessage({
       {/* Lock never trades places with another action, so a quick second
           click can't lock something the first click just changed */}
       <ButtonWithLoading
+        ref={lockRef}
         variant={targetDiff === 0 ? 'primary' : 'normal'}
         isLoading={pendingAction === 'done'}
         isDisabled={pendingAction !== null || targetDiff !== 0}
@@ -371,7 +380,7 @@ function FormulaTerm({
 type DifferenceMenuProps = {
   value: string;
   isDisabled: boolean;
-  onAddAdjustment: () => void;
+  onAddAdjustment: () => Promise<void>;
 };
 
 // An unreconciled difference opens a menu of ways to resolve it, so fixing it
@@ -409,7 +418,7 @@ function DifferenceMenu({
               slot="close"
               onMenuSelect={name => {
                 if (name === 'add-adjustment') {
-                  onAddAdjustment();
+                  void onAddAdjustment();
                 }
               }}
               items={[
