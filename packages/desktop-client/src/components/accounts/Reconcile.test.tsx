@@ -135,6 +135,27 @@ describe('ReconcilingMessage', () => {
     expect(onDone).not.toHaveBeenCalled();
   });
 
+  test('focuses Lock after adding an adjustment from the keyboard', async () => {
+    vi.mocked(useSheetValue).mockReturnValue(5000);
+    const onCreateTransaction = vi.fn(() => {
+      vi.mocked(useSheetValue).mockReturnValue(6000);
+    });
+    renderMessage({ onCreateTransaction });
+
+    await enterTarget('60');
+    screen.getByRole('button', { name: /^Difference/ }).focus();
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() =>
+      expect(screen.getByText('Add adjustment transaction')).toBeVisible(),
+    );
+    await userEvent.keyboard('{ArrowDown}{Enter}');
+
+    expect(onCreateTransaction).toHaveBeenCalledTimes(1);
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Lock' })).toHaveFocus(),
+    );
+  });
+
   test('counts only cleared transactions on or before the date', async () => {
     vi.mocked(useSheetValue).mockReturnValue(5000);
     renderMessage();
