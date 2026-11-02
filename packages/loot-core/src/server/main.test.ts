@@ -5,6 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { expectSnapshotWithDiffer } from '#mocks/util';
 import * as connection from '#platform/server/connection';
 import * as fs from '#platform/server/fs';
+import { logger } from '#platform/server/log';
+import * as persistence from '#platform/server/persistence';
 import {
   extendBudgetMonths,
   getBudgetCellValue,
@@ -16,15 +18,18 @@ import * as monthUtils from '#shared/months';
 import * as budgetActions from './budget/actions';
 import * as budget from './budget/base';
 import * as db from './db';
+import { SyncError } from './errors';
 import { liveReads, notifyBudgetChanges } from './live-reads';
-import { handlers } from './main';
+import { handlers, lib } from './main';
 import {
   disableGlobalMutations,
   enableGlobalMutations,
   runHandler,
   runMutator,
 } from './mutators';
+import * as post from './post';
 import * as prefs from './prefs';
+import { batchMessages, scheduleFullSync, setSyncingMode } from './sync';
 
 vi.mock('./post');
 
@@ -512,5 +517,128 @@ describe('Categories', () => {
     // The deleted category should not leave any overspending behind
     expect(getBudgetCellValue(nextSheetName, 'last-month-overspent')).toBe(0);
     expect(getBudgetCellValue(nextSheetName, 'to-budget')).toBe(toBudget);
+  });
+});
+
+describe('Budget shutdown', () => {
+  beforeEach(async () => {
+    vi.useFakeTimers();
+    await prefs.loadPrefs();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+    fs._setDocumentDir(null);
+    setSyncingMode('disabled');
+  });
+
+  function deferred() {
+    let resolve: () => void;
+    const promise = new Promise<void>(resolvePromise => {
+      resolve = resolvePromise;
+    });
+    return { promise, resolve };
+  }
+
+  test('finishes sync and schedule persistence before unloading, without admitting new syncs', async () => {
+    await prefs.savePrefs({ groupId: 'group' });
+    fs._setDocumentDir(__dirname);
+    setSyncingMode('enabled');
+    const syncGate = deferred();
+    const syncStarted = deferred();
+    const writeGate = deferred();
+    const writeStarted = deferred();
+    const flushGate = deferred();
+    const flushStarted = deferred();
+    const postBinary = post.postBinary;
+    const postSpy = vi
+      .spyOn(post, 'postBinary')
+      .mockImplementationOnce(async (...args) => {
+        syncStarted.resolve();
+        await syncGate.promise;
+        return postBinary(...args);
+      });
+    let savedPrefs;
+    vi.spyOn(fs, 'writeFile').mockImplementation(async (_path, contents) => {
+      const metadata = typeof contents === 'string' ? JSON.parse(contents) : {};
+      if (metadata.lastScheduleRun) {
+        writeStarted.resolve();
+        await writeGate.promise;
+        savedPrefs = metadata;
+      }
+      return true;
+    });
+    await lib.send('app-focused');
+    await syncStarted.promise;
+    const closePromise = lib.send('close-budget');
+
+    try {
+      await vi.runAllTimersAsync();
+      expect(db.getDatabase()).not.toBeNull();
+
+      vi.stubEnv('NODE_ENV', 'production');
+      syncGate.resolve();
+      await writeStarted.promise;
+      await vi.runAllTimersAsync();
+      expect(db.getDatabase()).not.toBeNull();
+
+      vi.spyOn(persistence, 'flush').mockImplementationOnce(async () => {
+        flushStarted.resolve();
+        await flushGate.promise;
+      });
+      writeGate.resolve();
+      await flushStarted.promise;
+      await lib.send('app-focused');
+      scheduleFullSync();
+      await vi.runAllTimersAsync();
+      expect(postSpy).toHaveBeenCalledTimes(1);
+
+      flushGate.resolve();
+      await vi.runAllTimersAsync();
+      await expect(closePromise).resolves.toBe('ok');
+      expect(savedPrefs).toMatchObject({
+        groupId: 'group',
+        lastScheduleRun: monthUtils.currentDay(),
+      });
+      expect(db.getDatabase()).toBeNull();
+    } finally {
+      syncGate.resolve();
+      writeGate.resolve();
+      flushGate.resolve();
+      await vi.runAllTimersAsync();
+      await closePromise;
+    }
+  });
+
+  test('drains schedule work queued by a rejecting mutator during shutdown', async () => {
+    const errorLog = vi.spyOn(logger, 'error');
+    const gate = deferred();
+    const rejectingPromise = runMutator(async () => {
+      await gate.promise;
+      batchMessages(() => {
+        throw new SyncError('invalid-schema');
+      });
+    });
+    const closePromise = lib.send('close-budget');
+
+    try {
+      await vi.runAllTimersAsync();
+      gate.resolve();
+      await expect(rejectingPromise).rejects.toThrow('invalid-schema');
+      await vi.runAllTimersAsync();
+      await expect(closePromise).resolves.toBe('ok');
+      expect(db.getDatabase()).toBeNull();
+      await runMutator(async () => undefined);
+      expect(errorLog).not.toHaveBeenCalledWith(
+        'Failed to run schedule service after sync',
+        expect.anything(),
+      );
+    } finally {
+      gate.resolve();
+      await vi.runAllTimersAsync();
+      await Promise.allSettled([rejectingPromise, closePromise]);
+    }
   });
 });
