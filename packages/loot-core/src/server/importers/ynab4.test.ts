@@ -124,15 +124,8 @@ function categoryBudget(
   };
 }
 
-const entityIdMap = new Map([
-  ['A5', 'actual-category'],
-  ['deleted', 'actual-deleted'],
-  ['empty', 'actual-empty'],
-  ['missing-note', 'actual-missing-note'],
-]);
-
 describe('doImport', () => {
-  it('preserves group notes alongside month and category budget notes', async () => {
+  it('preserves group notes alongside month notes', async () => {
     const data = {
       accounts: [],
       payees: [],
@@ -213,7 +206,6 @@ describe('doImport', () => {
     ).toEqual([
       ['notes-save', { id: 'actual-group', note: 'SAMPLE GROUP NOTE' }],
       ['notes-save', { id: 'budget-2026-10', note: 'SAMPLE NOTE 1' }],
-      ['notes-save', { id: 'actual-category-2026-10', note: 'SAMPLE NOTE 2' }],
     ]);
     expect(send).toHaveBeenCalledWith('api/budget-set-amount', {
       month: '2026-10',
@@ -224,29 +216,18 @@ describe('doImport', () => {
 });
 
 describe('getBudgetNotes', () => {
-  it('imports month and mapped category notes, skipping tombstones and empty or unmapped notes', () => {
+  it('imports the month note but not category budget notes', () => {
     const budget = {
       entityType: 'monthlyBudget',
       month: '2026-10-01',
       note: 'SAMPLE NOTE 1',
       entityVersion: 'A-1',
       entityId: 'october',
-      monthlySubCategoryBudgets: [
-        categoryBudget({ note: 'SAMPLE NOTE 2' }),
-        categoryBudget({
-          categoryId: 'deleted',
-          note: 'Deleted note',
-          isTombstone: true,
-        }),
-        categoryBudget({ categoryId: 'empty', note: '' }),
-        categoryBudget({ categoryId: 'missing-note', budgeted: 0 }),
-        categoryBudget({ categoryId: 'unmapped', note: 'Unmapped note' }),
-      ],
+      monthlySubCategoryBudgets: [categoryBudget({ note: 'SAMPLE NOTE 2' })],
     } satisfies MonthlyBudget;
 
-    expect(getBudgetNotes(budget, entityIdMap)).toEqual([
+    expect(getBudgetNotes(budget)).toEqual([
       { id: 'budget-2026-10', note: 'SAMPLE NOTE 1' },
-      { id: 'actual-category-2026-10', note: 'SAMPLE NOTE 2' },
     ]);
   });
 
@@ -260,6 +241,6 @@ describe('getBudgetNotes', () => {
       monthlySubCategoryBudgets: [],
     } satisfies MonthlyBudget;
 
-    expect(getBudgetNotes(budget, entityIdMap)).toEqual([]);
+    expect(getBudgetNotes(budget)).toEqual([]);
   });
 });

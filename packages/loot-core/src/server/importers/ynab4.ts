@@ -297,30 +297,16 @@ function fillInBudgets(
   return budgets;
 }
 
+// Only month notes are imported: the fork has no UI for category-month notes
+// (`<categoryId>-<month>`), so YNAB4 category budget notes would be invisible.
 export function getBudgetNotes(
   budget: YNAB4.MonthlyBudget,
-  entityIdMap: Map<string, string>,
 ): { id: string; note: string }[] {
   const month = monthUtils.monthFromDate(budget.month);
-  const notes: { id: string; note: string }[] = [];
-
   if (typeof budget.note === 'string' && budget.note.length > 0) {
-    notes.push({ id: `budget-${month}`, note: budget.note });
+    return [{ id: `budget-${month}`, note: budget.note }];
   }
-
-  for (const categoryBudget of budget.monthlySubCategoryBudgets) {
-    const categoryId = entityIdMap.get(categoryBudget.categoryId);
-    if (
-      !categoryBudget.isTombstone &&
-      categoryId &&
-      typeof categoryBudget.note === 'string' &&
-      categoryBudget.note.length > 0
-    ) {
-      notes.push({ id: `${categoryId}-${month}`, note: categoryBudget.note });
-    }
-  }
-
-  return notes;
+  return [];
 }
 
 async function importBudgets(
@@ -333,7 +319,7 @@ async function importBudgets(
   await send('api/batch-budget-start');
   try {
     for (const budget of budgets) {
-      for (const note of getBudgetNotes(budget, entityIdMap)) {
+      for (const note of getBudgetNotes(budget)) {
         await send('notes-save', note);
       }
 
