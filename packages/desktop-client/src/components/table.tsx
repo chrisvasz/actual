@@ -1056,6 +1056,7 @@ export const Table = forwardRef(
       return (
         <View
           key={key}
+          className="animated-row"
           style={{
             ...rowStyle,
             zIndex: editing || selected ? 101 : 'auto',
@@ -1130,6 +1131,7 @@ export const Table = forwardRef(
           flex: 1,
           outline: 'none',
           overflow: 'hidden',
+          '& .animated .animated-row': { transition: '.2s transform' },
           ...style,
         }}
         tabIndex={0}
