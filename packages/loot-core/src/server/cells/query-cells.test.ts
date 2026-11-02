@@ -1,13 +1,20 @@
+import { Timestamp } from '@actual-app/crdt';
+
 import { aqlQuery } from '#server/aql';
 import { loadBudgetState } from '#server/budget/state';
 import { generateBudget } from '#server/budget/test-helpers/generate-budget';
 import * as db from '#server/db';
-import { batchMessages } from '#server/sync';
+import { applyMessages, batchMessages } from '#server/sync';
 import { batchUpdateTransactions } from '#server/transactions';
+import { undo, withUndo } from '#server/undo';
 import { q } from '#shared/query';
 import type { Query } from '#shared/query';
 
-import { createQueryCell, getQueryCellValue } from './query-cells';
+import {
+  createQueryCell,
+  getQueryCellValue,
+  releaseQueryCell,
+} from './query-cells';
 
 beforeEach(global.emptyDatabase());
 
@@ -15,7 +22,36 @@ beforeEach(global.emptyDatabase());
 // uncategorized count, a category's month and the balance chart's start.
 function boundQueries(): Record<string, Query> {
   const sum = (query: Query) => query.calculate({ $sum: '$amount' });
+  const register = (filter: Record<string, unknown>) =>
+    q('transactions').options({ splits: 'grouped' }).filter(filter);
   return {
+    'register-checking': sum(register({ account: 'acct-checking' })),
+    'register-checking-cleared': sum(
+      register({ account: 'acct-checking' }).filter({ cleared: true }),
+    ),
+    'register-checking-uncleared-count': register({ account: 'acct-checking' })
+      .filter({ cleared: false })
+      .calculate({ $count: '$id' }),
+    'register-offbudget': sum(
+      register({
+        $and: [{ 'account.offbudget': true }, { 'account.closed': false }],
+      }),
+    ),
+    'register-closed': sum(register({ 'account.closed': true })),
+    'register-new': sum(register({ account: 'acct-new' })),
+    'checking-count': q('transactions')
+      .filter({ account: 'acct-checking' })
+      .options({ splits: 'none' })
+      .calculate({ $count: '$id' }),
+    'group-balance': sum(
+      q('transactions')
+        .filter({
+          'account.account_group_id': 'group-a',
+          'account.offbudget': false,
+          'account.closed': false,
+        })
+        .options({ splits: 'none' }),
+    ),
     'all-balance': sum(q('transactions').filter({ 'account.closed': false })),
     'onbudget-cleared': sum(
       q('transactions')
@@ -81,6 +117,12 @@ function transactionIds(filter: Record<string, unknown>, limit: number) {
 describe('query cells', () => {
   it('stay equal to running their query after each change', async () => {
     await generateBudget({ seed: 2, years: 2, transactionsPerMonth: 60 });
+    db.runQuery(
+      "INSERT INTO account_groups (id, name, tombstone) VALUES ('group-a', 'A', 0)",
+    );
+    db.runQuery(
+      "UPDATE accounts SET account_group_id = 'group-a' WHERE id IN ('acct-checking', 'acct-savings')",
+    );
     await loadBudgetState();
 
     const queries = boundQueries();
@@ -186,6 +228,66 @@ describe('query cells', () => {
       ],
       ['merge category', () => db.deleteCategory({ id: 'cat-0-0' }, 'cat-0-1')],
       [
+        'move account off budget',
+        () => db.update('accounts', { id: 'acct-card', offbudget: 1 }),
+      ],
+      [
+        'move account to group',
+        () =>
+          db.update('accounts', {
+            id: 'acct-card',
+            account_group_id: 'group-a',
+          }),
+      ],
+      [
+        'delete account',
+        () => db.update('accounts', { id: 'acct-invest', tombstone: 1 }),
+      ],
+      // Transactions that arrive before their account
+      [
+        'new account transactions',
+        () =>
+          batchUpdateTransactions({
+            added: [
+              added('new-1', 1500, { account: 'acct-new' }),
+              added('new-2', 2500, { account: 'acct-new', cleared: false }),
+            ],
+          }),
+      ],
+      [
+        'new account',
+        () => db.insertAccount({ id: 'acct-new', name: 'New', offbudget: 1 }),
+      ],
+      [
+        'undoable edits',
+        () =>
+          withUndo(async () =>
+            batchUpdateTransactions({
+              updated: [{ id: plain, amount: -4321, cleared: false }],
+              deleted: [{ id: other }],
+            }),
+          ),
+      ],
+      ['undo', () => undo()],
+      [
+        'synced change',
+        () =>
+          applyMessages(
+            [
+              ['acct', 'acct-checking'],
+              ['date', 20210320],
+              ['amount', 999],
+              ['cleared', 0],
+            ].map(([column, value]) => ({
+              dataset: 'transactions',
+              row: 'synced',
+              column: column as string,
+              value,
+              timestamp: Timestamp.send()!,
+            })),
+          ),
+      ],
+      [
         'large batch',
         () =>
           batchMessages(() => {
@@ -199,6 +301,28 @@ describe('query cells', () => {
       await apply();
       expectCurrent(step);
     }
+  });
+
+  it('binds balances again from the transaction totals', async () => {
+    await generateBudget({ seed: 2, years: 1, transactionsPerMonth: 20 });
+    await loadBudgetState();
+    const balance = q('transactions')
+      .filter({ account: 'acct-checking' })
+      .options({ splits: 'none' })
+      .calculate({ $sum: '$amount' })
+      .serialize();
+    createQueryCell('balance', balance);
+    const value = getQueryCellValue('balance') as number;
+    releaseQueryCell('balance', balance);
+
+    // A write that skips sync isn't seen by the totals, so binding the balance
+    // again shows it only if it ran its query
+    db.runQuery(
+      "UPDATE transactions SET amount = amount + 777 WHERE acct = 'acct-checking' AND isChild = 0",
+    );
+    createQueryCell('balance', balance);
+
+    expect(getQueryCellValue('balance')).toBe(value);
   });
 
   it('adjust sums and counts by the changed rows', async () => {
