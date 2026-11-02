@@ -82,6 +82,10 @@ export function prepare(db: Database, sql: string) {
   return db.prepare(sql);
 }
 
+export function finalize(stmt: Statement) {
+  stmt.finalize();
+}
+
 export function runQuery(
   db: Database,
   sql: string | Statement,

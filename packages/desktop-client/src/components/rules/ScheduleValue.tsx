@@ -30,7 +30,7 @@ export function ScheduleValue({ value }: ScheduleValueProps) {
 
   const schedule = schedules.find(item => item.id === value);
   const display = schedule
-    ? describeSchedule(schedule, byId[schedule._payee])
+    ? describeSchedule(schedule, byId.get(schedule._payee))
     : '(deleted)';
 
   return <Value value={display} field="notes" valueIsRaw />;

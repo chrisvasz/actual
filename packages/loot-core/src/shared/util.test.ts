@@ -144,9 +144,58 @@ describe('utility functions', () => {
     expect(formatter.format(Number('-1.2'))).toBe('-1');
   });
 
-  describe('cached number formats', () => {
+  describe('number formats', () => {
     afterEach(() => {
       setNumberFormat({ format: 'comma-dot', hideFraction: false });
+    });
+
+    test.each([
+      ['comma-dot', 'en-US'],
+      ['dot-comma', 'de-DE'],
+      ['space-comma', 'fr-FR'],
+      ['apostrophe-dot', 'de-CH'],
+      ['comma-dot-in', 'en-IN'],
+    ] as const)('%s formats like Intl does for %s', (format, locale) => {
+      const values = [
+        0,
+        -0,
+        1,
+        -1,
+        0.5,
+        -0.5,
+        1.005,
+        2.675,
+        -2.675,
+        0.125,
+        999.995,
+        1234.5678,
+        -0.001,
+        1e15 + 0.3,
+        1e21,
+        -1e22,
+        123456789.987654,
+        Number.MAX_SAFE_INTEGER,
+        NaN,
+        Infinity,
+        -Infinity,
+      ];
+      for (let i = 0; i < 500; i++) {
+        values.push(Math.round((Math.random() - 0.5) * 10 ** (i % 14)) / 100);
+        values.push((Math.random() - 0.5) * 10 ** (i % 18));
+      }
+      for (const decimalPlaces of [0, 1, 2, 3, 4]) {
+        const intl = new Intl.NumberFormat(locale, {
+          minimumFractionDigits: decimalPlaces,
+          maximumFractionDigits: decimalPlaces,
+        });
+        const { formatter } = getNumberFormat({ format, decimalPlaces });
+        for (const value of values) {
+          const fromIntl = intl.format(value).replace(/'/g, '\u2019');
+          expect(formatter.format(value)).toBe(
+            fromIntl === '-0' ? '0' : fromIntl,
+          );
+        }
+      }
     });
 
     const expected = {
@@ -209,17 +258,6 @@ describe('utility functions', () => {
         }
       },
     );
-
-    test('returns the same formatter for the same settings', () => {
-      setNumberFormat({ format: 'dot-comma', hideFraction: false });
-      expect(getNumberFormat().formatter).toBe(getNumberFormat().formatter);
-      expect(
-        getNumberFormat({ format: 'dot-comma', hideFraction: false }),
-      ).toBe(getNumberFormat());
-      expect(
-        getNumberFormat({ format: 'dot-comma', hideFraction: true }),
-      ).not.toBe(getNumberFormat());
-    });
 
     test('keeps decimal places separate from the configured fraction', () => {
       setNumberFormat({ format: 'comma-dot', hideFraction: false });

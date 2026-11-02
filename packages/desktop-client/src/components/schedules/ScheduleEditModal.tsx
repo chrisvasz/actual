@@ -56,7 +56,9 @@ export function ScheduleEditModal({ id, transaction }: ScheduleEditModalProps) {
           _account: transaction.account,
           _amount: transaction.amount,
           _amountOp: 'is',
-          name: transaction.payee ? payees[transaction.payee].name : '',
+          name: transaction.payee
+            ? (payees.get(transaction.payee)?.name ?? '')
+            : '',
           _payee: transaction.payee ? transaction.payee : '',
           _date: {
             ...date,
@@ -203,7 +205,9 @@ export function ScheduleEditModal({ id, transaction }: ScheduleEditModalProps) {
   }
 
   const payee =
-    payees && state.fields.payee ? payees[state.fields.payee] : null;
+    payees && state.fields.payee
+      ? (payees.get(state.fields.payee) ?? null)
+      : null;
   // This is derived from the date
   const repeats =
     state.fields.date && typeof state.fields.date !== 'string'

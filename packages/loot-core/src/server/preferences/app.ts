@@ -2,7 +2,6 @@ import * as asyncStorage from '#platform/server/asyncStorage';
 import { createApp } from '#server/app';
 import * as db from '#server/db';
 import { PostError } from '#server/errors';
-import { resetFormulaPreferencesCache } from '#server/formulas/bootstrap';
 import { mutator } from '#server/mutators';
 import { post } from '#server/post';
 import {
@@ -25,14 +24,6 @@ export type PreferencesHandlers = {
 };
 
 export const app = createApp<PreferencesHandlers>();
-
-const FORMULA_FORMAT_SYNCED_PREFS = new Set<keyof SyncedPrefs>([
-  'numberFormat',
-  'hideFraction',
-  'defaultCurrencyCode',
-  'currencySymbolPosition',
-  'currencySpaceBetweenAmountAndSymbol',
-]);
 
 app.method('preferences/save', mutator(undoable(saveSyncedPrefs)));
 app.method('preferences/get', getSyncedPrefs);
@@ -57,10 +48,6 @@ async function saveSyncedPrefs({
     id,
     value,
   });
-
-  if (FORMULA_FORMAT_SYNCED_PREFS.has(id)) {
-    resetFormulaPreferencesCache();
-  }
 }
 
 async function getSyncedPrefs(): Promise<SyncedPrefs> {

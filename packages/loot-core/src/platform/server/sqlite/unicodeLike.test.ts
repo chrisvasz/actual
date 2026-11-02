@@ -69,4 +69,16 @@ describe('unicode LIKE functionality', () => {
   it('should treat \\\\ as a literal \\ character', () => {
     expect(unicodeLike('c:\\\\test', 'c:\\test')).toBe(1);
   });
+
+  it('should match across line breaks, like SQLite LIKE', () => {
+    expect(unicodeLike('first%second', 'first line\nsecond line')).toBe(1);
+    expect(unicodeLike('line?second', 'line\nsecond')).toBe(1);
+  });
+
+  it('should ignore case for letters with more than one lowercase form', () => {
+    // A final sigma lowercases differently from a sigma mid-word
+    expect(unicodeLike('%ΟΣ%', 'ΟΣΟ')).toBe(1);
+    expect(unicodeLike('%πας%', 'πασχάλης')).toBe(1);
+    expect(unicodeLike('%µg%', '10 μg')).toBe(1);
+  });
 });

@@ -1,6 +1,5 @@
 import { useSyncExternalStore } from 'react';
 
-import { memoizeOne } from '@actual-app/core/shared/memoize';
 import { q } from '@actual-app/core/shared/query';
 import type { NoteEntity } from '@actual-app/core/types/models';
 
@@ -12,16 +11,11 @@ import { getLiveQuery } from '#queries/liveStore';
 // reading all of it is cheap.
 const allNotes = getLiveQuery<readonly NoteEntity[]>(q('notes').select('*'));
 
-const getNotesById = memoizeOne(
-  (notes: readonly NoteEntity[] | undefined) =>
-    new Map((notes ?? []).map(note => [note.id, note.note])),
-);
-
 export function useNotes(id: string): string | null {
   // Selecting the one note means a component only re-renders when its own
   // note changes - not whenever any note in the budget file does.
   return useSyncExternalStore(
     allNotes.subscribe,
-    () => getNotesById(allNotes.getSnapshot().data).get(id) ?? null,
+    () => allNotes.getRowsById()?.get(id)?.note ?? null,
   );
 }

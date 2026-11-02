@@ -3,7 +3,6 @@ import { createRef, PureComponent } from 'react';
 import type { CSSProperties, ReactNode, Ref, RefObject, UIEvent } from 'react';
 
 import { View } from '@actual-app/components/view';
-import { memoizeOne } from '@actual-app/core/shared/memoize';
 
 const IS_SCROLLING_DEBOUNCE_INTERVAL = 150;
 
@@ -397,29 +396,46 @@ export class FixedSizeList extends PureComponent<
     );
   };
 
-  _callOnItemsRendered = memoizeOne(
-    (
+  // What the callbacks were last told, so they're only called on a change
+  _reportedItems: number[] | null = null;
+  _reportedScroll: unknown[] | null = null;
+
+  _callOnItemsRendered(
+    overscanStartIndex: number,
+    overscanStopIndex: number,
+    visibleStartIndex: number,
+    visibleStopIndex: number,
+  ) {
+    const items = [
       overscanStartIndex,
       overscanStopIndex,
       visibleStartIndex,
       visibleStopIndex,
-    ) =>
-      this.props.onItemsRendered({
-        overscanStartIndex,
-        overscanStopIndex,
-        visibleStartIndex,
-        visibleStopIndex,
-      }),
-  );
+    ];
+    if (isSameReport(this._reportedItems, items)) {
+      return;
+    }
+    this._reportedItems = items;
+    this.props.onItemsRendered({
+      overscanStartIndex,
+      overscanStopIndex,
+      visibleStartIndex,
+      visibleStopIndex,
+    });
+  }
 
-  _callOnScroll = memoizeOne(
-    (scrollDirection, scrollOffset, scrollUpdateWasRequested) =>
-      this.props.onScroll({
-        scrollDirection,
-        scrollOffset,
-        scrollUpdateWasRequested,
-      }),
-  );
+  _callOnScroll(scrollDirection, scrollOffset, scrollUpdateWasRequested) {
+    const scroll = [scrollDirection, scrollOffset, scrollUpdateWasRequested];
+    if (isSameReport(this._reportedScroll, scroll)) {
+      return;
+    }
+    this._reportedScroll = scroll;
+    this.props.onScroll({
+      scrollDirection,
+      scrollOffset,
+      scrollUpdateWasRequested,
+    });
+  }
 
   _callPropsCallbacks() {
     if (typeof this.props.onItemsRendered === 'function') {
@@ -451,35 +467,15 @@ export class FixedSizeList extends PureComponent<
     }
   }
 
-  // Lazily create and cache item styles while scrolling,
-  // So that pure component sCU will prevent re-renders.
-  // We maintain this cache, and pass a style prop rather than index,
-  // So that List can clear cached styles and force item re-render if necessary.
-  _getItemStyle = (index: number) => {
-    const { direction, itemSize, layout } = this.props;
-
-    const itemStyleCache = this._getItemStyleCache(itemSize, layout, direction);
-
-    let style: CSSProperties;
-    if (itemStyleCache.hasOwnProperty(index)) {
-      style = itemStyleCache[index];
-    } else {
-      const offset = this.getItemOffset(index);
-      const size = this.getItemSize();
-
-      itemStyleCache[index] = style = {
-        position: 'absolute',
-        left: 0,
-        top: offset,
-        height: size,
-        width: '100%',
-      };
-    }
-
-    return style;
-  };
-
-  _getItemStyleCache = memoizeOne((_, __, ___) => ({}));
+  // Rows read only `top` from their style, never compare it by identity,
+  // so a fresh object per render costs nothing to keep stable
+  _getItemStyle = (index: number): CSSProperties & { top: number } => ({
+    position: 'absolute',
+    left: 0,
+    top: this.getItemOffset(index),
+    height: this.getItemSize(),
+    width: '100%',
+  });
 
   _getRangeToRender() {
     const { itemCount, overscanCount } = this.props;
@@ -572,11 +568,10 @@ export class FixedSizeList extends PureComponent<
   _resetIsScrolling = () => {
     this._resetIsScrollingTimeoutId = null;
 
-    this.setState({ isScrolling: false }, () => {
-      // Clear style cache after state update has been committed.
-      // This way we don't break pure sCU for items that don't use isScrolling param.
-      // @ts-expect-error fix me
-      this._getItemStyleCache(-1, null);
-    });
+    this.setState({ isScrolling: false });
   };
+}
+
+function isSameReport(last: readonly unknown[] | null, next: unknown[]) {
+  return last != null && last.every((value, i) => Object.is(value, next[i]));
 }

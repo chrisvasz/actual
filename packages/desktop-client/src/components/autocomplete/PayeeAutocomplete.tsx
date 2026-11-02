@@ -53,7 +53,7 @@ function filterActivePayees<T extends PayeeEntity>(
   payees: T[],
   accounts: AccountEntity[],
 ): T[] {
-  return accounts ? (getActivePayees(payees, accounts) as T[]) : payees;
+  return accounts ? getActivePayees(payees, accounts) : payees;
 }
 
 function filterTransferPayees<T extends PayeeEntity>(payees: T[]): T[] {

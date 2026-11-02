@@ -1,5 +1,3 @@
-import { memoizeOne } from '@actual-app/core/shared/memoize';
-import { groupById } from '@actual-app/core/shared/util';
 import type { AccountEntity } from '@actual-app/core/types/models';
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
@@ -46,10 +44,6 @@ const accountsSlice = createSlice({
     builder.addCase(resetApp, () => initialState);
   },
 });
-
-export const getAccountsById = memoizeOne(
-  (accounts: AccountEntity[] | null | undefined) => groupById(accounts),
-);
 
 export const { name, reducer, getInitialState } = accountsSlice;
 export const actions = {

@@ -58,18 +58,18 @@ export type UserPreferences = {
   currencySpaceBetweenAmountAndSymbol: boolean;
 };
 
-let cachedUserPreferences: UserPreferences | null = null;
+// Reads the preferences when a formula formats a value, so it always uses
+// the current ones
+let readUserPreferences: (() => UserPreferences) | null = null;
 
-export function setCachedUserPreferences(prefs: UserPreferences): void {
-  cachedUserPreferences = prefs;
-}
-
-export function clearCachedUserPreferences(): void {
-  cachedUserPreferences = null;
+export function setUserPreferencesReader(
+  read: (() => UserPreferences) | null,
+): void {
+  readUserPreferences = read;
 }
 
 function getUserPreferences(): UserPreferences {
-  if (!cachedUserPreferences) {
+  if (!readUserPreferences) {
     // If not loaded, use defaults
     return {
       currency: getCurrency('USD'),
@@ -82,7 +82,7 @@ function getUserPreferences(): UserPreferences {
       currencySpaceBetweenAmountAndSymbol: false,
     };
   }
-  return cachedUserPreferences;
+  return readUserPreferences();
 }
 
 export function createBudgetQueryPrefetchKey({

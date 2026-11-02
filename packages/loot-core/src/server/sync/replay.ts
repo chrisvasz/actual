@@ -1,5 +1,6 @@
 import { captureException } from '#platform/exceptions';
 import { logger } from '#platform/server/log';
+import type { Statement } from '#platform/server/sqlite';
 import * as db from '#server/db';
 import { isMissingSchemaError } from '#shared/errors';
 
@@ -43,12 +44,17 @@ export function deleteStalePendingMessages(): void {
   `);
 }
 
+const deletePendingSql = db.prepared(
+  'DELETE FROM messages_pending WHERE dataset = ? AND row = ? AND column = ?',
+);
+
 // Applies sync messages that were deferred because they referenced
 // schema (or a value format) this client didn't have yet — see
 // `deferMessage` in ./index.ts. Called on budget load right after
 // migrations run, only when a sync server is configured. Messages that
 // still can't apply stay pending for a future upgrade and re-trigger
 // the update-required notification.
+
 export function replayPendingMessages(): void {
   resetDeferredMessagesNotification();
 
@@ -56,7 +62,7 @@ export function replayPendingMessages(): void {
   let newerVersionCount = 0;
   let failedCount = 0;
 
-  const replay = () => {
+  const replay = (prepare: (sql: string) => Statement) => {
     deleteStalePendingMessages();
 
     // Timestamp order gives last-write-wins per cell
@@ -85,7 +91,7 @@ export function replayPendingMessages(): void {
         // CONFLICT fires, so an existing row must take the UPDATE path.
         const updated = Number(
           db.runQuery(
-            db.cache(
+            prepare(
               `UPDATE ${quoteSqlId(msg.dataset)} SET ${quoteSqlId(msg.column)} = ? WHERE id = ?`,
             ),
             [value, msg.row],
@@ -93,7 +99,7 @@ export function replayPendingMessages(): void {
         );
         if (updated === 0) {
           db.runQuery(
-            db.cache(
+            prepare(
               `INSERT INTO ${quoteSqlId(msg.dataset)} (id, ${quoteSqlId(msg.column)}) VALUES (?, ?)`,
             ),
             [msg.row, value],
@@ -117,12 +123,7 @@ export function replayPendingMessages(): void {
     }
 
     function deletePending(msg: db.DbPendingMessage) {
-      db.runQuery(
-        db.cache(
-          'DELETE FROM messages_pending WHERE dataset = ? AND row = ? AND column = ?',
-        ),
-        [msg.dataset, msg.row, msg.column],
-      );
+      db.runQuery(deletePendingSql(), [msg.dataset, msg.row, msg.column]);
     }
 
     function processPass(
@@ -166,7 +167,7 @@ export function replayPendingMessages(): void {
   };
 
   try {
-    db.transaction(replay);
+    db.transaction(() => db.withStatements(replay));
   } catch (e) {
     // Possibly-transient abort: nothing was dropped, everything retries
     // on the next load — telemetry only, no user notification

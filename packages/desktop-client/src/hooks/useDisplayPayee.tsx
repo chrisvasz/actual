@@ -74,9 +74,11 @@ export function DisplayPayeeProvider({
         if (subtransactions.length === 0) {
           acc[transaction.id] = getPrettyPayee({
             transaction,
-            payee: payeesById[transaction?.payee || ''],
+            payee: payeesById.get(transaction?.payee || ''),
             transferAccount: accounts.find(
-              a => a.id === payeesById[transaction?.payee || '']?.transfer_acct,
+              a =>
+                a.id ===
+                payeesById.get(transaction?.payee || '')?.transfer_acct,
             ),
           });
 
@@ -110,8 +112,9 @@ export function DisplayPayeeProvider({
           return acc;
         }
 
-        const mostCommonPayee =
-          payeesById[mostCommonPayeeTransaction.payee || ''];
+        const mostCommonPayee = payeesById.get(
+          mostCommonPayeeTransaction.payee || '',
+        );
 
         if (!mostCommonPayee) {
           acc[transaction.id] = 'Split (no payee)';
@@ -126,7 +129,8 @@ export function DisplayPayeeProvider({
           transferAccount: accounts.find(
             a =>
               a.id ===
-              payeesById[mostCommonPayeeTransaction.payee || '']?.transfer_acct,
+              payeesById.get(mostCommonPayeeTransaction.payee || '')
+                ?.transfer_acct,
           ),
           numHiddenPayees: numDistinctPayees - 1,
         });
