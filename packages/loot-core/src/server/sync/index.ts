@@ -401,7 +401,7 @@ export type Message = {
 
 export function applyMessages(
   messages: Message[],
-  deferUnknownSchema = false,
+  isReceived = false,
 ): Message[] | undefined {
   if (checkSyncingMode('import')) {
     applyMessagesForImport(messages);
@@ -485,7 +485,9 @@ export function applyMessages(
         const applied = apply(
           msg,
           getIn(oldData, [dataset, row]) || added.has(dataset + row),
-          deferUnknownSchema,
+          // Inbound messages may come from a newer version of the app, so
+          // unknown-schema errors defer instead of failing the batch
+          isReceived,
         );
 
         if (applied) {
@@ -535,7 +537,11 @@ export function applyMessages(
 
     newData = fetchData(idsPerTable);
   };
-  db.transaction(applyInTransaction, { immediate: true });
+  if (isReceived) {
+    receiveInTransaction(messages, applyInTransaction);
+  } else {
+    db.transaction(applyInTransaction, { immediate: true });
+  }
 
   if (checkSyncingMode('enabled')) {
     // Update the in-memory clock.
@@ -609,34 +615,54 @@ export function applyMessages(
     : messages.filter(msg => !deferredMessages.has(msg));
 }
 
-export function receiveMessages(messages: Message[]): Promise<Message[]> {
+// Receiving the batch's latest timestamp inside the transaction advances
+// the clock once per batch and includes it in the saved `messages_clock`
+// row. If the transaction fails, the clock is restored along with it.
+function receiveInTransaction(
+  messages: Message[],
+  applyInTransaction: () => void,
+) {
+  let latest: Timestamp | null = null;
+  for (const { timestamp } of messages) {
+    if (
+      latest === null ||
+      timestamp.millis() > latest.millis() ||
+      (timestamp.millis() === latest.millis() &&
+        timestamp.counter() > latest.counter())
+    ) {
+      latest = timestamp;
+    }
+  }
+
+  const clock = getClock();
+  const savedMillis = clock.timestamp.millis();
+  const savedCounter = clock.timestamp.counter();
   try {
-    // Receiving the latest timestamp preserves the clock and drift check while
-    // advancing the counter once per batch.
-    let latest = null;
-    for (const { timestamp } of messages) {
-      if (
-        latest === null ||
-        timestamp.millis() > latest.millis() ||
-        (timestamp.millis() === latest.millis() &&
-          timestamp.counter() > latest.counter())
-      ) {
-        latest = timestamp;
-      }
-    }
-    if (latest !== null) {
-      Timestamp.recv(latest);
-    }
+    db.transaction(
+      () => {
+        if (latest !== null) {
+          Timestamp.recv(latest);
+        }
+        applyInTransaction();
+      },
+      { immediate: true },
+    );
+  } catch (e) {
+    clock.timestamp.setMillis(savedMillis);
+    clock.timestamp.setCounter(savedCounter);
+    throw e;
+  }
+}
+
+export async function receiveMessages(messages: Message[]): Promise<Message[]> {
+  try {
+    return await runMutator(async () => applyMessages(messages, true));
   } catch (e) {
     if (e instanceof Timestamp.ClockDriftError) {
       throw new SyncError('clock-drift');
     }
     throw e;
   }
-
-  // Inbound messages may come from a newer version of the app, so
-  // unknown-schema errors defer instead of failing the batch
-  return runMutator(async () => applyMessages(messages, true));
 }
 
 async function errorHandler(e: Error) {
