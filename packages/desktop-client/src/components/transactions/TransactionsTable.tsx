@@ -1600,6 +1600,7 @@ const Transaction = memo(function Transaction({
                 }}
                 shouldSaveFromKey={shouldSaveFromKey}
                 clearOnBlur
+                propagateEnter
                 onUpdate={onUpdate}
                 onSelect={onSave}
                 onCalendarSelect={() => {
