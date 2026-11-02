@@ -347,7 +347,9 @@ test.describe('Accounts', () => {
 
     test('preserves QIF categories in preview and imported transactions', async () => {
       const fileChooserPromise = page.waitForEvent('filechooser');
-      await accountPage.page.getByRole('button', { name: 'Import' }).click();
+      await accountPage.page
+        .getByRole('button', { name: 'Import', exact: true })
+        .click();
 
       const fileChooser = await fileChooserPromise;
       await fileChooser.setFiles(join(__dirname, 'data/qif-categories.qif'));
@@ -400,7 +402,9 @@ test.describe('Accounts', () => {
     test('imports a new transaction when an unchecked match has the same amount', async () => {
       async function openCsv(content: string) {
         const fileChooserPromise = page.waitForEvent('filechooser');
-        await accountPage.page.getByRole('button', { name: 'Import' }).click();
+        await accountPage.page
+          .getByRole('button', { name: 'Import', exact: true })
+          .click();
         const fileChooser = await fileChooserPromise;
         await fileChooser.setFiles({
           name: 'same-amount.csv',
