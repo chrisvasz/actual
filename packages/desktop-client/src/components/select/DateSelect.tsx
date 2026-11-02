@@ -319,6 +319,9 @@ type DateSelectProps = {
   ref?: Ref<HTMLInputElement>;
   shouldSaveFromKey?: (e: KeyboardEvent<HTMLInputElement>) => boolean;
   clearOnBlur?: boolean;
+  // Let Enter bubble up even while the calendar is open, so a parent
+  // (like the transaction table navigator) can move focus
+  propagateEnter?: boolean;
   onUpdate?: (selectedDate: string) => void;
   onSelect: (selectedDate: string) => void;
   // Called after a date is clicked in the calendar
@@ -339,6 +342,7 @@ function DateSelectDesktop({
   ref,
   shouldSaveFromKey = defaultShouldSaveFromKey,
   clearOnBlur = true,
+  propagateEnter = false,
   onUpdate,
   onSelect,
   onCalendarSelect,
@@ -435,7 +439,7 @@ function DateSelectDesktop({
 
       setOpen(false);
 
-      if (open && e.key === 'Enter') {
+      if (open && e.key === 'Enter' && !propagateEnter) {
         // This stops the event from propagating up
         e.stopPropagation();
         e.preventDefault();
