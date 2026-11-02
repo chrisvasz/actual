@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { RecurConfig } from '#types/models';
 
-import { getScheduleDates } from './occurrences';
+import { getScheduleDates, MAX_SCHEDULE_DATES } from './occurrences';
 
 describe('getScheduleDates', () => {
   describe('single dates', () => {
@@ -295,6 +295,28 @@ describe('getScheduleDates', () => {
           { start: '2024-01-01', count: 1 },
         ),
       ).toThrow('`weekendSolveMode` is required');
+    });
+
+    it(`rejects a count above ${MAX_SCHEDULE_DATES}`, () => {
+      expect(() =>
+        getScheduleDates(
+          { frequency: 'daily', start: '2024-01-01' },
+          { start: '2024-01-01', count: MAX_SCHEDULE_DATES + 1 },
+        ),
+      ).toThrow('cannot be more than');
+    });
+
+    it(`rejects a window with more than ${MAX_SCHEDULE_DATES} dates`, () => {
+      const daily: RecurConfig = { frequency: 'daily', start: '2024-01-01' };
+      expect(
+        getScheduleDates(daily, {
+          start: '2024-01-01',
+          count: MAX_SCHEDULE_DATES,
+        }),
+      ).toHaveLength(MAX_SCHEDULE_DATES);
+      expect(() =>
+        getScheduleDates(daily, { start: '2024-01-01', end: '9999-12-31' }),
+      ).toThrow(`More than ${MAX_SCHEDULE_DATES} dates`);
     });
   });
 });

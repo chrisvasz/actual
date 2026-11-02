@@ -2,6 +2,10 @@ import * as monthUtils from '#shared/months';
 import { getNextDateAfter } from '#shared/schedules';
 import type { RecurConfig } from '#types/models';
 
+// Bounds the work one request can do: each step builds a fresh rschedule
+// Schedule, and the backend serves every other request on the same thread.
+export const MAX_SCHEDULE_DATES = 1000;
+
 export type ScheduleDatesOptions = {
   start: string;
   end?: string;
@@ -19,7 +23,8 @@ export type ScheduleDatesOptions = {
  * schedule's Saturday and Sunday both landing on Monday) is listed once.
  *
  * At least one of `end`, `count`, or an ending recurrence must bound the
- * result; an unbounded request throws.
+ * result; an unbounded request throws, as does one that asks for or would
+ * return more than `MAX_SCHEDULE_DATES` dates.
  */
 export function getScheduleDates(
   date: RecurConfig | string,
@@ -27,6 +32,9 @@ export function getScheduleDates(
 ): string[] {
   if (count === 0) {
     return [];
+  }
+  if (count != null && count > MAX_SCHEDULE_DATES) {
+    throw new Error(`\`count\` cannot be more than ${MAX_SCHEDULE_DATES}`);
   }
 
   if (typeof date === 'string') {
@@ -49,6 +57,11 @@ export function getScheduleDates(
 
   let next = getNextDateAfter(dateCond, monthUtils.subDays(start, 1));
   while (next != null && (end == null || next <= end)) {
+    if (dates.length === MAX_SCHEDULE_DATES) {
+      throw new Error(
+        `More than ${MAX_SCHEDULE_DATES} dates fall in the window; narrow it or pass a \`count\``,
+      );
+    }
     dates.push(next);
     if (count != null && dates.length >= count) {
       break;

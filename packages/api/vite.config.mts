@@ -50,7 +50,8 @@ export default defineConfig({
       // and recurrence rules on a different `@rschedule/core` than the one
       // loot-core uses, and every schedule then advances one millisecond at
       // a time. Resolving the ES builds keeps a single instance. The
-      // production bundle is unaffected, as Rollup merges the copies.
+      // production build already resolves the ES builds, through Vite's
+      // default `mainFields` for SSR.
       ...(process.env.VITEST ? { mainFields: ['module', 'main'] } : {}),
     },
   },
