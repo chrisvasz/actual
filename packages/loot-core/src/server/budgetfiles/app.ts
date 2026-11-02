@@ -29,7 +29,9 @@ import { getServer } from '#server/server-config';
 import {
   clearFullSyncTimeout,
   initialFullSync,
+  resumeFullSync,
   setSyncingMode,
+  stopFullSync,
 } from '#server/sync';
 import * as syncMigrations from '#server/sync/migrate';
 import { replayPendingMessages } from '#server/sync/replay';
@@ -279,6 +281,15 @@ async function createDemoBudget() {
 }
 
 async function closeBudget() {
+  await stopFullSync();
+  try {
+    return await unloadBudget();
+  } finally {
+    resumeFullSync();
+  }
+}
+
+async function unloadBudget() {
   captureBreadcrumb({ message: 'Closing budget' });
   resetFormulaPreferencesCache();
 
@@ -295,6 +306,10 @@ async function closeBudget() {
     captureException(e);
   }
   db.closeDatabase();
+  // A sync started while the next budget loads must find syncing off until
+  // `_loadBudget` turns it back on, or it would apply this budget's clock
+  // to that one. Not earlier: edits made while closing must still be logged
+  setSyncingMode('disabled');
   notifyChanges('all');
 
   try {
