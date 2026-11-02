@@ -1008,6 +1008,7 @@ type TransactionProps = {
   index: number;
   amountColumnWidths: AmountColumnWidths;
   showTodayDivider?: boolean;
+  isTodayChipCovered?: boolean;
 };
 
 function getNoTransaction() {
@@ -1073,6 +1074,7 @@ const Transaction = memo(function Transaction({
   index,
   amountColumnWidths,
   showTodayDivider = false,
+  isTodayChipCovered = false,
 }: TransactionProps) {
   const dispatch = useDispatch();
   const dispatchSelected = useSelectedDispatch();
@@ -2053,7 +2055,11 @@ const Transaction = memo(function Transaction({
     >
       <DropHighlight pos={showDropHighlight ? dropPos : null} />
       {showTodayDivider && (
-        <TodayDivider dateFormat={dateFormat} isTopRow={index === 0} />
+        <TodayDivider
+          dateFormat={dateFormat}
+          isTopRow={index === 0}
+          isChipCovered={isTodayChipCovered}
+        />
       )}
       <TransactionDragRow
         rowRef={triggerRef}
@@ -2388,16 +2394,33 @@ function findTodayDividerId(
   return null;
 }
 
+// The "Today" chip reaches up into the row above, where an open date editor
+// would sit on top of it.
+function isDateEditorAbove(
+  transactions: readonly TransactionEntity[],
+  index: number,
+  tableNavigator: TableNavigator<TransactionEntity>,
+) {
+  return (
+    index > 0 &&
+    transactions[index - 1]?.id === tableNavigator.editingId &&
+    tableNavigator.focusedField === 'date'
+  );
+}
+
 function TodayDivider({
   dateFormat,
   isTopRow,
+  isChipCovered,
 }: {
   dateFormat: string;
   isTopRow: boolean;
+  isChipCovered: boolean;
 }) {
   // The top row starts 1px above the list's clipping edge (Table offsets
   // every row by -1px), so the line is nudged down to stay whole and the
-  // chip, which would be cut off, is left out.
+  // chip, which would be cut off, is left out. The chip is also left out
+  // while the date editor above would cover it.
   return (
     <View
       aria-hidden
@@ -2414,7 +2437,7 @@ function TodayDivider({
     >
       {/* Sized by an invisible date in the row's font, so the chip centers
           over the date column's text whatever the date format. */}
-      {!isTopRow && (
+      {!isTopRow && !isChipCovered && (
         <View
           style={{
             position: 'absolute',
@@ -3047,6 +3070,10 @@ function TransactionTableInner({
         onDrop={props.onDrop}
         index={index}
         showTodayDivider={trans.id === todayDividerId}
+        isTodayChipCovered={
+          trans.id === todayDividerId &&
+          isDateEditorAbove(transactionsToRender, index, tableNavigator)
+        }
       />
     );
   };
