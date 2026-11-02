@@ -398,7 +398,7 @@ describe('liveReads cells', () => {
     expect(liveReads.cell('__global', 'balance')).toBe(100);
   });
 
-  it('keeps the most recently released query cells current', async () => {
+  it('drops a released query cell', async () => {
     await openBudget();
     liveReads.cell('__global', 'balance', balance);
 
@@ -409,14 +409,12 @@ describe('liveReads cells', () => {
       .serialize();
     liveReads.cell('__global', 'balance', cleared);
     liveReads.releaseCell('__global', 'balance', balance);
-    for (let i = 0; i < 100; i++) {
-      liveReads.cell('__global', `other-${i}`, balance);
-      liveReads.releaseCell('__global', `other-${i}`, balance);
-    }
     expect(hasQueryCell('__global!balance')).toBe(true);
 
-    // Released, it's kept current while 100 cells released after it are
     liveReads.releaseCell('__global', 'balance', cleared);
+    expect(hasQueryCell('__global!balance')).toBe(false);
+
+    // Bound again, it reads the current balance
     db.insertTransaction({
       id: 't1',
       account: 'acct',
@@ -424,17 +422,7 @@ describe('liveReads cells', () => {
       date: '2017-01-05',
       cleared: true,
     });
-    expect(hasQueryCell('__global!balance')).toBe(true);
-    expect(liveReads.cell('__global', 'balance')).toBe(100);
-    for (let i = 0; i < 99; i++) {
-      liveReads.cell('__global', `more-${i}`, balance);
-      liveReads.releaseCell('__global', `more-${i}`, balance);
-    }
-    expect(hasQueryCell('__global!balance')).toBe(true);
-    liveReads.cell('__global', 'last', balance);
-    liveReads.releaseCell('__global', 'last', balance);
-    expect(hasQueryCell('__global!balance')).toBe(false);
-    expect(hasQueryCell('__global!last')).toBe(true);
+    expect(liveReads.cell('__global', 'balance', cleared)).toBe(100);
   });
 
   it('reads null, binding nothing, with no budget open', () => {
