@@ -8,6 +8,7 @@ import {
 } from '#server/budget/state';
 import { createQueryCell, getQueryCellValue } from '#server/cells/query-cells';
 import * as db from '#server/db';
+import { runMutator } from '#server/mutators';
 import * as prefs from '#server/prefs';
 import * as mockSyncServer from '#server/tests/mockSyncServer';
 import { q } from '#shared/query';
@@ -238,8 +239,22 @@ describe('receiveMessages', () => {
     }));
   }
 
+  // Holds the mutator queue so the receives below wait in it; otherwise
+  // the fork's synchronous apply finishes each one before it returns
+  function blockMutators() {
+    let release: (() => void) | undefined;
+    const blocked = runMutator(
+      () => new Promise<void>(resolve => (release = resolve)),
+    );
+    return async () => {
+      release?.();
+      await blocked;
+    };
+  }
+
   it('discards failed clock advances before receiving the next queued batch', async () => {
     const messages = conflictingMessages();
+    const unblock = blockMutators();
     const failedBatch = receiveMessages(messages);
     const nextBatch = receiveMessages([
       {
@@ -247,6 +262,7 @@ describe('receiveMessages', () => {
         timestamp: new Timestamp(Date.now() + 1000, 0, '0000000000000002'),
       },
     ]);
+    await unblock();
 
     await expect(failedBatch).rejects.toThrow(/UNIQUE constraint failed/);
     await expect(nextBatch).resolves.toHaveLength(1);
@@ -255,8 +271,10 @@ describe('receiveMessages', () => {
   });
 
   it('does not reuse timestamps issued while a failed receive is pending', async () => {
+    const unblock = blockMutators();
     const failedBatch = receiveMessages(conflictingMessages());
     const issued = Timestamp.send();
+    await unblock();
 
     await expect(failedBatch).rejects.toThrow(/UNIQUE constraint failed/);
     expect(Timestamp.send().toString() > issued.toString()).toBe(true);

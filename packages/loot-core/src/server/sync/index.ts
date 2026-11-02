@@ -795,6 +795,11 @@ const testSyncErrors: Error[] = [];
 export function scheduleFullSync(): void {
   clearFullSyncTimeout();
 
+  // A timer set while the budget closes would fire during the next load
+  if (isFullSyncStopped) {
+    return;
+  }
+
   if (checkSyncingMode('enabled') && !checkSyncingMode('offline')) {
     if (process.env.NODE_ENV === 'test') {
       testSyncs = testSyncs.then(async () => {
@@ -891,6 +896,7 @@ export async function stopFullSync(): Promise<void> {
 }
 
 export function resumeFullSync(): void {
+  clearFullSyncTimeout();
   isFullSyncStopped = false;
 }
 
