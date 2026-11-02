@@ -217,7 +217,7 @@ async function mergeOrphanedPayees(
         timeout: 20000,
         message:
           `Merged ${merged} into "${targetName}"` +
-          (isEditingRule ? '' : ` [Edit rename rule](#createRule)`),
+          (isEditingRule ? '' : `\n\n[Edit rename rule](#createRule)`),
         messageActions: {
           createRule: () =>
             void createPayeeRenameRule(store, fromNames, targetId),

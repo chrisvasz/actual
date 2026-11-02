@@ -36,7 +36,7 @@ function compileMessage(
   onRemove?: () => void,
 ) {
   return (
-    <SpaceBetween direction="vertical" gap={10}>
+    <SpaceBetween direction="vertical" gap={10} align="start">
       {message.split(/\n\n/).map((paragraph, idx) => {
         const parts = paragraph.split(/(\[[^\]]*\]\([^)]*\))/g);
 
@@ -250,7 +250,9 @@ function Notification({
           aria-label="Close"
           style={{
             position: 'absolute',
-            top: 8,
+            // Center on the first line of text, or on the action button when
+            // it shares the top row
+            top: button && !title ? 16 : 12,
             right: 8,
             padding: 8,
             color: 'currentColor',
@@ -285,7 +287,10 @@ function Notification({
             gap={10}
             style={{ width: '100%', alignItems: 'flex-start' }}
           >
-            <View style={{ flex: 1, minWidth: 0 }}>{processedMessage}</View>
+            {/* Pad so the first line centers on the button */}
+            <View style={{ flex: 1, minWidth: 0, paddingTop: button ? 5 : 0 }}>
+              {processedMessage}
+            </View>
             {button && (
               <ButtonWithLoading
                 variant="bare"
