@@ -246,8 +246,12 @@ describe('receiveMessages', () => {
     const blocked = runMutator(
       () => new Promise<void>(resolve => (release = resolve)),
     );
+    if (!release) {
+      throw new Error('mutator queue was not idle');
+    }
+    const unblock = release;
     return async () => {
-      release?.();
+      unblock();
       await blocked;
     };
   }

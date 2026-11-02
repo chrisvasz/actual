@@ -291,10 +291,6 @@ async function closeBudget() {
 
 async function unloadBudget() {
   captureBreadcrumb({ message: 'Closing budget' });
-  // A sync started while the next budget loads must find syncing off until
-  // `_loadBudget` turns it back on, or it would apply this budget's clock
-  // to that one
-  setSyncingMode('disabled');
   resetFormulaPreferencesCache();
 
   unloadBudgetState();
@@ -310,6 +306,10 @@ async function unloadBudget() {
     captureException(e);
   }
   db.closeDatabase();
+  // A sync started while the next budget loads must find syncing off until
+  // `_loadBudget` turns it back on, or it would apply this budget's clock
+  // to that one. Not earlier: edits made while closing must still be logged
+  setSyncingMode('disabled');
   notifyChanges('all');
 
   try {

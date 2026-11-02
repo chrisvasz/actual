@@ -590,6 +590,13 @@ describe('Budget shutdown', () => {
       });
       writeGate.resolve();
       await flushStarted.promise;
+      // An edit that lands while the budget closes is still logged for sync
+      await runMutator(async () => {
+        db.insertPayee({ name: 'Closing edit' });
+      });
+      expect(
+        db.all("SELECT * FROM messages_crdt WHERE dataset = 'payees'"),
+      ).not.toHaveLength(0);
       await lib.send('app-focused');
       scheduleFullSync();
       await vi.runAllTimersAsync();
