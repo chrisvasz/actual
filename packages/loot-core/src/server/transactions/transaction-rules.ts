@@ -358,11 +358,9 @@ export function runRules(
     normalizedTrans[field] = null;
   }
 
-  let finalTrans = prepareTransactionForRules(
-    normalizedTrans,
-    accountsMap,
-    { includeBalance: false },
-  );
+  let finalTrans = prepareTransactionForRules(normalizedTrans, accountsMap, {
+    includeBalance: false,
+  });
   let lastCategoryIdForGroup: string | null = finalTrans.category ?? null;
 
   // The running balance is a query over every earlier transaction in

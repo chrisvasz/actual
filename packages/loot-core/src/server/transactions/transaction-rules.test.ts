@@ -1203,7 +1203,7 @@ describe('Learning categories', () => {
   test('does not create a rule if a "one of" rule already sets the category', async () => {
     await loadData();
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'oneOf', field: 'payee', value: ['foo', 'bar'] }],
@@ -1216,10 +1216,10 @@ describe('Learning categories', () => {
       payee: 'foo',
       category: 'food',
     };
-    await db.insertTransaction({ ...trans, id: 'one' });
-    await db.insertTransaction({ ...trans, id: 'two' });
-    await db.insertTransaction({ ...trans, id: 'three' });
-    await updateCategoryRules([{ ...trans, id: 'three' }]);
+    db.insertTransaction({ ...trans, id: 'one' });
+    db.insertTransaction({ ...trans, id: 'two' });
+    db.insertTransaction({ ...trans, id: 'three' });
+    updateCategoryRules([{ ...trans, id: 'three' }]);
 
     expect(getRules().length).toBe(1);
     expect(getRules()[0].conditions[0].op).toBe('oneOf');
@@ -1228,7 +1228,7 @@ describe('Learning categories', () => {
   test('creates a rule if a "one of" rule sets a different category', async () => {
     await loadData();
 
-    await insertRule({
+    insertRule({
       stage: null,
       conditionsOp: 'and',
       conditions: [{ op: 'oneOf', field: 'payee', value: ['foo', 'bar'] }],
@@ -1241,10 +1241,10 @@ describe('Learning categories', () => {
       payee: 'foo',
       category: 'food',
     };
-    await db.insertTransaction({ ...trans, id: 'one' });
-    await db.insertTransaction({ ...trans, id: 'two' });
-    await db.insertTransaction({ ...trans, id: 'three' });
-    await updateCategoryRules([{ ...trans, id: 'three' }]);
+    db.insertTransaction({ ...trans, id: 'one' });
+    db.insertTransaction({ ...trans, id: 'two' });
+    db.insertTransaction({ ...trans, id: 'three' });
+    updateCategoryRules([{ ...trans, id: 'three' }]);
 
     expect(getRules().length).toBe(2);
     expectCategoryRule(getRules()[1], 'food', 'foo');

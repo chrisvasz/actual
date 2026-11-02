@@ -484,7 +484,7 @@ export async function updateSchedule({
 
   const postsTransaction =
     scheduleFields.posts_transaction ??
-    (await getSchedule(scheduleFields.id))?.posts_transaction;
+    getSchedule(scheduleFields.id)?.posts_transaction;
 
   await allowAutoPostingToRunAgainToday(postsTransaction);
 

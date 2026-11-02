@@ -653,7 +653,7 @@ describe('schedule app', () => {
 
         const {
           data: [row],
-        } = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+        } = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
 
         expect(row.next_date).toBe('2017-01-02');
       }
@@ -688,7 +688,7 @@ describe('schedule app', () => {
 
         const {
           data: [row],
-        } = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+        } = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
 
         expect(row.next_date).toBe('2021-05-24');
       } finally {
@@ -719,7 +719,7 @@ describe('schedule app', () => {
 
         const {
           data: [row],
-        } = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+        } = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
 
         expect(row.next_date).toBe('2017-01-07');
       } finally {
@@ -746,7 +746,7 @@ describe('schedule app', () => {
 
       const {
         data: [row],
-      } = await aqlQuery(q('schedules').filter({ id }).select(['next_date']));
+      } = aqlQuery(q('schedules').filter({ id }).select(['next_date']));
 
       expect(row.next_date).toBe('2016-11-14');
     });
