@@ -1058,7 +1058,7 @@ export const Table = forwardRef(
           key={key}
           style={{
             ...rowStyle,
-            zIndex: editing || selected ? 101 : 'auto',
+            zIndex: selected ? 101 : 'auto',
             transform: 'translateY(var(--pos))',
             backgroundColor,
           }}
