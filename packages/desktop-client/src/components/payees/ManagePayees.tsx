@@ -7,7 +7,6 @@ import { Popover } from '@actual-app/components/popover';
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import { memoizeOne } from '@actual-app/core/shared/memoize';
 import { getNormalisedString } from '@actual-app/core/shared/normalisation';
 import { groupById } from '@actual-app/core/shared/util';
 import type { Diff } from '@actual-app/core/shared/util';
@@ -26,8 +25,6 @@ import { useDispatch } from '#redux';
 
 import { PayeeMenu } from './PayeeMenu';
 import { PayeeTable } from './PayeeTable';
-
-const getPayeesById = memoizeOne((payees: PayeeEntity[]) => groupById(payees));
 
 function PayeeTableHeader() {
   const dispatchSelected = useSelectedDispatch();
@@ -211,7 +208,7 @@ export const ManagePayees = ({
 
   const buttonsDisabled = selected.items.size === 0;
 
-  const payeesById = getPayeesById(payees);
+  const payeesById = groupById(payees);
 
   const [menuOpen, setMenuOpen] = useState(false);
 

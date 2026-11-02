@@ -18,7 +18,6 @@ import { clearQueryCells } from '#server/cells/query-cells';
 import * as cloudStorage from '#server/cloud-storage';
 import * as db from '#server/db';
 import * as mappings from '#server/db/mappings';
-import { resetFormulaPreferencesCache } from '#server/formulas/bootstrap';
 import { handleBudgetImport } from '#server/importers';
 import type { ImportableBudgetType } from '#server/importers';
 import { notifyBudgetChanges, notifyChanges } from '#server/live-reads';
@@ -280,7 +279,6 @@ async function createDemoBudget() {
 
 async function closeBudget() {
   captureBreadcrumb({ message: 'Closing budget' });
-  resetFormulaPreferencesCache();
 
   unloadBudgetState();
   clearQueryCells();
@@ -585,7 +583,6 @@ async function _loadBudget(id: Budget['id']): Promise<{
   }
 
   try {
-    resetFormulaPreferencesCache();
     await prefs.loadPrefs(id);
     await db.openDatabase(id);
   } catch (e) {

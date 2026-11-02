@@ -94,22 +94,24 @@ function toDate(value: string): Date {
   return new Date(year, month - 1, day);
 }
 
-// Intl.DateTimeFormat construction is expensive and the picker uses only a
-// handful of (locale, options) shapes, so cache the formatters.
-const formatters = new Map<string, Intl.DateTimeFormat>();
+/**
+ * A function formatting values with `options`. Building it is the costly
+ * part, so make one to format many values.
+ */
+export function dateFormatter(
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+): (value: string) => string {
+  const formatter = new Intl.DateTimeFormat(locale, options);
+  return value => formatter.format(toDate(value));
+}
 
 export function formatDate(
   value: string,
   locale: string,
   options: Intl.DateTimeFormatOptions,
 ): string {
-  const key = `${locale}|${JSON.stringify(options)}`;
-  let formatter = formatters.get(key);
-  if (!formatter) {
-    formatter = new Intl.DateTimeFormat(locale, options);
-    formatters.set(key, formatter);
-  }
-  return formatter.format(toDate(value));
+  return dateFormatter(locale, options)(value);
 }
 
 export function getYear(value: string): string {

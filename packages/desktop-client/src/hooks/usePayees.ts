@@ -1,8 +1,6 @@
 import type { PayeeEntity } from '@actual-app/core/types/models';
 
-import { getPayeesById } from '#payees';
-
-import { useLiveRead } from './useLiveRead';
+import { useLiveRead, useLiveReadRowsById } from './useLiveRead';
 
 const NO_PAYEES: PayeeEntity[] = [];
 
@@ -11,6 +9,7 @@ export function usePayees(): PayeeEntity[] {
   return useLiveRead('payees-get').data ?? NO_PAYEES;
 }
 
-export function usePayeesById() {
-  return getPayeesById(usePayees());
+/** Every payee by id. */
+export function usePayeesById(): ReadonlyMap<string, PayeeEntity> {
+  return useLiveReadRowsById('payees-get');
 }

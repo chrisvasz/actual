@@ -7,7 +7,6 @@ import {
   setClock,
   Timestamp,
 } from '@actual-app/crdt';
-import { LRUCache } from 'lru-cache';
 import { v4 as uuidv4 } from 'uuid';
 
 import * as fs from '#platform/server/fs';
@@ -102,7 +101,6 @@ export function closeDatabase() {
 
 export function setDatabase(db_: Database) {
   db = db_;
-  resetQueryCache();
 }
 
 export function getDatabase() {
@@ -157,22 +155,49 @@ export function execQuery(sql: string) {
   sqlite.execQuery(db, sql);
 }
 
-// This manages an LRU cache of prepared query statements. This is
-// only needed in hot spots when you are running lots of queries.
-let _queryCache = new LRUCache<string, Statement>({ max: 100 });
-export function cache(sql: string) {
-  const cached = _queryCache.get(sql);
-  if (cached) {
-    return cached;
-  }
-
-  const prepared = sqlite.prepare(db, sql);
-  _queryCache.set(sql, prepared);
-  return prepared;
+/**
+ * Fixed SQL run many times (per message, per row), as a function giving its
+ * statement for the open database: prepared on the first call against a
+ * database, and finalized when that database closes (closing finalizes
+ * every statement still open on it). Declare one at module
+ * level per statement and run it with `runQuery(statement(), params)`.
+ */
+export function prepared(sql: string): () => Statement {
+  let statement: Statement | null = null;
+  let database: Database | null = null;
+  return () => {
+    if (statement == null || database !== db) {
+      statement = sqlite.prepare(db, sql);
+      database = db;
+    }
+    return statement;
+  };
 }
 
-function resetQueryCache() {
-  _queryCache = new LRUCache<string, Statement>({ max: 100 });
+/**
+ * Runs `fn` with `prepare`, which prepares each distinct SQL once while
+ * `fn` runs; the statements are finalized when it returns. For SQL built
+ * from the schema (a write to one column of one table) that a batch of
+ * changes runs over and over.
+ */
+export function withStatements<T>(
+  fn: (prepare: (sql: string) => Statement) => T,
+): T {
+  const statements = new Map<string, Statement>();
+  try {
+    return fn(sql => {
+      let statement = statements.get(sql);
+      if (!statement) {
+        statement = sqlite.prepare(db, sql);
+        statements.set(sql, statement);
+      }
+      return statement;
+    });
+  } finally {
+    for (const statement of statements.values()) {
+      sqlite.finalize(statement);
+    }
+  }
 }
 
 export function transaction(

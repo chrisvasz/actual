@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { TransactionForRules } from '#server/transactions/transaction-rules';
 import { getCurrency } from '#shared/currencies';
-import { setCachedUserPreferences } from '#shared/formulas/customFunctions';
+import { setUserPreferencesReader } from '#shared/formulas/customFunctions';
 
 import { Action } from './action';
 
 describe('Formula-based rule actions', () => {
   beforeEach(() => {
-    setCachedUserPreferences({
+    setUserPreferencesReader(() => ({
       currency: getCurrency('USD'),
       numberFormat: 'comma-dot',
       decimalPlaces: 2,
@@ -17,7 +17,7 @@ describe('Formula-based rule actions', () => {
       locale: 'en-US',
       currencySymbolPosition: 'before',
       currencySpaceBetweenAmountAndSymbol: false,
-    });
+    }));
   });
 
   it('should execute a simple math formula', () => {
@@ -238,7 +238,7 @@ describe('Formula-based rule actions', () => {
   });
 
   it('should format numbers using number-format preferences with FORMATNUMBER', () => {
-    setCachedUserPreferences({
+    setUserPreferencesReader(() => ({
       currency: getCurrency('USD'),
       numberFormat: 'dot-comma',
       decimalPlaces: 2,
@@ -247,7 +247,7 @@ describe('Formula-based rule actions', () => {
       locale: 'en-US',
       currencySymbolPosition: 'before',
       currencySpaceBetweenAmountAndSymbol: false,
-    });
+    }));
 
     const action = new Action('set', 'notes', null, {
       formula: '=FORMATNUMBER(1234567.89, 2)',
@@ -260,7 +260,7 @@ describe('Formula-based rule actions', () => {
   });
 
   it('should format numbers using decimal-place preferences with FORMATNUMBER', () => {
-    setCachedUserPreferences({
+    setUserPreferencesReader(() => ({
       currency: getCurrency('JPY'),
       numberFormat: 'comma-dot',
       decimalPlaces: 0,
@@ -269,7 +269,7 @@ describe('Formula-based rule actions', () => {
       locale: 'en-US',
       currencySymbolPosition: 'before',
       currencySpaceBetweenAmountAndSymbol: false,
-    });
+    }));
 
     const action = new Action('set', 'notes', null, {
       formula: '=FORMATNUMBER(1234567.89)',
@@ -282,7 +282,7 @@ describe('Formula-based rule actions', () => {
   });
 
   it('should let FORMATNUMBER decimals override decimal-place preferences', () => {
-    setCachedUserPreferences({
+    setUserPreferencesReader(() => ({
       currency: getCurrency('JPY'),
       numberFormat: 'comma-dot',
       decimalPlaces: 0,
@@ -291,7 +291,7 @@ describe('Formula-based rule actions', () => {
       locale: 'en-US',
       currencySymbolPosition: 'before',
       currencySpaceBetweenAmountAndSymbol: false,
-    });
+    }));
 
     const action = new Action('set', 'notes', null, {
       formula: '=FORMATNUMBER(1234567.89, 2)',
@@ -348,7 +348,7 @@ describe('Formula-based rule actions', () => {
   });
 
   it('should use cached currency preferences when FORMATCURRENCY arguments are omitted', () => {
-    setCachedUserPreferences({
+    setUserPreferencesReader(() => ({
       currency: getCurrency('BRL'),
       numberFormat: 'dot-comma',
       decimalPlaces: 2,
@@ -357,7 +357,7 @@ describe('Formula-based rule actions', () => {
       locale: 'pt-BR',
       currencySymbolPosition: 'before',
       currencySpaceBetweenAmountAndSymbol: false,
-    });
+    }));
 
     const action = new Action('set', 'notes', null, {
       formula: '=FORMATCURRENCY(SUM(1, 2, 3))',
@@ -370,7 +370,7 @@ describe('Formula-based rule actions', () => {
   });
 
   it('should use cached currency symbol position and spacing preferences', () => {
-    setCachedUserPreferences({
+    setUserPreferencesReader(() => ({
       currency: getCurrency('BRL'),
       numberFormat: 'dot-comma',
       decimalPlaces: 2,
@@ -379,7 +379,7 @@ describe('Formula-based rule actions', () => {
       locale: 'pt-BR',
       currencySymbolPosition: 'after',
       currencySpaceBetweenAmountAndSymbol: true,
-    });
+    }));
 
     const action = new Action('set', 'notes', null, {
       formula: '=FORMATCURRENCY(SUM(1, 2, 3))',
@@ -403,7 +403,7 @@ describe('Formula-based rule actions', () => {
   });
 
   it('should use cached currency position and spacing preferences with custom symbols', () => {
-    setCachedUserPreferences({
+    setUserPreferencesReader(() => ({
       currency: getCurrency('BRL'),
       numberFormat: 'dot-comma',
       decimalPlaces: 2,
@@ -412,7 +412,7 @@ describe('Formula-based rule actions', () => {
       locale: 'pt-BR',
       currencySymbolPosition: 'after',
       currencySpaceBetweenAmountAndSymbol: true,
-    });
+    }));
 
     const action = new Action('set', 'notes', null, {
       formula: '=FORMATCURRENCY(1234567.89, "€")',
@@ -425,7 +425,7 @@ describe('Formula-based rule actions', () => {
   });
 
   it('should override cached currency position and spacing preferences with custom arguments', () => {
-    setCachedUserPreferences({
+    setUserPreferencesReader(() => ({
       currency: getCurrency('BRL'),
       numberFormat: 'dot-comma',
       decimalPlaces: 2,
@@ -434,7 +434,7 @@ describe('Formula-based rule actions', () => {
       locale: 'pt-BR',
       currencySymbolPosition: 'after',
       currencySpaceBetweenAmountAndSymbol: true,
-    });
+    }));
 
     const action = new Action('set', 'notes', null, {
       formula:

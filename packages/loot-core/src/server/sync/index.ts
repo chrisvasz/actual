@@ -11,6 +11,7 @@ import { captureException } from '#platform/exceptions';
 import * as asyncStorage from '#platform/server/asyncStorage';
 import * as connection from '#platform/server/connection';
 import { logger } from '#platform/server/log';
+import type { Statement } from '#platform/server/sqlite';
 import { applyBudgetChanges, isBudgetStateLoaded } from '#server/budget/state';
 import {
   beginQueryCellUpdate,
@@ -86,31 +87,31 @@ export function checkSyncingMode(mode: SyncingMode): boolean {
   }
 }
 
+const deferMessageSql = db.prepared(
+  `INSERT INTO messages_pending (timestamp, dataset, row, column, value)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(dataset, row, column) DO UPDATE
+       SET timestamp = excluded.timestamp, value = excluded.value
+       WHERE excluded.timestamp > messages_pending.timestamp`,
+);
+
 // Record a message that can't be applied yet because it targets schema
 // from a newer version. It's replayed by `replayPendingMessages` once a
 // migration adds the missing table/column. Only the newest value per
 // cell is kept — replay is last-write-wins per cell anyway, and this
 // bounds the table while the client stays on an old version.
+
 function deferMessage(msg: Message) {
   // The table may not exist yet when the served migration files are
   // older than the code — create it rather than failing the sync batch
   db.execQuery(PENDING_MESSAGES_TABLE_SQL);
-  db.runQuery(
-    db.cache(
-      `INSERT INTO messages_pending (timestamp, dataset, row, column, value)
-         VALUES (?, ?, ?, ?, ?)
-         ON CONFLICT(dataset, row, column) DO UPDATE
-           SET timestamp = excluded.timestamp, value = excluded.value
-           WHERE excluded.timestamp > messages_pending.timestamp`,
-    ),
-    [
-      msg.timestamp.toString(),
-      msg.dataset,
-      msg.row,
-      msg.column,
-      serializeValue(msg.value),
-    ],
-  );
+  db.runQuery(deferMessageSql(), [
+    msg.timestamp.toString(),
+    msg.dataset,
+    msg.row,
+    msg.column,
+    serializeValue(msg.value),
+  ]);
 }
 
 // Returns false when the message was deferred because it references
@@ -119,6 +120,7 @@ function deferMessage(msg: Message) {
 // messages a missing table/column is a bug and must surface as an
 // apply-failure.
 function apply(
+  prepare: (sql: string) => Statement,
   msg: Message,
   prev?: boolean,
   deferUnknownSchema?: boolean,
@@ -159,7 +161,7 @@ function apply(
         };
       }
 
-      db.runQuery(db.cache(query.sql), query.params);
+      db.runQuery(prepare(query.sql), query.params);
     } catch (error) {
       if (deferUnknownSchema && isMissingSchemaError(error)) {
         deferMessage(msg);
@@ -255,23 +257,26 @@ export function addSyncListener(func: SyncListener) {
 }
 
 // Cells per `messages_crdt` lookup in `compareMessages`. The last chunk
-// is padded up to one of these sizes so only a handful of distinct
-// prepared statements ever live in `db.cache`. 100 terms is well inside
-// SQLITE_MAX_EXPR_DEPTH and still uses the messages_crdt_search index.
-const COMPARE_CHUNK_SIZES = [1, 10, 100];
-const compareMessagesSqlByTermCount = new Map<number, string>();
+// is padded up to one of these sizes, so there's one statement per size.
+// 100 terms is well inside SQLITE_MAX_EXPR_DEPTH and still uses the
+// messages_crdt_search index.
+const COMPARE_CHUNKS = [1, 10, 100].map(size => ({
+  size,
+  sql: db.prepared(
+    'SELECT dataset, row, column, timestamp FROM messages_crdt WHERE ' +
+      Array(size)
+        .fill('(dataset = ? AND row = ? AND column = ? AND timestamp >= ?)')
+        .join(' OR '),
+  ),
+}));
 
-function compareMessagesSql(termCount: number): string {
-  let sql = compareMessagesSqlByTermCount.get(termCount);
-  if (sql == null) {
-    const term = '(dataset = ? AND row = ? AND column = ? AND timestamp >= ?)';
-    sql =
-      'SELECT dataset, row, column, timestamp FROM messages_crdt WHERE ' +
-      Array(termCount).fill(term).join(' OR ');
-    compareMessagesSqlByTermCount.set(termCount, sql);
-  }
-  return sql;
-}
+const insertCrdtMessageSql = db.prepared(
+  `INSERT INTO messages_crdt (timestamp, dataset, row, column, value)
+     VALUES (?, ?, ?, ?, ?)`,
+);
+const saveClockSql = db.prepared(
+  'INSERT OR REPLACE INTO messages_clock (id, clock) VALUES (1, ?)',
+);
 
 type CompareKey = {
   dataset: string;
@@ -311,10 +316,12 @@ function compareMessages(messages: Message[]): Message[] {
 
   const loggedTimestamps = new Map<string, string[]>();
   const cellList = [...cells.values()];
-  const largestChunk = COMPARE_CHUNK_SIZES[COMPARE_CHUNK_SIZES.length - 1];
+  const largestChunk = COMPARE_CHUNKS[COMPARE_CHUNKS.length - 1].size;
   for (let start = 0; start < cellList.length; start += largestChunk) {
     const chunk = cellList.slice(start, start + largestChunk);
-    const chunkSize = COMPARE_CHUNK_SIZES.find(size => size >= chunk.length);
+    const { size: chunkSize, sql } =
+      COMPARE_CHUNKS.find(({ size }) => size >= chunk.length) ??
+      COMPARE_CHUNKS[COMPARE_CHUNKS.length - 1];
     // Pad with a repeated cell so the statement shape matches a bucket
     while (chunk.length < chunkSize) {
       chunk.push(chunk[chunk.length - 1]);
@@ -328,7 +335,7 @@ function compareMessages(messages: Message[]): Message[] {
     ]);
     const rows = db.runQuery<
       Pick<db.DbCrdtMessage, 'dataset' | 'row' | 'column' | 'timestamp'>
-    >(db.cache(compareMessagesSql(chunkSize)), params, true);
+    >(sql(), params, true);
 
     for (const logged of rows) {
       const key = cellKey(logged.dataset, logged.row, logged.column);
@@ -370,24 +377,26 @@ function compareMessages(messages: Message[]): Message[] {
 // projected state (like rules). We can't fire those because they
 // depend on having both old and new data which we don't quere here
 function applyMessagesForImport(messages: Message[]): void {
-  db.transaction(() => {
-    for (let i = 0; i < messages.length; i++) {
-      const msg = messages[i];
-      const { dataset } = msg;
+  db.transaction(() =>
+    db.withStatements(prepare => {
+      for (let i = 0; i < messages.length; i++) {
+        const msg = messages[i];
+        const { dataset } = msg;
 
-      if (!msg.old) {
-        try {
-          apply(msg);
-        } catch {
-          apply(msg, true);
-        }
+        if (!msg.old) {
+          try {
+            apply(prepare, msg);
+          } catch {
+            apply(prepare, msg, true);
+          }
 
-        if (dataset === 'prefs') {
-          throw new Error('Cannot set prefs while importing');
+          if (dataset === 'prefs') {
+            throw new Error('Cannot set prefs while importing');
+          }
         }
       }
-    }
-  });
+    }),
+  );
 }
 
 export type Message = {
@@ -437,7 +446,7 @@ export function applyMessages(
   // `immediate` takes the write lock before the reads below, so a
   // file-backed database can't be changed by another connection between
   // them.
-  const applyInTransaction = () => {
+  const applyInTransaction = (prepare: (sql: string) => Statement) => {
     if (checkSyncingMode('enabled')) {
       // Compare the messages with the existing crdt. This filters out
       // already applied messages and determines if a message is old or
@@ -483,6 +492,7 @@ export function applyMessages(
 
       if (!msg.old) {
         const applied = apply(
+          prepare,
           msg,
           getIn(oldData, [dataset, row]) || added.has(dataset + row),
           deferUnknownSchema,
@@ -510,11 +520,13 @@ export function applyMessages(
       }
 
       if (checkSyncingMode('enabled')) {
-        db.runQuery(
-          db.cache(`INSERT INTO messages_crdt (timestamp, dataset, row, column, value)
-         VALUES (?, ?, ?, ?, ?)`),
-          [timestamp.toString(), dataset, row, column, serializeValue(value)],
-        );
+        db.runQuery(insertCrdtMessageSql(), [
+          timestamp.toString(),
+          dataset,
+          row,
+          column,
+          serializeValue(value),
+        ]);
 
         currentMerkle = merkle.insert(currentMerkle, timestamp);
       }
@@ -525,17 +537,16 @@ export function applyMessages(
 
       // Save the clock in the db first (queries might throw
       // exceptions)
-      db.runQuery(
-        db.cache(
-          'INSERT OR REPLACE INTO messages_clock (id, clock) VALUES (1, ?)',
-        ),
-        [serializeClock({ ...clock, merkle: currentMerkle })],
-      );
+      db.runQuery(saveClockSql(), [
+        serializeClock({ ...clock, merkle: currentMerkle }),
+      ]);
     }
 
     newData = fetchData(idsPerTable);
   };
-  db.transaction(applyInTransaction, { immediate: true });
+  db.transaction(() => db.withStatements(applyInTransaction), {
+    immediate: true,
+  });
 
   if (checkSyncingMode('enabled')) {
     // Update the in-memory clock.

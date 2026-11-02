@@ -5,7 +5,7 @@ import { View } from '#View';
 import { GridButton } from './GridButton';
 import {
   currentMonth,
-  formatDate,
+  dateFormatter,
   monthFromIndex,
   rangePosition,
 } from './util';
@@ -36,21 +36,21 @@ export function MonthGrid({
   const thisMonth = currentMonth();
   // Manual memo: React Compiler doesn't cover this package, and this body
   // re-renders on every hover while a range is being picked.
-  const months = useMemo(
-    () =>
-      Array.from({ length: 12 }, (_, i) => {
-        const month = monthFromIndex(year, i);
-        return {
-          month,
-          label: formatDate(month, locale, { month: 'short' }),
-          fullLabel: formatDate(month, locale, {
-            month: 'long',
-            year: 'numeric',
-          }),
-        };
-      }),
-    [year, locale],
-  );
+  const months = useMemo(() => {
+    const formatLabel = dateFormatter(locale, { month: 'short' });
+    const formatFullLabel = dateFormatter(locale, {
+      month: 'long',
+      year: 'numeric',
+    });
+    return Array.from({ length: 12 }, (_, i) => {
+      const month = monthFromIndex(year, i);
+      return {
+        month,
+        label: formatLabel(month),
+        fullLabel: formatFullLabel(month),
+      };
+    });
+  }, [year, locale]);
   return (
     <View
       style={{

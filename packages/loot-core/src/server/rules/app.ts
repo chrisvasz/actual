@@ -187,6 +187,17 @@ export const ruleLiveReads = registerLiveReads({
     empty: () => [],
     read: readRules,
   }),
+  // The query filters matching rule conditions. Reads no table: it only
+  // translates the conditions.
+  'make-filters-from-conditions': liveRead<
+    ReturnType<typeof rules.conditionsToAQL>,
+    { conditions: unknown; applySpecialCases?: boolean }
+  >({
+    tables: [],
+    empty: () => ({ filters: [], errors: [] }),
+    read: ({ conditions, applySpecialCases }) =>
+      rules.conditionsToAQL(conditions, { applySpecialCases }),
+  }),
 });
 
 function readRules(): RuleEntity[] {

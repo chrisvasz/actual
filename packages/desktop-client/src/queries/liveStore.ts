@@ -43,13 +43,28 @@ export type LiveResult<Data> = {
 /** Read and subscribe to one query, in the shape `useSyncExternalStore` takes. */
 export type LiveQueryHandle<Data> = {
   getSnapshot: () => LiveResult<Data>;
+  /**
+   * The rows of the latest result by `id`, when it's an array of rows with
+   * distinct ids; undefined otherwise. The same map until the rows change,
+   * so it can be a `useSyncExternalStore` snapshot too.
+   */
+  getRowsById: () => ReadonlyMap<string, RowOf<Data>> | undefined;
   subscribe: (listener: () => void) => () => void;
 };
+
+/** A row of `Data`, when it's an array of rows. */
+export type RowOf<Data> = Data extends ReadonlyArray<infer Row> ? Row : unknown;
 
 type Entry = {
   key: string;
   run: () => { data: unknown; dependencies: readonly string[] };
   result: LiveResult<unknown> | null;
+  /**
+   * `result.data`'s rows by id. Each read needs the previous rows by id to
+   * match them, so keeping the index costs nothing extra and readers get
+   * it for free.
+   */
+  rowsById: Map<string, unknown> | null;
   /** The tables the last successful read read; null before one. */
   dependencies: readonly string[] | null;
   /** The version of each dependency the last read saw. */
@@ -173,7 +188,10 @@ function read(entry: Entry): LiveResult<unknown> {
   let result: LiveResult<unknown>;
   try {
     const read = entry.run();
-    const data = replaceEqualDeep(previous?.data, read.data);
+    const data = replaceEqualDeep(previous?.data, read.data, entry.rowsById);
+    if (previous?.data !== data) {
+      entry.rowsById = Array.isArray(data) ? rowsById(data) : null;
+    }
     result =
       previous != null && previous.error == null && previous.data === data
         ? previous
@@ -268,6 +286,7 @@ function getEntry(
       key,
       run,
       result: null,
+      rowsById: null,
       dependencies: null,
       versions: [],
       epoch,
@@ -389,6 +408,11 @@ function makeHandle(
   const current = () => (last = getEntry(key, run, release, last));
   return {
     getSnapshot: () => read(current()),
+    getRowsById: () => {
+      const entry = current();
+      read(entry);
+      return entry.rowsById ?? undefined;
+    },
     subscribe: listener => subscribe(current(), listener),
   };
 }
@@ -418,8 +442,13 @@ export function watchLiveQuery<Data = unknown>(
  * a re-read that changed one row hands back the other rows (and an
  * unchanged read the whole result) by reference. Rows with an `id` are
  * matched by it, so adding or removing one doesn't shift the rest.
+ * `previousById` is `previous`'s rows by id, when the caller has it.
  */
-export function replaceEqualDeep(previous: unknown, next: unknown): unknown {
+export function replaceEqualDeep(
+  previous: unknown,
+  next: unknown,
+  previousById?: Map<string, unknown> | null,
+): unknown {
   if (Object.is(previous, next)) {
     return previous;
   }
@@ -428,7 +457,7 @@ export function replaceEqualDeep(previous: unknown, next: unknown): unknown {
     return next;
   }
   if (isArray) {
-    const byId = previousRowsById(previous as unknown[]);
+    const byId = previousById ?? rowsById(previous as unknown[]);
     if (byId) {
       return replaceEqualRows(previous as unknown[], next as unknown[], byId);
     }
@@ -464,7 +493,7 @@ function rowId(value: unknown): string | undefined {
 }
 
 // `null` unless every row has a distinct `id`
-function previousRowsById(rows: unknown[]): Map<string, unknown> | null {
+function rowsById(rows: unknown[]): Map<string, unknown> | null {
   const byId = new Map<string, unknown>();
   for (const row of rows) {
     const id = rowId(row);

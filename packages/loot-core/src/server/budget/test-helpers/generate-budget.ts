@@ -178,7 +178,7 @@ export async function generateBudget({
     monthUtils.addMonths(currentMonth, 2),
   );
 
-  const insert = db.cache(
+  const insert = db.prepared(
     `INSERT INTO transactions
        (id, isParent, isChild, acct, category, amount, date, tombstone,
         parent_id, sort_order, description)
@@ -197,7 +197,7 @@ export async function generateBudget({
     parent_id?: string | null;
   }) {
     const transactionId = row.id ?? id('t');
-    db.runQuery(insert, [
+    db.runQuery(insert(), [
       transactionId,
       row.isParent ?? 0,
       row.isChild ?? 0,
@@ -325,7 +325,7 @@ export async function generateBudget({
 
   // Budgeted amounts, carryover flags and holds, including rows outside the
   // budget's range and rows of categories that get deleted.
-  const budgetInsert = db.cache(
+  const budgetInsert = db.prepared(
     `INSERT INTO zero_budgets (id, month, category, amount, carryover)
      VALUES (?, ?, ?, ?, ?)`,
   );
@@ -347,7 +347,7 @@ export async function generateBudget({
         const carryover = carryoverCategories.has(catId)
           ? random.chance(0.9)
           : random.chance(0.03);
-        db.runQuery(budgetInsert, [
+        db.runQuery(budgetInsert(), [
           `${dbMonth}-${catId}`,
           dbMonth,
           catId,
@@ -357,7 +357,7 @@ export async function generateBudget({
       }
       for (const catId of incomeCategories) {
         if (random.chance(0.2)) {
-          db.runQuery(budgetInsert, [
+          db.runQuery(budgetInsert(), [
             `${dbMonth}-${catId}`,
             dbMonth,
             catId,

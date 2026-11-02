@@ -1,9 +1,9 @@
 import React, {
   createRef,
   PureComponent,
-  use,
   useEffect,
   useMemo,
+  useState,
 } from 'react';
 import type { ReactElement, RefObject } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -13,6 +13,10 @@ import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { listen, send } from '@actual-app/core/platform/client/connection';
+import {
+  readSync,
+  runQuerySync,
+} from '@actual-app/core/platform/client/live-reads';
 import * as undo from '@actual-app/core/platform/client/undo';
 import type { UndoState } from '@actual-app/core/server/undo';
 import { q } from '@actual-app/core/shared/query';
@@ -119,18 +123,18 @@ function selectTransactionRows(
 // The query filters for the given filter conditions, to be combined with
 // the screen's and/or operator. Shared by the screen's filters and the
 // preload of a screen that opens filtered, which have to fetch the same rows.
-async function makeTransactionFilters(conditions: ConditionEntity[]) {
+function makeTransactionFilters(conditions: ConditionEntity[]) {
   const customQueryFilters = conditions
     .filter(
       (cond): cond is Partial<RuleConditionEntity> =>
         !isTransactionFilterEntity(cond),
     )
     .map(f => f.queryFilter);
-  const { filters: queryFilters } = await send('make-filters-from-conditions', {
+  const { filters: queryFilters } = readSync('make-filters-from-conditions', {
     conditions: conditions.filter(
       cond => isTransactionFilterEntity(cond) || !cond.customName,
     ),
-  });
+  }).data;
   return [...queryFilters, ...customQueryFilters];
 }
 
@@ -547,7 +551,7 @@ class AccountInternal extends PureComponent<
   fetchTransactions = (filterConditions?: ConditionEntity[]) => {
     const query = this.makeRootTransactionsQuery();
     this.rootQuery = this.currentQuery = query;
-    if (filterConditions) void this.applyFilters(filterConditions);
+    if (filterConditions) this.applyFilters(filterConditions);
     else this.updateQuery(query);
 
     if (this.props.accountId) {
@@ -959,7 +963,7 @@ class AccountInternal extends PureComponent<
         this.setState({ sort: null }, () => {
           const filterConditions = this.state.filterConditions;
           if (filterConditions.length > 0) {
-            void this.applyFilters([...filterConditions]);
+            this.applyFilters([...filterConditions]);
           } else {
             this.fetchTransactions();
           }
@@ -1525,7 +1529,7 @@ class AccountInternal extends PureComponent<
       filterConditionsOp: value,
       filterId: { ...state.filterId, status: 'changed' } as SavedFilter,
     }));
-    void this.applyFilters([...this.state.filterConditions]);
+    this.applyFilters([...this.state.filterConditions], value);
     if (this.state.search !== '') {
       this.onSearch(this.state.search);
     }
@@ -1537,13 +1541,19 @@ class AccountInternal extends PureComponent<
         f => f.id === this.state.filterId?.id,
       );
       this.setState({ filterConditionsOp: savedFilter.conditionsOp ?? 'and' });
-      void this.applyFilters([...savedFilter.conditions]);
+      this.applyFilters(
+        [...savedFilter.conditions],
+        savedFilter.conditionsOp ?? 'and',
+      );
     } else {
       if (savedFilter.status) {
         this.setState({
           filterConditionsOp: savedFilter.conditionsOp ?? 'and',
         });
-        void this.applyFilters([...(savedFilter.conditions ?? [])]);
+        this.applyFilters(
+          [...(savedFilter.conditions ?? [])],
+          savedFilter.conditionsOp ?? 'and',
+        );
       }
     }
     this.setState(state => ({
@@ -1554,7 +1564,7 @@ class AccountInternal extends PureComponent<
   onClearFilters = () => {
     this.setState({ filterConditionsOp: 'and' });
     this.setState({ filterId: undefined });
-    void this.applyFilters([]);
+    this.applyFilters([]);
     if (this.state.search !== '') {
       this.onSearch(this.state.search);
     }
@@ -1564,7 +1574,7 @@ class AccountInternal extends PureComponent<
     oldCondition: RuleConditionEntity,
     updatedCondition: RuleConditionEntity,
   ) => {
-    void this.applyFilters(
+    this.applyFilters(
       this.state.filterConditions.map(c =>
         c === oldCondition ? updatedCondition : c,
       ),
@@ -1581,9 +1591,7 @@ class AccountInternal extends PureComponent<
   };
 
   onDeleteFilter = (condition: RuleConditionEntity) => {
-    void this.applyFilters(
-      this.state.filterConditions.filter(c => c !== condition),
-    );
+    this.applyFilters(this.state.filterConditions.filter(c => c !== condition));
     if (this.state.filterConditions.length === 1) {
       this.setState({ filterId: undefined, filterConditionsOp: 'and' });
     } else {
@@ -1620,7 +1628,10 @@ class AccountInternal extends PureComponent<
         filterId: { ...savedFilter, status: 'saved' },
       });
       this.setState({ filterConditionsOp: savedFilter.conditionsOp });
-      void this.applyFilters([...savedFilter.conditions]);
+      this.applyFilters(
+        [...savedFilter.conditions],
+        savedFilter.conditionsOp ?? 'and',
+      );
     } else {
       // A condition was passed in.
       const condition = conditionOrSavedFilter;
@@ -1636,7 +1647,7 @@ class AccountInternal extends PureComponent<
           status: state.filterId && 'changed',
         } as SavedFilter,
       }));
-      void this.applyFilters([...filterConditions, condition]);
+      this.applyFilters([...filterConditions, condition]);
     }
 
     if (this.state.search !== '') {
@@ -1677,16 +1688,14 @@ class AccountInternal extends PureComponent<
     }
   };
 
-  applyFilters = async (conditions: ConditionEntity[]) => {
+  // `conditionsOp` defaults to the screen's; a caller that changes it in
+  // the same update passes the new one, since the state hasn't committed
+  applyFilters = (
+    conditions: ConditionEntity[],
+    conditionsOp = this.state.filterConditionsOp,
+  ) => {
     if (conditions.length > 0) {
-      const filters = await makeTransactionFilters(conditions);
-      // Read the operator only now: callers set it right before calling
-      // this, and the update has only committed once the await is done.
-      const conditionsOpKey =
-        this.state.filterConditionsOp === 'or' ? '$or' : '$and';
-      this.currentQuery = this.rootQuery.filter({
-        [conditionsOpKey]: filters,
-      });
+      this.currentQuery = this.makeFilteredQuery(conditions, conditionsOp);
 
       this.setState(
         {
@@ -1712,6 +1721,17 @@ class AccountInternal extends PureComponent<
       this.applySort();
     }
   };
+
+  // The root query narrowed to `conditions`, combined by `conditionsOp`
+  makeFilteredQuery(
+    conditions: ConditionEntity[],
+    conditionsOp: 'and' | 'or',
+  ): Query {
+    return this.rootQuery.filter({
+      [conditionsOp === 'or' ? '$or' : '$and']:
+        makeTransactionFilters(conditions),
+    });
+  }
 
   applySort = (
     field?: string,
@@ -1795,7 +1815,10 @@ class AccountInternal extends PureComponent<
       // called directly from UI by sorting a column.
       // active filters need to be applied before sorting
       case isFiltered:
-        void this.applyFilters([...filterConditions]);
+        this.currentQuery = this.makeFilteredQuery(
+          filterConditions,
+          this.state.filterConditionsOp,
+        );
         sortCurrentQuery(this, sortField, sortAscDesc);
         break;
 
@@ -2075,7 +2098,10 @@ type AccountHackProps = Omit<
   | 'onSetTransfer'
 >;
 
-async function loadAccountPreload({
+// Reads the screen's first page synchronously from the backend on this
+// thread, so the screen mounts with it and draws complete on its first
+// paint.
+function loadAccountPreload({
   accounts,
   accountId,
   filterConditions,
@@ -2087,11 +2113,9 @@ async function loadAccountPreload({
   filterConditions: ConditionEntity[];
   showBalances: boolean | undefined;
   showReconciled: boolean;
-}): Promise<AccountPreload> {
+}): AccountPreload {
   const isFiltered = filterConditions.length > 0;
-  const filters = isFiltered
-    ? await makeTransactionFilters(filterConditions)
-    : null;
+  const filters = isFiltered ? makeTransactionFilters(filterConditions) : null;
   // A screen always opens with its conditions combined by `and`.
   const rootQuery = filters
     ? queries.transactions(accountId).filter({ $and: filters })
@@ -2110,19 +2134,18 @@ async function loadAccountPreload({
 
   // Mirror `getBalanceTotal` and `getFilteredAmount`, so the balance column
   // and the filtered total draw filled in too.
-  const [{ data }, total, filteredAmount] = await Promise.all([
-    aqlQuery(query.limit(TRANSACTIONS_PAGE_COUNT)),
+  const { data } = runQuerySync<TransactionEntity[]>(
+    query.limit(TRANSACTIONS_PAGE_COUNT),
+  );
+  const total =
     showBalances && canCalculateBalance
-      ? aqlQuery(
+      ? (runQuerySync<number | null>(
           query.options({ splits: 'none' }).calculate({ $sum: '$amount' }),
-        ).then(({ data }: { data: number | null }) => data ?? 0)
-      : null,
-    isFiltered
-      ? aqlQuery(query.calculate({ $sum: '$amount' })).then(
-          ({ data }: { data: number }) => data,
-        )
-      : null,
-  ]);
+        ).data ?? 0)
+      : null;
+  const filteredAmount = isFiltered
+    ? runQuerySync<number>(query.calculate({ $sum: '$amount' })).data
+    : null;
   const transactions = ungroupTransactions(data);
 
   return {
@@ -2133,39 +2156,6 @@ async function loadAccountPreload({
         : calculateRunningBalancesFromTotal(transactions, total),
     filteredAmount,
   };
-}
-
-// Each navigation's preload, while the screen that read it is mounted
-const accountPreloads = new Map<string, Promise<AccountPreload>>();
-
-// The preload for the navigation `key`, suspending until it's loaded. Only
-// the screen's first render reads it, so it's never loaded again while
-// mounted; it's dropped once the screen unmounts, so coming back loads
-// fresh. Keyed by the navigation, since a path can open with different
-// filters.
-function useAccountPreload(
-  key: string,
-  load: () => Promise<AccountPreload>,
-): AccountPreload {
-  let preload = accountPreloads.get(key);
-  if (!preload) {
-    const loading = load();
-    // A failed preload is loaded again by the next render that asks for it
-    loading.catch(() => {
-      if (accountPreloads.get(key) === loading) {
-        accountPreloads.delete(key);
-      }
-    });
-    accountPreloads.set(key, loading);
-    preload = loading;
-  }
-  useEffect(
-    () => () => {
-      accountPreloads.delete(key);
-    },
-    [key],
-  );
-  return use(preload);
 }
 
 function AccountHack(props: AccountHackProps) {
@@ -2250,7 +2240,9 @@ export function Account() {
     (await createPayee({ name })) ?? null;
 
   const showReconciled = String(hideReconciled) !== 'true';
-  const preload = useAccountPreload(location.key, () =>
+  // Only the screen's first render reads it: `AccountInternal` takes it
+  // when it mounts and runs its own live queries from then on.
+  const [preload] = useState(() =>
     loadAccountPreload({
       accounts,
       accountId: params.id,

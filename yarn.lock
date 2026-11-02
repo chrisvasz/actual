@@ -113,7 +113,6 @@ __metadata:
     hyperformula: "npm:^3.3.0"
     jest-diff: "npm:^30.4.1"
     jsverify: "npm:^0.8.4"
-    lru-cache: "npm:^11.5.2"
     mitt: "npm:^3.0.1"
     mockdate: "npm:^3.0.5"
     npm-run-all: "npm:^4.1.5"
@@ -9877,7 +9876,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lru-cache@npm:^11.0.0, lru-cache@npm:^11.3.5, lru-cache@npm:^11.5.2":
+"lru-cache@npm:^11.0.0, lru-cache@npm:^11.3.5":
   version: 11.5.2
   resolution: "lru-cache@npm:11.5.2"
   checksum: 10/122789c66605ddf29df58ff279e9e2c9499499d0b80b895ec524496f14bcde045d1582e3e38008f3457226d98067556719573b352119d6be8bdb1f8849f85681

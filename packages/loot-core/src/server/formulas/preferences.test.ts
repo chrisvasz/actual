@@ -6,10 +6,6 @@ import { handlers } from '#server/main';
 import { runHandler } from '#server/mutators';
 import { Action } from '#server/rules/action';
 
-import {
-  ensureFormulaPreferencesLoaded,
-  resetFormulaPreferencesCache,
-} from './bootstrap';
 import { loadUserPreferencesForFormulas } from './customFunctionsPreferences';
 
 function executeFormula(formula: string) {
@@ -21,25 +17,20 @@ function executeFormula(formula: string) {
   return transaction.notes;
 }
 
-describe('formula preference bootstrap', () => {
+describe('formula preferences', () => {
   beforeEach(async () => {
     // oxlint-disable-next-line typescript/no-explicit-any
     await (global as any).emptyDatabase()();
     vi.clearAllMocks();
-    resetFormulaPreferencesCache();
   });
 
-  it('reloads cached user preferences after reset', async () => {
-    ensureFormulaPreferencesLoaded();
+  it('reads preferences changed outside the settings, like by a sync', async () => {
     expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1,234.50');
 
     db.update('preferences', {
       id: 'numberFormat',
       value: 'dot-comma',
     });
-
-    resetFormulaPreferencesCache();
-    ensureFormulaPreferencesLoaded();
 
     expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1.234,50');
   });
@@ -74,45 +65,41 @@ describe('formula preference bootstrap', () => {
     expect(aqlQuerySpy).toHaveBeenCalledTimes(1);
   });
 
-  it('reloads cached user preferences after relevant synced preferences change', async () => {
-    ensureFormulaPreferencesLoaded();
+  it('reads preferences saved in the settings', async () => {
     expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1,234.50');
 
     await runHandler(handlers['preferences/save'], {
       id: 'numberFormat',
       value: 'dot-comma',
     });
-    ensureFormulaPreferencesLoaded();
 
     expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1.234,50');
   });
 
-  it('reloads cached user preferences after hide fraction changes', async () => {
-    ensureFormulaPreferencesLoaded();
+  it('reads the hide fraction preference once it changes', async () => {
     expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1,234.50');
 
     await runHandler(handlers['preferences/save'], {
       id: 'hideFraction',
       value: 'true',
     });
-    ensureFormulaPreferencesLoaded();
 
     expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1,235');
   });
 
-  it('keeps cached user preferences after unrelated synced preferences change', async () => {
-    ensureFormulaPreferencesLoaded();
-    db.update('preferences', {
+  it('reads preferences changed by an undo', async () => {
+    await runHandler(handlers['preferences/save'], {
       id: 'numberFormat',
       value: 'dot-comma',
     });
-
     await runHandler(handlers['preferences/save'], {
-      id: 'dateFormat',
-      value: 'dd/MM/yyyy',
+      id: 'numberFormat',
+      value: 'comma-dot',
     });
-    ensureFormulaPreferencesLoaded();
-
     expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1,234.50');
+
+    await runHandler(handlers['undo']);
+
+    expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1.234,50');
   });
 });

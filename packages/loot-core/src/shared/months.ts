@@ -2,7 +2,6 @@
 import * as d from 'date-fns';
 import type { Locale } from 'date-fns';
 
-import { memoizeOne } from '#shared/memoize';
 import * as Platform from '#shared/platform';
 import type { SyncedPrefs } from '#types/prefs';
 
@@ -459,23 +458,23 @@ export function formatDistance(
   });
 }
 
-export const getDateFormatRegex = memoizeOne((format: string) => {
+export function getDateFormatRegex(format: string) {
   return new RegExp(
     format
       .replace(/d+/g, '\\d{1,2}')
       .replace(/M+/g, '\\d{1,2}')
       .replace(/y+/g, '\\d{4}'),
   );
-});
+}
 
-export const getDayMonthFormat = memoizeOne((format: string) => {
+export function getDayMonthFormat(format: string) {
   return format
     .replace(/y+/g, '')
     .replace(/[^\w]$/, '')
     .replace(/^[^\w]/, '');
-});
+}
 
-export const getDayMonthRegex = memoizeOne((format: string) => {
+export function getDayMonthRegex(format: string) {
   const regex = format
     .replace(/y+/g, '')
     .replace(/[^\w]$/, '')
@@ -483,9 +482,9 @@ export const getDayMonthRegex = memoizeOne((format: string) => {
     .replace(/d+/g, '\\d{1,2}')
     .replace(/M+/g, '\\d{1,2}');
   return new RegExp('^' + regex + '$');
-});
+}
 
-export const getMonthYearFormat = memoizeOne((format: string) => {
+export function getMonthYearFormat(format: string) {
   return format
     .replace(/d+/g, '')
     .replace(/[^\w]$/, '')
@@ -493,9 +492,9 @@ export const getMonthYearFormat = memoizeOne((format: string) => {
     .replace(/\/\//, '/')
     .replace(/\.\./, '.')
     .replace(/--/, '-');
-});
+}
 
-export const getMonthYearRegex = memoizeOne((format: string) => {
+export function getMonthYearRegex(format: string) {
   const regex = format
     .replace(/d+/g, '')
     .replace(/[^\w]$/, '')
@@ -504,13 +503,13 @@ export const getMonthYearRegex = memoizeOne((format: string) => {
     .replace(/M+/g, '\\d{1,2}')
     .replace(/y+/g, '\\d{2,4}');
   return new RegExp('^' + regex + '$');
-});
+}
 
-export const getShortYearFormat = memoizeOne((format: string) => {
+export function getShortYearFormat(format: string) {
   return format.replace(/y+/g, 'yy');
-});
+}
 
-export const getShortYearRegex = memoizeOne((format: string) => {
+export function getShortYearRegex(format: string) {
   const regex = format
     .replace(/[^\w]$/, '')
     .replace(/^[^\w]/, '')
@@ -518,4 +517,4 @@ export const getShortYearRegex = memoizeOne((format: string) => {
     .replace(/M+/g, '\\d{1,2}')
     .replace(/y+/g, '\\d{2}');
   return new RegExp('^' + regex + '$');
-});
+}

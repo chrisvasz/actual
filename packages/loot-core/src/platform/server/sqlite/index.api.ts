@@ -33,6 +33,11 @@ export function prepare(db, sql) {
   return db.prepare(sql);
 }
 
+// better-sqlite3 frees a statement once it's unreachable
+export function finalize(_stmt: SQL.Statement) {
+  // no-op on native sqlite
+}
+
 export function runQuery(
   db: SQL.Database,
   sql: string | SQL.Statement,

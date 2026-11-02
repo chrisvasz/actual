@@ -56,18 +56,20 @@ export function loadSpending(): Spending {
   return spending;
 }
 
+const querySpentSql = db.prepared(
+  `SELECT SUM(IFNULL(t.amount, 0)) AS amount
+       FROM category_mapping cm
+       JOIN transactions t ON t.category = cm.id
+       JOIN accounts a ON a.id = t.acct AND a.offbudget = 0
+       LEFT JOIN transactions p ON t.isChild = 1 AND p.id = t.parent_id
+      WHERE cm.transferId = ? AND t.date >= ? AND t.date <= ?
+        AND ${FILTERS}`,
+);
+
 export function querySpent(month: string, categoryId: string): number {
   const dbMonth = dbMonthFromMonth(month);
   const rows = db.runQuery<{ amount: number | null }>(
-    db.cache(
-      `SELECT SUM(IFNULL(t.amount, 0)) AS amount
-         FROM category_mapping cm
-         JOIN transactions t ON t.category = cm.id
-         JOIN accounts a ON a.id = t.acct AND a.offbudget = 0
-         LEFT JOIN transactions p ON t.isChild = 1 AND p.id = t.parent_id
-        WHERE cm.transferId = ? AND t.date >= ? AND t.date <= ?
-          AND ${FILTERS}`,
-    ),
+    querySpentSql(),
     // Every date whose `date / 100` is the month, like the grouped query.
     [categoryId, dbMonth * 100, dbMonth * 100 + 99],
     true,

@@ -24,6 +24,10 @@ export function rebuildMerkleHash(): {
   };
 }
 
+const saveClockSql = db.prepared(
+  'INSERT OR REPLACE INTO messages_clock (id, clock) VALUES (1, ?)',
+);
+
 export async function repairSync(): Promise<void> {
   const rebuilt = rebuildMerkleHash();
   const clock = getClock();
@@ -32,8 +36,5 @@ export async function repairSync(): Promise<void> {
   clock.merkle = rebuilt.trie;
 
   // Persist it in the db
-  db.runQuery(
-    db.cache('INSERT OR REPLACE INTO messages_clock (id, clock) VALUES (1, ?)'),
-    [serializeClock(clock)],
-  );
+  db.runQuery(saveClockSql(), [serializeClock(clock)]);
 }

@@ -324,9 +324,30 @@ type NumberFormatResult = {
   formatter: { format: (value: number) => string };
 };
 
-// Building an `Intl.NumberFormat` is expensive and `getNumberFormat` runs for
-// every formatted amount, so results are cached per distinct set of inputs.
-const numberFormatCache = new Map<string, NumberFormatResult>();
+// Each format's separators and grouping, matching what `Intl.NumberFormat`
+// gives for the locale it stands for. Formatting with them directly is a
+// few string operations, with no formatter to build per format.
+const NUMBER_FORMAT_SPECS: Record<
+  NumberFormats,
+  {
+    thousandsSeparator: string;
+    decimalSeparator: string;
+    // en-IN groups the last three digits, then every two (1,00,000)
+    isIndianGrouping?: boolean;
+  }
+> = {
+  'comma-dot': { thousandsSeparator: ',', decimalSeparator: '.' },
+  'dot-comma': { thousandsSeparator: '.', decimalSeparator: ',' },
+  'space-comma': { thousandsSeparator: '\u202F', decimalSeparator: ',' },
+  // Intl may give U+0027 for de-CH (Node <24.13.1/ICU 77); this is always
+  // U+2019 (https://github.com/nodejs/node/issues/61861)
+  'apostrophe-dot': { thousandsSeparator: '\u2019', decimalSeparator: '.' },
+  'comma-dot-in': {
+    thousandsSeparator: ',',
+    decimalSeparator: '.',
+    isIndianGrouping: true,
+  },
+};
 
 export function getNumberFormat({
   format = numberFormatConfig.format,
@@ -348,69 +369,81 @@ export function getNumberFormat({
       : currentHideFraction
         ? 0
         : 2;
+  const spec =
+    NUMBER_FORMAT_SPECS[format as NumberFormats] ??
+    NUMBER_FORMAT_SPECS['comma-dot'];
 
-  const cacheKey = `${format}|${currentFormat}|${fractionDigits}`;
-  const cached = numberFormatCache.get(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  let locale, thousandsSeparator, decimalSeparator;
-
-  switch (format) {
-    case 'space-comma':
-      locale = 'fr-FR';
-      thousandsSeparator = '\u202F';
-      decimalSeparator = ',';
-      break;
-    case 'dot-comma':
-      locale = 'de-DE';
-      thousandsSeparator = '.';
-      decimalSeparator = ',';
-      break;
-    case 'apostrophe-dot':
-      locale = 'de-CH';
-      thousandsSeparator = '\u2019'; // Intl may return U+0027 (Node <24.13.1/ICU 77)
-      decimalSeparator = '.';
-      break;
-    case 'comma-dot-in':
-      locale = 'en-IN';
-      thousandsSeparator = ',';
-      decimalSeparator = '.';
-      break;
-    case 'comma-dot':
-    default:
-      locale = 'en-US';
-      thousandsSeparator = ',';
-      decimalSeparator = '.';
-  }
-
-  const intlFormatter = new Intl.NumberFormat(locale, {
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits,
-  });
-
-  // Wrapper to handle -0 edge case
-  // Normalize apostrophe-dot to U+2019 for consistency across
-  // Node/ICU versions (https://github.com/nodejs/node/issues/61861)
-  const formatter = {
-    format: (value: number) => {
-      let formatted = intlFormatter.format(value);
-      if (currentFormat === 'apostrophe-dot') {
-        formatted = formatted.replace(/'/g, '\u2019');
-      }
-      return formatted === '-0' ? '0' : formatted;
+  return {
+    value: currentFormat,
+    thousandsSeparator: spec.thousandsSeparator,
+    decimalSeparator: spec.decimalSeparator,
+    formatter: {
+      format: (value: number) =>
+        formatNumber(
+          value,
+          fractionDigits,
+          spec.thousandsSeparator,
+          spec.decimalSeparator,
+          spec.isIndianGrouping ?? false,
+        ),
     },
   };
+}
 
-  const result = {
-    value: currentFormat,
-    thousandsSeparator,
-    decimalSeparator,
-    formatter,
-  };
-  numberFormatCache.set(cacheKey, result);
-  return result;
+// `value` rounded to `fractionDigits` like `Intl.NumberFormat` rounds it
+// (half away from zero, on the shortest decimal that reads back as
+// `value`), without its -0.
+function formatNumber(
+  value: number,
+  fractionDigits: number,
+  thousandsSeparator: string,
+  decimalSeparator: string,
+  isIndianGrouping: boolean,
+): string {
+  // Untyped callers can pass a non-number, which Intl formats as NaN too
+  value = Number(value);
+  if (Number.isNaN(value)) {
+    return 'NaN';
+  }
+  const sign = value < 0 || Object.is(value, -0) ? '-' : '';
+  const magnitude = Math.abs(value);
+  if (magnitude === Infinity) {
+    return sign + '\u221E';
+  }
+
+  // The shortest digits, and how many of them come before the point
+  const [mantissa, exponent] = magnitude.toExponential().split('e');
+  const digits = mantissa.replace('.', '');
+  const integerLength = Number(exponent) + 1;
+
+  // The digits kept, as a whole number of the last kept place
+  const keptLength = integerLength + fractionDigits;
+  let kept =
+    keptLength > 0 ? digits.slice(0, keptLength).padEnd(keptLength, '0') : '';
+  if (keptLength >= 0 && digits.charCodeAt(keptLength) >= 53 /* '5' */) {
+    kept = (BigInt(kept || '0') + 1n).toString();
+  }
+  kept = kept.replace(/^0+/, '').padStart(fractionDigits + 1, '0');
+
+  const integer = kept.slice(0, kept.length - fractionDigits);
+  const formatted =
+    sign +
+    groupDigits(integer, thousandsSeparator, isIndianGrouping) +
+    (fractionDigits > 0 ? decimalSeparator + kept.slice(integer.length) : '');
+  return formatted === '-0' ? '0' : formatted;
+}
+
+function groupDigits(
+  digits: string,
+  separator: string,
+  isIndianGrouping: boolean,
+): string {
+  // Before every three digits from the end, or with Indian grouping, before
+  // the last three and every two before them
+  const groupStart = isIndianGrouping
+    ? /\B(?=(\d{2})*\d{3}$)/g
+    : /\B(?=(\d{3})+$)/g;
+  return digits.replace(groupStart, separator);
 }
 
 // Number utilities

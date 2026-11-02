@@ -1,8 +1,10 @@
 import {
+  createContext,
   createElement,
   forwardRef,
   memo,
   useCallback,
+  useContext,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -46,7 +48,6 @@ import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
 import { send } from '@actual-app/core/platform/client/connection';
-import { memoizeOne } from '@actual-app/core/shared/memoize';
 import * as monthUtils from '@actual-app/core/shared/months';
 import { q } from '@actual-app/core/shared/query';
 import { DEFAULT_UPCOMING_SCHEDULE_DAYS } from '@actual-app/core/shared/schedules';
@@ -79,7 +80,6 @@ import type {
 } from '@actual-app/core/types/models';
 import { format as formatDate, parseISO } from 'date-fns';
 
-import { getAccountsById } from '#accounts/accountsSlice';
 import { AccountAutocomplete } from '#components/autocomplete/AccountAutocomplete';
 import { CategoryAutocomplete } from '#components/autocomplete/CategoryAutocomplete';
 import { PayeeAutocomplete } from '#components/autocomplete/PayeeAutocomplete';
@@ -137,7 +137,6 @@ import { useSyncedPref } from '#hooks/useSyncedPref';
 import { pushModal } from '#modals/modalsSlice';
 import { NotesTagFormatter } from '#notes/NotesTagFormatter';
 import { addNotification } from '#notifications/notificationsSlice';
-import { getPayeesById } from '#payees';
 import { aqlQuery } from '#queries/aqlQuery';
 import { useDispatch } from '#redux';
 import { getStatusLabel } from '#util/schedule';
@@ -1076,6 +1075,9 @@ const Transaction = memo(function Transaction({
   showTodayDivider = false,
   isTodayChipCovered = false,
 }: TransactionProps) {
+  const { accountsById, categoriesById, groupByCategoryId } = useContext(
+    TransactionLookupsContext,
+  );
   const dispatch = useDispatch();
   const dispatchSelected = useSelectedDispatch();
   const triggerRef = useRef(null);
@@ -1211,7 +1213,7 @@ const Transaction = memo(function Transaction({
       name === 'account' &&
       value &&
       typeof value === 'string' &&
-      getAccountsById(accounts)[value].offbudget
+      accountsById.get(value)?.offbudget
     ) {
       newTransaction.category = undefined;
     }
@@ -1323,12 +1325,12 @@ const Transaction = memo(function Transaction({
   const previewStatus = forceUpcoming ? 'upcoming' : categoryId;
 
   // Join in some data
-  const account = accounts && accountId && getAccountsById(accounts)[accountId];
+  const account = accountId ? accountsById.get(accountId) : undefined;
 
   const isChild = transaction.is_child;
   const transferAcct =
     isTemporaryId(id) && payee?.transfer_acct
-      ? getAccountsById(accounts)[payee.transfer_acct]
+      ? accountsById.get(payee.transfer_acct)
       : transferAccount;
   const isBudgetTransfer = transferAcct && transferAcct.offbudget === 0;
   const isOffBudget = account && account.offbudget === 1;
@@ -1646,7 +1648,7 @@ const Transaction = memo(function Transaction({
             textAlign="flex"
             value={accountId}
             formatter={acctId => {
-              const acct = acctId && getAccountsById(accounts)[acctId];
+              const acct = acctId && accountsById.get(acctId);
               if (acct) {
                 return acct.name;
               }
@@ -1734,9 +1736,7 @@ const Transaction = memo(function Transaction({
               fontWeight: 300,
             }}
             value={
-              categoryId
-                ? (getGroupByCatId(categoryGroups)[categoryId]?.name ?? '')
-                : ''
+              categoryId ? (groupByCategoryId.get(categoryId)?.name ?? '') : ''
             }
           />
         );
@@ -1876,7 +1876,7 @@ const Transaction = memo(function Transaction({
             value={categoryId}
             formatter={value =>
               value
-                ? (getCategoriesById(categoryGroups)[value]?.name ?? '')
+                ? (categoriesById.get(value)?.name ?? '')
                 : transaction.id
                   ? 'Categorize'
                   : ''
@@ -2172,7 +2172,7 @@ const Transaction = memo(function Transaction({
               {isParent ? (
                 <>Split ({subtransactions?.length ?? 0})</>
               ) : categoryId ? (
-                (getCategoriesById(categoryGroups)[categoryId]?.name ?? '')
+                (categoriesById.get(categoryId)?.name ?? '')
               ) : (
                 ''
               )}
@@ -2569,7 +2569,6 @@ type NewTransactionProps = {
     name: string,
   ) => void;
   onSplit: (id: TransactionEntity['id']) => void;
-  payees: PayeeEntity[];
   columns: TransactionTableColumnId[];
   balance?: number | null;
   transactions: TransactionEntity[];
@@ -2584,7 +2583,6 @@ function NewTransaction({
   amountColumnWidths,
   accounts,
   categoryGroups,
-  payees,
   transferAccountsByTransaction,
   editingTransaction,
   focusedField,
@@ -2610,6 +2608,7 @@ function NewTransaction({
   balance,
   showHiddenCategories,
 }: NewTransactionProps) {
+  const payeesById = useContext(PayeesByIdContext);
   const { schedules = [] } = useCachedSchedules();
   const error = transactions[0].error;
   const isDeposit = transactions[0].amount > 0;
@@ -2666,7 +2665,7 @@ function NewTransaction({
           transaction={transaction}
           subtransactions={transaction.is_parent ? childTransactions : null}
           payee={
-            (transaction.payee && getPayeesById(payees)[transaction.payee]) ||
+            (transaction.payee && payeesById.get(transaction.payee)) ||
             undefined
           }
           transferAccount={
@@ -2843,6 +2842,7 @@ function TransactionTableInner({
   showHiddenCategories,
   ...props
 }: TransactionTableInnerProps) {
+  const payeesById = useContext(PayeesByIdContext);
   const { schedules = [] } = useCachedSchedules();
   const schedulesById = useMemo(
     () => new Map(schedules.map(schedule => [schedule.id, schedule])),
@@ -2928,7 +2928,6 @@ function TransactionTableInner({
       selectedItems,
       accounts,
       categoryGroups,
-      payees,
       columns,
       balances,
       hideFraction,
@@ -3006,7 +3005,7 @@ function TransactionTableInner({
         editing={editing}
         transaction={trans}
         schedule={(trans.schedule && schedulesById.get(trans.schedule)) || null}
-        payee={(trans.payee && getPayeesById(payees)[trans.payee]) || undefined}
+        payee={(trans.payee && payeesById.get(trans.payee)) || undefined}
         transferAccount={props.transferAccountsByTransaction[trans.id] ?? null}
         subtransactions={childTransactions}
         columns={columns}
@@ -3114,7 +3113,6 @@ function TransactionTableInner({
               focusedField={newNavigator.focusedField}
               accounts={props.accounts}
               categoryGroups={props.categoryGroups}
-              payees={props.payees || []}
               columns={props.columns}
               dateFormat={dateFormat}
               hideFraction={props.hideFraction}
@@ -3402,6 +3400,18 @@ export const TransactionTable = forwardRef(
       return result;
     }, [props.transactions, splitsExpanded]);
 
+    // Built once per change to the rows they index. Rows read these through
+    // context; payees are kept apart so a payee change only re-renders the
+    // rows whose `payee` prop changed.
+    const lookups = useMemo(
+      () => makeTransactionLookups(props.accounts, props.categoryGroups),
+      [props.accounts, props.categoryGroups],
+    );
+    const payeesById = useMemo(
+      () => new Map((props.payees ?? []).map(p => [p.id, p])),
+      [props.payees],
+    );
+
     const transactionMap = useMemo(() => {
       return new Map(
         transactionsWithExpandedSplits.map(trans => [trans.id, trans]),
@@ -3424,8 +3434,8 @@ export const TransactionTable = forwardRef(
       if (!props.accounts) {
         return {};
       }
-      const accounts = getAccountsById(props.accounts);
-      const payees = getPayeesById(props.payees);
+      const { accountsById: accounts } = lookups;
+      const payees = payeesById;
 
       return Object.fromEntries(
         props.transactions.map(t => {
@@ -3433,13 +3443,13 @@ export const TransactionTable = forwardRef(
             return [t.id, null];
           }
 
-          const payee = (t.payee && payees[t.payee]) || undefined;
+          const payee = (t.payee && payees.get(t.payee)) || undefined;
           const transferAccount =
-            payee?.transfer_acct && accounts[payee.transfer_acct];
+            payee?.transfer_acct && accounts.get(payee.transfer_acct);
           return [t.id, transferAccount || null];
         }),
       );
-    }, [props.transactions, props.payees, props.accounts]);
+    }, [props.transactions, props.accounts, lookups, payeesById]);
 
     const hasPrevSplitsExpanded = prevSplitsExpanded.current;
 
@@ -4151,49 +4161,53 @@ export const TransactionTable = forwardRef(
     return (
       <DisplayPayeeProvider transactions={displayPayeeTransactions}>
         <SchedulesProvider query={allSchedulesQuery}>
-          <TransactionTableInner
-            tableRef={mergedRef}
-            listContainerRef={listContainerRef}
-            {...props}
-            columns={visibleColumns}
-            transactions={transactionsWithExpandedSplits}
-            transactionMap={transactionMap}
-            transactionsByParent={transactionsByParent}
-            transferAccountsByTransaction={transferAccountsByTransaction}
-            selectedItems={selectedItems}
-            isExpanded={splitsExpanded.isExpanded}
-            onSave={onSave}
-            onDelete={onDelete}
-            onBatchDelete={onBatchDelete}
-            onBatchDuplicate={onBatchDuplicate}
-            onBatchLinkSchedule={onBatchLinkSchedule}
-            onBatchUnlinkSchedule={onBatchUnlinkSchedule}
-            onCreateRule={onCreateRule}
-            onScheduleAction={onScheduleAction}
-            onMakeAsNonSplitTransactions={onMakeAsNonSplitTransactions}
-            onSplit={onSplit}
-            onCheckNewEnter={onCheckNewEnter}
-            onCheckEnter={onCheckEnter}
-            onScheduleTemporary={onScheduleTemporary}
-            onAddTemporary={onAddTemporary}
-            onAddAndCloseTemporary={onAddAndCloseTemporary}
-            onAddSplit={onAddSplit}
-            onDistributeRemainder={onDistributeRemainder}
-            onCloseAddTransaction={onCloseAddTransaction}
-            onToggleSplit={onToggleSplit}
-            newTransactions={newTransactions ?? []}
-            tableNavigator={tableNavigator}
-            newNavigator={newNavigator}
-            showSelection={props.showSelection}
-            allowSplitTransaction={props.allowSplitTransaction}
-            showHiddenCategories={showHiddenCategories}
-            canDrag={canDrag}
-            draggedId={draggedId}
-            draggedParentId={draggedParentId}
-            draggedDate={draggedDate}
-            onDragChange={onDragChange}
-            onDrop={onDrop}
-          />
+          <TransactionLookupsContext.Provider value={lookups}>
+            <PayeesByIdContext.Provider value={payeesById}>
+              <TransactionTableInner
+                tableRef={mergedRef}
+                listContainerRef={listContainerRef}
+                {...props}
+                columns={visibleColumns}
+                transactions={transactionsWithExpandedSplits}
+                transactionMap={transactionMap}
+                transactionsByParent={transactionsByParent}
+                transferAccountsByTransaction={transferAccountsByTransaction}
+                selectedItems={selectedItems}
+                isExpanded={splitsExpanded.isExpanded}
+                onSave={onSave}
+                onDelete={onDelete}
+                onBatchDelete={onBatchDelete}
+                onBatchDuplicate={onBatchDuplicate}
+                onBatchLinkSchedule={onBatchLinkSchedule}
+                onBatchUnlinkSchedule={onBatchUnlinkSchedule}
+                onCreateRule={onCreateRule}
+                onScheduleAction={onScheduleAction}
+                onMakeAsNonSplitTransactions={onMakeAsNonSplitTransactions}
+                onSplit={onSplit}
+                onCheckNewEnter={onCheckNewEnter}
+                onCheckEnter={onCheckEnter}
+                onScheduleTemporary={onScheduleTemporary}
+                onAddTemporary={onAddTemporary}
+                onAddAndCloseTemporary={onAddAndCloseTemporary}
+                onAddSplit={onAddSplit}
+                onDistributeRemainder={onDistributeRemainder}
+                onCloseAddTransaction={onCloseAddTransaction}
+                onToggleSplit={onToggleSplit}
+                newTransactions={newTransactions ?? []}
+                tableNavigator={tableNavigator}
+                newNavigator={newNavigator}
+                showSelection={props.showSelection}
+                allowSplitTransaction={props.allowSplitTransaction}
+                showHiddenCategories={showHiddenCategories}
+                canDrag={canDrag}
+                draggedId={draggedId}
+                draggedParentId={draggedParentId}
+                draggedDate={draggedDate}
+                onDragChange={onDragChange}
+                onDrop={onDrop}
+              />
+            </PayeesByIdContext.Provider>
+          </TransactionLookupsContext.Provider>
         </SchedulesProvider>
       </DisplayPayeeProvider>
     );
@@ -4202,30 +4216,37 @@ export const TransactionTable = forwardRef(
 
 TransactionTable.displayName = 'TransactionTable';
 
-const getCategoriesById = memoizeOne(
-  (categoryGroups: CategoryGroupEntity[] | null | undefined) => {
-    const res: { [id: CategoryEntity['id']]: CategoryEntity } = {};
-    categoryGroups?.forEach(group => {
-      group.categories?.forEach(cat => {
-        res[cat.id] = cat;
-      });
-    });
+type TransactionLookups = {
+  accountsById: ReadonlyMap<string, AccountEntity>;
+  categoriesById: ReadonlyMap<string, CategoryEntity>;
+  groupByCategoryId: ReadonlyMap<string, CategoryGroupEntity>;
+};
 
-    return res;
-  },
+function makeTransactionLookups(
+  accounts: readonly AccountEntity[] | null | undefined,
+  categoryGroups: readonly CategoryGroupEntity[] | null | undefined,
+): TransactionLookups {
+  const categoriesById = new Map<string, CategoryEntity>();
+  const groupByCategoryId = new Map<string, CategoryGroupEntity>();
+  for (const group of categoryGroups ?? []) {
+    for (const category of group.categories ?? []) {
+      categoriesById.set(category.id, category);
+      groupByCategoryId.set(category.id, group);
+    }
+  }
+  return {
+    accountsById: new Map((accounts ?? []).map(a => [a.id, a])),
+    categoriesById,
+    groupByCategoryId,
+  };
+}
+
+const TransactionLookupsContext = createContext<TransactionLookups>(
+  makeTransactionLookups(null, null),
 );
 
-const getGroupByCatId = memoizeOne(
-  (categoryGroups: CategoryGroupEntity[] | null | undefined) => {
-    const res: { [id: CategoryEntity['id']]: CategoryGroupEntity } = {};
-    categoryGroups?.forEach(group => {
-      group.categories?.forEach(cat => {
-        res[cat.id] = group;
-      });
-    });
-
-    return res;
-  },
+const PayeesByIdContext = createContext<ReadonlyMap<string, PayeeEntity>>(
+  new Map(),
 );
 
 function columnToField(columnId: TransactionTableColumnId) {
