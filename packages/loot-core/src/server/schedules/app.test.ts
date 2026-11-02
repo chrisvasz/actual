@@ -723,7 +723,11 @@ describe('schedule app', () => {
 
         expect(row.next_date).toBe('2017-01-07');
       } finally {
-        process.env.TZ = tz;
+        if (tz === undefined) {
+          delete process.env.TZ;
+        } else {
+          process.env.TZ = tz;
+        }
       }
     });
 
