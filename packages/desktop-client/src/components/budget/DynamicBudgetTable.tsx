@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React, { useEffect, useLayoutEffect } from 'react';
+import React, { useEffect, useInsertionEffect } from 'react';
 import type { ComponentProps } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -60,7 +60,10 @@ const DynamicBudgetTable = ({
   const numPossible = getNumPossibleMonths(width, categoryWidth);
   const numMonths = Math.min(numPossible, maxMonths);
 
-  useLayoutEffect(() => {
+  // An insertion effect runs before any child's ref attaches or layout effect
+  // runs, so the month picker's measure on attach already sees the column at
+  // its width. A layout effect would run after the children's.
+  useInsertionEffect(() => {
     setCategoryColumnWidth(categoryWidth);
   }, [categoryWidth]);
 
