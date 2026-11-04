@@ -11,6 +11,7 @@ import * as persistence from '#platform/server/persistence';
 
 import * as memoryVfs from './memory-vfs';
 import { normalise } from './normalise';
+import { regexp } from './regexp';
 import type { SqlParam } from './types';
 import { unicodeLike } from './unicodeLike';
 
@@ -293,10 +294,6 @@ export function commitTransaction(db: Database) {
   if (transactionDepth === 0) {
     db.exec('COMMIT');
   }
-}
-
-function regexp(regex: string, text: string | null) {
-  return new RegExp(regex).test(text || '') ? 1 : 0;
 }
 
 // Files opened from a buffer, by their database

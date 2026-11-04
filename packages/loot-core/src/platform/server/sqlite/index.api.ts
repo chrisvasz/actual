@@ -4,6 +4,7 @@ import SQL from 'better-sqlite3';
 import { logger } from '#platform/server/log';
 
 import { normalise } from './normalise';
+import { regexp } from './regexp';
 import type { SqlParam } from './types';
 import { unicodeLike } from './unicodeLike';
 
@@ -112,10 +113,6 @@ export function commitTransaction(db: SQL.Database) {
   if (transactionDepth === 0) {
     db.exec('COMMIT');
   }
-}
-
-function regexp(regex: string, text: string | null) {
-  return new RegExp(regex).test(text || '') ? 1 : 0;
 }
 
 export function openDatabase(pathOrBuffer: string | Buffer): SQL.Database {

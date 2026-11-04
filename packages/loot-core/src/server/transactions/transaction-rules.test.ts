@@ -405,6 +405,74 @@ describe('Transaction rules', () => {
     });
   });
 
+  test('"payee is nothing" matches a transaction without a payee field', () => {
+    loadRules();
+    insertRule({
+      stage: null,
+      conditionsOp: 'and',
+      conditions: [{ op: 'is', field: 'payee', value: null }],
+      actions: [{ op: 'set', field: 'notes', value: 'no payee' }],
+    });
+
+    // Bank sync leaves `payee` out entirely when the import has no payee
+    expect(
+      runRules({
+        imported_payee: 'kroger',
+        date: '2020-08-11',
+        amount: 50,
+      }),
+    ).toEqual({
+      imported_payee: 'kroger',
+      date: '2020-08-11',
+      amount: 50,
+      notes: 'no payee',
+    });
+
+    // A payee set by a rule action is kept
+    insertRule({
+      stage: null,
+      conditionsOp: 'and',
+      conditions: [{ op: 'is', field: 'payee', value: null }],
+      actions: [{ op: 'set', field: 'payee', value: 'kroger' }],
+    });
+    expect(
+      runRules({
+        imported_payee: 'kroger',
+        date: '2020-08-11',
+        amount: 50,
+      }),
+    ).toEqual({
+      imported_payee: 'kroger',
+      date: '2020-08-11',
+      amount: 50,
+      payee: 'kroger',
+      notes: 'no payee',
+    });
+  });
+
+  test('"category is nothing" matches a transaction without a category field', () => {
+    loadRules();
+    insertRule({
+      stage: null,
+      conditionsOp: 'and',
+      conditions: [{ op: 'is', field: 'category', value: null }],
+      actions: [{ op: 'set', field: 'notes', value: 'no category' }],
+    });
+
+    expect(
+      runRules({
+        payee: 'kroger',
+        date: '2020-08-11',
+        amount: 50,
+      }),
+    ).toEqual({
+      payee: 'kroger',
+      date: '2020-08-11',
+      amount: 50,
+      notes: 'no category',
+    });
+  });
+
   test('category_group condition matches categories in that group (live)', async () => {
     loadRules();
     const billsGroupId = db.insertCategoryGroup({ name: 'Bills' });
@@ -665,6 +733,32 @@ describe('Transaction rules', () => {
     ]);
 
     expect(transactions.map(t => t.id)).toEqual(['2']);
+  });
+
+  test('transactions can be queried by a notes regex that is still being typed', async () => {
+    loadRules();
+    const account = db.insertAccount({ name: 'bank' });
+
+    db.insertTransaction({
+      id: '1',
+      date: '2020-10-01',
+      account,
+      notes: 'Invoice #123',
+      amount: 123,
+    });
+
+    // An incomplete pattern matches nothing instead of failing the query
+    for (const value of ['#\\', '#[', '#\\d+(']) {
+      const transactions = await getMatchingTransactions([
+        { field: 'notes', op: 'matches', value },
+      ]);
+      expect(transactions).toEqual([]);
+    }
+
+    const transactions = await getMatchingTransactions([
+      { field: 'notes', op: 'matches', value: '#\\d+' },
+    ]);
+    expect(transactions.map(t => t.id)).toEqual(['1']);
   });
 
   test('transactions can be queried by hasTags if no "#" is included', async () => {
@@ -1104,6 +1198,56 @@ describe('Learning categories', () => {
       2,
       'bar',
     );
+  });
+
+  test('does not create a rule if a "one of" rule already sets the category', async () => {
+    await loadData();
+
+    insertRule({
+      stage: null,
+      conditionsOp: 'and',
+      conditions: [{ op: 'oneOf', field: 'payee', value: ['foo', 'bar'] }],
+      actions: [{ op: 'set', field: 'category', value: 'food' }],
+    });
+
+    const trans = {
+      date: '2016-12-01',
+      account: 'acct',
+      payee: 'foo',
+      category: 'food',
+    };
+    db.insertTransaction({ ...trans, id: 'one' });
+    db.insertTransaction({ ...trans, id: 'two' });
+    db.insertTransaction({ ...trans, id: 'three' });
+    updateCategoryRules([{ ...trans, id: 'three' }]);
+
+    expect(getRules().length).toBe(1);
+    expect(getRules()[0].conditions[0].op).toBe('oneOf');
+  });
+
+  test('creates a rule if a "one of" rule sets a different category', async () => {
+    await loadData();
+
+    insertRule({
+      stage: null,
+      conditionsOp: 'and',
+      conditions: [{ op: 'oneOf', field: 'payee', value: ['foo', 'bar'] }],
+      actions: [{ op: 'set', field: 'category', value: 'beer' }],
+    });
+
+    const trans = {
+      date: '2016-12-01',
+      account: 'acct',
+      payee: 'foo',
+      category: 'food',
+    };
+    db.insertTransaction({ ...trans, id: 'one' });
+    db.insertTransaction({ ...trans, id: 'two' });
+    db.insertTransaction({ ...trans, id: 'three' });
+    updateCategoryRules([{ ...trans, id: 'three' }]);
+
+    expect(getRules().length).toBe(2);
+    expectCategoryRule(getRules()[1], 'food', 'foo');
   });
 
   test('updates rules correctly even if multiple rules exist', async () => {
