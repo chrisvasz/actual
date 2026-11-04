@@ -9,19 +9,30 @@ import { appendWhere } from '#server/aql/compiler';
 import * as db from '#server/db';
 import type { QueryState } from '#shared/query';
 
+import {
+  adjustTotals,
+  clearTotals,
+  getTotalsGroups,
+  isTotalsLoaded,
+  readTotalsOverRows,
+  reloadTotals,
+} from './transaction-totals';
+import type { TotalsGroup, TotalsRow } from './transaction-totals';
+
 // Cells the client binds to an AQL query, like an account's balance. Each one
 // keeps its last result and runs again whenever an applied change touches a
 // table its query reads. The client reads a cell (`liveReads.cell`), which
 // binds it, and is told the names of the cells a change changed; it releases
-// a cell once nothing shows it. The most recently released cells are still
-// kept current, so a screen that comes back (a register reopened) binds its
-// cells again without running their queries.
+// a cell once nothing shows it, which drops it.
 //
 // Most of them are a sum or count over every transaction, which takes tens of
-// milliseconds on a large budget. When a change only touched transactions,
-// those are updated from the changed rows instead: the cell's query runs over
-// just those rows before and after the change, and the difference is added to
-// the value.
+// milliseconds on a large budget. The balances only pick transactions by
+// their account and cleared state, so they add up the matching groups of the
+// transaction totals instead (see `transaction-totals`), and binding one
+// again, like reopening a register, costs about as little as the first time.
+// The other sums and counts are updated from the changed rows when a change
+// only touched transactions: the cell's query runs over just those rows
+// before and after the change, and the difference is added to the value.
 
 type QueryCell = {
   name: string;
@@ -34,19 +45,22 @@ type QueryCell = {
   // the changed rows. It isn't when the last run failed.
   isCurrent: boolean;
   isRowWise: boolean;
+  // Set for a balance made of transaction totals
+  totals: CellTotals | null;
+};
+
+type CellTotals = {
+  mode: 'none' | 'inline';
+  field: 'sum' | 'count';
+  // The groups the query's filter picks
+  groups: TotalsGroup[];
 };
 
 // Above this many changed transactions, running each query in full is about
 // as cheap as running it twice over the changed rows.
 const MAX_ROW_WISE_ROWS = 1000;
 
-// Above this many released cells, the one released longest ago is dropped.
-// Each kept cell costs a little on every change to the tables it reads.
-const MAX_RELEASED = 100;
-
 const cells = new Map<string, QueryCell>();
-// Names of the released cells still kept, released longest ago first
-const released = new Set<string>();
 
 export function hasQueryCell(name: string): boolean {
   return cells.has(name);
@@ -84,6 +98,91 @@ function isRowWiseQuery(
       path => (path as { tableName: string }).tableName === 'transactions',
     )
   );
+}
+
+// Fields a balance can filter on: the same for every transaction in a group
+// of the totals.
+function isTotalsFilter(filter: unknown): boolean {
+  if (Array.isArray(filter)) {
+    return filter.every(isTotalsFilter);
+  }
+  if (filter == null) {
+    return true;
+  }
+  if (typeof filter !== 'object') {
+    return false;
+  }
+  return Object.entries(filter).every(([key, value]) =>
+    key === '$and' || key === '$or'
+      ? isTotalsFilter(value)
+      : key === 'account' || key.startsWith('account.') || key === 'cleared',
+  );
+}
+
+// How the cell's query adds up transaction totals, if it can: a sum or count
+// over the transactions picked by their account and cleared state.
+function totalsShape(
+  query: QueryState,
+  sql: ReturnType<typeof compileQuery>,
+): Omit<CellTotals, 'groups'> | null {
+  const splits = query.tableOptions?.splits ?? 'inline';
+  if (
+    !isRowWiseQuery(query, sql) ||
+    query.withDead ||
+    query.rawMode ||
+    !['none', 'inline', 'grouped'].includes(splits as string) ||
+    !isTotalsFilter(query.filterExpressions)
+  ) {
+    return null;
+  }
+  return {
+    mode: splits === 'none' ? 'none' : 'inline',
+    field:
+      JSON.stringify(query.selectExpressions) === ROW_WISE_SELECTS[0]
+        ? 'sum'
+        : 'count',
+  };
+}
+
+// The groups the cell's filter picks, found by running its filter over one
+// row per group, or null if that failed. A filter reading anything but the
+// account and cleared state fails here, as the rows have no other columns.
+function matchGroups(cell: QueryCell): TotalsGroup[] | null {
+  const groups = getTotalsGroups();
+  if (groups.length === 0) {
+    return [];
+  }
+  const { from, joins, where } = cell.sql.sqlPieces;
+  try {
+    const rows = db.runQuery<{ _index: number }>(
+      `WITH _groups(_index, account, cleared) AS (
+         VALUES ${groups.map(() => '(?, ?, ?)').join(', ')}
+       )
+       SELECT DISTINCT ${from}._index FROM _groups AS ${from} ${joins} ${where}`,
+      groups.flatMap((group, i) => [i, group.account, group.cleared]),
+      true,
+    );
+    return rows.map(row => groups[row._index]);
+  } catch (e) {
+    logger.warn(`Failed matching ${cell.name} to transaction totals!`, e);
+    return null;
+  }
+}
+
+function totalsValue({ mode, field, groups }: CellTotals): number {
+  let value = 0;
+  for (const group of groups) {
+    value += group[mode][field];
+  }
+  return value;
+}
+
+// What the cell adds up from the transaction totals, if its query is a
+// balance and its groups could be found.
+function findTotals(cell: QueryCell): CellTotals | null {
+  const shape = totalsShape(cell.query, cell.sql);
+  const groups = shape && matchGroups(cell);
+  return shape && groups ? { ...shape, groups } : null;
 }
 
 // Runs the cell's query and returns whether it succeeded. A failing query
@@ -135,7 +234,6 @@ function runOverRows(cell: QueryCell, rowsSql: string): number | null {
 // as a change. A name is only ever bound to one query at a time: a reader of
 // the same name with another query wouldn't be told it was replaced.
 export function createQueryCell(name: string, query: QueryState) {
-  released.delete(name);
   const queryKey = JSON.stringify(query);
   const existing = cells.get(name);
   if (existing?.queryKey === queryKey) {
@@ -150,24 +248,25 @@ export function createQueryCell(name: string, query: QueryState) {
     sql,
     value: existing?.value ?? null,
     isCurrent: false,
-    isRowWise: isRowWiseQuery(query, sql),
+    isRowWise: false,
+    totals: null,
   };
   cells.set(name, cell);
-  run(cell);
+  cell.totals = findTotals(cell);
+  if (cell.totals) {
+    cell.value = totalsValue(cell.totals);
+    cell.isCurrent = true;
+  } else {
+    cell.isRowWise = isRowWiseQuery(query, sql);
+    run(cell);
+  }
 }
 
-// Marks the cell `name` as no longer shown, unless it has since been bound to
-// another query. It's kept current until enough cells were released after it.
+// Drops the cell `name` as no longer shown, unless it has since been bound to
+// another query.
 export function releaseQueryCell(name: string, query: QueryState) {
-  if (cells.get(name)?.queryKey !== JSON.stringify(query)) {
-    return;
-  }
-  released.delete(name);
-  released.add(name);
-  if (released.size > MAX_RELEASED) {
-    const [oldest] = released;
-    released.delete(oldest);
-    cells.delete(oldest);
+  if (cells.get(name)?.queryKey === JSON.stringify(query)) {
+    cells.delete(name);
   }
 }
 
@@ -178,12 +277,23 @@ function readsTables(cell: QueryCell, tables: Set<string>) {
 export type QueryCellUpdate = {
   rowsSql: string;
   before: Map<QueryCell, number>;
+  // The transaction totals over the rows, if they're loaded
+  totalsBefore: TotalsRow[] | null;
 };
 
+function readTotalsOrNull(rowsSql: string): TotalsRow[] | null {
+  try {
+    return readTotalsOverRows(rowsSql);
+  } catch (e) {
+    logger.warn('Failed reading the transaction totals of changed rows!', e);
+    return null;
+  }
+}
+
 // Called with the rows a change is about to write, before writing them.
-// Records each cell's result over those rows, so `triggerQueryCells` can
-// adjust the cell by the difference afterwards. Only for cells that read no
-// other table the change touches.
+// Records the transaction totals and each cell's result over those rows, so
+// `triggerQueryCells` can adjust them by the difference afterwards. Only for
+// cells that read no other table the change touches.
 export function beginQueryCellUpdate(
   idsPerTable: Record<string, string[]>,
 ): QueryCellUpdate | null {
@@ -232,7 +342,19 @@ export function beginQueryCellUpdate(
       }
     }
   }
-  return { rowsSql, before };
+  const totalsBefore = isTotalsLoaded() ? readTotalsOrNull(rowsSql) : null;
+  return { rowsSql, before, totalsBefore };
+}
+
+// Brings the transaction totals up to date with a change to transactions;
+// returns whether the groups changed, rather than only their totals.
+function updateTotals(update: QueryCellUpdate | null): boolean {
+  const after = update?.totalsBefore ? readTotalsOrNull(update.rowsSql) : null;
+  if (update?.totalsBefore && after) {
+    return adjustTotals(update.totalsBefore, after);
+  }
+  reloadTotals();
+  return true;
 }
 
 // Brings the cells reading `tables` up to date with a change; returns the
@@ -241,9 +363,36 @@ export function triggerQueryCells(
   tables: Set<string>,
   update: QueryCellUpdate | null = null,
 ): string[] {
+  const areGroupsChanged =
+    isTotalsLoaded() && tables.has('transactions') && updateTotals(update);
+
   const changed: string[] = [];
   for (const cell of cells.values()) {
     if (!readsTables(cell, tables)) {
+      continue;
+    }
+
+    if (cell.totals) {
+      // A change to accounts can change which groups the filter picks
+      const isMatchChanged =
+        areGroupsChanged ||
+        cell.sql.state.dependencies.some(
+          dep => dep !== 'transactions' && tables.has(dep),
+        );
+      if (isMatchChanged) {
+        cell.totals = findTotals(cell);
+        if (!cell.totals) {
+          cell.isRowWise = isRowWiseQuery(cell.query, cell.sql);
+          run(cell);
+          changed.push(cell.name);
+          continue;
+        }
+      }
+      const value = totalsValue(cell.totals);
+      if (value !== cell.value) {
+        cell.value = value;
+        changed.push(cell.name);
+      }
       continue;
     }
 
@@ -264,5 +413,5 @@ export function triggerQueryCells(
 
 export function clearQueryCells() {
   cells.clear();
-  released.clear();
+  clearTotals();
 }
