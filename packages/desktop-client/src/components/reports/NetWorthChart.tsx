@@ -18,7 +18,9 @@ import type { NetWorthData, NetWorthRow } from './netWorth';
 const HEIGHT = 260;
 const MARGIN = { top: 12, right: 16, bottom: 28, left: 52 };
 const MAX_X_LABELS = 8;
-const BAND_OPACITY = 0.28;
+const MAX_BAR_WIDTH = 80;
+const BAR_WIDTH_RATIO = 0.9;
+const BAR_RADIUS = 4;
 
 const axisFormat = new Intl.NumberFormat(undefined, {
   notation: 'compact',
@@ -58,11 +60,9 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
 
   const plotWidth = Math.max(0, width - MARGIN.left - MARGIN.right);
   const plotHeight = HEIGHT - MARGIN.top - MARGIN.bottom;
-  const x = (i: number) =>
-    MARGIN.left +
-    (months.length === 1
-      ? plotWidth / 2
-      : (i / (months.length - 1)) * plotWidth);
+  const slotWidth = plotWidth / months.length;
+  const barWidth = Math.min(MAX_BAR_WIDTH, slotWidth * BAR_WIDTH_RATIO);
+  const x = (i: number) => MARGIN.left + (i + 0.5) * slotWidth;
   const y = (value: number) =>
     MARGIN.top + ((yMax - value) / (yMax - yMin || 1)) * plotHeight;
 
@@ -73,7 +73,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
     const rect = event.currentTarget.getBoundingClientRect();
     const ratio = (event.clientX - rect.left) / (rect.width || 1);
     setHoverIndex(
-      Math.min(lastIndex, Math.max(0, Math.round(ratio * lastIndex))),
+      Math.min(lastIndex, Math.max(0, Math.floor(ratio * months.length))),
     );
   }
 
@@ -84,278 +84,241 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
     hoverIndex != null && y(totalChanges[hoverIndex]) < HEIGHT / 2;
 
   return (
-    <View style={{ gap: 12 }}>
-      <View
-        ref={containerRef}
-        style={{ position: 'relative', height: HEIGHT }}
-        data-testid="net-worth-chart"
-      >
-        {width > 0 && (
-          <svg
-            width={width}
-            height={HEIGHT}
-            role="img"
-            aria-label={`Monthly change in net worth by account group, ${formatMonth(months[0])} to ${formatMonth(months[lastIndex])}`}
-            style={{ display: 'block', overflow: 'visible' }}
-          >
-            {ticks.map(tick => (
-              <g key={tick}>
-                {tick !== 0 && (
-                  <line
-                    x1={MARGIN.left}
-                    x2={width - MARGIN.right}
-                    y1={y(tick)}
-                    y2={y(tick)}
-                    stroke={theme.tableBorder}
-                    shapeRendering="crispEdges"
-                  />
-                )}
-                <text
-                  x={MARGIN.left - 10}
-                  y={y(tick)}
-                  dy="0.32em"
-                  textAnchor="end"
-                  fontSize={11}
-                  fill={theme.pageTextSubdued}
-                  style={styles.tnum}
-                >
-                  {axisFormat.format(integerToAmount(tick))}
-                </text>
-              </g>
-            ))}
-
-            {hoverIndex != null && (
-              <line
-                x1={x(hoverIndex)}
-                x2={x(hoverIndex)}
-                y1={MARGIN.top}
-                y2={HEIGHT - MARGIN.bottom}
-                stroke={theme.tableHeaderText}
-                strokeOpacity={0.4}
-                shapeRendering="crispEdges"
-                pointerEvents="none"
-              />
-            )}
-
-            {stacks.bands.map(band => {
-              const color = colors.get(band.groupId);
-              return (
-                <g key={band.key} pointerEvents="none">
-                  <path
-                    d={areaPath(band.base, band.edge, x, y)}
-                    fill={color}
-                    fillOpacity={BAND_OPACITY}
-                  />
-                  <path
-                    d={linePath(band.edge, x, y)}
-                    fill="none"
-                    stroke={color}
-                    strokeWidth={1.5}
-                    strokeLinejoin="round"
-                  />
-                </g>
-              );
-            })}
-
-            <path
-              d={linePath(totalChanges, x, y)}
-              fill="none"
-              stroke={theme.pageText}
-              strokeWidth={2.5}
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              pointerEvents="none"
-            />
-            {/* Drawn over the bands and the net worth line so it stays
-                visible in flat months, with a halo to set it apart from
-                bands of a similar color */}
-            <g pointerEvents="none">
-              <line
-                x1={MARGIN.left}
-                x2={width - MARGIN.right}
-                y1={y(0)}
-                y2={y(0)}
-                stroke={theme.tableBackground}
-                strokeWidth={5}
-              />
-              <line
-                x1={MARGIN.left}
-                x2={width - MARGIN.right}
-                y1={y(0)}
-                y2={y(0)}
-                stroke={theme.numberNegative}
-                strokeWidth={2}
-              />
-            </g>
-            <circle
-              cx={x(hoverIndex ?? lastIndex)}
-              cy={y(totalChanges[hoverIndex ?? lastIndex])}
-              r={4}
-              fill={theme.pageText}
-              stroke={theme.tableBackground}
-              strokeWidth={2}
-              pointerEvents="none"
-            />
-
-            {xLabels.map(({ index, label }) => (
+    <View
+      ref={containerRef}
+      style={{ position: 'relative', height: HEIGHT }}
+      data-testid="net-worth-chart"
+    >
+      {width > 0 && (
+        <svg
+          width={width}
+          height={HEIGHT}
+          role="img"
+          aria-label={`Monthly change in net worth by account group, ${formatMonth(months[0])} to ${formatMonth(months[lastIndex])}`}
+          style={{ display: 'block', overflow: 'visible' }}
+        >
+          {ticks.map(tick => (
+            <g key={tick}>
+              {tick !== 0 && (
+                <line
+                  x1={MARGIN.left}
+                  x2={width - MARGIN.right}
+                  y1={y(tick)}
+                  y2={y(tick)}
+                  stroke={theme.tableBorder}
+                  shapeRendering="crispEdges"
+                />
+              )}
               <text
-                key={months[index]}
-                x={x(index)}
-                y={HEIGHT - 8}
-                // Keep the edge labels inside the plot
-                textAnchor={
-                  lastIndex > 0 && index === 0
-                    ? 'start'
-                    : lastIndex > 0 && index === lastIndex
-                      ? 'end'
-                      : 'middle'
-                }
+                x={MARGIN.left - 10}
+                y={y(tick)}
+                dy="0.32em"
+                textAnchor="end"
                 fontSize={11}
                 fill={theme.pageTextSubdued}
+                style={styles.tnum}
               >
-                {label}
+                {axisFormat.format(integerToAmount(tick))}
               </text>
-            ))}
+            </g>
+          ))}
 
+          {hoverIndex != null && (
             <rect
-              x={MARGIN.left}
+              x={x(hoverIndex) - slotWidth / 2}
               y={MARGIN.top}
-              width={plotWidth}
+              width={slotWidth}
               height={plotHeight}
-              fill="transparent"
-              onPointerMove={onPointerMove}
-              onPointerLeave={() => setHoverIndex(null)}
+              fill={theme.tableHeaderText}
+              fillOpacity={0.12}
+              pointerEvents="none"
             />
-          </svg>
-        )}
+          )}
 
-        {hoverIndex != null && (
+          {stacks.bands.map(band => (
+            <g
+              key={band.key}
+              fill={colors.get(band.groupId)}
+              pointerEvents="none"
+            >
+              {months.map(
+                (month, i) =>
+                  band.edge[i] !== band.base[i] && (
+                    <path
+                      key={month}
+                      d={segmentPath({
+                        left: x(i) - barWidth / 2,
+                        width: barWidth,
+                        baseY: y(band.base[i]),
+                        edgeY: y(band.edge[i]),
+                        isOutermost:
+                          band.edge[i] === stacks.highest[i] ||
+                          band.edge[i] === stacks.lowest[i],
+                      })}
+                    />
+                  ),
+              )}
+            </g>
+          ))}
+
+          <path
+            d={linePath(totalChanges, x, y)}
+            fill="none"
+            stroke={theme.pageText}
+            strokeWidth={2.5}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            pointerEvents="none"
+          />
+          {/* Drawn over the bars and the net worth line so it stays
+                visible in flat months, with a halo to set it apart from
+                bars of a similar color */}
+          <g pointerEvents="none">
+            <line
+              x1={MARGIN.left}
+              x2={width - MARGIN.right}
+              y1={y(0)}
+              y2={y(0)}
+              stroke={theme.tableBackground}
+              strokeWidth={5}
+            />
+            <line
+              x1={MARGIN.left}
+              x2={width - MARGIN.right}
+              y1={y(0)}
+              y2={y(0)}
+              stroke={theme.numberNegative}
+              strokeWidth={2}
+            />
+          </g>
+          <circle
+            cx={x(hoverIndex ?? lastIndex)}
+            cy={y(totalChanges[hoverIndex ?? lastIndex])}
+            r={4}
+            fill={theme.pageText}
+            stroke={theme.tableBackground}
+            strokeWidth={2}
+            pointerEvents="none"
+          />
+
+          {xLabels.map(({ index, label }) => (
+            <text
+              key={months[index]}
+              x={x(index)}
+              y={HEIGHT - 8}
+              textAnchor="middle"
+              fontSize={11}
+              fill={theme.pageTextSubdued}
+            >
+              {label}
+            </text>
+          ))}
+
+          <rect
+            x={MARGIN.left}
+            y={MARGIN.top}
+            width={plotWidth}
+            height={plotHeight}
+            fill="transparent"
+            onPointerMove={onPointerMove}
+            onPointerLeave={() => setHoverIndex(null)}
+          />
+        </svg>
+      )}
+
+      {hoverIndex != null && (
+        <View
+          role="tooltip"
+          style={{
+            position: 'absolute',
+            ...(tooltipAtBottom
+              ? { bottom: MARGIN.bottom }
+              : { top: MARGIN.top }),
+            ...(tooltipOnLeft
+              ? { right: width - x(hoverIndex) + 14 }
+              : { left: x(hoverIndex) + 14 }),
+            pointerEvents: 'none',
+            backgroundColor: theme.tooltipBackground,
+            color: theme.tooltipText,
+            border: `1px solid ${theme.tooltipBorder}`,
+            borderRadius: 6,
+            padding: '10px 12px',
+            fontSize: 12,
+            gap: 6,
+            minWidth: 200,
+            boxShadow:
+              '0 15px 30px 0 rgba(0, 0, 0, 0.11), 0 5px 15px 0 rgba(0, 0, 0, 0.08)',
+          }}
+        >
+          <Text style={{ fontWeight: 600, fontSize: 13 }}>
+            End of {formatMonth(months[hoverIndex])}
+          </Text>
           <View
-            role="tooltip"
             style={{
-              position: 'absolute',
-              ...(tooltipAtBottom
-                ? { bottom: MARGIN.bottom }
-                : { top: MARGIN.top }),
-              ...(tooltipOnLeft
-                ? { right: width - x(hoverIndex) + 14 }
-                : { left: x(hoverIndex) + 14 }),
-              pointerEvents: 'none',
-              backgroundColor: theme.tooltipBackground,
-              color: theme.tooltipText,
-              border: `1px solid ${theme.tooltipBorder}`,
-              borderRadius: 6,
-              padding: '10px 12px',
-              fontSize: 12,
-              gap: 6,
-              minWidth: 200,
-              boxShadow:
-                '0 15px 30px 0 rgba(0, 0, 0, 0.11), 0 5px 15px 0 rgba(0, 0, 0, 0.08)',
+              display: 'grid',
+              gridTemplateColumns: 'auto 1fr auto auto',
+              alignItems: 'center',
+              columnGap: 8,
+              rowGap: 6,
             }}
           >
-            <Text style={{ fontWeight: 600, fontSize: 13 }}>
-              End of {formatMonth(months[hoverIndex])}
-            </Text>
-            <View
+            <Text
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'auto 1fr auto auto',
-                alignItems: 'center',
-                columnGap: 8,
-                rowGap: 6,
+                gridColumn: 3,
+                textAlign: 'right',
+                color: theme.pageTextSubdued,
               }}
             >
-              <Text
-                style={{
-                  gridColumn: 3,
-                  textAlign: 'right',
-                  color: theme.pageTextSubdued,
-                }}
-              >
-                vs.{' '}
-                {monthUtils.format(
-                  monthUtils.prevMonth(months[hoverIndex]),
-                  'MMM',
-                )}
-              </Text>
-              <Text
-                style={{
-                  gridColumn: 4,
-                  textAlign: 'right',
-                  paddingLeft: 8,
-                  color: theme.pageTextSubdued,
-                }}
-              >
-                Balance
-              </Text>
-              {groups.map(group => (
-                <Fragment key={group.id}>
-                  <ColorSwatch color={colors.get(group.id)} size={8} />
-                  <Text style={{ color: theme.pageTextSubdued }}>
-                    {group.name}
-                  </Text>
-                  <FinancialText style={{ textAlign: 'right' }}>
-                    {formatChange(changes(group)[hoverIndex])}
-                  </FinancialText>
-                  <FinancialText style={{ textAlign: 'right', paddingLeft: 8 }}>
-                    {format(group.history[hoverIndex], 'financial')}
-                  </FinancialText>
-                </Fragment>
-              ))}
-              <View
-                style={{
-                  gridColumn: '1 / -1',
-                  borderTop: `1px solid ${theme.tooltipBorder}`,
-                }}
-              />
-              <Text style={{ gridColumn: '1 / 3', fontWeight: 600 }}>
-                Net worth
-              </Text>
-              <FinancialText style={{ textAlign: 'right', fontWeight: 600 }}>
-                {formatChange(totalChanges[hoverIndex])}
-              </FinancialText>
-              <FinancialText
-                style={{ textAlign: 'right', paddingLeft: 8, fontWeight: 600 }}
-              >
-                {format(data.total.history[hoverIndex], 'financial')}
-              </FinancialText>
-            </View>
+              vs.{' '}
+              {monthUtils.format(
+                monthUtils.prevMonth(months[hoverIndex]),
+                'MMM',
+              )}
+            </Text>
+            <Text
+              style={{
+                gridColumn: 4,
+                textAlign: 'right',
+                paddingLeft: 8,
+                color: theme.pageTextSubdued,
+              }}
+            >
+              Balance
+            </Text>
+            {groups.map(group => (
+              <Fragment key={group.id}>
+                <ColorSwatch color={colors.get(group.id)} size={8} />
+                <Text style={{ color: theme.pageTextSubdued }}>
+                  {group.name}
+                </Text>
+                <FinancialText style={{ textAlign: 'right' }}>
+                  {formatChange(changes(group)[hoverIndex])}
+                </FinancialText>
+                <FinancialText style={{ textAlign: 'right', paddingLeft: 8 }}>
+                  {format(group.history[hoverIndex], 'financial')}
+                </FinancialText>
+              </Fragment>
+            ))}
+            <View
+              style={{
+                gridColumn: '1 / -1',
+                borderTop: `1px solid ${theme.tooltipBorder}`,
+              }}
+            />
+            <Text style={{ gridColumn: '1 / 3', fontWeight: 600 }}>
+              Net worth
+            </Text>
+            <FinancialText style={{ textAlign: 'right', fontWeight: 600 }}>
+              {formatChange(totalChanges[hoverIndex])}
+            </FinancialText>
+            <FinancialText
+              style={{ textAlign: 'right', paddingLeft: 8, fontWeight: 600 }}
+            >
+              {format(data.total.history[hoverIndex], 'financial')}
+            </FinancialText>
           </View>
-        )}
-      </View>
-
-      <View
-        aria-hidden
-        style={{
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          gap: '6px 16px',
-          paddingLeft: MARGIN.left,
-          fontSize: 12,
-          color: theme.pageTextSubdued,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <View
-            style={{
-              width: 14,
-              height: 2.5,
-              borderRadius: 2,
-              backgroundColor: theme.pageText,
-            }}
-          />
-          <Text>Net worth change</Text>
         </View>
-        {groups.map(group => (
-          <View
-            key={group.id}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
-          >
-            <ColorSwatch color={colors.get(group.id)} />
-            <Text>{group.name}</Text>
-          </View>
-        ))}
-      </View>
+      )}
     </View>
   );
 }
@@ -365,7 +328,7 @@ type Band = {
   groupId: string;
   /** The side nearest zero */
   base: number[];
-  /** The side away from zero, drawn as a line */
+  /** The side away from zero */
   edge: number[];
 };
 
@@ -383,7 +346,7 @@ function changes({ history, balance, changeAmount }: NetWorthRow) {
 /**
  * Stacks each group's gains up from zero and its losses down from it, in
  * table order. A group that gains in some months and loses in others gets a
- * band on each side, so bands never cross zero.
+ * band on each side, so segments never cross zero.
  */
 function stackChanges({ months, groups }: NetWorthData) {
   const gainTop = months.map(() => 0);
@@ -437,19 +400,37 @@ function pickMonthLabels(months: string[]) {
     }));
 }
 
-function areaPath(
-  base: number[],
-  edge: number[],
-  x: (i: number) => number,
-  y: (value: number) => number,
-) {
-  if (edge.length === 1) {
-    // A single month: draw a narrow column so it's visible
-    return `M${x(0) - 12},${y(edge[0])}H${x(0) + 12}V${y(base[0])}H${x(0) - 12}Z`;
-  }
-  const out = edge.map((value, i) => `${x(i)},${y(value)}`);
-  const back = base.map((value, i) => `${x(i)},${y(value)}`).reverse();
-  return `M${out.join('L')}L${back.join('L')}Z`;
+/**
+ * A bar segment's outline. Only the end of a stack is rounded, so segments
+ * butt up against each other; a sliver keeps a visible height.
+ */
+function segmentPath({
+  left,
+  width,
+  baseY,
+  edgeY,
+  isOutermost,
+}: {
+  left: number;
+  width: number;
+  baseY: number;
+  edgeY: number;
+  isOutermost: boolean;
+}) {
+  const direction = edgeY < baseY ? -1 : 1;
+  const height = Math.max(1, Math.abs(edgeY - baseY));
+  const end = baseY + direction * height;
+  const right = left + width;
+  const radius = isOutermost ? Math.min(BAR_RADIUS, width / 2, height) : 0;
+  const shoulder = end - direction * radius;
+  return [
+    `M${left},${baseY}`,
+    `V${shoulder}`,
+    `Q${left},${end} ${left + radius},${end}`,
+    `H${right - radius}`,
+    `Q${right},${end} ${right},${shoulder}`,
+    `V${baseY}Z`,
+  ].join('');
 }
 
 function linePath(
@@ -457,9 +438,6 @@ function linePath(
   x: (i: number) => number,
   y: (value: number) => number,
 ) {
-  if (values.length === 1) {
-    return `M${x(0) - 12},${y(values[0])}H${x(0) + 12}`;
-  }
   return `M${values.map((value, i) => `${x(i)},${y(value)}`).join('L')}`;
 }
 
