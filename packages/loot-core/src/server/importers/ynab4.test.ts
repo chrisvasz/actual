@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { send } from '#server/main-app';
 import { makeChild } from '#shared/transactions';
 
-import { importTransactions } from './ynab4';
+import { doImport, getBudgetNotes, importTransactions } from './ynab4';
+import type { MonthlyBudget, MonthlySubCategoryBudget } from './ynab4-types';
 import type * as YNAB4 from './ynab4-types';
 
 vi.mock('#server/main-app', () => ({
@@ -106,5 +107,140 @@ describe('importTransactions', () => {
 
     expect(transferChild.payee).toBe('transfer-payee-2');
     expect(transferChild.transfer_id).toBe(entityIdMap.get('txn-transfer-in'));
+  });
+});
+
+function categoryBudget(
+  overrides: Partial<MonthlySubCategoryBudget> = {},
+): MonthlySubCategoryBudget {
+  return {
+    entityType: 'monthlyCategoryBudget',
+    categoryId: 'A5',
+    budgeted: 100,
+    entityVersion: 'A-1',
+    entityId: 'category-budget',
+    parentMonthlyBudgetId: 'october',
+    ...overrides,
+  };
+}
+
+describe('doImport', () => {
+  it('preserves group notes alongside month notes', async () => {
+    const data = {
+      accounts: [],
+      payees: [],
+      transactions: [],
+      scheduledTransactions: [],
+      fileMetaData: {
+        entityType: 'fileMetaData',
+        budgetDataVersion: '4.2',
+        currentKnowledge: 'A-1',
+      },
+      budgetMetaData: {
+        entityType: 'budgetMetaData',
+        strictBudget: 'true',
+        entityVersion: 'A-1',
+        currencyLocale: 'en_US',
+        budgetType: 'Personal',
+        dateLocale: 'en_US',
+        entityId: 'budget',
+      },
+      masterCategories: [
+        {
+          entityType: 'masterCategory',
+          entityId: 'A4',
+          entityVersion: 'A-1',
+          name: 'Sample Category',
+          note: 'SAMPLE GROUP NOTE',
+          type: 'OUTFLOW',
+          expanded: true,
+          deleteable: true,
+          sortableIndex: 0,
+          subCategories: [
+            {
+              entityType: 'subCategory',
+              entityId: 'A5',
+              entityVersion: 'A-1',
+              masterCategoryId: 'A4',
+              name: 'Sample Subcategory',
+              type: 'OUTFLOW',
+              sortableIndex: 0,
+            },
+          ],
+        },
+      ],
+      monthlyBudgets: [
+        {
+          entityType: 'monthlyBudget',
+          entityId: 'october',
+          entityVersion: 'A-1',
+          month: '2026-10-01',
+          note: 'SAMPLE NOTE 1',
+          monthlySubCategoryBudgets: [
+            categoryBudget({ note: 'SAMPLE NOTE 2' }),
+          ],
+        },
+      ],
+    } satisfies YNAB4.YFull;
+
+    vi.mocked(send).mockImplementation(async name => {
+      switch (name) {
+        case 'api/category-group-create':
+          return 'actual-group';
+        case 'api/category-create':
+          return 'actual-category';
+        case 'api/categories-get':
+          return [{ id: 'income', name: 'Income' }];
+        case 'api/accounts-get':
+        case 'api/payees-get':
+          return [];
+        default:
+          return null;
+      }
+    });
+
+    await doImport(data);
+
+    expect(
+      vi.mocked(send).mock.calls.filter(([name]) => name === 'notes-save'),
+    ).toEqual([
+      ['notes-save', { id: 'actual-group', note: 'SAMPLE GROUP NOTE' }],
+      ['notes-save', { id: 'budget-2026-10', note: 'SAMPLE NOTE 1' }],
+    ]);
+    expect(send).toHaveBeenCalledWith('api/budget-set-amount', {
+      month: '2026-10',
+      categoryId: 'actual-category',
+      amount: 10000,
+    });
+  });
+});
+
+describe('getBudgetNotes', () => {
+  it('imports the month note but not category budget notes', () => {
+    const budget = {
+      entityType: 'monthlyBudget',
+      month: '2026-10-01',
+      note: 'SAMPLE NOTE 1',
+      entityVersion: 'A-1',
+      entityId: 'october',
+      monthlySubCategoryBudgets: [categoryBudget({ note: 'SAMPLE NOTE 2' })],
+    } satisfies MonthlyBudget;
+
+    expect(getBudgetNotes(budget)).toEqual([
+      { id: 'budget-2026-10', note: 'SAMPLE NOTE 1' },
+    ]);
+  });
+
+  it.each([undefined, ''])('skips a month note of %s', note => {
+    const budget = {
+      entityType: 'monthlyBudget',
+      month: '2026-10-01',
+      note,
+      entityVersion: 'A-1',
+      entityId: 'october',
+      monthlySubCategoryBudgets: [],
+    } satisfies MonthlyBudget;
+
+    expect(getBudgetNotes(budget)).toEqual([]);
   });
 });
