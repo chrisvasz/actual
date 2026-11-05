@@ -94,10 +94,14 @@
   --palette-chartQual1: #45b29d;
   --palette-chartQual2: #efc94c;
   --palette-chartQual3: #e27a3f;
-  --palette-chartQual4: #df5a49;
-  --palette-chartQual5: #5f91b8;
-  --palette-chartQual6: #e2a37f;
-  --palette-chartQual7: #55dbc1;
-  --palette-chartQual8: #efda97;
-  --palette-chartQual9: #df948a;
+  --palette-chartQual4: #5293f0;
+  --palette-chartQual5: #ac3320;
+  --palette-chartQual6: #b95d9d;
+  --palette-chartQual7: #751f81;
+  --palette-chartQual8: #e597dd;
+  --palette-chartQual9: #005baa;
+
+  --palette-chartQual5Dark: #af413e;
+  --palette-chartQual7Dark: #8a4cf8;
+  --palette-chartQual9Dark: #4766ac;
 }
