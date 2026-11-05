@@ -271,9 +271,9 @@
   --color-chartQual2: var(--palette-chartQual2);
   --color-chartQual3: var(--palette-chartQual3);
   --color-chartQual4: var(--palette-chartQual4);
-  --color-chartQual5: var(--palette-chartQual5);
+  --color-chartQual5: var(--palette-chartQual5Dark);
   --color-chartQual6: var(--palette-chartQual6);
-  --color-chartQual7: var(--palette-chartQual7);
+  --color-chartQual7: var(--palette-chartQual7Dark);
   --color-chartQual8: var(--palette-chartQual8);
-  --color-chartQual9: var(--palette-chartQual9);
+  --color-chartQual9: var(--palette-chartQual9Dark);
 }
