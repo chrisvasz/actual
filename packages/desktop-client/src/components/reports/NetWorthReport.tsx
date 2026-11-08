@@ -3,8 +3,13 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import * as monthUtils from '@actual-app/core/shared/months';
 import { q } from '@actual-app/core/shared/query';
+import type {
+  AccountEntity,
+  AccountGroupEntity,
+} from '@actual-app/core/types/models';
 
 import { FinancialText } from '#components/FinancialText';
+import { buildAccountSide } from '#components/sidebar/useSidebarAccountTree';
 import { useAccountGroups } from '#hooks/useAccountGroups';
 import { useAccounts } from '#hooks/useAccounts';
 import { useFormat } from '#hooks/useFormat';
@@ -63,16 +68,14 @@ export function NetWorthReport({ start, end }: NetWorthReportProps) {
     groups: accountGroups,
   });
 
-  // Colors follow the groups' sidebar order, so they don't trade places when
+  // Rows and colors follow the sidebar, so neither trades places when
   // balances do
+  const order = sidebarOrder(accounts, accountGroups);
   const colors = new Map<string, string>(
-    [
-      ...[...accountGroups]
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .map(group => group.id),
-      UNGROUPED_ON_BUDGET_ID,
-      UNGROUPED_OFF_BUDGET_ID,
-    ].map((id, i) => [id, GROUP_COLORS[i % GROUP_COLORS.length]]),
+    order.map((id, i) => [id, GROUP_COLORS[i % GROUP_COLORS.length]]),
+  );
+  const groups = [...data.groups].sort(
+    (a, b) => order.indexOf(a.id) - order.indexOf(b.id),
   );
 
   const baselineLabel = monthUtils.format(data.baselineMonth, 'MMMM yyyy');
@@ -98,30 +101,39 @@ export function NetWorthReport({ start, end }: NetWorthReportProps) {
         >
           Net worth
         </Text>
-        <FinancialText
-          data-testid="net-worth-total"
-          style={{ fontSize: 30, fontWeight: 600, lineHeight: 1.3 }}
-        >
-          {format(data.total.balance, 'financial')}
-        </FinancialText>
         <View
           style={{
             flexDirection: 'row',
+            flexWrap: 'wrap',
             alignItems: 'baseline',
-            gap: 6,
-            fontSize: 13,
+            columnGap: 12,
           }}
         >
-          <PercentChange
-            change={data.total.change}
-            isGood={data.total.changeAmount > 0}
-            style={{ fontWeight: 600 }}
-          />
-          <Text style={{ color: theme.pageTextSubdued }}>
-            {data.total.change == null
-              ? `No percentage: net worth was at or below zero in ${baselineLabel}`
-              : `since ${baselineLabel}`}
-          </Text>
+          <FinancialText
+            data-testid="net-worth-total"
+            style={{ fontSize: 30, fontWeight: 600, lineHeight: 1.3 }}
+          >
+            {format(data.total.balance, 'financial')}
+          </FinancialText>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'baseline',
+              gap: 6,
+              fontSize: 13,
+            }}
+          >
+            <PercentChange
+              change={data.total.change}
+              isGood={data.total.changeAmount > 0}
+              style={{ fontWeight: 600 }}
+            />
+            <Text style={{ color: theme.pageTextSubdued }}>
+              {data.total.change == null
+                ? `No percentage: net worth was at or below zero in ${baselineLabel}`
+                : `since ${baselineLabel}`}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -132,9 +144,43 @@ export function NetWorthReport({ start, end }: NetWorthReportProps) {
       ) : (
         <>
           <NetWorthChart data={data} colors={colors} />
-          <NetWorthTable data={data} colors={colors} />
+          <NetWorthTable data={{ ...data, groups }} colors={colors} />
         </>
       )}
     </View>
   );
+}
+
+/**
+ * Group ids in the order the sidebar lists them: the on-budget section, then
+ * the off-budget one, each with its ungrouped accounts first. Groups holding
+ * only closed accounts come last.
+ */
+function sidebarOrder(
+  accounts: readonly AccountEntity[],
+  groups: readonly AccountGroupEntity[],
+): string[] {
+  const open = accounts.filter(account => !account.closed);
+  const sorted = [...groups].sort((a, b) => a.sort_order - b.sort_order);
+  const order = new Set<string>();
+  for (const [isOffBudget, ungroupedId] of [
+    [false, UNGROUPED_ON_BUDGET_ID],
+    [true, UNGROUPED_OFF_BUDGET_ID],
+  ] as const) {
+    const { buckets } = buildAccountSide(
+      open.filter(account => Boolean(account.offbudget) === isOffBudget),
+      sorted,
+    );
+    for (const { group } of buckets) {
+      order.add(group?.id ?? ungroupedId);
+    }
+  }
+  return [
+    ...new Set([
+      ...order,
+      ...sorted.map(group => group.id),
+      UNGROUPED_ON_BUDGET_ID,
+      UNGROUPED_OFF_BUDGET_ID,
+    ]),
+  ];
 }
