@@ -144,6 +144,7 @@ function makeTransactionFilters(conditions: ConditionEntity[]) {
  * screen mounts so it can render complete on its first paint.
  */
 type AccountPreload = {
+  rows: readonly TransactionEntity[] | undefined;
   transactions: TransactionEntity[];
   balances: Record<TransactionEntity['id'], IntegerAmount> | null;
   filteredAmount: number | null;
@@ -378,6 +379,7 @@ class AccountInternal extends PureComponent<
   // Reads the rows now, if they've changed since last read
   readRows: (() => void) | null = null;
   _isRowsQueryFiltered = false;
+  _hasReadRows = false;
   // The rows on screen, as last read
   _shownRows: readonly TransactionEntity[] | null = null;
   // Whether the rows on screen filled the limit
@@ -612,6 +614,15 @@ class AccountInternal extends PureComponent<
         return;
       }
       this._hasMoreRows = data.length >= limit;
+      // The screen mounted with these rows: nothing to show
+      const isPreloaded =
+        !this._hasReadRows && data === this.props.preload?.rows;
+      this._hasReadRows = true;
+      if (isPreloaded) {
+        this._shownRows = data;
+        this._pendingBalanceTotal = null;
+        return;
+      }
       this.showRows(data);
     };
     const unsubscribe = rows.subscribe(readRows);
@@ -2134,9 +2145,11 @@ function loadAccountPreload({
 
   // Mirror `getBalanceTotal` and `getFilteredAmount`, so the balance column
   // and the filtered total draw filled in too.
-  const { data } = runQuerySync<TransactionEntity[]>(
+  // Read live, so the screen's own read of these rows finds them
+  const rows = getLiveQuery<TransactionEntity[]>(
     query.limit(TRANSACTIONS_PAGE_COUNT),
-  );
+  ).getSnapshot().data;
+  const data = rows ?? [];
   const total =
     showBalances && canCalculateBalance
       ? (runQuerySync<number | null>(
@@ -2149,6 +2162,7 @@ function loadAccountPreload({
   const transactions = ungroupTransactions(data);
 
   return {
+    rows,
     transactions,
     balances:
       total == null
