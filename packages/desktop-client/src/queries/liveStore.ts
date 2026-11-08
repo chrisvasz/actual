@@ -325,9 +325,13 @@ function subscribe(entry: Entry, listener: () => void) {
 }
 
 // Drop a result nothing listens to. Not right away: a screen that remounts
-// (or a Strict Mode effect re-run) picks its result back up.
+// (or a Strict Mode effect re-run) picks its result back up. And not while
+// a time-sliced render is between slices, which yield to timers: dropping
+// what the render read there means reading it again, which looks to React
+// like a store that changed mid-render, so it throws the render away and
+// starts over. The page isn't idle until the render is done.
 function collectLater(entry: Entry) {
-  setTimeout(() => {
+  whenIdle(() => {
     if (entry.listeners.size === 0 && entries.get(entry.key) === entry) {
       entries.delete(entry.key);
       if (entry.release) {
@@ -337,7 +341,19 @@ function collectLater(entry: Entry) {
         entry.release();
       }
     }
-  }, 0);
+  });
+}
+
+// Safari has no idle callbacks: wait out a slow render instead
+const IDLE_FALLBACK_MS = 1000;
+
+function whenIdle(callback: () => void) {
+  if (typeof requestIdleCallback === 'function') {
+    // A busy main thread (a sync, an import) can put idle off indefinitely
+    requestIdleCallback(callback, { timeout: IDLE_FALLBACK_MS });
+  } else {
+    setTimeout(callback, IDLE_FALLBACK_MS);
+  }
 }
 
 /**

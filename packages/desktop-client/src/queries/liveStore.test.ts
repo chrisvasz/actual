@@ -309,6 +309,28 @@ describe('liveStore', () => {
     expect(readsOf('transactions')).toBe(2);
   });
 
+  it('drops a result when idle, within a second even on a busy thread', () => {
+    const idle = vi.fn<(callback: () => void, options?: object) => number>();
+    vi.stubGlobal('requestIdleCallback', idle);
+    try {
+      const { unmount } = renderHook(() =>
+        useLiveQuery<Row>(() => q('transactions').select('*'), []),
+      );
+      unmount();
+      expect(idle).toHaveBeenCalledWith(expect.any(Function), {
+        timeout: 1000,
+      });
+
+      for (const [callback] of idle.mock.calls) {
+        callback();
+      }
+      getLiveQuery(q('transactions').select('*')).getSnapshot();
+      expect(readsOf('transactions')).toBe(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('keeps the result a render read even if it was collected before subscribing', () => {
     vi.useFakeTimers();
     const handle = getLiveQuery<Row[]>(q('transactions').select('*'));
