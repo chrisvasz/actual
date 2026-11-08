@@ -10,14 +10,12 @@ import * as db from '#server/db';
 import type { QueryState } from '#shared/query';
 
 import {
-  adjustTotals,
+  beginTotalsUpdate,
   clearTotals,
+  finishTotalsUpdate,
   getTotalsGroups,
-  isTotalsLoaded,
-  readTotalsOverRows,
-  reloadTotals,
 } from './transaction-totals';
-import type { TotalsGroup, TotalsRow } from './transaction-totals';
+import type { TotalsGroup } from './transaction-totals';
 
 // Cells the client binds to an AQL query, like an account's balance. Each one
 // keeps its last result and runs again whenever an applied change touches a
@@ -277,18 +275,8 @@ function readsTables(cell: QueryCell, tables: Set<string>) {
 export type QueryCellUpdate = {
   rowsSql: string;
   before: Map<QueryCell, number>;
-  // The transaction totals over the rows, if they're loaded
-  totalsBefore: TotalsRow[] | null;
+  totalsBefore: ReturnType<typeof beginTotalsUpdate>;
 };
-
-function readTotalsOrNull(rowsSql: string): TotalsRow[] | null {
-  try {
-    return readTotalsOverRows(rowsSql);
-  } catch (e) {
-    logger.warn('Failed reading the transaction totals of changed rows!', e);
-    return null;
-  }
-}
 
 // Called with the rows a change is about to write, before writing them.
 // Records the transaction totals and each cell's result over those rows, so
@@ -342,19 +330,7 @@ export function beginQueryCellUpdate(
       }
     }
   }
-  const totalsBefore = isTotalsLoaded() ? readTotalsOrNull(rowsSql) : null;
-  return { rowsSql, before, totalsBefore };
-}
-
-// Brings the transaction totals up to date with a change to transactions;
-// returns whether the groups changed, rather than only their totals.
-function updateTotals(update: QueryCellUpdate | null): boolean {
-  const after = update?.totalsBefore ? readTotalsOrNull(update.rowsSql) : null;
-  if (update?.totalsBefore && after) {
-    return adjustTotals(update.totalsBefore, after);
-  }
-  reloadTotals();
-  return true;
+  return { rowsSql, before, totalsBefore: beginTotalsUpdate(rowsSql) };
 }
 
 // Brings the cells reading `tables` up to date with a change; returns the
@@ -364,7 +340,8 @@ export function triggerQueryCells(
   update: QueryCellUpdate | null = null,
 ): string[] {
   const areGroupsChanged =
-    isTotalsLoaded() && tables.has('transactions') && updateTotals(update);
+    tables.has('transactions') &&
+    finishTotalsUpdate(update?.totalsBefore ?? null, update?.rowsSql ?? null);
 
   const changed: string[] = [];
   for (const cell of cells.values()) {

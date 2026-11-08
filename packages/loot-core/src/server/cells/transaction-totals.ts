@@ -1,3 +1,4 @@
+import { logger } from '#platform/server/log';
 import * as db from '#server/db';
 
 // The sum and count of the transactions in each account and cleared state,
@@ -18,7 +19,7 @@ export type TotalsGroup = {
   inline: Totals;
 };
 
-export type TotalsRow = {
+type TotalsRow = {
   account: string;
   cleared: number | null;
   noneSum: number;
@@ -54,14 +55,9 @@ function readTotals(where: string): TotalsRow[] {
   );
 }
 
-function addRow(
-  byKey: Map<string, TotalsGroup>,
-  row: TotalsRow,
-  sign: number,
-): boolean {
+function addRow(byKey: Map<string, TotalsGroup>, row: TotalsRow, sign: number) {
   const key = groupKey(row.account, row.cleared);
   let group = byKey.get(key);
-  const isNew = group == null;
   if (!group) {
     group = {
       account: row.account,
@@ -75,7 +71,6 @@ function addRow(
   group.none.count += sign * (row.noneCount ?? 0);
   group.inline.sum += sign * (row.inlineSum ?? 0);
   group.inline.count += sign * (row.inlineCount ?? 0);
-  return isNew;
 }
 
 function load(): Map<string, TotalsGroup> {
@@ -87,39 +82,47 @@ function load(): Map<string, TotalsGroup> {
   return loaded;
 }
 
-export function isTotalsLoaded(): boolean {
-  return groups != null;
-}
-
 export function getTotalsGroups(): TotalsGroup[] {
   return [...(groups ?? load()).values()];
 }
 
-// The totals of the given transactions only, to be subtracted before a change
-// writes them and added back after.
-export function readTotalsOverRows(rowsSql: string): TotalsRow[] {
-  return readTotals(`WHERE id IN ${rowsSql}`);
+// The totals of the rows a change is about to write, read before writing
+// them, or null if the totals aren't loaded or the rows couldn't be read.
+export function beginTotalsUpdate(rowsSql: string | null): TotalsRow[] | null {
+  if (!groups || rowsSql == null) {
+    return null;
+  }
+  try {
+    return readTotals(`WHERE id IN ${rowsSql}`);
+  } catch (e) {
+    logger.warn('Failed reading the transaction totals of changed rows!', e);
+    return null;
+  }
 }
 
-// Moves the totals from the changed rows as they were to as they are. Returns
-// whether a group was added. Totals not read yet will be read as they are.
-export function adjustTotals(before: TotalsRow[], after: TotalsRow[]): boolean {
-  const byKey = groups;
-  if (!byKey) {
+// Moves the totals from the changed rows as they were to as they are, or
+// reads them all again if the rows couldn't be read. Returns whether the
+// groups changed, rather than only their totals.
+export function finishTotalsUpdate(
+  before: TotalsRow[] | null,
+  rowsSql: string | null,
+): boolean {
+  if (!groups) {
     return false;
   }
-  let isAdded = false;
+  const after = before && beginTotalsUpdate(rowsSql);
+  if (!before || !after) {
+    load();
+    return true;
+  }
+  const size = groups.size;
   for (const row of before) {
-    isAdded = addRow(byKey, row, -1) || isAdded;
+    addRow(groups, row, -1);
   }
   for (const row of after) {
-    isAdded = addRow(byKey, row, 1) || isAdded;
+    addRow(groups, row, 1);
   }
-  return isAdded;
-}
-
-export function reloadTotals() {
-  load();
+  return groups.size !== size;
 }
 
 export function clearTotals() {
