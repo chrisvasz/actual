@@ -85,9 +85,10 @@ import { addNotification } from '#notifications/notificationsSlice';
 import { useCreatePayee } from '#payees';
 import * as queries from '#queries';
 import { aqlQuery } from '#queries/aqlQuery';
-import { getLiveQuery } from '#queries/liveStore';
+import { getLiveCell, getLiveQuery } from '#queries/liveStore';
 import { useDispatch, useSelector } from '#redux';
 import type { AppDispatch } from '#redux/store';
+import * as bindings from '#spreadsheet/bindings';
 import { updateNewTransactions } from '#transactions/transactionsSlice';
 import { clearPendingUndo } from '#undo';
 
@@ -820,14 +821,12 @@ class AccountInternal extends PureComponent<
   };
 
   getBalanceTotal = async (): Promise<number | null> => {
-    if (!this.canCalculateBalance() || !this.rowsQuery) {
+    const { accountId } = this.props;
+    if (accountId == null || !this.canCalculateBalance() || !this.rowsQuery) {
       return null;
     }
 
-    const { data }: { data: number | null } = await aqlQuery(
-      this.rowsQuery.options({ splits: 'none' }).calculate({ $sum: '$amount' }),
-    );
-    return data ?? 0;
+    return readAccountBalance(accountId);
   };
 
   // Running balances for the loaded rows only. Computing them for every row
@@ -2155,10 +2154,8 @@ function loadAccountPreload({
   ).getSnapshot().data;
   const data = rows ?? [];
   const total =
-    showBalances && canCalculateBalance
-      ? (runQuerySync<number | null>(
-          query.options({ splits: 'none' }).calculate({ $sum: '$amount' }),
-        ).data ?? 0)
+    accountId != null && showBalances && canCalculateBalance
+      ? readAccountBalance(accountId)
       : null;
   const filteredAmount = isFiltered
     ? runQuerySync<number>(query.calculate({ $sum: '$amount' })).data
@@ -2174,6 +2171,16 @@ function loadAccountPreload({
         : calculateRunningBalancesFromTotal(transactions, total),
     filteredAmount,
   };
+}
+
+// The balance of an account shown unfiltered, unsearched and in date order,
+// so including every row: the cell the sidebar shows, which the server keeps
+// current, rather than a sum over the account's rows on every open and edit
+function readAccountBalance(accountId: string) {
+  const { name, query } = bindings.accountBalance(accountId);
+  return (
+    getLiveCell<number | null>('account', name, query).getSnapshot().data ?? 0
+  );
 }
 
 function AccountHack(props: AccountHackProps) {
