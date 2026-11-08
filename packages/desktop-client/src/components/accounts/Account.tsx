@@ -1115,7 +1115,11 @@ class AccountInternal extends PureComponent<
   getBalanceQuery(id?: string) {
     return {
       name: `balance-query-${id}`,
-      query: this.makeRootTransactionsQuery().calculate({ $sum: '$amount' }),
+      // Sum split parents rather than their children, like the sidebar
+      // balance, so an unfinished split doesn't make the two disagree.
+      query: this.makeRootTransactionsQuery()
+        .options({ splits: 'none' })
+        .calculate({ $sum: '$amount' }),
     } as const;
   }
 
