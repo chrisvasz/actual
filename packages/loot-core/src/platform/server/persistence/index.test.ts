@@ -1,6 +1,10 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 
+import {
+  BUDGETS_DIR,
+  readLastBudget,
+} from '#platform/client/browser-preload/boot';
 import * as connection from '#platform/server/connection';
 import * as idb from '#platform/server/indexeddb';
 import * as sqlite from '#platform/server/sqlite';
@@ -231,5 +235,76 @@ describe('web persistence', () => {
     await persistence.removeFile(DB_PATH);
     expect(await persistence.listFiles()).toEqual([]);
     await expect(sqlite.openDatabase(DB_PATH)).rejects.toThrow('not found');
+  });
+});
+
+describe('the database the page read at startup', () => {
+  const LAST_BUDGET_PATH = `${BUDGETS_DIR}/last-budget/db.sqlite`;
+
+  async function createLastBudget() {
+    const db = await sqlite.openDatabase();
+    sqlite.execQuery(
+      db,
+      `CREATE TABLE notes (id TEXT PRIMARY KEY, note TEXT);
+       INSERT INTO notes VALUES ('n1', 'stored');`,
+    );
+    await persistence.writeFile(
+      LAST_BUDGET_PATH,
+      await sqlite.exportDatabase(db),
+    );
+    sqlite.closeDatabase(db);
+    const idbDb = await idb.openDatabase();
+    const trans = idbDb.transaction('asyncStorage', 'readwrite');
+    trans.objectStore('asyncStorage').put('last-budget', 'lastBudget');
+    await idb.transactionDone(trans);
+  }
+
+  it('opens the last budget from what the page read', async () => {
+    await createLastBudget();
+    const prefetched = await readLastBudget();
+    expect(prefetched?.path).toBe(LAST_BUDGET_PATH);
+    persistence.usePrefetchedDatabase(Promise.resolve(prefetched));
+
+    // Gone from storage, so it can only come from the page's copy
+    await storage.removePages(await idb.openDatabase(), LAST_BUDGET_PATH);
+    const db = await sqlite.openDatabase(LAST_BUDGET_PATH);
+    expect(readNote(db, 'n1')).toBe('stored');
+    sqlite.closeDatabase(db);
+  });
+
+  it('drops the copy when the file is replaced', async () => {
+    await createLastBudget();
+    persistence.usePrefetchedDatabase(readLastBudget());
+
+    const replacement = await sqlite.openDatabase();
+    sqlite.execQuery(
+      replacement,
+      `CREATE TABLE notes (id TEXT PRIMARY KEY, note TEXT);
+       INSERT INTO notes VALUES ('n1', 'replaced');`,
+    );
+    await persistence.writeFile(
+      LAST_BUDGET_PATH,
+      await sqlite.exportDatabase(replacement),
+    );
+    sqlite.closeDatabase(replacement);
+
+    const db = await sqlite.openDatabase(LAST_BUDGET_PATH);
+    expect(readNote(db, 'n1')).toBe('replaced');
+    sqlite.closeDatabase(db);
+  });
+
+  it('is only used for the file it was read from', async () => {
+    await createLastBudget();
+    await createDatabaseFile();
+    persistence.usePrefetchedDatabase(readLastBudget());
+
+    const db = await sqlite.openDatabase(DB_PATH);
+    expect(readNote(db, 'n1')).toBe('x'.repeat(200));
+    sqlite.closeDatabase(db);
+  });
+
+  it('reads nothing without a last budget', async () => {
+    await createDatabaseFile();
+    expect(await readLastBudget()).toBeNull();
   });
 });

@@ -130,6 +130,7 @@
     "./mocks": "./src/mocks/index.ts",
     "./platform/client/backend-worker": "./src/platform/client/backend-worker.ts",
     "./platform/client/browser-preload": "./src/platform/client/browser-preload/index.ts",
+    "./platform/client/browser-preload/boot": "./src/platform/client/browser-preload/boot.ts",
     "./platform/client/connection": {
       "api": "./src/platform/client/connection/index.api.ts",
       "main-thread": "./src/platform/client/connection/index.main-thread.ts",

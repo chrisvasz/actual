@@ -146,6 +146,36 @@ async function stagePublicData(): Promise<void> {
   );
 }
 
+// Loads `src/boot.ts` as a script of its own, ahead of the app's bundle.
+// Vite merges every module script in index.html into one entry, so it's
+// added to the page here instead. `async` runs it as soon as it arrives,
+// rather than after the app's bundle.
+const bootScript = (): Plugin => ({
+  name: 'boot-script',
+  transformIndexHtml: {
+    order: 'post',
+    handler(_html, ctx) {
+      let src = '/src/boot.ts';
+      if (ctx.bundle) {
+        const chunk = Object.values(ctx.bundle).find(
+          file => file.type === 'chunk' && file.isEntry && file.name === 'boot',
+        );
+        if (chunk == null) {
+          throw new Error('The boot entry is missing from the bundle');
+        }
+        src = '/' + chunk.fileName;
+      }
+      return [
+        {
+          tag: 'script',
+          attrs: { type: 'module', async: true, crossorigin: true, src },
+          injectTo: 'head-prepend',
+        },
+      ];
+    },
+  },
+});
+
 const lootCoreBackend = (): Plugin => ({
   name: 'loot-core-backend',
   configureServer(server) {
@@ -297,6 +327,11 @@ export default defineConfig(async ({ mode, command }) => {
       assetsInlineLimit: 0,
       chunkSizeWarningLimit: 1500,
       rolldownOptions: {
+        // `boot` is a script of its own (see `bootScript`)
+        input: {
+          index: path.resolve(__dirname, 'index.html'),
+          boot: path.resolve(__dirname, 'src/boot.ts'),
+        },
         output: {
           // Users debug from raw stack traces, so compress and strip
           // whitespace but never mangle identifiers (overrides the
@@ -346,6 +381,7 @@ export default defineConfig(async ({ mode, command }) => {
       conditions: ['main-thread', ...defaultClientConditions],
     },
     plugins: [
+      bootScript(),
       VitePWA({
         registerType: 'prompt',
         // TODO:  The plugin worker build is currently disabled due to issues with offline support. Fix this
