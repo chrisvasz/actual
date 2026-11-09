@@ -146,6 +146,49 @@ async function stagePublicData(): Promise<void> {
   );
 }
 
+// Fetches the backend, SQLite's wasm and the data file index while the
+// app's own bundle loads, instead of after it has run
+const preloadBackend = (): Plugin => ({
+  name: 'preload-backend',
+  transformIndexHtml() {
+    const hash = process.env.REACT_APP_BACKEND_HASH;
+    if (hash == null || hash === 'dev') {
+      return [];
+    }
+    // The base is '/' (see below), as is the backend's PUBLIC_URL
+    return [
+      {
+        tag: 'link',
+        attrs: { rel: 'modulepreload', href: `/kcab/kcab.backend.${hash}.js` },
+        injectTo: 'head',
+      },
+      // `crossorigin` makes these match the backend's `fetch()`es, so the
+      // preloaded responses are used
+      {
+        tag: 'link',
+        attrs: {
+          rel: 'preload',
+          href: '/sqlite3.wasm',
+          as: 'fetch',
+          type: 'application/wasm',
+          crossorigin: '',
+        },
+        injectTo: 'head',
+      },
+      {
+        tag: 'link',
+        attrs: {
+          rel: 'preload',
+          href: '/data-file-index.txt',
+          as: 'fetch',
+          crossorigin: '',
+        },
+        injectTo: 'head',
+      },
+    ];
+  },
+});
+
 const lootCoreBackend = (): Plugin => ({
   name: 'loot-core-backend',
   configureServer(server) {
@@ -346,6 +389,7 @@ export default defineConfig(async ({ mode, command }) => {
       conditions: ['main-thread', ...defaultClientConditions],
     },
     plugins: [
+      preloadBackend(),
       VitePWA({
         registerType: 'prompt',
         // TODO:  The plugin worker build is currently disabled due to issues with offline support. Fix this

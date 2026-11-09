@@ -7,7 +7,8 @@ import { _setDocumentDir as _setDocumentDirShared } from './shared';
 // persisted root (`/documents` or a custom document dir) are only
 // placeholders there: their contents live in IndexedDB (see
 // `#platform/server/persistence`). Everything else (bundled data,
-// uploads) only exists in memory.
+// uploads) only exists in memory; bundled data is fetched the first time
+// it's read.
 
 // A file's contents are null when they're persisted
 type Entry = { type: 'dir' } | { type: 'file'; contents: Uint8Array | null };
@@ -113,7 +114,10 @@ export async function readFile(
     getFile(filepath);
     contents = await readPersisted(filepath);
   } else {
-    contents = getFile(filepath) ?? new Uint8Array();
+    contents =
+      getFile(filepath) ??
+      (await fetchDefaultFile(filepath)) ??
+      new Uint8Array();
   }
   return encoding === 'utf8' ? new TextDecoder().decode(contents) : contents;
 }
@@ -134,6 +138,7 @@ export const writeFile = async function (
     putFile(filepath, null);
   } else {
     putFile(filepath, bytes.slice());
+    unfetchedFiles.delete(normalize(filepath));
   }
   return true;
 };
@@ -144,6 +149,7 @@ export const removeFile = async function (filepath: string) {
   }
   getFile(filepath);
   getEntries().delete(normalize(filepath));
+  unfetchedFiles.delete(normalize(filepath));
 };
 
 export const copyFile = async function (
@@ -153,7 +159,8 @@ export const copyFile = async function (
   return writeFile(topath, await readFile(frompath, 'binary'));
 };
 
-// Load files from the server that should exist by default
+// Lists the files the server ships (migrations, the default database, the
+// demo budget)
 async function populateDefaultFilesystem() {
   const index = await (
     await fetch(process.env.PUBLIC_URL + 'data-file-index.txt')
@@ -162,7 +169,6 @@ async function populateDefaultFilesystem() {
     .split('\n')
     .map(name => name.trim())
     .filter(name => name !== '');
-  const fetchFile = (url: string) => fetch(url).then(res => res.arrayBuffer());
 
   // This is hardcoded. We know we must create the migrations
   // directory, it's not worth complicating the index to support
@@ -170,13 +176,38 @@ async function populateDefaultFilesystem() {
   await mkdir('/migrations');
   await mkdir('/demo-budget');
 
-  await Promise.all(
-    files.map(async file => {
-      const contents = await fetchFile(process.env.PUBLIC_URL + 'data/' + file);
-      // `.data` lets shipped JS files escape bundler import-analysis.
-      await writeFile('/' + file.replace(/\.data$/, ''), contents);
-    }),
-  );
+  // Only their names are needed up front: a file is fetched the first time
+  // it's read
+  for (const file of files) {
+    // `.data` lets shipped JS files escape bundler import-analysis.
+    const path = normalize('/' + file.replace(/\.data$/, ''));
+    putFile(path, null);
+    unfetchedFiles.set(path, process.env.PUBLIC_URL + 'data/' + file);
+  }
+}
+
+// Default files whose contents haven't been fetched yet: path → URL.
+// Writing or removing one drops it from here.
+const unfetchedFiles = new Map<string, string>();
+
+// Fetches a default file's contents on its first read. Null when the
+// file isn't an unfetched default file.
+async function fetchDefaultFile(filepath: string): Promise<Uint8Array | null> {
+  const path = normalize(filepath);
+  const url = unfetchedFiles.get(path);
+  if (url == null) {
+    return null;
+  }
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch ${url}: ${res.status}`);
+  }
+  const contents = new Uint8Array(await res.arrayBuffer());
+  // Unless the file was written or removed while it was being fetched
+  if (unfetchedFiles.delete(path)) {
+    putFile(path, contents);
+  }
+  return contents;
 }
 
 // Recreate placeholders for every persisted file
@@ -189,6 +220,7 @@ async function populateFileHierarchy() {
 
 export const init = async function () {
   entries = new Map();
+  unfetchedFiles.clear();
   await persistence.init();
 
   // When a user "uploads" a file, we just put it in memory in this
@@ -243,7 +275,11 @@ export const size = async function (filepath: string) {
   if (persistence.isPersistedPath(filepath)) {
     return (await readPersisted(filepath)).byteLength;
   }
-  return (getFile(filepath) ?? new Uint8Array()).byteLength;
+  return (
+    getFile(filepath) ??
+    (await fetchDefaultFile(filepath)) ??
+    new Uint8Array()
+  ).byteLength;
 };
 
 export const removeDir = async function (filepath: string) {
