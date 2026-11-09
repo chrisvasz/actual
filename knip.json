@@ -45,7 +45,8 @@
         "bin/*.mjs",
         "globals.ts",
         "src/globals.ts",
-        "src/build-shims.js"
+        "src/build-shims.js",
+        "src/boot.ts"
       ],
       "ignore": ["playwright.config.d.ts"],
       "ignoreDependencies": ["plugins-service"]
