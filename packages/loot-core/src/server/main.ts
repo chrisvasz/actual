@@ -1,4 +1,5 @@
 // @ts-strict-ignore
+import type { PrefetchedDatabase } from '#platform/client/browser-preload/boot';
 import * as asyncStorage from '#platform/server/asyncStorage';
 import * as connection from '#platform/server/connection';
 import * as fs from '#platform/server/fs';
@@ -197,8 +198,16 @@ async function ensureUsable(dir) {
 }
 
 // Starts the browser app's backend. `channel` is the in-process channel
-// the page talks to it over.
-export async function initApp(isDev, channel) {
+// the page talks to it over; `prefetchedDatabase` is the last open
+// budget's database, as the page started reading it.
+export async function initApp(
+  isDev,
+  channel,
+  prefetchedDatabase?: Promise<PrefetchedDatabase | null>,
+) {
+  if (prefetchedDatabase) {
+    persistence.usePrefetchedDatabase(prefetchedDatabase);
+  }
   await sqlite.init();
   asyncStorage.init();
   await fs.init();

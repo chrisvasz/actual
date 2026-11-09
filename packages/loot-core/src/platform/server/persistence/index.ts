@@ -21,6 +21,7 @@
 // starting the backend (`platform/client/browser-preload/start.ts`). Web
 // Locks need a secure context, so `init` refuses to run without one.
 
+import type { PrefetchedDatabase } from '#platform/client/browser-preload/boot';
 import { captureException } from '#platform/exceptions';
 import * as connection from '#platform/server/connection';
 import * as idb from '#platform/server/indexeddb';
@@ -89,8 +90,31 @@ type OpenDatabase = {
 
 const open = new Map<string, OpenDatabase>();
 
+// The last open budget's database, as the page read it at startup (see
+// `platform/client/browser-preload/boot.ts`). The page held the Web Lock
+// while reading, so no other tab has changed the file since; only this
+// backend could, so writing or removing it here drops the copy. The first
+// `loadDatabase` uses it or drops it.
+let prefetched: Promise<PrefetchedDatabase | null> | null = null;
+
+export function usePrefetchedDatabase(
+  database: Promise<PrefetchedDatabase | null>,
+) {
+  prefetched = database;
+}
+
+async function takePrefetched(path: string): Promise<Uint8Array | null> {
+  const database = await prefetched;
+  prefetched = null;
+  return database?.path === path ? storage.joinPages(database.pages) : null;
+}
+
 // Reads the database file at `path`
 export async function loadDatabase(path: string): Promise<Uint8Array> {
+  const fromPrefetch = await takePrefetched(path);
+  if (fromPrefetch) {
+    return fromPrefetch;
+  }
   const bytes = await storage.readPages(getStorage(), path);
   if (bytes == null) {
     throw new Error('Database file not found: ' + path);
@@ -212,6 +236,7 @@ function assertNotOpen(path: string, action: string) {
 export async function writeFile(path: string, bytes: Uint8Array) {
   if (isDatabasePath(path)) {
     assertNotOpen(path, 'replace');
+    prefetched = null;
     await writeWholeFile(path, bytes);
   } else {
     await storage.writeFile(getStorage(), path, bytes);
@@ -221,6 +246,7 @@ export async function writeFile(path: string, bytes: Uint8Array) {
 export async function removeFile(path: string) {
   if (isDatabasePath(path)) {
     assertNotOpen(path, 'remove');
+    prefetched = null;
     await storage.removePages(getStorage(), path);
   } else {
     await storage.removeFile(getStorage(), path);

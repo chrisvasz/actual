@@ -68,9 +68,11 @@ export async function readPages(
   const pages = await idb.promisifyRequest<Uint8Array[]>(
     store.getAll(pageRange(path)),
   );
-  if (pages.length === 0) {
-    return null;
-  }
+  return pages.length === 0 ? null : joinPages(pages);
+}
+
+// Joins a file's pages, in order, into the whole file
+export function joinPages(pages: Uint8Array[]): Uint8Array {
   const bytes = new Uint8Array(
     pages.reduce((size, page) => size + page.byteLength, 0),
   );

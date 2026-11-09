@@ -3,6 +3,8 @@ import type { InProcessChannel } from '#platform/in-process-channel';
 import { logger } from '#platform/server/log';
 import type * as Backend from '#server/main';
 
+import { startBoot } from './boot';
+
 export type StartBackendOptions = {
   /** URL of the backend bundle, an ES module exporting `initApp`. */
   backendUrl: string;
@@ -27,13 +29,6 @@ function initFailure(
   });
 }
 
-// Only one tab at a time may run the backend. The backend keeps the open
-// budget in memory and owns its snapshots and outbox; a second tab would
-// load its own copy, and the two would drift apart and overwrite each
-// other's snapshots. The tab that gets this lock holds it until the page
-// unloads.
-const BACKEND_LOCK_NAME = 'actual-backend';
-
 // The dev build of the page can be up before the backend's first build
 // finishes, so keep trying for a while
 const DEV_IMPORT_RETRIES = 5;
@@ -55,7 +50,10 @@ export async function startBrowserBackend({
   if (!window.isSecureContext) {
     return 'insecure-context';
   }
-  if (!(await acquireBackendLock())) {
+  // Only one tab may run the backend (see ./boot). The page usually
+  // started this already.
+  const { hasLock, database } = await startBoot();
+  if (!hasLock) {
     return 'already-open';
   }
 
@@ -75,7 +73,7 @@ export async function startBrowserBackend({
 
   const channel = createInProcessChannel();
   try {
-    await backend.initApp(isDev, channel);
+    await backend.initApp(isDev, channel, database);
   } catch (error) {
     logger.error('Failed starting the backend:', error);
     throw initFailure('Failed starting the backend', error, {
@@ -119,23 +117,5 @@ function afterNextPaint(): Promise<void> {
       clearTimeout(fallback);
       setTimeout(resolve, 0);
     });
-  });
-}
-
-function acquireBackendLock(): Promise<boolean> {
-  return new Promise(resolve => {
-    navigator.locks
-      .request(BACKEND_LOCK_NAME, { ifAvailable: true }, lock => {
-        resolve(lock !== null);
-        if (!lock) {
-          return;
-        }
-        return new Promise<never>(() => {
-          // Never settle, so the lock is held for the life of the page.
-        });
-      })
-      // The request rejects when the browser blocks storage for this site.
-      // Start anyway so the backend reports the real storage error.
-      .catch(() => resolve(true));
   });
 }
