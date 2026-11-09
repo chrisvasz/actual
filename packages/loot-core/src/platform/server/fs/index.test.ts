@@ -139,6 +139,57 @@ describe('web filesystem', () => {
   });
 });
 
+describe('default files', () => {
+  const served: Record<string, string> = {
+    '/data-file-index.txt': 'migrations/1_init.sql\ndefault-db.sqlite\n',
+    '/data/migrations/1_init.sql': 'CREATE TABLE t (id TEXT);',
+    '/data/default-db.sqlite': 'db',
+  };
+  let fetched: string[];
+
+  beforeEach(() => {
+    fetched = [];
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('PUBLIC_URL', '/');
+    vi.stubGlobal('fetch', async (url: string) => {
+      fetched.push(url);
+      return new Response(served[url], { status: url in served ? 200 : 404 });
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  test('are listed at startup and fetched on first read', async () => {
+    await init();
+    expect(fetched).toEqual(['/data-file-index.txt']);
+    expect(await listDir('/migrations')).toEqual(['1_init.sql']);
+
+    expect(await readFile('/migrations/1_init.sql')).toBe(
+      'CREATE TABLE t (id TEXT);',
+    );
+    expect(await readFile('/migrations/1_init.sql')).toBe(
+      'CREATE TABLE t (id TEXT);',
+    );
+    expect(await size('/default-db.sqlite')).toBe(2);
+    expect(fetched).toEqual([
+      '/data-file-index.txt',
+      '/data/migrations/1_init.sql',
+      '/data/default-db.sqlite',
+    ]);
+  });
+
+  test('a write before the first read replaces the default', async () => {
+    await init();
+    const reading = readFile('/default-db.sqlite');
+    await writeFile('/default-db.sqlite', 'mine');
+    expect(await reading).toBe('db');
+    expect(await readFile('/default-db.sqlite')).toBe('mine');
+  });
+});
+
 describe('join', () => {
   test('basic join works', () => {
     expect(join('foo', 'bar')).toBe('foo/bar');

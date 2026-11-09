@@ -199,10 +199,8 @@ async function ensureUsable(dir) {
 // Starts the browser app's backend. `channel` is the in-process channel
 // the page talks to it over.
 export async function initApp(isDev, channel) {
-  await sqlite.init();
   asyncStorage.init();
-  await fs.init();
-  await setupDocumentsDir();
+  await Promise.all([sqlite.init(), fs.init().then(() => setupDocumentsDir())]);
 
   const keysStr = await asyncStorage.getItem('encrypt-keys');
   if (keysStr) {
