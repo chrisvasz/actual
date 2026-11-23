@@ -30,6 +30,7 @@ export function IncomeMenu({
         onMenuSelect={name => {
           switch (name) {
             case 'view':
+              onClose();
               onShowActivity(categoryId, month);
               break;
             case 'carryover':
