@@ -3,10 +3,9 @@ import { logger } from '#platform/server/log';
 import { handlers } from '#server/main';
 
 import { importActual } from './actual';
-import * as YNAB4 from './ynab4';
 import * as YNAB5 from './ynab5';
 
-export type ImportableBudgetType = 'ynab4' | 'ynab5' | 'actual';
+export type ImportableBudgetType = 'ynab5' | 'actual';
 
 type Importer = {
   parseFile(buffer: Buffer): unknown;
@@ -15,7 +14,6 @@ type Importer = {
 };
 
 const importers: Record<Exclude<ImportableBudgetType, 'actual'>, Importer> = {
-  ynab4: YNAB4,
   ynab5: YNAB5,
 };
 

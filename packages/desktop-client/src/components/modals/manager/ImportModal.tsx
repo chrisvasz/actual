@@ -15,11 +15,8 @@ export function ImportModal() {
   const dispatch = useDispatch();
   const [error] = useState(false);
 
-  function onSelectType(type: 'ynab4' | 'ynab5' | 'actual') {
+  function onSelectType(type: 'ynab5' | 'actual') {
     switch (type) {
-      case 'ynab4':
-        dispatch(pushModal({ modal: { name: 'import-ynab4' } }));
-        break;
       case 'ynab5':
         dispatch(pushModal({ modal: { name: 'import-ynab5' } }));
         break;
@@ -30,13 +27,8 @@ export function ImportModal() {
     }
   }
 
-  function getErrorMessage(error: 'not-ynab4' | boolean) {
-    switch (error) {
-      case 'not-ynab4':
-        return 'This file is not valid. Please select a .ynab4 file';
-      default:
-        return 'An unknown error occurred while importing. Please report this as a new issue on GitHub.';
-    }
+  function getErrorMessage() {
+    return 'An unknown error occurred while importing. Please report this as a new issue on GitHub.';
   }
   const itemStyle = {
     padding: 10,
@@ -57,7 +49,7 @@ export function ImportModal() {
           <View style={{ ...styles.smallText, lineHeight: 1.5 }}>
             {error && (
               <Block style={{ color: theme.errorText, marginBottom: 15 }}>
-                {getErrorMessage(error)}
+                {getErrorMessage()}
               </Block>
             )}
 
@@ -66,12 +58,6 @@ export function ImportModal() {
               process.
             </Text>
 
-            <Button style={itemStyle} onPress={() => onSelectType('ynab4')}>
-              <span style={{ fontWeight: 700 }}>YNAB4</span>
-              <View style={{ color: theme.pageTextLight }}>
-                The old unsupported desktop app
-              </View>
-            </Button>
             <Button style={itemStyle} onPress={() => onSelectType('ynab5')}>
               <span style={{ fontWeight: 700 }}>nYNAB</span>
               <View style={{ color: theme.pageTextLight }}>

@@ -54,7 +54,7 @@ export async function getBudgets() {
 
 /**
  * Import a budget from an exported file — an Actual `.zip` export, or a
- * YNAB4/YNAB5 export. Accepts either a path to the file on the engine's
+ * YNAB5 (nYNAB) export. Accepts either a path to the file on the engine's
  * filesystem, or the raw file contents. Loads the imported budget and
  * returns its id.
  */

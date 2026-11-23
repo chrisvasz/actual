@@ -55,22 +55,11 @@ export class ConfigurationPage {
     return budgetPage;
   }
 
-  async importBudget(type: 'YNAB4' | 'nYNAB' | 'Actual', file: string) {
+  async importBudget(type: 'nYNAB' | 'Actual', file: string) {
     const fileChooserPromise = this.page.waitForEvent('filechooser');
     await this.page.getByRole('button', { name: 'Import my budget' }).click();
 
     switch (type) {
-      case 'YNAB4':
-        await this.page
-          .getByRole('button', {
-            name: 'YNAB4 The old unsupported desktop app',
-          })
-          .click();
-        await this.page
-          .getByRole('button', { name: 'Select zip file...' })
-          .click();
-        break;
-
       case 'nYNAB':
         await this.page
           .getByRole('button', { name: 'nYNAB The newer web app' })

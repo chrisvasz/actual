@@ -32,23 +32,6 @@ test.describe('Onboarding', () => {
     await expect(page).toMatchThemeScreenshots();
   });
 
-  test('creates a new budget file by importing YNAB4 budget', async () => {
-    const budgetPage = await configurationPage.importBudget(
-      'YNAB4',
-      path.resolve(__dirname, 'data/ynab4-demo-budget.zip'),
-    );
-
-    await expect(budgetPage.budgetTable).toBeVisible({ timeout: 30000 });
-
-    const accountPage = await navigation.goToAccountPage(
-      'Account1 with Starting Balance',
-    );
-    await expect(accountPage.accountBalance).toHaveText('-400.00');
-
-    await navigation.goToAccountPage('Account2 no Starting Balance');
-    await expect(accountPage.accountBalance).toHaveText('2,607.00');
-  });
-
   test('creates a new budget file by importing nYNAB budget', async () => {
     const budgetPage = await configurationPage.importBudget(
       'nYNAB',
