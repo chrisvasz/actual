@@ -609,8 +609,10 @@ export async function transferCategory({
   });
 }
 
-// Sets whether a category's overspending in `month` rolls into the next
-// month's balance. The flag applies to that one month only.
+// Sets whether a category's balance in `month` rolls into the next month
+// (overspending for expense categories, auto-hold for income). Turning it on
+// affects only that month. Turning it off also clears later months, so
+// budgets from before the flag became per-month don't keep rolling over.
 export async function setCategoryCarryover({
   month,
   category,
@@ -620,7 +622,24 @@ export async function setCategoryCarryover({
   category: string;
   flag: boolean;
 }): Promise<void> {
-  setCarryover(category, dbMonth(month).toString(), flag);
+  if (flag) {
+    setCarryover(category, dbMonth(month).toString(), true);
+    return;
+  }
+
+  const start = dbMonth(month);
+  const later = db.all<Pick<db.DbZeroBudget, 'month'>>(
+    `SELECT month FROM zero_budgets
+     WHERE category = ? AND month > ? AND carryover = 1`,
+    [category, start],
+  );
+
+  batchMessages(() => {
+    setCarryover(category, start.toString(), false);
+    for (const row of later) {
+      setCarryover(category, row.month.toString(), false);
+    }
+  });
 }
 
 export async function resetIncomeCarryover({

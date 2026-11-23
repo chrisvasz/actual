@@ -99,6 +99,23 @@ describe('setCategoryCarryover', () => {
       toBudgetBefore - 20,
     );
   });
+
+  it('turning the flag off also clears it in later months', async () => {
+    await prepareDatabase();
+    for (const month of ['2024-02', '2024-03']) {
+      await setCategoryCarryover({ month, category: 'cat2', flag: true });
+    }
+
+    await setCategoryCarryover({
+      month: '2024-02',
+      category: 'cat2',
+      flag: false,
+    });
+
+    expect(await getSheetBoolean('budget202401', 'carryover-cat2')).toBe(true);
+    expect(await getSheetBoolean('budget202402', 'carryover-cat2')).toBe(false);
+    expect(await getSheetBoolean('budget202403', 'carryover-cat2')).toBe(false);
+  });
 });
 
 describe('coverOverbudgeted', () => {

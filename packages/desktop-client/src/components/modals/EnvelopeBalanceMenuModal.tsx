@@ -71,8 +71,9 @@ export function EnvelopeBalanceMenuModal({
               isDisabled
               carryover={envelopeBudget.catCarryover(categoryId)}
               balance={envelopeBudget.catBalance(categoryId)}
-              CarryoverIndicator={({ style }) => (
+              CarryoverIndicator={({ style, label }) => (
                 <CarryoverIndicator
+                  label={label}
                   style={{
                     width: 15,
                     height: 15,

@@ -24,6 +24,7 @@ export function CarryoverIndicator({ style, label }: CarryoverIndicatorProps) {
 
   return (
     <View
+      role={label ? 'img' : undefined}
       aria-label={label}
       style={{
         position: 'absolute',

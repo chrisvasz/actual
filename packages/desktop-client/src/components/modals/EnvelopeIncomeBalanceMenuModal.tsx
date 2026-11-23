@@ -76,8 +76,9 @@ export function EnvelopeIncomeBalanceMenuModal({
               carryover={envelopeBudget.catCarryover(categoryId)}
               balance={envelopeBudget.catSumAmount(categoryId)}
               carryoverLabel="Income is held for next month"
-              CarryoverIndicator={({ style }) => (
+              CarryoverIndicator={({ style, label }) => (
                 <CarryoverIndicator
+                  label={label}
                   style={{
                     width: 15,
                     height: 15,
