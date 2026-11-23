@@ -21,10 +21,6 @@ export function ImportActualModal() {
 
   function getErrorMessage(error: string): string {
     switch (error) {
-      case 'parse-error':
-        return 'Unable to parse file. Please select a JSON file exported from nYNAB.';
-      case 'not-ynab5':
-        return 'This file is not valid. Please select a JSON file exported from nYNAB.';
       case 'not-zip-file':
         return 'This file is not valid. Please select an unencrypted archive of Actual data.';
       case 'invalid-zip-file':

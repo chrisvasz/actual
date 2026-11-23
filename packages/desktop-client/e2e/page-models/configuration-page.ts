@@ -55,30 +55,11 @@ export class ConfigurationPage {
     return budgetPage;
   }
 
-  async importBudget(type: 'nYNAB' | 'Actual', file: string) {
+  async importBudget(file: string) {
     const fileChooserPromise = this.page.waitForEvent('filechooser');
     await this.page.getByRole('button', { name: 'Import my budget' }).click();
 
-    switch (type) {
-      case 'nYNAB':
-        await this.page
-          .getByRole('button', { name: 'nYNAB The newer web app' })
-          .click();
-        await this.page.getByRole('button', { name: 'Select file...' }).click();
-        break;
-
-      case 'Actual':
-        await this.page
-          .getByRole('button', {
-            name: 'Actual Import a file exported from Actual',
-          })
-          .click();
-        await this.page.getByRole('button', { name: 'Select file...' }).click();
-        break;
-
-      default:
-        throw new Error(`Unrecognized import type: ${String(type)}`);
-    }
+    await this.page.getByRole('button', { name: 'Select file...' }).click();
 
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(file);

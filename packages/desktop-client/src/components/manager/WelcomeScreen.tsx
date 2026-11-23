@@ -146,12 +146,14 @@ export function WelcomeScreen() {
         }}
       >
         <Text style={{ color: theme.pageTextLight }}>
-          Coming from another budgeting app?
+          Have a budget exported from Actual?
         </Text>
         <Button
           variant="bare"
           style={{ color: theme.pageTextLink }}
-          onPress={() => dispatch(pushModal({ modal: { name: 'import' } }))}
+          onPress={() =>
+            dispatch(pushModal({ modal: { name: 'import-actual' } }))
+          }
         >
           Import my budget
         </Button>

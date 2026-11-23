@@ -32,50 +32,8 @@ test.describe('Onboarding', () => {
     await expect(page).toMatchThemeScreenshots();
   });
 
-  test('creates a new budget file by importing nYNAB budget', async () => {
-    const budgetPage = await configurationPage.importBudget(
-      'nYNAB',
-      path.resolve(__dirname, 'data/ynab5-demo-budget.json'),
-    );
-
-    await expect(budgetPage.budgetTable).toBeVisible({ timeout: 30000 });
-
-    const accountPage = await navigation.goToAccountPage('Checking');
-    await expect(accountPage.accountBalance).toHaveText('2,600.00');
-
-    await navigation.goToAccountPage('Saving');
-    await expect(accountPage.accountBalance).toHaveText('250.00');
-
-    await navigation.goToSchedulesPage();
-    const scheduleRows = page.getByTestId('table').getByTestId('row');
-    const scheduleNames = [
-      'Scheduled - repeated every four weeks',
-      'Scheduled - repeated every other week',
-      'Scheduled - repeated every other year',
-      'Scheduled - repeated every four months',
-      'Scheduled - repeated twice a month',
-      'Scheduled - repeated monthly',
-      'Scheduled - repeated weekly',
-      'Scheduled - not repeated',
-      'Scheduled - repeated twice a year',
-      'Scheduled - repeated yearly',
-      'Scheduled - repeated every other month',
-      'Scheduled - repeated every three months',
-      'Scheduled - repeated daily',
-      'Scheduled - split categories monthly',
-      'Scheduled - transfer to Saving',
-    ];
-
-    for (const scheduleName of scheduleNames) {
-      await expect(scheduleRows.filter({ hasText: scheduleName })).toHaveCount(
-        1,
-      );
-    }
-  });
-
   test('creates a new budget file by importing Actual budget', async () => {
     const budgetPage = await configurationPage.importBudget(
-      'Actual',
       path.resolve(__dirname, 'data/actual-demo-budget.zip'),
     );
 

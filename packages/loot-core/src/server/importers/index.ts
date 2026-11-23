@@ -1,56 +1,15 @@
-// @ts-strict-ignore
-import { logger } from '#platform/server/log';
-import { handlers } from '#server/main';
-
 import { importActual } from './actual';
-import * as YNAB5 from './ynab5';
 
-export type ImportableBudgetType = 'ynab5' | 'actual';
-
-type Importer = {
-  parseFile(buffer: Buffer): unknown;
-  getBudgetName(filepath: string, data: unknown): string | null;
-  doImport(data: unknown): Promise<void>;
-};
-
-const importers: Record<Exclude<ImportableBudgetType, 'actual'>, Importer> = {
-  ynab5: YNAB5,
-};
+export type ImportableBudgetType = 'actual';
 
 export async function handleBudgetImport(
   type: ImportableBudgetType,
   filepath: string,
   buffer: Buffer,
 ) {
-  if (type === 'actual') {
-    return importActual(filepath, buffer);
+  // API callers may still pass a type that used to be supported, like 'ynab5'.
+  if (type !== 'actual') {
+    return { error: 'unsupported-type' };
   }
-  const importer = importers[type];
-  try {
-    let data;
-    let budgetName: string;
-    try {
-      data = importer.parseFile(buffer);
-      budgetName = importer.getBudgetName(filepath, data);
-    } catch (e) {
-      logger.error('failed to parse file', e);
-    }
-    if (!budgetName) {
-      return { error: 'not-' + type };
-    }
-
-    try {
-      await handlers['api/start-import']({ budgetName });
-    } catch (e) {
-      logger.error('failed to start import', e);
-      return { error: 'unknown' };
-    }
-    await importer.doImport(data);
-  } catch (e) {
-    await handlers['api/abort-import']();
-    logger.error('failed to run import', e);
-    return { error: 'unknown' };
-  }
-
-  await handlers['api/finish-import']();
+  return importActual(filepath, buffer);
 }
