@@ -1,47 +1,16 @@
 // @ts-strict-ignore
 import React from 'react';
-import type {
-  ComponentPropsWithoutRef,
-  ComponentType,
-  CSSProperties,
-} from 'react';
+import type { ComponentPropsWithoutRef, ComponentType } from 'react';
 
-import { SvgArrowThinRight } from '@actual-app/components/icons/v1';
-import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 
 import { CellValue, CellValueText } from '#components/spreadsheet/CellValue';
 import { useSheetValue } from '#hooks/useSheetValue';
 import type { Binding } from '#spreadsheet';
 
+import { CarryoverIndicator } from './CarryoverIndicator';
+import type { CarryoverIndicatorProps } from './CarryoverIndicator';
 import { makeBalanceAmountStyle } from './util';
-
-type CarryoverIndicatorProps = {
-  style?: CSSProperties;
-};
-
-export function CarryoverIndicator({ style }: CarryoverIndicatorProps) {
-  return (
-    <View
-      style={{
-        marginLeft: 2,
-        position: 'absolute',
-        right: '-4px',
-        alignSelf: 'center',
-        justifyContent: 'center',
-        top: 0,
-        bottom: 0,
-        ...style,
-      }}
-    >
-      <SvgArrowThinRight
-        width={style?.width || 7}
-        height={style?.height || 7}
-        style={style}
-      />
-    </View>
-  );
-}
 
 type CellValueChildren = ComponentPropsWithoutRef<typeof CellValue>['children'];
 
@@ -63,6 +32,8 @@ type BalanceWithCarryoverProps = Omit<
    */
   balance: Binding<'envelope-budget', 'leftover' | 'sum-amount'>;
   isDisabled?: boolean;
+  /** What the carryover flag does, shown when hovering its indicator. */
+  carryoverLabel?: string;
   CarryoverIndicator?: ComponentType<CarryoverIndicatorProps>;
 };
 
@@ -70,6 +41,7 @@ export function BalanceWithCarryover({
   carryover,
   balance,
   isDisabled,
+  carryoverLabel = 'Overspending rolls over to next month',
   CarryoverIndicator: CarryoverIndicatorComponent = CarryoverIndicator,
   children,
   ...props
@@ -110,6 +82,7 @@ export function BalanceWithCarryover({
 
           {carryoverValue && (
             <CarryoverIndicatorComponent
+              label={carryoverLabel}
               style={makeBalanceAmountStyle(balanceValue)}
             />
           )}

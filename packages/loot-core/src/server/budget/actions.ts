@@ -7,7 +7,7 @@ import { safeNumber } from '#shared/util';
 import type { IntegerAmount } from '#shared/util';
 import type { CategoryEntity } from '#types/models';
 
-import { getBudgetCellValue, getBudgetMonths } from './state';
+import { getBudgetCellValue } from './state';
 
 export async function getSheetValue(
   sheetName: string,
@@ -73,11 +73,6 @@ function getBudgetData(month: string): BudgetData[] {
   `,
     [month],
   );
-}
-
-function getAllMonths(startMonth: string): string[] {
-  const months = getBudgetMonths();
-  return monthUtils.rangeInclusive(startMonth, months[months.length - 1]);
 }
 
 // TODO: Valid month format in all the functions below
@@ -614,22 +609,18 @@ export async function transferCategory({
   });
 }
 
+// Sets whether a category's overspending in `month` rolls into the next
+// month's balance. The flag applies to that one month only.
 export async function setCategoryCarryover({
-  startMonth,
+  month,
   category,
   flag,
 }: {
-  startMonth: string;
+  month: string;
   category: string;
   flag: boolean;
 }): Promise<void> {
-  const months = getAllMonths(startMonth);
-
-  batchMessages(() => {
-    for (const month of months) {
-      setCarryover(category, dbMonth(month).toString(), flag);
-    }
-  });
+  setCarryover(category, dbMonth(month).toString(), flag);
 }
 
 export async function resetIncomeCarryover({

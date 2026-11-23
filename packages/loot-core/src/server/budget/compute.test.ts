@@ -323,13 +323,13 @@ describe('computeBudget', () => {
       actions.setBudget({ category: cat2, month: month(), amount: 0 });
       await expectMatches();
       await actions.setCategoryCarryover({
-        startMonth: monthUtils.subMonths(month(), 6),
+        month: monthUtils.subMonths(month(), 6),
         category: cat1,
         flag: true,
       });
       await expectMatches();
       await actions.setCategoryCarryover({
-        startMonth: month(),
+        month: month(),
         category: cat1,
         flag: false,
       });
@@ -339,7 +339,7 @@ describe('computeBudget', () => {
       await actions.resetHold({ month: month() });
       await expectMatches();
       await actions.setCategoryCarryover({
-        startMonth: month(),
+        month: month(),
         category: 'income-bonus',
         flag: true,
       });
@@ -472,7 +472,7 @@ describe('computeBudget', () => {
       getComputedBudget();
       // ...while stored amounts keep changing
       await actions.setCategoryCarryover({
-        startMonth: month(),
+        month: month(),
         category: 'income-bonus',
         flag: true,
       });

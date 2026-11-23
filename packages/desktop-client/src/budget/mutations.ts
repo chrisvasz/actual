@@ -567,7 +567,7 @@ async function sendBudgetAction({
       break;
     case 'carryover': {
       await send('budget/set-carryover', {
-        startMonth: month,
+        month,
         category: args.category,
         flag: args.flag,
       });

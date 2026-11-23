@@ -423,7 +423,7 @@ handlers['api/budget-set-carryover'] = withMutation(async function ({
   await validateMonth(month);
   validateExpenseCategory('budget-set-carryover', categoryId);
   return handlers['budget/set-carryover']({
-    startMonth: month,
+    month,
     category: categoryId,
     flag,
   });
