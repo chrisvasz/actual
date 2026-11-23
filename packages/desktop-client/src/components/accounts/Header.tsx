@@ -247,37 +247,29 @@ export function AccountHeader({
       <View style={{ ...styles.pageContent, paddingBottom: 10, flexShrink: 0 }}>
         <View
           style={{
-            flexDirection: 'column',
+            flexDirection: 'row',
             marginTop: 2,
             justifyContent: 'space-between',
+            alignItems: 'flex-start',
             gap: 10,
           }}
         >
           <View
             style={{
               flexGrow: 1,
+              flexShrink: 1,
+              minWidth: 0,
               alignItems: 'flex-start',
               gap: 10,
             }}
           >
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 3,
-              }}
-            >
-              <AccountNameField
-                account={account}
-                accountName={accountName}
-                isNameEditable={isNameEditable}
-                saveNameError={saveNameError}
-                onSaveName={onSaveName}
-              />
-              <View style={{ marginLeft: 7, flexDirection: 'row', gap: 7 }}>
-                <UncategorizedChip />
-              </View>
-            </View>
+            <AccountNameField
+              account={account}
+              accountName={accountName}
+              isNameEditable={isNameEditable}
+              saveNameError={saveNameError}
+              onSaveName={onSaveName}
+            />
 
             <Balances
               balanceQuery={balanceQuery}
@@ -285,6 +277,9 @@ export function AccountHeader({
               isFiltered={isFiltered}
               filteredAmount={filteredAmount}
             />
+          </View>
+          <View style={{ flexShrink: 0 }}>
+            <UncategorizedChip />
           </View>
         </View>
         <SpaceBetween gap={10} style={{ marginTop: 12 }}>
