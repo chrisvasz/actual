@@ -647,17 +647,6 @@ export function looselyParseAmount(amount: string) {
   return safeNumber(parseFloat(left + '.' + right));
 }
 
-export function sortByKey<T>(arr: T[], key: keyof T): T[] {
-  return [...arr].sort((item1, item2) => {
-    if (item1[key] < item2[key]) {
-      return -1;
-    } else if (item1[key] > item2[key]) {
-      return 1;
-    }
-    return 0;
-  });
-}
-
 // Date utilities
 
 export function tsToRelativeTime(

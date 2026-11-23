@@ -502,8 +502,7 @@ async function importBudget({
   /** Raw contents of the file to import; alternative to `filepath`. */
   buffer?: ArrayBuffer;
   /**
-   * Original name of the imported file; only used together with `buffer`,
-   * to derive the budget name for some import types.
+   * Original name of the imported file; only used together with `buffer`.
    */
   filename?: string;
 }): Promise<{ error?: string; meta?: unknown; id?: string }> {
