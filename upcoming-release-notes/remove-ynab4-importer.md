@@ -1,6 +1,6 @@
 ---
-category: Maintenance
+category: Enhancements
 authors: [chrisvasz]
 ---
 
-Remove the YNAB4 importer
+Remove the option to import budgets from YNAB4
