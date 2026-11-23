@@ -43,8 +43,6 @@ import { LoadBackupModal } from './modals/LoadBackupModal';
 import { DeleteFileModal } from './modals/manager/DeleteFileModal';
 import { DuplicateFileModal } from './modals/manager/DuplicateFileModal';
 import { ImportActualModal } from './modals/manager/ImportActualModal';
-import { ImportModal } from './modals/manager/ImportModal';
-import { ImportYNAB5Modal } from './modals/manager/ImportYNAB5Modal';
 import { ManageRulesModal } from './modals/ManageRulesModal';
 import { MergeUnusedPayeesModal } from './modals/MergeUnusedPayeesModal';
 import { NewCategoryGroupModal } from './modals/NewCategoryGroupModal';
@@ -281,10 +279,6 @@ export function Modals() {
           return <DeleteFileModal key={key} {...modal.options} />;
         case 'duplicate-budget':
           return <DuplicateFileModal key={key} {...modal.options} />;
-        case 'import':
-          return <ImportModal key={key} />;
-        case 'import-ynab5':
-          return <ImportYNAB5Modal key={key} />;
         case 'import-actual':
           return <ImportActualModal key={key} />;
 

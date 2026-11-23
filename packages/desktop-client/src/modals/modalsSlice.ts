@@ -138,12 +138,6 @@ export type Modal =
       };
     }
   | {
-      name: 'import';
-    }
-  | {
-      name: 'import-ynab5';
-    }
-  | {
       name: 'import-actual';
     }
   | {

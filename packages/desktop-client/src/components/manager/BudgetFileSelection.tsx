@@ -552,7 +552,7 @@ export function BudgetFileSelection({
               color: theme.pageTextLight,
             }}
             onPress={() => {
-              dispatch(pushModal({ modal: { name: 'import' } }));
+              dispatch(pushModal({ modal: { name: 'import-actual' } }));
             }}
           >
             Import file

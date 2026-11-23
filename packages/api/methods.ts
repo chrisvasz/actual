@@ -53,9 +53,8 @@ export async function getBudgets() {
 }
 
 /**
- * Import a budget from an exported file — an Actual `.zip` export, or a
- * YNAB5 (nYNAB) export. Accepts either a path to the file on the engine's
- * filesystem, or the raw file contents. Loads the imported budget and
+ * Import a budget from an Actual `.zip` export. Accepts either a path to the
+ * file on the engine's filesystem, or the raw file contents. Loads the imported budget and
  * returns its id.
  */
 export async function importBudget(
