@@ -191,15 +191,21 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
               strokeWidth={2}
             />
           </g>
-          <circle
-            cx={x(hoverIndex ?? lastIndex)}
-            cy={y(totalChanges[hoverIndex ?? lastIndex])}
-            r={4}
+          <g
             fill={theme.pageText}
             stroke={theme.tableBackground}
             strokeWidth={2}
             pointerEvents="none"
-          />
+          >
+            {months.map((month, i) => (
+              <circle
+                key={month}
+                cx={x(i)}
+                cy={y(totalChanges[i])}
+                r={i === (hoverIndex ?? lastIndex) ? 4.5 : 3}
+              />
+            ))}
+          </g>
 
           {xLabels.map(({ index, label }) => (
             <text
