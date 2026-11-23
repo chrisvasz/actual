@@ -141,9 +141,6 @@ export type Modal =
       name: 'import';
     }
   | {
-      name: 'import-ynab4';
-    }
-  | {
       name: 'import-ynab5';
     }
   | {
