@@ -7,10 +7,8 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
-import {
-  BalanceWithCarryover,
-  CarryoverIndicator,
-} from '#components/budget/BalanceWithCarryover';
+import { BalanceWithCarryover } from '#components/budget/BalanceWithCarryover';
+import { CarryoverIndicator } from '#components/budget/CarryoverIndicator';
 import { useEnvelopeSheetValue } from '#components/budget/envelope/EnvelopeBudgetComponents';
 import {
   Modal,
@@ -77,13 +75,16 @@ export function EnvelopeIncomeBalanceMenuModal({
               isDisabled
               carryover={envelopeBudget.catCarryover(categoryId)}
               balance={envelopeBudget.catSumAmount(categoryId)}
-              CarryoverIndicator={({ style }) => (
+              carryoverLabel="Income is held for next month"
+              CarryoverIndicator={({ style, label }) => (
                 <CarryoverIndicator
+                  label={label}
                   style={{
                     width: 15,
                     height: 15,
                     display: 'inline-flex',
                     position: 'relative',
+                    right: 0,
                     ...style,
                   }}
                 />

@@ -6,6 +6,7 @@ import * as db from '#server/db';
 
 import {
   coverOverbudgeted,
+  getSheetBoolean,
   getSheetValue,
   set3MonthAvg,
   setBudget,
@@ -67,6 +68,53 @@ describe('set budget average', () => {
     await set3MonthAvg({ month: '2024-04' });
 
     expect(await getSheetValue('budget202404', 'budget-cat1')).toBe(600);
+  });
+});
+
+describe('setCategoryCarryover', () => {
+  beforeEach(global.emptyDatabase());
+  afterEach(global.emptyDatabase());
+
+  it('sets the flag for only the given month', async () => {
+    // Setup: cat2 rolls over January's -20.
+    await prepareDatabase();
+
+    expect(await getSheetBoolean('budget202401', 'carryover-cat2')).toBe(true);
+    expect(await getSheetBoolean('budget202402', 'carryover-cat2')).toBe(false);
+    expect(await getSheetValue('budget202402', 'leftover-cat2')).toBe(-20);
+  });
+
+  it('turning the flag off moves the overspending back to "to budget"', async () => {
+    await prepareDatabase();
+    const toBudgetBefore = await getSheetValue('budget202402', 'to-budget');
+
+    await setCategoryCarryover({
+      month: '2024-01',
+      category: 'cat2',
+      flag: false,
+    });
+
+    expect(await getSheetValue('budget202402', 'leftover-cat2')).toBe(0);
+    expect(await getSheetValue('budget202402', 'to-budget')).toBe(
+      toBudgetBefore - 20,
+    );
+  });
+
+  it('turning the flag off also clears it in later months', async () => {
+    await prepareDatabase();
+    for (const month of ['2024-02', '2024-03']) {
+      await setCategoryCarryover({ month, category: 'cat2', flag: true });
+    }
+
+    await setCategoryCarryover({
+      month: '2024-02',
+      category: 'cat2',
+      flag: false,
+    });
+
+    expect(await getSheetBoolean('budget202401', 'carryover-cat2')).toBe(true);
+    expect(await getSheetBoolean('budget202402', 'carryover-cat2')).toBe(false);
+    expect(await getSheetBoolean('budget202403', 'carryover-cat2')).toBe(false);
   });
 });
 
@@ -146,7 +194,7 @@ async function prepareDatabase() {
   extendBudgetMonths(['2024-01', '2024-02']);
 
   await setCategoryCarryover({
-    startMonth: '2024-01',
+    month: '2024-01',
     category: 'cat2',
     flag: true,
   });

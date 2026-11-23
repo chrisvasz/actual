@@ -344,6 +344,7 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
         ref={balanceMenuTriggerRef}
         name="balance"
         width="flex"
+        truncate={false}
         style={{ position: 'relative', textAlign: 'right' }}
         // The month's right padding lives inside the cell so the goal track
         // can reach the cell's right edge
@@ -371,6 +372,7 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
             background: 'transparent',
             width: '100%',
             padding: 0,
+            overflow: 'visible',
           }}
         >
           <BalanceWithCarryover
@@ -506,6 +508,7 @@ export function IncomeCategoryMonth({
             <BalanceWithCarryover
               carryover={envelopeBudget.catCarryover(category.id)}
               balance={envelopeBudget.catSumAmount(category.id)}
+              carryoverLabel="Income is held for next month"
             />
           </Button>
           <Popover

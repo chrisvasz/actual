@@ -7,7 +7,7 @@ import { safeNumber } from '#shared/util';
 import type { IntegerAmount } from '#shared/util';
 import type { CategoryEntity } from '#types/models';
 
-import { getBudgetCellValue, getBudgetMonths } from './state';
+import { getBudgetCellValue } from './state';
 
 export async function getSheetValue(
   sheetName: string,
@@ -73,11 +73,6 @@ function getBudgetData(month: string): BudgetData[] {
   `,
     [month],
   );
-}
-
-function getAllMonths(startMonth: string): string[] {
-  const months = getBudgetMonths();
-  return monthUtils.rangeInclusive(startMonth, months[months.length - 1]);
 }
 
 // TODO: Valid month format in all the functions below
@@ -614,20 +609,35 @@ export async function transferCategory({
   });
 }
 
+// Sets whether a category's balance in `month` rolls into the next month
+// (overspending for expense categories, auto-hold for income). Turning it on
+// affects only that month. Turning it off also clears later months, so
+// budgets from before the flag became per-month don't keep rolling over.
 export async function setCategoryCarryover({
-  startMonth,
+  month,
   category,
   flag,
 }: {
-  startMonth: string;
+  month: string;
   category: string;
   flag: boolean;
 }): Promise<void> {
-  const months = getAllMonths(startMonth);
+  if (flag) {
+    setCarryover(category, dbMonth(month).toString(), true);
+    return;
+  }
+
+  const start = dbMonth(month);
+  const later = db.all<Pick<db.DbZeroBudget, 'month'>>(
+    `SELECT month FROM zero_budgets
+     WHERE category = ? AND month > ? AND carryover = 1`,
+    [category, start],
+  );
 
   batchMessages(() => {
-    for (const month of months) {
-      setCarryover(category, dbMonth(month).toString(), flag);
+    setCarryover(category, start.toString(), false);
+    for (const row of later) {
+      setCarryover(category, row.month.toString(), false);
     }
   });
 }
