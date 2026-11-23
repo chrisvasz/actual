@@ -80,6 +80,7 @@ export function FinancesAppRoutes() {
         path="/accounts"
         element={
           <ErrorBoundary
+            key={location.pathname}
             FallbackComponent={FeatureErrorFallback}
             resetKeys={[location.pathname]}
           >
@@ -105,6 +106,7 @@ export function FinancesAppRoutes() {
         path="/categories/:id"
         element={
           <ErrorBoundary
+            key={location.pathname}
             FallbackComponent={FeatureErrorFallback}
             resetKeys={[location.pathname]}
           >
