@@ -18,8 +18,7 @@ export const CATEGORY_COLUMN_ROOT_ATTR = 'data-category-column-root';
 // Set on the table root while the column is being dragged.
 export const CATEGORY_COLUMN_RESIZING_ATTR = 'data-category-column-resizing';
 // The table's scroll container, and the content that scrolls in it. The former
-// has `--budget-total-months` and `--budget-shown-months` set on it, which
-// only change with the number of months.
+// has `--budget-total-months` and `--budget-shown-months` set on it.
 export const BUDGET_SCROLLER_CLASS = 'budget-scroller';
 export const BUDGET_CONTENT_CLASS = 'budget-scroll-content';
 // The part of a row beside the category column, as wide as every month the

@@ -4,6 +4,7 @@ import type { CSSProperties, KeyboardEvent } from 'react';
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
+import * as monthUtils from '@actual-app/core/shared/months';
 import type {
   CategoryEntity,
   CategoryGroupEntity,
@@ -290,6 +291,8 @@ export function BudgetTable(props: BudgetTableProps) {
             className={BUDGET_CONTENT_CLASS}
             style={{
               flexShrink: 0,
+              // A month can be mounted beyond what can be scrolled to
+              overflowX: 'clip',
               paddingLeft: TABLE_GUTTER,
               paddingRight: TABLE_GUTTER,
             }}
@@ -315,7 +318,9 @@ export function BudgetTable(props: BudgetTableProps) {
               >
                 {Array.from({ length: totalMonths }, (_, index) => (
                   <div
-                    key={index}
+                    // Kept as the range moves, so the browser stays snapped
+                    // to the same month
+                    key={monthUtils.addMonths(firstMonth, index)}
                     style={{
                       position: 'absolute',
                       top: 0,

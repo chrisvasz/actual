@@ -87,11 +87,26 @@ test.describe('Budget', () => {
     );
   });
 
+  test('scrolls one month at a time, however far the scroll', async () => {
+    const month = await budgetPage.getSelectedMonth();
+
+    await budgetPage.scrollByMonths(-5);
+    await expect
+      .poll(() => budgetPage.getSelectedMonth())
+      .toBe(monthUtils.subMonths(month, 1));
+  });
+
   test('keeps a cell open for editing while scrolled out of view', async () => {
     const input = await budgetPage.editBudgetedAmount(1);
     await input.fill('123.45');
 
-    await budgetPage.scrollByMonths(-3);
+    const month = await budgetPage.getSelectedMonth();
+    for (const distance of [1, 2, 3]) {
+      await budgetPage.scrollByMonths(-1);
+      await expect
+        .poll(() => budgetPage.getSelectedMonth())
+        .toBe(monthUtils.subMonths(month, distance));
+    }
     await expect(input).toBeFocused();
     await expect(input).toHaveValue('123.45');
   });

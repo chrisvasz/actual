@@ -3,9 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { getMountedMonths } from './useMonthScroll';
 
 const budget = {
-  firstMonth: '2026-01',
-  totalMonths: 12,
-  firstInView: 4,
+  monthBounds: { start: '2026-01', end: '2026-12' },
+  range: { from: 4, to: 4 },
   numMonths: 3,
   overscan: 1,
   pinnedMonth: null,
@@ -26,24 +25,47 @@ describe('getMountedMonths', () => {
     });
   });
 
+  it('mounts nothing more while scrolling to the next month', () => {
+    const { months } = getMountedMonths(budget);
+    expect(
+      getMountedMonths({ ...budget, range: { from: 4, to: 5 } }).months,
+    ).toEqual(months);
+    expect(
+      getMountedMonths({ ...budget, range: { from: 4, to: 3 } }).months,
+    ).toEqual(months);
+  });
+
+  it('mounts every month passed while scrolling further', () => {
+    expect(getMountedMonths({ ...budget, range: { from: 4, to: 7 } })).toEqual({
+      months: [
+        '2026-04',
+        '2026-05',
+        '2026-06',
+        '2026-07',
+        '2026-08',
+        '2026-09',
+        '2026-10',
+      ],
+      offscreenMonths: ['2026-04'],
+    });
+  });
+
   it('stays within the budget at either end', () => {
-    expect(getMountedMonths({ ...budget, firstInView: 0 }).months).toEqual([
-      '2026-01',
-      '2026-02',
-      '2026-03',
-      '2026-04',
-    ]);
-    expect(getMountedMonths({ ...budget, firstInView: 9 }).months).toEqual([
-      '2026-09',
-      '2026-10',
-      '2026-11',
-      '2026-12',
-    ]);
+    expect(
+      getMountedMonths({ ...budget, range: { from: 0, to: 0 } }).months,
+    ).toEqual(['2026-01', '2026-02', '2026-03', '2026-04']);
+    expect(
+      getMountedMonths({ ...budget, range: { from: 9, to: 9 } }).months,
+    ).toEqual(['2026-09', '2026-10', '2026-11', '2026-12']);
   });
 
   it('shows every month when they all fit', () => {
     expect(
-      getMountedMonths({ ...budget, totalMonths: 2, firstInView: 0 }),
+      getMountedMonths({
+        ...budget,
+        monthBounds: { start: '2026-01', end: '2026-02' },
+        range: { from: 0, to: 0 },
+      }),
     ).toEqual({ months: ['2026-01', '2026-02'], offscreenMonths: [] });
   });
 
