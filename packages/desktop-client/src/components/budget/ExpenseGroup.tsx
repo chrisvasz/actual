@@ -90,7 +90,6 @@ export function ExpenseGroup({
       collapsed
       style={{
         fontWeight: 600,
-        opacity: group.hidden ? 0.33 : undefined,
         backgroundColor: theme.budgetHeaderCurrentMonth, //use budget colors
       }}
     >
@@ -138,7 +137,10 @@ export function ExpenseGroup({
           onSortCategories={onSortCategories}
           onShowNewCategory={onShowNewCategory}
         />
-        <RenderMonths>
+        <RenderMonths
+          hasRowLines
+          trackStyle={group.hidden ? { opacity: 0.33 } : undefined}
+        >
           {({ month }) => <MonthComponent month={month} group={group} />}
         </RenderMonths>
       </View>

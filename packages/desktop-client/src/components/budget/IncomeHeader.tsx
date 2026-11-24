@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { Button } from '@actual-app/components/button';
+import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
 import { CATEGORY_COLUMN_CLASS } from './categoryColumnStyles';
@@ -19,6 +20,7 @@ export function IncomeHeader({ onShowNewGroup }: IncomeHeaderProps) {
       <View
         className={CATEGORY_COLUMN_CLASS}
         style={{
+          backgroundColor: theme.budgetCurrentMonth,
           alignItems: 'flex-start',
           justifyContent: 'flex-start',
         }}

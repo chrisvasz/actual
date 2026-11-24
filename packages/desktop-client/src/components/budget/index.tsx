@@ -137,7 +137,6 @@ export function Budget() {
       onToggleSummaryCollapse={onToggleCollapse}
     >
       <AutoSizingBudgetTable
-        prewarmStartMonth={startMonth}
         startMonth={startMonth}
         monthBounds={bounds}
         maxMonths={maxMonths}

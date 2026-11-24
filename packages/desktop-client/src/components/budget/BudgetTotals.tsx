@@ -11,7 +11,7 @@ import { View } from '@actual-app/components/view';
 import { CategoryColumnResizeHandle } from './CategoryColumnResizeHandle';
 import { CATEGORY_COLUMN_CLASS } from './categoryColumnStyles';
 import { RenderMonths } from './RenderMonths';
-import { getScrollbarWidth } from './util';
+import { TableFrame } from './TableFrame';
 
 import { useBudgetComponents } from '.';
 
@@ -38,9 +38,9 @@ export const BudgetTotals = memo(function BudgetTotals({
         backgroundColor: theme.budgetCurrentMonth, //use budget colors, not generic table colors
         flexDirection: 'row',
         flexShrink: 0,
+        // Not below, where the rows continue the card
         boxShadow: styles.cardShadow,
-        marginLeft: 5,
-        marginRight: 5 + getScrollbarWidth(),
+        clipPath: 'inset(-5px -5px 0)',
         borderRadius: '4px 4px 0 0',
         borderBottom: '1px solid ' + theme.tableBorder,
         '& .hover-visible': {
@@ -56,6 +56,7 @@ export const BudgetTotals = memo(function BudgetTotals({
         className={CATEGORY_COLUMN_CLASS}
         style={{
           color: theme.tableHeaderText,
+          backgroundColor: theme.budgetCurrentMonth,
           justifyContent: 'center',
           // Line the header up with the category names below it.
           paddingLeft: 14,
@@ -120,6 +121,7 @@ export const BudgetTotals = memo(function BudgetTotals({
       <RenderMonths>
         <MonthComponent />
       </RenderMonths>
+      <TableFrame borderRadius="4px 4px 0 0" hasShadow />
     </View>
   );
 });

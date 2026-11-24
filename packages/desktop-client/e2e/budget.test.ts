@@ -1,3 +1,4 @@
+import * as monthUtils from '@actual-app/core/shared/months';
 import type { Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
@@ -64,6 +65,35 @@ test.describe('Budget', () => {
     expect(page.url()).toContain('/accounts');
     expect(await accountPage.accountName.textContent()).toMatch('All Accounts');
     await page.goBack();
+  });
+
+  test('scrolling sideways moves through the months', async () => {
+    const month = await budgetPage.getSelectedMonth();
+
+    await budgetPage.scrollByMonths(-1);
+    await expect
+      .poll(() => budgetPage.getSelectedMonth())
+      .toBe(monthUtils.subMonths(month, 1));
+
+    // The months it scrolls to are the ones it shows
+    await expect(budgetPage.budgetSummary.first()).toContainText(
+      monthUtils.format(monthUtils.subMonths(month, 1), 'MMMM'),
+    );
+
+    await budgetPage.goToNextMonth();
+    await expect.poll(() => budgetPage.getSelectedMonth()).toBe(month);
+    await expect(budgetPage.budgetSummary.first()).toContainText(
+      monthUtils.format(month, 'MMMM'),
+    );
+  });
+
+  test('keeps a cell open for editing while scrolled out of view', async () => {
+    const input = await budgetPage.editBudgetedAmount(1);
+    await input.fill('123.45');
+
+    await budgetPage.scrollByMonths(-3);
+    await expect(input).toBeFocused();
+    await expect(input).toHaveValue('123.45');
   });
 
   test('right clicking a category opens context menu', async () => {

@@ -3,6 +3,12 @@ import type { Locator, Page } from '@playwright/test';
 
 import { AccountPage } from './account-page';
 
+// Elements of the months in view. The months on either side are mounted too,
+// but inert.
+function inView(testId: string) {
+  return `[data-testid="${testId}"]:not([inert] *)`;
+}
+
 export class BudgetPage {
   readonly page: Page;
   readonly budgetSummary: Locator;
@@ -15,7 +21,7 @@ export class BudgetPage {
   constructor(page: Page) {
     this.page = page;
 
-    this.budgetSummary = page.getByTestId('budget-summary');
+    this.budgetSummary = page.locator(inView('budget-summary'));
     this.budgetTable = page.getByTestId('budget-table');
     this.budgetTableTotals = this.budgetTable.getByTestId('budget-totals');
     this.selectedMonthButton = page.getByTestId('selected-budget-month');
@@ -35,6 +41,31 @@ export class BudgetPage {
     });
   }
 
+  async scrollByMonths(count: number) {
+    const monthWidth = await this.budgetTableTotals
+      .locator('[data-testid$="total-budgeted"]')
+      .evaluateAll(
+        ([first, second]) =>
+          second.getBoundingClientRect().left -
+          first.getBoundingClientRect().left,
+      );
+    await this.budgetTableScrollContainer.evaluate(
+      (el, left) => el.scrollBy({ left, behavior: 'instant' }),
+      count * monthWidth,
+    );
+  }
+
+  async editBudgetedAmount(idx: number) {
+    const cell = this.budgetTable
+      .getByTestId('row')
+      .nth(idx)
+      .locator(inView('budget'))
+      .first();
+    await cell.click();
+    // Not through `cell`, which only matches a month in view
+    return this.budgetTable.getByTestId('budget').locator('input');
+  }
+
   /**
    * Wait for the budget page to finish loading. The budget-table is
    * inside AutoSizer which returns null until layout provides width/
@@ -46,7 +77,7 @@ export class BudgetPage {
 
   async getTotalBudgeted() {
     const totalBudgetedText = await this.budgetTableTotals
-      .getByTestId(/total-budgeted$/)
+      .locator('[data-testid$="total-budgeted"]:not([inert] *)')
       .textContent();
 
     if (!totalBudgetedText) {
@@ -58,7 +89,7 @@ export class BudgetPage {
 
   async getTotalSpent() {
     const totalSpentText = await this.budgetTableTotals
-      .getByTestId(/total-spent$/)
+      .locator('[data-testid$="total-spent"]:not([inert] *)')
       .textContent();
 
     if (!totalSpentText) {
@@ -70,7 +101,7 @@ export class BudgetPage {
 
   async getTotalLeftover() {
     const totalLeftoverText = await this.budgetTableTotals
-      .getByTestId(/total-leftover$/)
+      .locator('[data-testid$="total-leftover"]:not([inert] *)')
       .textContent();
 
     if (!totalLeftoverText) {
@@ -97,7 +128,7 @@ export class BudgetPage {
       .getByTestId('row')
       .filter({ hasText: categoryName })
       .first();
-    const budgetCell = row.getByTestId('budget').nth(monthIndex);
+    const budgetCell = row.locator(inView('budget')).nth(monthIndex);
 
     await budgetCell.click();
     const input = budgetCell.locator('input');
@@ -147,7 +178,7 @@ export class BudgetPage {
     const balanceText = await this.budgetTable
       .getByTestId('row')
       .nth(idx)
-      .getByTestId('balance')
+      .locator(inView('balance'))
       .textContent();
 
     if (!balanceText) {
@@ -175,7 +206,7 @@ export class BudgetPage {
     await this.budgetTable
       .getByTestId('row')
       .nth(idx)
-      .getByTestId('category-month-spent')
+      .locator(inView('category-month-spent'))
       .click();
     return new AccountPage(this.page);
   }
@@ -193,7 +224,7 @@ export class BudgetPage {
       }
       const containerRect = container.getBoundingClientRect();
       const cells = container.querySelectorAll<HTMLElement>(
-        '[data-testid="category-month-spent"]',
+        '[data-testid="category-month-spent"]:not([inert] *)',
       );
       for (const cell of [...cells].reverse()) {
         const rect = cell.getBoundingClientRect();
@@ -223,7 +254,7 @@ export class BudgetPage {
     await this.budgetTable
       .getByTestId('row')
       .nth(fromIdx)
-      .getByTestId('balance')
+      .locator(inView('balance'))
       .getByTestId(/^budget/)
       .click();
 
