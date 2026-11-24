@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import type { CSSProperties } from 'react';
 
+import { Button } from '@actual-app/components/button';
 import {
   SvgArrowThinLeft,
   SvgArrowThinRight,
@@ -10,8 +11,8 @@ import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import * as monthUtils from '@actual-app/core/shared/months';
+import { css } from '@emotion/css';
 
-import { Link } from '#components/common/Link';
 import { useLocale } from '#hooks/useLocale';
 import { useResizeObserver } from '#hooks/useResizeObserver';
 
@@ -90,18 +91,17 @@ export const MonthPicker = ({
           justifyContent: 'center',
         }}
       >
-        <Link
-          variant="button"
-          buttonVariant="bare"
+        <Button
+          variant="bare"
           onPress={() => onSelect(monthUtils.prevMonth(startMonth))}
-          style={{
+          className={css({
             padding: '3px 3px',
             marginRight: '12px',
             opacity: 0.6,
             ':hover': {
               opacity: 1,
             },
-          }}
+          })}
         >
           <View title="Previous month">
             <SvgArrowThinLeft
@@ -111,7 +111,7 @@ export const MonthPicker = ({
               }}
             />
           </View>
-        </Link>
+        </Button>
         {range.map((month, idx) => {
           const monthName = monthUtils.format(month, 'MMM', locale);
           const selected =
@@ -216,18 +216,17 @@ export const MonthPicker = ({
             </View>
           );
         })}
-        <Link
-          variant="button"
-          buttonVariant="bare"
+        <Button
+          variant="bare"
           onPress={() => onSelect(monthUtils.nextMonth(startMonth))}
-          style={{
+          className={css({
             padding: '3px 3px',
             marginLeft: '12px',
             opacity: 0.6,
             ':hover': {
               opacity: 1,
             },
-          }}
+          })}
         >
           <View title="Next month">
             <SvgArrowThinRight
@@ -237,7 +236,7 @@ export const MonthPicker = ({
               }}
             />
           </View>
-        </Link>
+        </Button>
       </View>
     </View>
   );
