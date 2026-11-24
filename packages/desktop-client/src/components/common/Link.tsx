@@ -23,7 +23,9 @@ type ButtonLinkProps = Omit<
 > & {
   buttonVariant?: ComponentProps<typeof Button>['variant'];
   style?: CSSProperties;
-  to?: string;
+  // Required: an empty path navigates to the parent route. Use `Button` for
+  // a button that doesn't navigate.
+  to: string;
   activeStyle?: CSSProperties;
 };
 
@@ -96,8 +98,7 @@ const TextLink = ({ style, onClick, children, ...props }: TextLinkProps) => {
 
 const ButtonLink = ({ to, style, activeStyle, ...props }: ButtonLinkProps) => {
   const navigate = useNavigate();
-  const path = to ?? '';
-  const match = useMatch({ path, end: false });
+  const match = useMatch({ path: to, end: false });
   return (
     <Button
       className={() =>
@@ -113,7 +114,7 @@ const ButtonLink = ({ to, style, activeStyle, ...props }: ButtonLinkProps) => {
       variant={props.buttonVariant}
       onPress={e => {
         props.onPress?.(e);
-        void navigate(path);
+        void navigate(to);
       }}
     />
   );
