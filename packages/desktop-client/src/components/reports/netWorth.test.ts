@@ -6,6 +6,8 @@ import type {
 import {
   balanceChange,
   computeNetWorth,
+  netWorthChange,
+  startingBalance,
   UNGROUPED_OFF_BUDGET_ID,
   UNGROUPED_ON_BUDGET_ID,
 } from './netWorth';
@@ -199,5 +201,35 @@ describe('balanceChange', () => {
   it('is null from zero or across zero', () => {
     expect(balanceChange(0, 100)).toBeNull();
     expect(balanceChange(100, -50)).toBeNull();
+  });
+});
+
+describe('netWorthChange', () => {
+  it('measures growth from a positive start, even into debt', () => {
+    expect(netWorthChange(100, 110)).toBeCloseTo(0.1);
+    expect(netWorthChange(100, -50)).toBeCloseTo(-1.5);
+  });
+
+  it('is null from zero or below', () => {
+    expect(netWorthChange(0, 100)).toBeNull();
+    expect(netWorthChange(-100, 50)).toBeNull();
+  });
+});
+
+describe('startingBalance', () => {
+  it('is the previous month-end, or the baseline for the first month', () => {
+    const { total } = computeNetWorth({
+      months: ['2026-02', '2026-03'],
+      sums: [
+        { account: 'checking', month: '2026-01', amount: 1000 },
+        { account: 'checking', month: '2026-02', amount: 100 },
+        { account: 'checking', month: '2026-03', amount: 400 },
+      ],
+      accounts: [account('checking', 'cash')],
+      groups,
+    });
+
+    expect(startingBalance(total, 0)).toBe(1000);
+    expect(startingBalance(total, 1)).toBe(1100);
   });
 });

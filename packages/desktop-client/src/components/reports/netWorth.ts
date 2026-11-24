@@ -135,7 +135,7 @@ export function computeNetWorth({
     baselineMonth: hasHistoryBeforeRange ? monthUtils.prevMonth(start) : start,
     total: {
       ...total,
-      change: baseline > 0 ? total.changeAmount / baseline : null,
+      change: netWorthChange(baseline, total.balance),
     },
     groups: groupSeries
       .map(group => ({
@@ -160,6 +160,22 @@ export function balanceChange(start: number, end: number): number | null {
     return null;
   }
   return (Math.abs(end) - Math.abs(start)) / Math.abs(start);
+}
+
+/**
+ * How much net worth grew, as a fraction of where it started. Null when it
+ * started at or below zero, where a percentage would mislead.
+ */
+export function netWorthChange(start: number, end: number): number | null {
+  return start > 0 ? (end - start) / start : null;
+}
+
+/** A row's balance going into the month at `index` */
+export function startingBalance(
+  { history, balance, changeAmount }: NetWorthRow,
+  index: number,
+) {
+  return index === 0 ? balance - changeAmount : history[index - 1];
 }
 
 function makeRow(

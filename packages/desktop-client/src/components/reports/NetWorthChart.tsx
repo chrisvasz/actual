@@ -13,7 +13,9 @@ import { useFormat } from '#hooks/useFormat';
 import { useResizeObserver } from '#hooks/useResizeObserver';
 
 import { ColorSwatch } from './ColorSwatch';
+import { balanceChange, netWorthChange, startingBalance } from './netWorth';
 import type { NetWorthData, NetWorthRow } from './netWorth';
+import { PercentChange } from './PercentChange';
 
 const HEIGHT = 260;
 const MARGIN = { top: 12, right: 16, bottom: 28, left: 52 };
@@ -21,6 +23,7 @@ const MAX_X_LABELS = 8;
 const MAX_BAR_WIDTH = 80;
 const BAR_WIDTH_RATIO = 0.9;
 const BAR_RADIUS = 4;
+const TOOLTIP_GAP = 14;
 
 const axisFormat = new Intl.NumberFormat(undefined, {
   notation: 'compact',
@@ -240,9 +243,18 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
             ...(tooltipAtBottom
               ? { bottom: MARGIN.bottom }
               : { top: MARGIN.top }),
+            // Slides back inside the chart when there's too little room
+            // beside the point; percentages are of the tooltip's own width
             ...(tooltipOnLeft
-              ? { right: width - x(hoverIndex) + 14 }
-              : { left: x(hoverIndex) + 14 }),
+              ? {
+                  right: width - x(hoverIndex) + TOOLTIP_GAP,
+                  transform: `translateX(max(0px, 100% - ${x(hoverIndex) - TOOLTIP_GAP}px))`,
+                }
+              : {
+                  left: x(hoverIndex) + TOOLTIP_GAP,
+                  transform: `translateX(min(0px, ${width - x(hoverIndex) - TOOLTIP_GAP}px - 100%))`,
+                }),
+            width: 'max-content',
             pointerEvents: 'none',
             backgroundColor: theme.tooltipBackground,
             color: theme.tooltipText,
@@ -262,7 +274,7 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
           <View
             style={{
               display: 'grid',
-              gridTemplateColumns: 'auto 1fr auto auto',
+              gridTemplateColumns: 'auto 1fr auto auto auto',
               alignItems: 'center',
               columnGap: 8,
               rowGap: 6,
@@ -283,13 +295,21 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
             </Text>
             <Text
               style={{
-                gridColumn: 4,
                 textAlign: 'right',
                 paddingLeft: 8,
                 color: theme.pageTextSubdued,
               }}
             >
               Balance
+            </Text>
+            <Text
+              style={{
+                textAlign: 'right',
+                paddingLeft: 8,
+                color: theme.pageTextSubdued,
+              }}
+            >
+              Change
             </Text>
             {groups.map(group => (
               <Fragment key={group.id}>
@@ -303,6 +323,14 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
                 <FinancialText style={{ textAlign: 'right', paddingLeft: 8 }}>
                   {format(group.history[hoverIndex], 'financial')}
                 </FinancialText>
+                <PercentChange
+                  change={balanceChange(
+                    startingBalance(group, hoverIndex),
+                    group.history[hoverIndex],
+                  )}
+                  isGood={changes(group)[hoverIndex] > 0}
+                  style={{ textAlign: 'right', paddingLeft: 8 }}
+                />
               </Fragment>
             ))}
             <View
@@ -322,6 +350,14 @@ export function NetWorthChart({ data, colors }: NetWorthChartProps) {
             >
               {format(data.total.history[hoverIndex], 'financial')}
             </FinancialText>
+            <PercentChange
+              change={netWorthChange(
+                startingBalance(data.total, hoverIndex),
+                data.total.history[hoverIndex],
+              )}
+              isGood={totalChanges[hoverIndex] > 0}
+              style={{ textAlign: 'right', paddingLeft: 8, fontWeight: 600 }}
+            />
           </View>
         </View>
       )}
@@ -342,11 +378,8 @@ type Band = {
  * How much a row's balance moved in each month: from the previous month-end,
  * or from the baseline for the first month
  */
-function changes({ history, balance, changeAmount }: NetWorthRow) {
-  const baseline = balance - changeAmount;
-  return history.map(
-    (value, i) => value - (i === 0 ? baseline : history[i - 1]),
-  );
+function changes(row: NetWorthRow) {
+  return row.history.map((value, i) => value - startingBalance(row, i));
 }
 
 /**
