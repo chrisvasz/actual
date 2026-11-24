@@ -66,7 +66,7 @@ export function getRequiredBudget({
 }
 
 /** The goal each of a category's month cells measures against, if any. */
-export function useGoalTargets({
+export function getGoalTargets({
   category,
   month,
   balance,
@@ -74,11 +74,9 @@ export function useGoalTargets({
 }: {
   category: CategoryEntity;
   month: string;
-  balance: Binding<'envelope-budget', 'leftover'>;
-  budgeted: Binding<'envelope-budget', 'budget'>;
+  balance: number;
+  budgeted: number;
 }): GoalTargets {
-  const balanceValue = useSheetValue(balance) ?? 0;
-  const budgetedValue = useSheetValue(budgeted) ?? 0;
   const goal = category.goal_amount;
 
   if (goal == null || goal <= 0) {
@@ -86,15 +84,15 @@ export function useGoalTargets({
   }
 
   if (getGoalType(category) === 'budgeted') {
-    return { budgeted: { value: budgetedValue, goal }, balance: null };
+    return { budgeted: { value: budgeted, goal }, balance: null };
   }
 
   const targetMonth = category.goal_target_month;
   const required = targetMonth
     ? getRequiredBudget({
         goal,
-        balance: balanceValue,
-        budgeted: budgetedValue,
+        balance,
+        budgeted,
         month,
         targetMonth,
       })
@@ -106,8 +104,8 @@ export function useGoalTargets({
     budgeted:
       required == null || required === 0
         ? null
-        : { value: budgetedValue, goal: required },
-    balance: { value: balanceValue, goal },
+        : { value: budgeted, goal: required },
+    balance: { value: balance, goal },
   };
 }
 
