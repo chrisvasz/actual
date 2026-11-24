@@ -163,13 +163,22 @@ const balanceCellClass = css({
 });
 
 // An exact third, whatever the cell's padding, so the columns don't move when
-// the editor (which has none) takes the budget cell's place
-const categoryCellClass = css({ flex: '0 0 calc(100% / 3)' });
+// the editor (which has none) takes the budget cell's place. Isolated for the
+// goal track, which sits behind the text.
+const categoryCellClass = css({
+  flex: '0 0 calc(100% / 3)',
+  isolation: 'isolate',
+});
 
+// The hover outline is inset to sit exactly where the editor's input does
 const budgetCellClass = css({
   cursor: 'default',
-  borderRadius: 4,
-  ':hover': {
+  ':hover::after': {
+    content: '""',
+    position: 'absolute',
+    inset: 1,
+    zIndex: -1,
+    borderRadius: 4,
     boxShadow: 'inset 0 0 0 1px ' + theme.pageTextSubdued, //remove mobile color variable
     backgroundColor: theme.budgetCurrentMonth,
   },
@@ -290,11 +299,12 @@ function BudgetCellEditor({
       ref={budgetCellRef}
       style={{
         position: 'relative',
+        isolation: 'isolate',
         flex: '0 0 calc(100% / 3)',
         flexDirection: 'row',
       }}
     >
-      <GoalProgressFill target={target} column="budgeted" />
+      <GoalProgressFill target={target} />
       <EnvelopeSheetCell
         name="budget"
         exposed={editing}
@@ -311,7 +321,8 @@ function BudgetCellEditor({
         textAlign="right"
         valueStyle={{
           cursor: 'default',
-          padding: '0 5px',
+          margin: 1,
+          padding: '0 4px',
           borderRadius: 4,
           ':hover': {
             boxShadow: 'inset 0 0 0 1px ' + theme.pageTextSubdued, //remove mobile color variable
@@ -438,7 +449,7 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
             }
           }}
         >
-          <GoalProgressFill target={goalTargets.budgeted} column="budgeted" />
+          <GoalProgressFill target={goalTargets.budgeted} />
           {format(budgeted, 'financial')}
         </div>
       )}
@@ -461,7 +472,7 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
         data-testid="balance"
         className={cx(amountCellClass, categoryCellClass, balanceCellClass)}
       >
-        <GoalProgressFill target={goalTargets.balance} column="balance" />
+        <GoalProgressFill target={goalTargets.balance} />
         <button
           type="button"
           data-testid={balanceName}
