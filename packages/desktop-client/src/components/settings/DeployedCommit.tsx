@@ -8,7 +8,7 @@ import { Link } from '#components/common/Link';
 
 import { Setting } from './UI';
 
-const REPOSITORY_URL = 'https://github.com/chrisvasz/actual';
+const COMMITS_URL = 'https://github.com/chrisvasz/actual/commits/master/';
 
 // Baked in at build time by vite.config.mts; empty when the build had no
 // commit to report (for example a tarball checkout with no git history).
@@ -26,11 +26,7 @@ export function DeployedCommit() {
         was built from.
       </Text>
       <Text style={{ color: theme.pageText }} data-vrt-mask>
-        <Link
-          variant="external"
-          to={`${REPOSITORY_URL}/commit/${commitSha}`}
-          linkColor="purple"
-        >
+        <Link variant="external" to={COMMITS_URL} linkColor="purple">
           <span style={styles.tnum}>{commitSha.slice(0, 7)}</span>
         </Link>
       </Text>
