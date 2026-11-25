@@ -61,15 +61,11 @@ describe('computeNetWorth', () => {
       id: 'cash',
       history: [1100, 1500],
       balance: 1500,
-      share: 1,
-      change: 0.5,
       changeAmount: 500,
     });
     expect(loans).toMatchObject({
       id: 'debt',
       balance: -1500,
-      share: null,
-      change: -0.25,
       changeAmount: 500,
     });
   });
@@ -87,7 +83,7 @@ describe('computeNetWorth', () => {
 
     expect(data.baselineMonth).toBe('2026-01');
     expect(data.total.change).toBe(0.5);
-    expect(data.groups[0].change).toBe(0.5);
+    expect(data.groups[0].changeAmount).toBe(500);
   });
 
   it('splits accounts without a known group by budget side and hides empty ones', () => {
@@ -109,12 +105,11 @@ describe('computeNetWorth', () => {
     });
 
     expect(
-      data.groups.map(group => [group.id, group.name, group.accounts.length]),
+      data.groups.map(group => [group.id, group.name, group.balance]),
     ).toEqual([
-      [UNGROUPED_ON_BUDGET_ID, 'On budget', 2],
-      [UNGROUPED_OFF_BUDGET_ID, 'Off budget', 1],
+      [UNGROUPED_ON_BUDGET_ID, 'On budget', 30],
+      [UNGROUPED_OFF_BUDGET_ID, 'Off budget', 5],
     ]);
-    expect(data.groups[0].accounts.map(row => row.id)).toEqual(['b', 'a']);
     expect(data.total.balance).toBe(35);
   });
 
@@ -130,7 +125,7 @@ describe('computeNetWorth', () => {
     });
 
     expect(data.total.history).toEqual([300, 0]);
-    expect(data.groups[0].change).toBe(-1);
+    expect(data.groups[0].changeAmount).toBe(-300);
   });
 
   it('sorts assets largest first, then debts largest first', () => {
@@ -161,33 +156,6 @@ describe('computeNetWorth', () => {
       'g4',
       'g3',
     ]);
-    expect(data.groups[0].share).toBeCloseTo(100 / 110);
-  });
-
-  it('measures account shares against all accounts with a positive balance', () => {
-    const data = computeNetWorth({
-      months: ['2026-01'],
-      sums: [
-        { account: 'house', month: '2026-01', amount: 300 },
-        { account: 'mortgage', month: '2026-01', amount: -250 },
-        { account: 'checking', month: '2026-01', amount: 100 },
-      ],
-      accounts: [
-        account('house', 'g1'),
-        account('mortgage', 'g1'),
-        account('checking', 'g2'),
-      ],
-      groups: [
-        { id: 'g1', name: 'Home', sort_order: 0 },
-        { id: 'g2', name: 'Cash', sort_order: 1 },
-      ],
-    });
-
-    const [cash, home] = data.groups;
-    expect(cash.share).toBeCloseTo(100 / 150);
-    expect(home.share).toBeCloseTo(50 / 150);
-    expect(home.accounts[0]).toMatchObject({ id: 'house', share: 0.75 });
-    expect(home.accounts[1]).toMatchObject({ id: 'mortgage', share: null });
   });
 });
 

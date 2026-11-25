@@ -22,7 +22,6 @@ import {
 } from './netWorth';
 import type { MonthlyAccountSum } from './netWorth';
 import { NetWorthChart } from './NetWorthChart';
-import { NetWorthTable } from './NetWorthTable';
 import { PercentChange } from './PercentChange';
 
 const GROUP_COLORS = [
@@ -68,13 +67,13 @@ export function NetWorthReport({ start, end }: NetWorthReportProps) {
     groups: accountGroups,
   });
 
-  // Rows and colors follow the sidebar, so neither trades places when
+  // The legend and colors follow the sidebar, so neither trades places when
   // balances do
   const order = sidebarOrder(accounts, accountGroups);
   const colors = new Map<string, string>(
     order.map((id, i) => [id, GROUP_COLORS[i % GROUP_COLORS.length]]),
   );
-  const groups = [...data.groups].sort(
+  const legendGroups = [...data.groups].sort(
     (a, b) => order.indexOf(a.id) - order.indexOf(b.id),
   );
 
@@ -142,10 +141,11 @@ export function NetWorthReport({ start, end }: NetWorthReportProps) {
           Add accounts and transactions to see your net worth over time.
         </Text>
       ) : (
-        <>
-          <NetWorthChart data={data} colors={colors} />
-          <NetWorthTable data={{ ...data, groups }} colors={colors} />
-        </>
+        <NetWorthChart
+          data={data}
+          colors={colors}
+          legendGroups={legendGroups}
+        />
       )}
     </View>
   );
