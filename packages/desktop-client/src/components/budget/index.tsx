@@ -27,6 +27,7 @@ import { useLocalPref } from '#hooks/useLocalPref';
 import { SheetNameProvider } from '#hooks/useSheetName';
 import { useStableNavigate } from '#hooks/useStableNavigate';
 
+import { BudgetFormatProvider } from './BudgetFormatContext';
 import { AutoSizingBudgetTable } from './DynamicBudgetTable';
 import * as envelopeBudget from './envelope/EnvelopeBudgetComponents';
 import { EnvelopeBudgetProvider } from './envelope/EnvelopeBudgetContext';
@@ -172,7 +173,9 @@ export function Budget() {
           overflow: 'hidden',
         }}
       >
-        <View style={{ flex: 1 }}>{table}</View>
+        <View style={{ flex: 1 }}>
+          <BudgetFormatProvider>{table}</BudgetFormatProvider>
+        </View>
       </View>
     </SheetNameProvider>
   );

@@ -8,13 +8,7 @@ import type { GoalTarget } from './goalProgress';
 
 type GoalProgressFillProps = {
   target: GoalTarget | null;
-  column: 'budgeted' | 'balance';
 };
-
-// Inset from the cell's bottom edge so the cell's own 1px bottom border (in the
-// budgeted column, where the track sits outside the bordered cell) doesn't
-// paint over the track's last row.
-const BOTTOM_BORDER_WIDTH = 1;
 
 /**
  * Draws a thin track along the bottom of its (relatively positioned) parent
@@ -22,7 +16,7 @@ const BOTTOM_BORDER_WIDTH = 1;
  * value covers. Only shows while the goal isn't met, so the cells that need
  * attention stand out from the ones already on track.
  */
-export function GoalProgressFill({ target, column }: GoalProgressFillProps) {
+export function GoalProgressFill({ target }: GoalProgressFillProps) {
   if (!target) {
     return null;
   }
@@ -40,7 +34,9 @@ export function GoalProgressFill({ target, column }: GoalProgressFillProps) {
         position: 'absolute',
         left: 0,
         right: 0,
-        bottom: column === 'budgeted' ? BOTTOM_BORDER_WIDTH : 0,
+        bottom: 0,
+        // Under the cell's hover background (the cell isolates it)
+        zIndex: -1,
         height: 2,
         backgroundColor: theme.budgetGoalTrack,
         pointerEvents: 'none',
