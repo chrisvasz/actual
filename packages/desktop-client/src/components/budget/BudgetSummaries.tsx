@@ -1,113 +1,41 @@
-import React, {
-  useCallback,
-  useContext,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { animated, useSpring } from 'react-spring';
+import React from 'react';
 
-import { View, viewStyles } from '@actual-app/components/view';
-import { addMonths, subMonths } from '@actual-app/core/shared/months';
-import { css } from '@emotion/css';
+import { theme } from '@actual-app/components/theme';
+import { View } from '@actual-app/components/view';
 
-import { useResizeObserver } from '#hooks/useResizeObserver';
+import { UncategorizedChip } from '#components/UncategorizedChip';
 
-import { MonthsContext } from './MonthsContext';
+import { CATEGORY_COLUMN_CLASS } from './categoryColumnStyles';
+import { useMonths } from './MonthsContext';
+import { RenderMonths } from './RenderMonths';
+import { TableFrame } from './TableFrame';
 
 import { useBudgetComponents } from '.';
 
 export function BudgetSummaries() {
-  const { months } = useContext(MonthsContext);
-  const [firstMonth] = months;
-
-  const [widthState, setWidthState] = useState(0);
-  const [styles, spring] = useSpring(
-    () => ({
-      from: { x: 0 },
-      config: { mass: 3, tension: 600, friction: 80 },
-    }),
-    [],
-  );
-
-  const containerRef = useResizeObserver<HTMLDivElement>(
-    useCallback(rect => {
-      setWidthState(rect.width);
-    }, []),
-    { measureOnAttach: true },
-  );
-
-  const prevMonth0 = useRef(firstMonth);
-  const allMonths = useMemo(() => {
-    const all = [...months];
-    all.unshift(subMonths(firstMonth, 1));
-    all.push(addMonths(months[months.length - 1], 1));
-    return all;
-  }, [months, firstMonth]);
-  const monthWidth = widthState / months.length;
-
-  useLayoutEffect(() => {
-    const prevMonth = prevMonth0.current;
-    const reversed = prevMonth > firstMonth;
-    const offsetX = monthWidth;
-    let from = reversed ? -offsetX * 2 : 0;
-
-    if (prevMonth !== allMonths[0] && prevMonth !== allMonths[2]) {
-      from = -offsetX;
-    }
-
-    const to = -offsetX;
-    if (from !== to) {
-      void spring.start({ from: { x: from }, to: { x: to } });
-    }
-  }, [spring, firstMonth, monthWidth, allMonths]);
-
-  useLayoutEffect(() => {
-    prevMonth0.current = firstMonth;
-  }, [firstMonth]);
-
-  useLayoutEffect(() => {
-    void spring.start({ to: { x: -monthWidth }, immediate: true });
-  }, [spring, monthWidth]);
-
+  const { numMonths } = useMonths();
   const { SummaryComponent } = useBudgetComponents();
+  const gap = numMonths === 1 ? 0 : 4;
 
   return (
-    <div
-      className={css([
-        { flex: 1, overflow: 'hidden' },
-        months.length === 1 && {
-          marginLeft: -4,
-          marginRight: -4,
-        },
-      ])}
-      ref={containerRef}
-    >
-      <animated.div
-        className={viewStyles}
+    <View style={{ flexDirection: 'row', flexShrink: 0 }}>
+      <View
+        className={CATEGORY_COLUMN_CLASS}
         style={{
-          flexDirection: 'row',
-          width: widthState,
-          willChange: 'transform',
-          transform: styles.x.to(x => `translateX(${x}px)`),
+          justifyContent: 'flex-end',
+          alignItems: 'flex-start',
+          paddingBottom: 8,
+          backgroundColor: theme.pageBackground,
         }}
       >
-        {allMonths.map(month => {
-          return (
-            <View
-              key={month}
-              style={{
-                flex: `0 0 ${monthWidth}px`,
-                paddingLeft: 4,
-                paddingRight: 4,
-              }}
-            >
-              <SummaryComponent month={month} />
-            </View>
-          );
-        })}
-      </animated.div>
-    </div>
+        <UncategorizedChip />
+      </View>
+      <RenderMonths
+        style={{ borderLeft: 0, paddingLeft: gap, paddingRight: gap }}
+      >
+        {({ month }) => <SummaryComponent month={month} />}
+      </RenderMonths>
+      <TableFrame hasMonthCard={numMonths === 1} />
+    </View>
   );
 }

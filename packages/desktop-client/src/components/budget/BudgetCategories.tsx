@@ -242,12 +242,12 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
     return (
       <View
         style={{
-          marginBottom: 10,
           backgroundColor: theme.budgetCurrentMonth, // match budget colors, not generic table colors.
-          overflow: 'hidden',
+          // Not `hidden`, which would scroll the sticky column with the rows
+          overflow: 'clip',
           boxShadow: styles.cardShadow,
           borderRadius: '0 0 4px 4px',
-          flex: 1,
+          flexShrink: 0,
         }}
       >
         {items.map((item, idx) => {

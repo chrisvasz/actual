@@ -89,7 +89,7 @@ export function SidebarCategory({
         alignItems: 'center',
         userSelect: 'none',
         WebkitUserSelect: 'none',
-        opacity: category.hidden || categoryGroup?.hidden ? 0.33 : undefined,
+        opacity: category.hidden || categoryGroup?.hidden ? 0.17 : undefined,
         backgroundColor: 'transparent',
         height: 20,
       }}
@@ -116,6 +116,7 @@ export function SidebarCategory({
       className={CATEGORY_COLUMN_CLASS}
       style={{
         overflow: 'hidden',
+        backgroundColor: theme.budgetCurrentMonth,
         '& .hover-visible': {
           display: 'none',
         },

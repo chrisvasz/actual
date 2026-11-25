@@ -58,13 +58,7 @@ export function IncomeCategory({
   const { IncomeCategoryComponent: MonthComponent } = useBudgetComponents();
 
   return (
-    <Row
-      innerRef={dropRef}
-      collapsed
-      style={{
-        opacity: cat.hidden ? 0.5 : undefined,
-      }}
-    >
+    <Row innerRef={dropRef} collapsed>
       <DropHighlight pos={dropPos} offset={{ top: 1 }} />
 
       <SidebarCategory
@@ -80,7 +74,7 @@ export function IncomeCategory({
         onSave={onSave}
         onDelete={onDelete}
       />
-      <RenderMonths>
+      <RenderMonths trackStyle={cat.hidden ? { opacity: 0.5 } : undefined}>
         {({ month }) => (
           <MonthComponent
             month={month}

@@ -1,37 +1,41 @@
 import React, { useState } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { CSSProperties, KeyboardEvent } from 'react';
 
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
+import * as monthUtils from '@actual-app/core/shared/months';
 import type {
   CategoryEntity,
   CategoryGroupEntity,
 } from '@actual-app/core/types/models';
 
 import type { DropPosition } from '#components/sort';
-import { UncategorizedChip } from '#components/UncategorizedChip';
 import { useCategories } from '#hooks/useCategories';
 import { useLocalPref } from '#hooks/useLocalPref';
+import { useResizeObserver } from '#hooks/useResizeObserver';
 
 import { BudgetCategories } from './BudgetCategories';
 import { BudgetSummaries } from './BudgetSummaries';
 import { BudgetTotals } from './BudgetTotals';
-import { CATEGORY_COLUMN_CLASS } from './categoryColumnStyles';
-import { MonthsProvider } from './MonthsContext';
-import type { MonthBounds } from './MonthsContext';
 import {
-  findSortDown,
-  findSortUp,
-  getScrollbarWidth,
-  separateGroups,
-} from './util';
+  BUDGET_CONTENT_CLASS,
+  BUDGET_SCROLLER_CLASS,
+  CATEGORY_COLUMN_CLASS,
+  MONTHS_TRACK_CLASS,
+  TABLE_GUTTER,
+} from './categoryColumnStyles';
+import { MonthsContext } from './MonthsContext';
+import type { MonthBounds } from './MonthsContext';
+import { TableFrame } from './TableFrame';
+import { useMonthScroll } from './useMonthScroll';
+import { findSortDown, findSortUp, separateGroups } from './util';
 
 type BudgetTableProps = {
-  prewarmStartMonth: string;
   startMonth: string;
   numMonths: number;
   monthBounds: MonthBounds;
+  onMonthSettle: (month: string) => void;
   onSaveCategory: (category: CategoryEntity) => Promise<void>;
   onDeleteCategory: (id: CategoryEntity['id']) => void;
   onSaveGroup: (group: CategoryGroupEntity) => Promise<void>;
@@ -55,10 +59,10 @@ type BudgetTableProps = {
 
 export function BudgetTable(props: BudgetTableProps) {
   const {
-    prewarmStartMonth,
     startMonth,
     numMonths,
     monthBounds,
+    onMonthSettle,
     onSaveCategory,
     onDeleteCategory,
     onSaveGroup,
@@ -79,6 +83,33 @@ export function BudgetTable(props: BudgetTableProps) {
   const [editing, setEditing] = useState<{ id: string; cell: string } | null>(
     null,
   );
+
+  const {
+    scrollerRef,
+    stripRef,
+    months,
+    offscreenMonths,
+    firstMonth,
+    totalMonths,
+  } = useMonthScroll({
+    startMonth,
+    numMonths,
+    monthBounds,
+    pinnedMonth: editing && editing.cell !== 'name' ? editing.cell : null,
+    onSettle: onMonthSettle,
+  });
+
+  // Keep a row scrolled into view (e.g. by moving to it with Enter) clear of
+  // the sticky header.
+  const headerRef = useResizeObserver<HTMLDivElement>(rect => {
+    if (scrollerRef.current) {
+      scrollerRef.current.style.scrollPaddingTop = `${rect.height}px`;
+      scrollerRef.current.style.setProperty(
+        '--budget-header-height',
+        `${rect.height}px`,
+      );
+    }
+  });
 
   const onEditMonth = (id: string, month: string) => {
     setEditing(id ? { id, cell: month } : null);
@@ -224,80 +255,127 @@ export function BudgetTable(props: BudgetTableProps) {
         }),
       }}
     >
-      <View
-        style={{
-          flexDirection: 'row',
-          overflow: 'hidden',
-          flexShrink: 0,
-          // This is necessary to align with the table because the
-          // table has this padding to allow the shadow to show
-          paddingLeft: 5,
-          paddingRight: 5 + getScrollbarWidth(),
-        }}
+      <MonthsContext.Provider
+        value={{ months, offscreenMonths, firstMonth, totalMonths, numMonths }}
       >
-        <View
-          className={CATEGORY_COLUMN_CLASS}
-          style={{
-            justifyContent: 'flex-end',
-            alignItems: 'flex-start',
-            paddingBottom: 8,
-          }}
-        >
-          <UncategorizedChip />
-        </View>
-        <MonthsProvider
-          startMonth={prewarmStartMonth}
-          numMonths={numMonths}
-          monthBounds={monthBounds}
-        >
-          <BudgetSummaries />
-        </MonthsProvider>
-      </View>
-
-      <MonthsProvider
-        startMonth={startMonth}
-        numMonths={numMonths}
-        monthBounds={monthBounds}
-      >
-        <BudgetTotals
-          toggleHiddenCategories={toggleHiddenCategories}
-          expandAllCategories={expandAllCategories}
-          collapseAllCategories={collapseAllCategories}
-        />
         <View
           data-testid="budget-table-scroll-container"
+          className={BUDGET_SCROLLER_CLASS}
+          innerRef={scrollerRef}
+          nativeStyle={
+            {
+              '--budget-total-months': totalMonths,
+              '--budget-shown-months': numMonths,
+            } as CSSProperties
+          }
           style={{
+            flex: 1,
+            display: 'block',
+            overflowX: 'auto',
             overflowY: 'scroll',
             overflowAnchor: 'none',
-            flex: 1,
-            paddingLeft: 5,
-            paddingRight: 5,
+            overscrollBehaviorX: 'contain',
+            scrollSnapType: 'x mandatory',
+            // Styling any part of a scrollbar stops it from overlaying the
+            // content, so leave overlay scrollbars alone
+            ...(styles.lightScrollbar && {
+              '&::-webkit-scrollbar:horizontal': { height: 0 },
+              // Keep the scrollbar beside the rows, below the sticky header
+              '&::-webkit-scrollbar-track:vertical': {
+                marginTop: 'var(--budget-header-height)',
+              },
+            }),
           }}
         >
           <View
+            className={BUDGET_CONTENT_CLASS}
             style={{
               flexShrink: 0,
+              // A month can be mounted beyond what can be scrolled to
+              overflowX: 'clip',
+              paddingLeft: TABLE_GUTTER,
+              paddingRight: TABLE_GUTTER,
             }}
             onKeyDown={onKeyDown}
           >
-            <BudgetCategories
-              categoryGroups={categoryGroups}
-              editingCell={editing}
-              onEditMonth={onEditMonth}
-              onEditName={onEditName}
-              onSaveCategory={onSaveCategory}
-              onSaveGroup={onSaveGroup}
-              onDeleteCategory={onDeleteCategory}
-              onDeleteGroup={onDeleteGroup}
-              onReorderCategory={_onReorderCategory}
-              onReorderGroup={_onReorderGroup}
-              onBudgetAction={onBudgetAction}
-              onShowActivity={onShowActivity}
-              onSortCategories={onSortCategories}
-            />
+            {/* Where a horizontal scroll can come to rest. As tall as the
+                table, so there's always one in view to snap to. */}
+            <View
+              aria-hidden
+              style={{
+                position: 'absolute',
+                inset: `0 ${TABLE_GUTTER}px`,
+                flexDirection: 'row',
+                pointerEvents: 'none',
+                visibility: 'hidden',
+              }}
+            >
+              <View className={CATEGORY_COLUMN_CLASS} />
+              <View
+                className={MONTHS_TRACK_CLASS}
+                innerRef={stripRef}
+                style={{ position: 'relative' }}
+              >
+                {Array.from({ length: totalMonths }, (_, index) => (
+                  <div
+                    // Kept as the range moves, so the browser stays snapped
+                    // to the same month
+                    key={monthUtils.addMonths(firstMonth, index)}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      bottom: 0,
+                      left: `${(index / totalMonths) * 100}%`,
+                      width: `${100 / totalMonths}%`,
+                      scrollSnapAlign: 'start',
+                    }}
+                  />
+                ))}
+              </View>
+            </View>
+
+            <View
+              innerRef={headerRef}
+              style={{
+                position: 'sticky',
+                top: 0,
+                zIndex: 102,
+                flexShrink: 0,
+                backgroundColor: theme.pageBackground,
+                marginLeft: -TABLE_GUTTER,
+                marginRight: -TABLE_GUTTER,
+                paddingLeft: TABLE_GUTTER,
+                paddingRight: TABLE_GUTTER,
+              }}
+            >
+              <BudgetSummaries />
+              <BudgetTotals
+                toggleHiddenCategories={toggleHiddenCategories}
+                expandAllCategories={expandAllCategories}
+                collapseAllCategories={collapseAllCategories}
+              />
+            </View>
+            <View style={{ marginBottom: 10, flexShrink: 0 }}>
+              <BudgetCategories
+                categoryGroups={categoryGroups}
+                editingCell={editing}
+                onEditMonth={onEditMonth}
+                onEditName={onEditName}
+                onSaveCategory={onSaveCategory}
+                onSaveGroup={onSaveGroup}
+                onDeleteCategory={onDeleteCategory}
+                onDeleteGroup={onDeleteGroup}
+                onReorderCategory={_onReorderCategory}
+                onReorderGroup={_onReorderGroup}
+                onBudgetAction={onBudgetAction}
+                onShowActivity={onShowActivity}
+                onSortCategories={onSortCategories}
+              />
+              <TableFrame borderRadius="0 0 4px 4px" hasShadow bottom={10} />
+            </View>
           </View>
         </View>
-      </MonthsProvider>
+      </MonthsContext.Provider>
     </View>
   );
 }

@@ -101,6 +101,7 @@ export function SidebarGroup({
         userSelect: 'none',
         WebkitUserSelect: 'none',
         height: 20,
+        opacity: group.hidden ? 0.33 : undefined,
       }}
       ref={triggerRef}
     >

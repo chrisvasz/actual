@@ -80,7 +80,6 @@ export function ExpenseCategory({
       collapsed
       style={{
         backgroundColor: theme.budgetCurrentMonth,
-        opacity: cat.hidden || categoryGroup?.hidden ? 0.5 : undefined,
       }}
     >
       <DropHighlight pos={dropPos} offset={{ top: 1 }} />
@@ -102,7 +101,14 @@ export function ExpenseCategory({
           onDelete={onDelete}
         />
 
-        <RenderMonths>
+        <RenderMonths
+          hasRowLines
+          // The category column fades its own name. It has to stay opaque, as
+          // months scroll under it.
+          trackStyle={
+            cat.hidden || categoryGroup?.hidden ? { opacity: 0.5 } : undefined
+          }
+        >
           {({ month }) => (
             <MonthComponent
               month={month}

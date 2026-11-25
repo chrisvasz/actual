@@ -45,7 +45,6 @@ type DynamicBudgetTableProps = {
 const DynamicBudgetTable = ({
   width,
   height,
-  prewarmStartMonth,
   startMonth,
   maxMonths = 3,
   monthBounds,
@@ -143,16 +142,16 @@ const DynamicBudgetTable = ({
       >
         <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
           <BudgetPageHeader
-            startMonth={prewarmStartMonth}
+            startMonth={startMonth}
             numMonths={numMonths}
             monthBounds={monthBounds}
             onMonthSelect={_onMonthSelect}
           />
           <BudgetTable
-            prewarmStartMonth={prewarmStartMonth}
             startMonth={startMonth}
             numMonths={numMonths}
             monthBounds={monthBounds}
+            onMonthSettle={_onMonthSelect}
             onBudgetAction={onBudgetAction}
             {...props}
           />
@@ -166,7 +165,7 @@ DynamicBudgetTable.displayName = 'DynamicBudgetTable';
 
 type AutoSizingBudgetTableProps = Omit<
   ComponentProps<typeof BudgetTable>,
-  'numMonths'
+  'numMonths' | 'onMonthSettle'
 > & {
   maxMonths: number;
   onMonthSelect: (month: string, numMonths: number) => void;
