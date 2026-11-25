@@ -274,7 +274,8 @@ export function BudgetTable(props: BudgetTableProps) {
             overflowX: 'auto',
             overflowY: 'scroll',
             overflowAnchor: 'none',
-            overscrollBehaviorX: 'contain',
+            // Not 'contain', which leaves Chrome to bounce the whole page
+            overscrollBehaviorX: 'none',
             scrollSnapType: 'x mandatory',
             // Styling any part of a scrollbar stops it from overlaying the
             // content, so leave overlay scrollbars alone
