@@ -17,24 +17,18 @@ export type NetWorthRow = {
   /** Balance at the end of each month in the range */
   history: number[];
   balance: number;
-  /** Part of the positive balances at this row's level; null unless positive */
-  share: number | null;
-  /** Change as a fraction of the starting size; null when meaningless */
-  change: number | null;
   /** Signed change: positive means net worth went up */
   changeAmount: number;
 };
-
-export type NetWorthGroup = NetWorthRow & { accounts: NetWorthRow[] };
 
 export type NetWorthData = {
   months: string[];
   /** The month whose end changes are measured from */
   baselineMonth: string;
   /** Net worth; its change is null when it started at or below zero */
-  total: NetWorthRow;
+  total: NetWorthRow & { change: number | null };
   /** Assets largest first, then debts largest first */
-  groups: NetWorthGroup[];
+  groups: NetWorthRow[];
 };
 
 /** Accounts outside any group are split the way the sidebar splits them */
@@ -82,8 +76,7 @@ export function computeNetWorth({
   );
 
   const groupNames = new Map(groups.map(group => [group.id, group.name]));
-  type Member = { account: AccountEntity; series: Series };
-  const membersByGroup = new Map<string, Member[]>();
+  const seriesByGroup = new Map<string, Series[]>();
   for (const { account, amounts } of accountAmounts) {
     let balance = amounts[0];
     const history = months.map((_, i) => {
@@ -100,52 +93,32 @@ export function computeNetWorth({
         : account.offbudget
           ? UNGROUPED_OFF_BUDGET_ID
           : UNGROUPED_ON_BUDGET_ID;
-    const members = membersByGroup.get(groupId) ?? [];
-    members.push({ account, series: { history, baseline } });
-    membersByGroup.set(groupId, members);
+    const groupSeries = seriesByGroup.get(groupId) ?? [];
+    groupSeries.push({ history, baseline });
+    seriesByGroup.set(groupId, groupSeries);
   }
 
-  const groupSeries = [...membersByGroup].map(([id, members]) => ({
-    id,
-    name:
-      groupNames.get(id) ??
-      (id === UNGROUPED_OFF_BUDGET_ID ? 'Off budget' : 'On budget'),
-    members,
-    series: sumSeries(
-      members.map(member => member.series),
-      months.length,
-    ),
-  }));
-
-  // Shares compare like with like, so a group netting a house against its
-  // mortgage doesn't make the house look larger than all assets
-  const groupAssets = positiveTotal(groupSeries.map(group => group.series));
-  const accountAssets = positiveTotal(
-    groupSeries.flatMap(group => group.members.map(member => member.series)),
-  );
-
   const totalSeries = sumSeries(
-    groupSeries.map(group => group.series),
+    [...seriesByGroup.values()].flat(),
     months.length,
   );
-  const total = makeRow('net-worth', 'Net worth', totalSeries, 0);
-  const { baseline } = totalSeries;
+  const total = makeRow('net-worth', 'Net worth', totalSeries);
   return {
     months,
     baselineMonth: hasHistoryBeforeRange ? monthUtils.prevMonth(start) : start,
     total: {
       ...total,
-      change: netWorthChange(baseline, total.balance),
+      change: netWorthChange(totalSeries.baseline, total.balance),
     },
-    groups: groupSeries
-      .map(group => ({
-        ...makeRow(group.id, group.name, group.series, groupAssets),
-        accounts: group.members
-          .map(({ account, series }) =>
-            makeRow(account.id, account.name, series, accountAssets),
-          )
-          .sort(compareRows),
-      }))
+    groups: [...seriesByGroup]
+      .map(([id, series]) =>
+        makeRow(
+          id,
+          groupNames.get(id) ??
+            (id === UNGROUPED_OFF_BUDGET_ID ? 'Off budget' : 'On budget'),
+          sumSeries(series, months.length),
+        ),
+      )
       .sort(compareRows),
   };
 }
@@ -182,7 +155,6 @@ function makeRow(
   id: string,
   name: string,
   { history, baseline }: Series,
-  totalAssets: number,
 ): NetWorthRow {
   const balance = last(history);
   return {
@@ -190,8 +162,6 @@ function makeRow(
     name,
     history,
     balance,
-    share: balance > 0 && totalAssets > 0 ? balance / totalAssets : null,
-    change: balanceChange(baseline, balance),
     changeAmount: balance - baseline,
   };
 }
@@ -212,10 +182,6 @@ function sumSeries(series: Series[], length: number): Series {
     ),
     baseline: sumOf(series.map(s => s.baseline)),
   };
-}
-
-function positiveTotal(series: Series[]) {
-  return sumOf(series.map(s => Math.max(0, last(s.history))));
 }
 
 function sumOf(values: number[]) {
