@@ -345,4 +345,31 @@ describe('Database', () => {
     expect(rows.length).toBe(1);
     expect(rows[0].id).toBe('trans1');
   });
+
+  describe('updateCategoryGroup', () => {
+    test('updates a group without a name', () => {
+      // api/category-group-update forwards the caller's Partial, so hiding a
+      // group sends no name at all. The duplicate-name guard used to call
+      // .toUpperCase() on it unconditionally (#8857).
+      const id = db.insertCategoryGroup({ name: 'Bills' });
+
+      db.updateCategoryGroup({ id, is_income: 0, hidden: 1 });
+
+      const group = db.first<{ hidden: number; name: string }>(
+        'SELECT * FROM category_groups WHERE id = ?',
+        [id],
+      );
+      expect(group.hidden).toBe(1);
+      expect(group.name).toBe('Bills');
+    });
+
+    test('still rejects a rename onto an existing group', () => {
+      db.insertCategoryGroup({ name: 'Bills' });
+      const id = db.insertCategoryGroup({ name: 'Savings' });
+
+      expect(() =>
+        db.updateCategoryGroup({ id, is_income: 0, name: 'bills' }),
+      ).toThrow("'Bills' category group already exists");
+    });
+  });
 });

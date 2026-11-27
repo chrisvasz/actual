@@ -130,3 +130,89 @@ describe('budget app', () => {
     });
   });
 });
+
+describe('category-update', () => {
+  type UpdateArgs = Parameters<(typeof app.handlers)['category-update']>[0];
+
+  function getCategory(id: string) {
+    return db.first<{ name: string; cat_group: string }>(
+      'SELECT name, cat_group FROM categories WHERE id = ?',
+      [id],
+    );
+  }
+
+  beforeEach(() => {
+    db.insertCategoryGroup({ id: 'group1', name: 'group1' });
+    db.insertCategoryGroup({ id: 'group2', name: 'group2' });
+  });
+
+  it('does not require a name, since the API types fields as a Partial', async () => {
+    // api/category-update spreads the caller's partial straight through, so a
+    // caller changing only the group never sends `name` (#8857).
+    const id = db.insertCategory({ name: 'Groceries', cat_group: 'group1' });
+
+    await app.handlers['category-update']({
+      id,
+      group: 'group2',
+    } as UpdateArgs);
+
+    expect(getCategory(id)).toMatchObject({
+      name: 'Groceries',
+      cat_group: 'group2',
+    });
+  });
+
+  it('still trims a name when one is supplied', async () => {
+    const id = db.insertCategory({ name: 'foo', cat_group: 'group1' });
+
+    await app.handlers['category-update']({
+      id,
+      name: '  Groceries  ',
+    } as UpdateArgs);
+
+    expect(getCategory(id)).toMatchObject({ name: 'Groceries' });
+  });
+
+  it('rejects an empty update with a clear error', async () => {
+    const id = db.insertCategory({ name: 'foo', cat_group: 'group1' });
+
+    await expect(
+      app.handlers['category-update']({ id } as UpdateArgs),
+    ).rejects.toThrow('No fields to update');
+  });
+
+  it('rejects updates that only carry ignored fields', async () => {
+    const id = db.insertCategory({ name: 'foo', cat_group: 'group1' });
+
+    await expect(
+      app.handlers['category-update']({
+        id,
+        _ignored: true,
+      } as unknown as UpdateArgs),
+    ).rejects.toThrow('No fields to update');
+  });
+
+  it.each([null, ''])(
+    'rejects an empty group (%j) and keeps the current one',
+    async group => {
+      const id = db.insertCategory({ name: 'foo', cat_group: 'group1' });
+
+      await expect(
+        app.handlers['category-update']({ id, group } as unknown as UpdateArgs),
+      ).rejects.toThrow('groupId is required');
+      expect(getCategory(id)).toMatchObject({ cat_group: 'group1' });
+    },
+  );
+
+  it('rejects a group that does not exist or was deleted', async () => {
+    const id = db.insertCategory({ name: 'foo', cat_group: 'group1' });
+    db.deleteCategoryGroup({ id: 'group2' });
+
+    for (const group of ['missing-group', 'group2']) {
+      await expect(
+        app.handlers['category-update']({ id, group } as UpdateArgs),
+      ).rejects.toThrow('category group does not exist');
+    }
+    expect(getCategory(id)).toMatchObject({ cat_group: 'group1' });
+  });
+});

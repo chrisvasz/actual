@@ -42,7 +42,18 @@ export default defineConfig({
   ssr: {
     noExternal: true,
     external: ['better-sqlite3'],
-    resolve: { conditions: ['api'] },
+    resolve: {
+      conditions: ['api'],
+      // Under vitest, `noExternal` inlines the UMD builds of @rschedule, but
+      // the `require()` calls inside them still load native copies, so
+      // `@rschedule/standard-date-adapter/setup` registers the date adapter
+      // and recurrence rules on a different `@rschedule/core` than the one
+      // loot-core uses, and every schedule then advances one millisecond at
+      // a time. Resolving the ES builds keeps a single instance. The
+      // production build already resolves the ES builds, through Vite's
+      // default `mainFields` for SSR.
+      ...(process.env.VITEST ? { mainFields: ['module', 'main'] } : {}),
+    },
   },
   build: {
     ssr: true,
