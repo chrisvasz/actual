@@ -29,6 +29,7 @@ import { MonthsContext } from './MonthsContext';
 import type { MonthBounds } from './MonthsContext';
 import { TableFrame } from './TableFrame';
 import { useMonthScroll } from './useMonthScroll';
+import { useScrollAxisLock } from './useScrollAxisLock';
 import { findSortDown, findSortUp, separateGroups } from './util';
 
 type BudgetTableProps = {
@@ -98,6 +99,8 @@ export function BudgetTable(props: BudgetTableProps) {
     pinnedMonth: editing && editing.cell !== 'name' ? editing.cell : null,
     onSettle: onMonthSettle,
   });
+
+  useScrollAxisLock(scrollerRef);
 
   // Keep a row scrolled into view (e.g. by moving to it with Enter) clear of
   // the sticky header.
@@ -273,9 +276,12 @@ export function BudgetTable(props: BudgetTableProps) {
             display: 'block',
             overflowX: 'auto',
             overflowY: 'scroll',
+            // Keeps the scrollbar's space while a sideways scroll hides it
+            scrollbarGutter: 'stable',
             overflowAnchor: 'none',
-            // Not 'contain', which leaves Chrome to bounce the whole page
-            overscrollBehaviorX: 'none',
+            // No bounce either way. Not 'contain', which leaves Chrome to
+            // bounce the whole page.
+            overscrollBehavior: 'none',
             scrollSnapType: 'x mandatory',
             // Styling any part of a scrollbar stops it from overlaying the
             // content, so leave overlay scrollbars alone
