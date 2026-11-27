@@ -250,7 +250,7 @@ export function listenForSyncEvent(store: AppStore) {
           // the server does not match the local one. This can mean a
           // few things depending on the state, and we try to show an
           // appropriate message and call to action to fix it.
-          const { cloudFileId } = store.getState().prefs.local;
+          const { cloudFileId, id: localId } = store.getState().prefs.local;
           if (!cloudFileId) {
             console.error(
               'Received file-has-reset or file-has-new-key error but no cloudFileId in prefs',
@@ -272,7 +272,9 @@ export function listenForSyncEvent(store: AppStore) {
             button: {
               title: 'Revert',
               action: () => {
-                void store.dispatch(closeAndDownloadBudget({ cloudFileId }));
+                void store.dispatch(
+                  closeAndDownloadBudget({ cloudFileId, localId }),
+                );
               },
             },
           };
